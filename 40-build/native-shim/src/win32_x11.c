@@ -989,6 +989,11 @@ static void push(wpf_thread *t, HWND hwnd, uint32_t msg, WPARAM wp, LPARAM lp,
         if (w && w->owner_thread) target = (wpf_thread *)w->owner_thread;
         pthread_mutex_unlock(&g_wpf.lock);
     }
+    if (getenv("WPF_LINUX_XDND_DIAG") && msg == 0x0233 /* WM_DROPFILES */) {
+        fprintf(stderr, "[XDND-PUSH] WM_DROPFILES hwnd=0x%lx wp=0x%lx pump_thread=%p owner=%p -> target=%p\n",
+                (unsigned long)hwnd, (unsigned long)wp, (void *)t, (void *)target, (void *)target);
+        fflush(stderr);
+    }
     wpf_queue_push(target, &m);
 }
 
