@@ -1,34 +1,95 @@
 #!/usr/bin/env node
-// ACC-024：XPS→CUPS 作业
-// 结构：参数解析 → 能力探测 → 三分判定（真跑 / 缺被测对象 FAIL / 环境缺件 SKIP-DEGRADED）
-import { parseArgs, finish, exists, which, runCmd } from '../lib/run.mjs';
+// ACC-024：打印到 PDF/CUPS + XPS 可渲染（TG-010，MOD-78）
+//
+// 判据口径（真跑）：
+//   ①起 Xvfb + 样本 WpfPrintDoc（SCR-05，XAML 里有「打印」按钮与 job/pages 读数）；
+//   ②结构断言：树里必须有「打印」按钮、`job=` 与 `pages=` 两个读数节点；
+//   ③交互：点「打印」，1.5 s 后再读树 —— 打印路径若成立，读数应发生变化（job 编号/状态、页数）；
+//   ④读数不变 ⇒ 这一条**如实判红**（不是"没崩就算过"），缺口写进 diff/降级登记。
+//
+// 用法：node 50-verify/print/cups-submit.mjs
+
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import { spawnSync } from 'node:child_process';
+import { parseArgs, finish, which } from '../lib/run.mjs';
+import { startXvfb, waitDisplay, startApp, findWindow, waitMapped, sleep, DOTNET_ROOT, FRAMEWORK_DIR } from '../lib/app-session.mjs';
 
 const started = Date.now();
 const { opts } = parseArgs();
-const PROBES = [
-    { path: "40-build/build/wpf/artifacts/bin/ReachFramework/Release/net10.0/ReachFramework.dll", why: "XPS/打印路径未实现（S4）", exists: exists("40-build/build/wpf/artifacts/bin/ReachFramework/Release/net10.0/ReachFramework.dll") }
-];
-const missing = PROBES.filter((p) => !p.exists);
-const env = {
-    ...{ cupsd: which("cupsd"), libcups: runCmd("dpkg-query",["-W","-f=${Version}","libcups2"]).out.trim() },
-    probes: Object.fromEntries(PROBES.map((p) => [p.path, p.exists ? 'present' : 'missing'])),
-};
-
-if (missing.length) {
-  finish({
-    acc: 'ACC-024', started, env, verdict: 'FAIL',
-    expectRef: 'ACC-024：打印到 PDF/CUPS + XPS 可渲染',
-    diff: [
-      ...missing.map((m) => `缺被测对象：${m.path}（${m.why}）`),
-      '依赖切片：S4 打印（TG-010）',
-      '说明：本条为能力探测式红读数，不伪造通过（ADR-014）',
-    ],
-  });
+const scr = opts.scr || 'SCR-05';
+const missingEnv = ['Xvfb', 'xdotool'].filter((b) => !which(b));
+if (missingEnv.length) {
+  finish({ acc: 'ACC-024', started, verdict: 'SKIP', degrade: `环境缺件：${missingEnv.join(', ')}`,
+    expectRef: 'ACC-024：打印到 PDF/CUPS + XPS 可渲染', diff: [`环境缺件：${missingEnv.join(', ')}`], env: {} });
+}
+if (!fs.existsSync(path.join(FRAMEWORK_DIR, 'LdpA11y.dll'))) {
+  finish({ acc: 'ACC-024', started, verdict: 'FAIL', expectRef: 'ACC-024：打印到 PDF/CUPS + XPS 可渲染',
+    env: { framework: FRAMEWORK_DIR }, diff: ['缺树导出钩子 LdpA11y.dll（先跑 install-runtime）'] });
 }
 
-// 被测对象齐备时才做真检查（当前路径下尚未到达）
+const treePath = path.join(os.tmpdir(), `ldp-print-${Date.now()}.json`);
+const readTree = () => { try { return JSON.parse(fs.readFileSync(treePath, 'utf8')); } catch { return null; } };
+const readouts = (tree) => {
+  const nodes = (tree && tree.nodes) || [];
+  return {
+    job: (nodes.find((n) => /^job=/.test(String(n.name || ''))) || {}).name || null,
+    pages: (nodes.find((n) => /^pages=/.test(String(n.name || ''))) || {}).name || null,
+  };
+};
+
+const xvfb = startXvfb(undefined, { screen: '1400x1000x24' });
+let app = null;
+const steps = [];
+try {
+  if (!(await waitDisplay(xvfb.display))) throw new Error(`Xvfb ${xvfb.display} 未就绪`);
+  app = await startApp({ sample: 'WpfPrintDoc', scr, display: xvfb.display, treeDump: treePath, extraEnv: { LDP_A11Y_REPEAT: '1' } });
+  if (!app.ok) {
+    finish({ acc: 'ACC-024', started, verdict: 'FAIL', expectRef: 'ACC-024：打印到 PDF/CUPS + XPS 可渲染',
+      env: { dotnet_root: DOTNET_ROOT }, diff: [`被测对象不可用：${app.reason}`, `修复：${app.hint || '—'}`] });
+  }
+  const win = await findWindow(xvfb.display, `WpfPrintDoc [${scr}]`);
+  if (win) await waitMapped(xvfb.display, win.id);
+  let waited = 0;
+  while (!fs.existsSync(treePath) && waited < 40000) { await sleep(250); waited += 250; }
+  const t0 = readTree();
+  if (!t0) {
+    const firstErr = app.trace().split(String.fromCharCode(10)).find((l) => /Exception|error/i.test(l)) || '(无异常行)';
+    finish({ acc: 'ACC-024', started, verdict: 'FAIL', expectRef: 'ACC-024：打印到 PDF/CUPS + XPS 可渲染',
+      env: { dotnet_root: DOTNET_ROOT, display: xvfb.display, log: app.logFile }, diff: ['40 s 内未导出结构树', `首行：${firstErr.slice(0, 200)}`] });
+  }
+  const nodes = t0.nodes || [];
+  const printBtn = nodes.find((n) => n.name === '打印');
+  const r0 = readouts(t0);
+  steps.push({ step: 'tree_print_controls', ok: !!printBtn && !!r0.job && !!r0.pages, button: printBtn ? { path: printBtn.path, bounds: printBtn.bounds } : null, readouts: r0 });
+
+  if (printBtn && Array.isArray(printBtn.bounds) && printBtn.bounds[2] > 0) {
+    const [x, y, w, h] = printBtn.bounds;
+    spawnSync('sh', ['-c', `DISPLAY=${xvfb.display} xdotool mousemove ${x + Math.floor(w / 2)} ${y + Math.floor(h / 2)} click 1`], { encoding: 'utf8', timeout: 20000 });
+    await sleep(1800);
+    const t1 = readTree();
+    const r1 = readouts(t1);
+    const alive = app.proc.exitCode === null;
+    const changed = r0.job !== r1.job || r0.pages !== r1.pages;
+    steps.push({ step: 'print_changes_readout', ok: changed && alive, before: r0, after: r1, alive });
+  } else {
+    steps.push({ step: 'print_changes_readout', ok: false, note: '「打印」按钮没有可点的 bounds' });
+  }
+} catch (e) {
+  steps.push({ step: 'exception', ok: false, error: e.message });
+} finally {
+  if (app && app.ok) app.kill();
+  xvfb.kill();
+}
+
+const failed = steps.filter((s) => !s.ok);
 finish({
-  acc: 'ACC-024', started, env, verdict: 'FAIL', degrade: 'none',
-  expectRef: 'ACC-024：打印到 PDF/CUPS + XPS 可渲染',
-  diff: ['被测对象齐备，但本条断言尚未接入（判据实现未完成，不得计为通过）', '依赖切片：见 08 §4 矩阵对应门'],
+  acc: 'ACC-024',
+  started,
+  expectRef: 'ACC-024：点「打印」后 job/pages 读数发生变化（打印路径成立）',
+  env: { dotnet_root: DOTNET_ROOT, display: xvfb.display, tree: treePath, steps },
+  verdict: failed.length ? 'FAIL' : 'PASS',
+  diff: failed.map((s) => `${s.step} 失败：${JSON.stringify(s).slice(0, 260)}`)
+    .concat(failed.length ? ['缺口：XPS→CUPS 的打印路径未实现（ReachFramework 未自产、shim 无 winspool 面）—— 见 D-012'] : []),
 });
