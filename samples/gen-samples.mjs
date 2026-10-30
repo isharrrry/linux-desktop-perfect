@@ -659,6 +659,7 @@ if (checkOnly) {
   //   （必须在应用侧做 —— 在 LdpA11y 的投影路径上访问 Block 会触发同步排版并卡住）。
   const HANDWRITTEN = new Set([
     'samples/WpfTextDemo/DocCache.cs',
+    'samples/WpfMediaInk/MediaHookup.cs',
   ]);
   for (const s of SAMPLES) {
     for (const abs of walk(path.join(HERE, s.dir))) {

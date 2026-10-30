@@ -97,17 +97,19 @@ namespace WpfGfx.Linux.Interop
         /// <summary>取播放位置（100ns）。E_NOTIMPL，pllTime 置 0。</summary>
         public static int MILMediaGetPosition(IntPtr THIS_PTR, ref long pllTime)
         {
-            _ = THIS_PTR;
-            pllTime = 0;
-            return HResult.E_NOTIMPL;
+            MilMediaObject media = MediaOf(THIS_PTR);
+            if (media == null) return HResult.E_INVALIDARG;
+            pllTime = media.PositionTicks;
+            return HResult.S_OK;
         }
 
         /// <summary>设置播放位置。E_NOTIMPL。</summary>
         public static int MILMediaSetPosition(IntPtr THIS_PTR, long llTime)
         {
-            _ = THIS_PTR;
-            _ = llTime;
-            return HResult.E_NOTIMPL;
+            MilMediaObject media = MediaOf(THIS_PTR);
+            if (media == null) return HResult.E_INVALIDARG;
+            media.PositionTicks = llTime;
+            return HResult.S_OK;
         }
 
         /// <summary>设置音量。E_NOTIMPL。</summary>
@@ -137,17 +139,19 @@ namespace WpfGfx.Linux.Interop
         /// <summary>是否正在缓冲。E_NOTIMPL，pIsBuffering 置 false。</summary>
         public static int MILMediaIsBuffering(IntPtr THIS_PTR, ref bool pIsBuffering)
         {
-            _ = THIS_PTR;
-            pIsBuffering = false;
-            return HResult.E_NOTIMPL;
+            MilMediaObject media = MediaOf(THIS_PTR);
+            if (media == null) return HResult.E_INVALIDARG;
+            pIsBuffering = false;   // 本地文件，不缓冲
+            return HResult.S_OK;
         }
 
         /// <summary>是否可暂停。E_NOTIMPL，pCanPause 置 false。</summary>
         public static int MILMediaCanPause(IntPtr THIS_PTR, ref bool pCanPause)
         {
-            _ = THIS_PTR;
-            pCanPause = false;
-            return HResult.E_NOTIMPL;
+            MilMediaObject media = MediaOf(THIS_PTR);
+            if (media == null) return HResult.E_INVALIDARG;
+            pCanPause = media.Opened;
+            return HResult.S_OK;
         }
 
         /// <summary>下载进度。E_NOTIMPL，pProgress 置 0。</summary>
@@ -169,9 +173,14 @@ namespace WpfGfx.Linux.Interop
         /// <summary>设置播放速率。E_NOTIMPL。</summary>
         public static int MILMediaSetRate(IntPtr THIS_PTR, double dblRate)
         {
-            _ = THIS_PTR;
-            _ = dblRate;
-            return HResult.E_NOTIMPL;
+            // WPF 的 Play()/Pause() 最终都落到这里（MediaPlayerState.PrivateSpeedRatio
+            //   → MILMedia.SetRate）：Play ⇒ SpeedRatio(>0)、Pause ⇒ 0。
+            //   本移植版不真播（没有 pipeline 时钟），但**如实记录速率** —— 这是
+            //   "播放状态"的唯一真值来源，不是假装。
+            MilMediaObject media = MediaOf(THIS_PTR);
+            if (media == null) return HResult.E_INVALIDARG;
+            media.Rate = dblRate;
+            return HResult.S_OK;
         }
 
         /// <summary>是否有视频轨。E_NOTIMPL，pfHasVideo 置 false（没有媒体 = 没有视频轨）。</summary>
@@ -180,7 +189,7 @@ namespace WpfGfx.Linux.Interop
             MilMediaObject media = MediaOf(THIS_PTR);
             if (media == null) return HResult.E_INVALIDARG;
             if (pfHas == IntPtr.Zero) return HResult.E_INVALIDARG;
-            System.Runtime.InteropServices.Marshal.WriteInt32(pfHas, media.HasVideo ? 1 : 0);
+            pfHas = media.HasVideo;
             return HResult.S_OK;
         }
 
@@ -190,7 +199,7 @@ namespace WpfGfx.Linux.Interop
             MilMediaObject media = MediaOf(THIS_PTR);
             if (media == null) return HResult.E_INVALIDARG;
             if (pfHas == IntPtr.Zero) return HResult.E_INVALIDARG;
-            System.Runtime.InteropServices.Marshal.WriteInt32(pfHas, media.HasAudio ? 1 : 0);
+            pfHas = media.HasAudio;
             return HResult.S_OK;
         }
 
@@ -200,7 +209,7 @@ namespace WpfGfx.Linux.Interop
             MilMediaObject media = MediaOf(THIS_PTR);
             if (media == null) return HResult.E_INVALIDARG;
             if (ph == IntPtr.Zero) return HResult.E_INVALIDARG;
-            System.Runtime.InteropServices.Marshal.WriteInt32(ph, (int)media.Height);
+            ph = (int)media.Height;
             return HResult.S_OK;
         }
 
@@ -210,7 +219,7 @@ namespace WpfGfx.Linux.Interop
             MilMediaObject media = MediaOf(THIS_PTR);
             if (media == null) return HResult.E_INVALIDARG;
             if (pw == IntPtr.Zero) return HResult.E_INVALIDARG;
-            System.Runtime.InteropServices.Marshal.WriteInt32(pw, (int)media.Width);
+            pw = (int)media.Width;
             return HResult.S_OK;
         }
 
@@ -221,7 +230,7 @@ namespace WpfGfx.Linux.Interop
             if (media == null) return HResult.E_INVALIDARG;
             if (plength == IntPtr.Zero) return HResult.E_INVALIDARG;
             // 单位是 100ns（与时间戳一致）：毫秒 × 10000
-            System.Runtime.InteropServices.Marshal.WriteInt64(plength, (long)media.DurationMs * 10000L);
+            plength = (long)media.DurationMs * 10000L;
             return HResult.S_OK;
         }
 
@@ -319,5 +328,7 @@ namespace WpfGfx.Linux.Interop
             public byte[] Frame;
             public bool HasVideo, HasAudio;
             public bool Opened;
+            public double Rate;          // SetRate 的值：>0 = 播放、0 = 暂停（WPF 的 Play/Pause 就是这条）
+            public long   PositionTicks; // 100ns
         }
 }
