@@ -559,7 +559,13 @@ BOOL    KillTimer(HWND, UINT_PTR);
 FARPROC GetProcAddressW(HMODULE, const char *);
 HMODULE GetModuleHandleW(const uint16_t *);
 int     wpf_x11_ensure(void);
-void    wpf_x11_set_input_focus(HWND hwnd);   // 补丁 F2：把 X 输入焦点真的设过去（原实现从不调 XSetInputFocus）
+void    wpf_x11_set_input_focus(HWND hwnd);
+
+// XIM（D-014）：有输入法服务器时才真正建 IC；无服务器时这些入口都是 no-op。
+//   判据（ACC-017）读 `wpf_xim_ic_count()` 与符号计数来区分"入口没接"和"环境没引擎"。
+int     wpf_xim_available(void);
+int     wpf_xim_ic_count(void);
+void    wpf_xim_attach_ic(unsigned long window);   // X11 Window（= unsigned long）   // 补丁 F2：把 X 输入焦点真的设过去（原实现从不调 XSetInputFocus）
 // 【波 44 · D-G49】鼠标五键的 `GetKeyState` 口径：问 X 的真实指针按键态。
 //   上游 `Win32MouseDevice` 判按钮状态**只看** `GetKeyState(VK_LBUTTON) & 0x8000`；
 //   本 shim 的 `key_state[]` 只由键盘翻译层填 ⇒ 鼠标五键恒 0 ⇒ 控件永不激活（只拿焦点）。
