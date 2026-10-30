@@ -13,7 +13,7 @@
 import { spawnSync } from 'node:child_process';
 import { parseArgs, finish, exists, which } from '../lib/run.mjs';
 import fs from 'node:fs';
-import { startXvfb, waitDisplay, sleep, startApp, findWindow } from '../lib/app-session.mjs';
+import { startXvfb, waitDisplay, sleep, startApp, findWindow, waitMapped } from '../lib/app-session.mjs';
 
 const started = Date.now();
 const { opts } = parseArgs();
@@ -57,10 +57,13 @@ try {
   // ③ XDND：**真的去读窗口的 XdndAware 属性**（D-011 第一步已实现"声明"，
   //   但"处理 XdndEnter/Position/Drop"那一层还没做 ⇒ 本步只验声明面）。
   {
-    let xdndOk = false, xdndValue = null, win = null, xdndMsg = null;
+    let xdndOk = false, xdndValue = null, win = null, xdndMsg = null, xdndRaw = null;
     const app = await startApp({ sample: 'WpfFirstWindow', scr: 'SCR-01', display: xvfb.display });
     if (app.ok) {
       win = await findWindow(xvfb.display, 'WpfFirstWindow [SCR-01]', 25000);
+      // 等窗口真的映射出来再发 XDND —— 修前没等，探针可能在窗口还没上屏时发消息
+      //   （X 会把发给未映射窗口的 ClientMessage 丢掉），于是判据里 status_received=false。
+      if (win) await waitMapped(xvfb.display, win.id);
       if (win) {
         // 直接用 xprop 读属性（不为此在 clip-probe 里加模式：那是另一个协议面）
         const rp = spawnSync('sh', ['-c', `DISPLAY=${xvfb.display} xprop -id ${win.id} XdndAware 2>/dev/null`],
@@ -75,6 +78,7 @@ try {
                                                  env: { ...process.env, DISPLAY: xvfb.display } });
           const line2 = (r2.stdout || '').trim().split(String.fromCharCode(10)).pop();
           try { xdndMsg = JSON.parse(line2); } catch { xdndMsg = null; }
+          xdndRaw = (r2.stdout || '').trim().slice(-200);   // 诊断：把探针原始输出也带进读数
         }
       }
       app.kill();
@@ -87,6 +91,7 @@ try {
       step: 'xdnd', ok: false, pending: true,
       declared: xdndOk, declared_value: xdndValue,
       status_received: !!(xdndMsg && xdndMsg.status_received),
+      raw: xdndRaw,
       note: (xdndOk ? `窗口声明 XdndAware(${xdndValue})；` : '缺 XdndAware；')
         + (msgOk ? 'XdndEnter/Position 已收到并回 XdndStatus(accept)，' : '消息层未通，')
         + '但 XdndDrop 的"取文件列表 → 构造 HDROP → WM_DROPFILES"未做，拖入后应用仍收不到文件（D-011）',
