@@ -724,6 +724,9 @@ void wpf_keystate_apply_queue_mods(uint8_t mods)
         { 0x2, WPF_VK_CONTROL, 0xA2, 0xA3 },
         { 0x4, WPF_VK_MENU,    0xA4, 0xA5 },
         { 0x8, WPF_VK_LWIN,    0x5B, 0x5C },
+        // 【D-008】bit4 = 左键按下（VK_LBUTTON）：鼠标消息也随消息携带"入队时刻"的按钮位，
+        //   否则整批抽干后 GetKeyState 读到的是 Release 之后的状态。
+        { 0x10, 0x01, 0x01, 0x01 },
     };
     for (size_t i = 0; i < sizeof(m) / sizeof(m[0]); ++i) {
         uint32_t vks[3] = { m[i].vk_generic, m[i].vk_l, m[i].vk_r };
@@ -1470,8 +1473,11 @@ int wpf_x11_pump_into_queue(wpf_thread *t)
                                 -1, 0, 0, "DELIVER(release)");
                 }
             }
+            // 【D-008】把"入队时刻的左键态"随消息带走（出队时由 apply_queue_mods 覆盖）
+            wpf_keystate_set_push_mods(down ? 0x10 : 0);
             push(t, h, m, mk, xy_lparam(ev.xbutton.x, ev.xbutton.y),
                  ev.xbutton.x, ev.xbutton.y);
+            wpf_keystate_set_push_mods(0);   // 后续非鼠标事件不继承
             produced++;
             break;
         }

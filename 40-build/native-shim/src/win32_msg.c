@@ -79,14 +79,14 @@ static uint32_t s_push_mods;
 //   修法乙若不加这道闸，一条被 post 的按键消息就会用**陈旧戳**改写实时表（真回归）。
 //   语义：**盖戳只对紧随其后的那一次入队有效**（push 时消费掉，见 `wpf_queue_push`）。
 static uint8_t  s_push_mods_valid;
-void wpf_keystate_set_push_mods(uint32_t mods) { s_push_mods = mods & 0x0F; s_push_mods_valid = 1; }
+void wpf_keystate_set_push_mods(uint32_t mods) { s_push_mods = mods & 0xFF; s_push_mods_valid = 1; }   // bit4 = 左键（D-008）
 
 void wpf_queue_push(wpf_thread *t, const WPF_MSG *m)
 {
     if (!t) return;
     wpf_msg_node *n = (wpf_msg_node *)malloc(sizeof(wpf_msg_node));
     if (!n) return;
-    n->mods = (uint8_t)(s_push_mods & 0x0F);   // [D-K1] 随消息带走"事件时刻"的修饰位
+    n->mods = (uint8_t)(s_push_mods & 0xFF);   // [D-K1] 随消息带走"事件时刻"的修饰位（bit4=左键，D-008）
     // [D-K1 · 波 24 修法乙] 只有**翻译层刚为某个 X 事件**盖的戳才算数，且**只对这一次入队有效**
     //   （`PostMessageW`/`SetTimer` 会沿用残留值 ⇒ 不加这道闸，被 post 的按键消息会用陈旧戳改写实时表）。
     n->mods_valid = s_push_mods_valid;
@@ -340,7 +340,10 @@ int wpf_queue_pop(wpf_thread *t, WPF_MSG *out, HWND hwndFilter, UINT lo, UINT hi
             //   本调用点在 `g_wpf.lock` 区间内 ⇒ `wpf_keystate_apply_queue_mods` 内部**不取锁**。
             if (v->mods_valid &&
                 (out->message == WM_KEYDOWN || out->message == WM_KEYUP ||
-                 out->message == WM_SYSKEYDOWN || out->message == WM_SYSKEYUP))
+                 out->message == WM_SYSKEYDOWN || out->message == WM_SYSKEYUP ||
+                 // 【D-008】鼠标按下/抬起也按"入队时刻"的快照覆盖按钮位：
+                 //   X 事件泵整批抽干会先处理 Release，WPF 之后才派发 Down ⇒ 不盖就恒 Released。
+                 out->message == WM_LBUTTONDOWN || out->message == WM_LBUTTONUP))
                 wpf_keystate_apply_queue_mods(v->mods);
             free(v);
             found = 1;
