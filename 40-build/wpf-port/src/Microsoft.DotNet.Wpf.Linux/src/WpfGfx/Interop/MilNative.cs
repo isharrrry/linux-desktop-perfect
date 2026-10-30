@@ -35,6 +35,20 @@ namespace WpfGfx.Linux.Interop
     // ------------------------------------------------------------------
     public static unsafe partial class MilNative
     {
+        // 【bridge 存活探针】只要 bridge 的托管代码被**加载**，这个静态构造就会执行。
+        //   为什么要它：M114–M116 里我给几个导出加了诊断，全都 0 次输出 ——
+        //   需要先确认「我改的这份 C# 到底有没有在跑」，否则后面所有 bridge 侧判断都不可信。
+        //   输出走 stderr（AOT 下 Console 可用，File 写盘在 M116 里已证明不可靠）。
+        static MilNative()
+        {
+            try
+            {
+                Console.Error.WriteLine("[BRIDGE-ALIVE] MilNative 静态构造执行（bridge 托管代码已加载）");
+                Console.Error.Flush();
+            }
+            catch { }
+        }
+    }
         // ==================================================================
         //  通道生命周期
         // ==================================================================
