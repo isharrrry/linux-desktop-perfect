@@ -1295,6 +1295,19 @@ int wpf_x11_pump_into_queue(wpf_thread *t)
             HWND h = (HWND)(uintptr_t)ev.xbutton.window;
             int down = (ev.type == ButtonPress);
             unsigned b = ev.xbutton.button;
+            // 【D-008 最后一跳】维护"消息时刻"的鼠标键态（Win32 `key_state` 布局：bit7 = 按下）。
+            //   为什么不由 XQueryPointer 兜底就够：`GetKeyState(VK_LBUTTON)` 在 WM_LBUTTONDOWN
+            //   派发期间被 WPF 的 `Win32MouseDevice.GetButtonStateFromSystem` 调用，而 XTest 合成的
+            //   按钮态在那个往返里还读不到 ⇒ 恒 Released。改成"翻译时登记"才是 Win32 的队列语义。
+            {
+                int vk = (b == Button1) ? 0x01 : (b == Button3) ? 0x02 : (b == Button2) ? 0x04 : 0;
+                if (vk) {
+                    wpf_lock();
+                    if (down) g_wpf.key_state[vk] |= 0x80;
+                    else      g_wpf.key_state[vk] &= (uint8_t)~0x80;
+                    pthread_mutex_unlock(&g_wpf.lock);
+                }
+            }
             WPARAM mk = xstate_to_mk(ev.xbutton.state, b);
             uint32_t m;
             if (b == Button4 || b == Button5 || b == 6 || b == 7) {

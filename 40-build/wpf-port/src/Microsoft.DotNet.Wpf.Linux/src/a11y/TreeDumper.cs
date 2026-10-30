@@ -119,7 +119,7 @@ namespace Ldp.A11y
             {
                 // 路由事件层追踪：比 InputManager.PreProcessInput 更靠后、更接近控件实际收到的事件，
                 // 用来判定「事件到窗口了但命中的是别的元素」还是「根本没到控件」。
-                win.PreviewMouseDown += (s, e) => Debug("Routed MouseDown pos=" + e.GetPosition(win) + " src=" + (e.OriginalSource == null ? "null" : e.OriginalSource.GetType().Name) + " btn=" + e.ChangedButton + " state=" + e.ButtonState + " left=" + Mouse.LeftButton + " active=" + win.IsActive + " handled=" + e.Handled);
+                win.PreviewMouseDown += (s, e) => Debug("Routed MouseDown pos=" + e.GetPosition(win) + " src=" + (e.OriginalSource == null ? "null" : e.OriginalSource.GetType().Name) + " btn=" + e.ChangedButton + " state=" + e.ButtonState + " left=" + Mouse.LeftButton + " active=" + win.IsActive + " stylus=" + (e.StylusDevice == null ? "null" : e.StylusDevice.Name) + " handled=" + e.Handled);
                 win.PreviewMouseUp += (s, e) => Debug("Routed MouseUp pos=" + e.GetPosition(win) + " src=" + (e.OriginalSource == null ? "null" : e.OriginalSource.GetType().Name));
                 win.PreviewMouseMove += (s, e) => Debug("Routed MouseMove pos=" + e.GetPosition(win));
             }

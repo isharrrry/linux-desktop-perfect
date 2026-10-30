@@ -2205,7 +2205,20 @@ static short wpf_keystate_read(int vk, const char *api)
     //   读不到 ⇒ 恒 `Released` ⇒ `ButtonBase` 只 `Focus()` 不激活（复选框不勾/下拉不开/滑块不动）。
     //   ⇒ 只对这五个 VK 改问 X 的真实指针按键态；**键盘路径（下面 from_snap/live 两段）逐字未动**。
     if (vk == 0x01 || vk == 0x02 || vk == 0x04 || vk == 0x05 || vk == 0x06) {
-        short mret = wpf_x11_mouse_keystate(vk);
+        // 【D-008 最后一跳】Win32 的 `GetKeyState` 是**消息队列语义**：返回"正在派发的这条消息时刻"
+        //   的按键态。修前这里只问 X 的实时指针（`XQueryPointer`）—— 实测在 `WM_LBUTTONDOWN`
+        //   派发期间读到的是 Released（XTest 合成的按钮态在该往返里还没反映），于是
+        //   `Win32MouseDevice.GetButtonStateFromSystem` 恒 Released ⇒ `TextEditor.OnMouseDown`
+        //   首行 return ⇒ 鼠标点 TextBox 永不聚焦。
+        //   现在优先读**由 ButtonPress/ButtonRelease 翻译层维护的表**（仍是"消息时刻"的口径），
+        //   表里没有记录时才回落到 X 实时查询（指针在窗口外按下等情形）。
+        uint8_t queued = g_wpf.key_state[vk];
+        short mret;
+        if (queued & 0x80) mret = (short)0x8000;
+        else {
+            short live = wpf_x11_mouse_keystate(vk);
+            mret = (live != 0) ? live : (short)(queued ? (queued & 0x80 ? (short)0x8000 : 0) : 0);
+        }
         wpf_ks_trace(api, vk, mret, 0, 0, 0);
         return mret;
     }
