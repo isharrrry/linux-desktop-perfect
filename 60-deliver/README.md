@@ -88,7 +88,7 @@ node 50-verify/index/gen-index.mjs             # 汇总全部判据读数
 | **打印路径**（ACC-024） | 判据红：点「打印」后 `job=0`/`pages=0` 不变（需 ReachFramework + shim 的 winspool 面） | `50-verify/读数/ACC-024/` |
 | **媒体播放状态机**（ACC-022） | 降级为 DEGRADED：媒体桥能解第一帧与元数据、播放器对象已建，但 `MediaPlayer.Open` 在 `CreateMedia` 收到 `E_NOTIMPL` | `70-operate/已知坑清单.md` D-015 |
 | **输入法**（ACC-017） | 环境级阻塞：本机没有输入法服务器（`XOpenIM` 返回 NULL），预编辑/提交路径无法真验 | 同上 |
-| **WinForms**（ACC-028） | 需上游 winforms 源码 + 自产 ~50 万行 Forms；SCR-07 的树因此无法导出 | `50-verify/读数/ACC-027/` |
+| **WinForms**（ACC-028） | 需上游 winforms 源码 + 自产 ~50 万行 Forms；**实测本机访问不了 GitHub**（`git ls-remote` 超时），源码拿不到 ⇒ 环境级阻塞。SCR-07 的树因此无法导出，ACC-008 与 ACC-027 的 SCR-07 一并受阻 | `50-verify/读数/ACC-027/`、已知坑 D-021 |
 | **段落角色** | SCR-02 的段落以 `label` 暴露而非 `paragraph`（设计取舍，理由见《界面设计说明》§2.3） | 同上 |
 | **AT-SPI 总线** | UIA 树为**自建投影**（`LdpA11y`），未走真实 AT-SPI 总线 | `40-build/wpf-port/.../a11y/TreeDumper.cs` |
 
