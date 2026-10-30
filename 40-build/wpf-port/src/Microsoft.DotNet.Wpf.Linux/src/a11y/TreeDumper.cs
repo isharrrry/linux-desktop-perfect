@@ -429,6 +429,20 @@ namespace Ldp.A11y
                 if (visible) states.Add("visible");
                 if (enabled) actions.Add("click");
             }
+            else if (el is System.Windows.Controls.FlowDocumentScrollViewer || el is System.Windows.Controls.FlowDocumentReader)
+            {
+                if (visible) states.Add("visible");
+                actions.Add("scroll");          // 属性表要求
+            }
+            else if (el is System.Windows.Controls.ComboBox cb)
+            {
+                if (enabled) { states.Add("enabled"); states.Add("sensitive"); }
+                else { states.Add("!enabled"); states.Add("!sensitive"); }
+                if (visible) states.Add("visible");
+                states.Add("expandable");       // AT-SPI 的 EXPANDABLE
+                actions.Add("select");          // 属性表要求「选择一项」的动作
+                if (cb.Focusable) actions.Add("focus");
+            }
             else if (el is System.Windows.Controls.Primitives.RangeBase rb)
             {
                 // Slider/ScrollBar 这类连续值控件：属性表要求 `enabled` 状态与 `focus` 动作。
@@ -477,6 +491,9 @@ namespace Ldp.A11y
         private static string RoleOf(AutomationPeer peer, UIElement el)
         {
             if (el is Canvas) return "drawing area";
+            // 文档宿主：属性表用 `document frame`（AT-SPI 的 ROLE_DOCUMENT_FRAME）
+            if (el is System.Windows.Controls.FlowDocumentScrollViewer) return "document frame";
+            if (el is System.Windows.Controls.FlowDocumentReader) return "document frame";
             // 墨迹画布：InkCanvas 没有默认 peer（它的可视化子件是 InkPresenter），
             //   WPF 的 GetAutomationControlType 对它返回 Custom ⇒ 树上会变成 "unknown"。
             //   属性表把 SCR-06 的 `0/5` 定为 drawing area（与 Canvas 同口径，
