@@ -64,7 +64,17 @@ namespace MilBridge
         [UnmanagedCallersOnly(EntryPoint = "LdpMilColorContextFromProfile")]
         public static IntPtr LdpMilColorContextFromProfile(byte* profile, uint length, uint type)
         {
-            if (profile == null || length == 0) return IntPtr.Zero;
+            // length == 0 合法：`WICCreateColorContext` 的语义就是"先造一个空上下文，
+            // 之后由 `IWICColorContext_InitializeFromMemory` 填 profile"。
+            if (profile == null || length == 0) {
+                var empty = new MilColorContext
+                {
+                    ProfileBytes = Array.Empty<byte>(),
+                    Type = MilWicColorContextType.WICColorContextUninitialized,
+                    ExifColorSpace = 0,
+                };
+                return MilColorContextTable.Register(empty);
+            }
             byte[] bytes = new byte[length];
             System.Runtime.InteropServices.Marshal.Copy((IntPtr)profile, bytes, 0, (int)length);
             var ctx = new MilColorContext
@@ -76,6 +86,27 @@ namespace MilBridge
                 ExifColorSpace = 0,
             };
             return MilColorContextTable.Register(ctx);
+        }
+
+        /// <summary>
+        /// 给一个已登记的「颜色上下文」填 profile（对应 WIC 的
+        /// `IWICColorContext_InitializeFromMemory` —— 那个语义是**填充已有对象**，不是创建）。
+        /// 返回 S_OK(0) / E_HANDLE（句柄不认识）/ E_INVALIDARG。
+        /// </summary>
+        [UnmanagedCallersOnly(EntryPoint = "LdpMilColorContextSetProfile")]
+        public static int LdpMilColorContextSetProfile(IntPtr handle, byte* profile, uint length, uint type)
+        {
+            if (handle == IntPtr.Zero) return unchecked((int)0x80070057);
+            MilColorContext ctx = MilColorContextTable.Resolve(handle);
+            if (ctx == null) return unchecked((int)0x80070006);   // E_HANDLE
+            if (profile == null || length == 0) return unchecked((int)0x80070057);
+            byte[] bytes = new byte[length];
+            System.Runtime.InteropServices.Marshal.Copy((IntPtr)profile, bytes, 0, (int)length);
+            ctx.ProfileBytes = bytes;
+            ctx.Type = type == 2 ? MilWicColorContextType.WICColorContextProfile
+                                 : (type == 1 ? MilWicColorContextType.WICColorContextExifColorSpace
+                                              : MilWicColorContextType.WICColorContextUninitialized);
+            return 0;
         }
 
         /// <summary>在流里定位；origin 用 COM 的 STREAM_SEEK_* 语义（0=SET 1=CUR 2=END）。</summary>

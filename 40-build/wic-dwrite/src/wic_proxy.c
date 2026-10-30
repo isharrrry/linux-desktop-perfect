@@ -568,6 +568,42 @@ int32_t IWICImagingFactory_CreateBitmapFromMemory_Proxy(void *factory, uint32_t 
     return S_OK_;
 }
 
+// ── 颜色上下文（ICC）────────────────────────────────────────────────────────────
+// 两个入口是一对：`WICCreateColorContext` 造**空**上下文，`InitializeFromMemory` 再填 profile。
+// WIC 的语义就是"填充已有对象"（不是创建），所以句柄统一登记在 bridge 的 MilColorContextTable，
+// 由 `LdpMilColorContextFromProfile/SetProfile` 两个导出操作。
+static void *wic_color_context_bridge(const char *name)
+{
+    void *p = dlsym(RTLD_DEFAULT, name);
+    if (p) return p;
+    void *h = dlopen("wpfgfx_cor3.so", RTLD_NOW | RTLD_NOLOAD);
+    return h ? dlsym(h, name) : NULL;
+}
+
+int32_t WICCreateColorContext_Proxy(void *factory, void **context)
+{
+    if (!context) return E_NOTIMPL_;
+    *context = NULL;
+    if (!wpf_wic_factory_valid(factory)) return 0x80070057;
+    typedef void *(*fn_new)(uint8_t *, uint32_t, uint32_t);
+    fn_new make = (fn_new)wic_color_context_bridge("LdpMilColorContextFromProfile");
+    if (!make) return E_NOTIMPL_;   // 没有 bridge ⇒ 造不出可用的上下文（如实失败）
+    void *h = make(NULL, 0, 0);     // 空上下文
+    if (!h) return E_NOTIMPL_;
+    *context = h;
+    return S_OK_;
+}
+
+int32_t IWICColorContext_InitializeFromMemory_Proxy(void *context, uint8_t *profile, uint32_t length)
+{
+    if (!context || !profile || length == 0) return 0x80070057;
+    typedef int32_t (*fn_set)(void *, uint8_t *, uint32_t, uint32_t);
+    fn_set set = (fn_set)wic_color_context_bridge("LdpMilColorContextSetProfile");
+    if (!set) return E_NOTIMPL_;
+    int32_t hr = set(context, profile, length, 2 /* WICColorContextProfile */);
+    return (int32_t)hr;
+}
+
 // ── 颜色上下文（ICC）：PNG 无内嵌 profile ⇒ 实际数量 0（不是"忘了实现"）─────────────
 // WPF 用它判断"要不要做色彩管理"。返回 0 个上下文是**真值**：本解码器只解像素，
 // 不做 ICC 解析（D-018 的 ICC 分支仍缺，见已知坑清单）。
@@ -580,6 +616,8 @@ int32_t IWICBitmapFrameDecode_GetColorContexts_Proxy(void *decoder, uint32_t cou
     // 没有内嵌 ICC ⇒ 0 个上下文（真值）
     if (!d->img.icc || d->img.icc_len == 0) return S_OK_;
     if (count == 0 || contexts == NULL) { if (actual) *actual = 1; return S_OK_; }   // 只问数量
+    // WIC 语义：**填充调用方给的已有 context**（不是创建新的）。若没给 context 就只报数量。
+    if (contexts[0] == NULL) { if (actual) *actual = 0; return S_OK_; }
     // 句柄必须登记进 bridge 的 MilColorContextTable，WPF 后面的
     // IWICColorContext_GetProfileBytes/GetType（落在 MilCore）才查得到。
     typedef void *(*fn_reg)(uint8_t *, uint32_t, uint32_t);
@@ -592,8 +630,11 @@ int32_t IWICBitmapFrameDecode_GetColorContexts_Proxy(void *decoder, uint32_t cou
         }
     }
     if (!reg) return S_OK_;   // 没有 bridge ⇒ 拿不到句柄，如实返回 0 个
-    void *handle = reg(d->img.icc, d->img.icc_len, 2 /* WICColorContextProfile */);
-    if (handle) { contexts[0] = handle; if (actual) *actual = 1; }
+    typedef int32_t (*fn_set)(void *, uint8_t *, uint32_t, uint32_t);
+    fn_set set = (fn_set)wic_color_context_bridge("LdpMilColorContextSetProfile");
+    if (!set) return S_OK_;
+    int32_t hr = set(contexts[0], d->img.icc, d->img.icc_len, 2 /* WICColorContextProfile */);
+    if (hr == 0) { if (actual) *actual = 1; }
     return S_OK_;
 }
 
