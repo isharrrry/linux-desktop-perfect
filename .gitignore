@@ -65,3 +65,6 @@ samples/**/obj/
 
 # --- 依赖目录 ---
 node_modules/
+
+# --- AE 基线帧（本仓自产，机器相关；由 ae-compare.mjs --baseline 重建） ---
+50-verify/render/baseline/

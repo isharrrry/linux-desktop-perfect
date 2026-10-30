@@ -2,7 +2,7 @@
 // ACC-025：FlowDocumentReader（TG-010，MOD-77 的文档面）
 //
 // 判据口径（真跑 + 结构读数 + 帧）：
-//   ①起 Xvfb + 样本 WpfPrintDoc（SCR-06，XAML 里有 `<FlowDocumentReader>` + 两个 Paragraph）；
+//   ①起 Xvfb + 样本 WpfPrintDoc（SCR-05，XAML 里有 `<FlowDocumentReader>` + 两个 Paragraph）；
 //   ②结构断言（UIA 树）：必须出现名字 `流文档` 的节点，且它的界限非零（文档真的布局了）；
 //   ③帧断言：窗口抓帧非空；
 //   ④交互断言：点 FlowDocumentReader 里的"下一页"按钮（走 X11 鼠标 + WPF 输入管线），
@@ -19,7 +19,7 @@ import { startXvfb, waitDisplay, startApp, findWindow, waitMapped, captureFrame,
 
 const started = Date.now();
 const { opts } = parseArgs();
-const scr = opts.scr || 'SCR-06';
+const scr = opts.scr || 'SCR-05';
 const missingEnv = ['Xvfb', 'xwd', 'convert', 'xdotool'].filter((b) => !which(b));
 if (missingEnv.length) {
   finish({ acc: 'ACC-025', started, verdict: 'SKIP', degrade: `环境缺件：${missingEnv.join(', ')}`,
