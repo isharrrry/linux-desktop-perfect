@@ -82,6 +82,48 @@ node 50-verify/index/gen-index.mjs             # 汇总全部判据读数
 | **段落角色** | SCR-02 的段落以 `label` 暴露而非 `paragraph`（设计取舍，理由见《界面设计说明》§2.3） | 同上 |
 | **AT-SPI 总线** | UIA 树为**自建投影**（`LdpA11y`），未走真实 AT-SPI 总线 | `40-build/wpf-port/.../a11y/TreeDumper.cs` |
 
+## 7. 升级（改了一个程序集之后，**已实测**）
+
+日常开发里 95% 的改动是「改一两个 C# 源 → 重建那个工程 → 部署」。这条路径
+**不需要**重跑 `build-port --map`，也不需要重跑 `apply.mjs`。
+
+### 7.1 只改了一个项目（例：`LdpA11y`）
+
+```bash
+# ① 重建那一个工程（例：无障碍树导出钩子）
+cd 40-build/wpf-port
+dotnet build src/Microsoft.DotNet.Wpf.Linux/src/a11y/LdpA11y.csproj \
+  -c Release -p:UpstreamWpfRoot=/home/links-dev/netTest/GitProj/linux-desktop-perfect/40-build/build/wpf/
+cp src/Microsoft.DotNet.Wpf.Linux/src/a11y/bin/Release/LdpA11y.dll ../out/
+
+# ② 打包 + 安装 + 桥（顺序仍然是 K-003 那个顺序）
+node 40-build/pack/build-pack.mjs
+node 40-build/pack/install-runtime.mjs
+node 40-build/milcore-bridge/build-bridge.mjs --install ~/.local/share/ldp/dotnet
+
+# ③ 验证
+node 50-verify/a11y/assert-tree.mjs --scr SCR-01
+```
+
+**实测（2026-10-30）**：在 `TreeDumper.cs` 里加一行哨兵注释 → 重建（**2 s**）→
+`build-pack` + `install-runtime` + `build-bridge`（**21 s**）→ `assert-tree --scr SCR-01`
+**PASS**。整条升级路径 **约 23 秒**。
+
+### 7.2 哪些步骤可以跳过
+
+| 改动类型 | build-port --map | build-pack | install-runtime | build-bridge |
+|---|---|---|---|---|
+| 只改一个框架程序集（如 `LdpA11y`、`PresentationCore`）| 跳过 | **要** | **要** | **要** |
+| 只改原生 shim（`native-shim/*.c`）| 跳过 | **要** | **要** | **要** |
+| 只改 bridge（`milcore-bridge`、`WpfGfx/*.cs`）| 跳过 | 可选 | 可选 | **要** |
+| 改了 `apply.mjs` 的补丁 | **要**（会重建派生树）| **要** | **要** | **要** |
+| 改了 `wic-dwrite` / `media-bridge` 的 `.so` | 跳过 | **要** | **要** | **要** |
+
+**两条硬约束**（都来自已知坑）：
+
+- `install-runtime` 会清掉 `wpfgfx_cor3.so` ⇒ **`build-bridge --install` 必须放最后**（K-003）；
+- `apply.mjs` 重建派生树会清掉 `PresentationBuildTasks` ⇒ 它会**自动补建**（K-002），但样本要**重新 `dotnet build`**。
+
 ## 6. 回滚与重装（**已实测**，不是理论步骤）
 
 ### 6.1 回滚
