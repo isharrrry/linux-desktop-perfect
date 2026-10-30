@@ -192,6 +192,14 @@ static void wpf_x11_init_threads(void)
 }
 
 static Atom a_xdnd_aware = None;
+// XDND（D-011）用到的原子：拖入/位置/放下/离开 + 状态回复 + selection
+static Atom a_xdnd_enter = None, a_xdnd_position = None, a_xdnd_drop = None;
+static Atom a_xdnd_leave = None, a_xdnd_status = None, a_xdnd_selection = None;
+static Atom a_xdnd_action_copy = None, a_xdnd_type_list = None;
+static Atom a_xdnd_action = None;
+static Window g_xdnd_source = None;
+// XDND 诊断开关（与 WPF_LINUX_KEY_DIAG 同风格：只在明确开了才打日志）
+#define XE_TRACE() (getenv("WPF_LINUX_XDND_DIAG") != NULL)   // 当前拖放源窗口（Enter 记下、Leave/Drop 清掉）
 static Atom a_wm_protocols = 0;
 static Atom a_wm_delete_window = 0;
 static Atom a_net_wm_name = 0;
@@ -575,6 +583,17 @@ uint64_t wpf_x11_create_window(wpf_window *w, const char *title)
     //   ⚠️ 还没做的一层：处理 `XdndEnter/Position/Drop/Leave` 并翻译成
     //   `WM_DROPFILES`（那才是"拖入后应用能收到事件"，见已知坑 D-011）。
     if (a_xdnd_aware == None) a_xdnd_aware = XInternAtom(d, "XdndAware", False);
+    if (a_xdnd_enter == None) {
+        a_xdnd_enter = XInternAtom(d, "XdndEnter", False);
+        a_xdnd_position = XInternAtom(d, "XdndPosition", False);
+        a_xdnd_drop = XInternAtom(d, "XdndDrop", False);
+        a_xdnd_leave = XInternAtom(d, "XdndLeave", False);
+        a_xdnd_status = XInternAtom(d, "XdndStatus", False);
+        a_xdnd_selection = XInternAtom(d, "XdndSelection", False);
+        a_xdnd_action_copy = XInternAtom(d, "XdndActionCopy", False);
+        a_xdnd_type_list = XInternAtom(d, "XdndTypeList", False);
+        a_xdnd_action = XInternAtom(d, "XdndAction", False);
+    }
     if (a_xdnd_aware != None) {
         unsigned long xdnd_version = 5;
         XChangeProperty(d, xid, a_xdnd_aware, XA_ATOM, 32, PropModeReplace,
@@ -1698,6 +1717,53 @@ int wpf_x11_pump_into_queue(wpf_thread *t)
                 (Atom)ev.xclient.data.l[0] == a_wm_delete_window) {
                 push(t, (HWND)(uintptr_t)ev.xclient.window, WM_CLOSE, 0, 0, 0, 0);
                 produced++;
+                break;
+            }
+            // ── XDND 拖入（D-011 第二半）──────────────────────────────────────
+            // 与 Windows 的对应关系：
+            //   XdndEnter    → 记下来源窗口（真正的"拖入开始"）
+            //   XdndPosition → 回 XdndStatus（accept），并给应用发 WM_DROPFILES? 不：
+            //                  这一步只是"鼠标在窗口上移动"，Windows 上是 IDropTarget::DragOver
+            //   XdndDrop     → 这才是"放下"：转成 WM_DROPFILES（带 HDROP）
+            //   XdndLeave    → 拖出窗口
+            // 【本轮做到哪】Enter/Position/Leave + XdndStatus 回复；Drop 的"取文件列表并构造 HDROP"
+            //   需要异步 XConvertSelection（SelectionNotify 回调），放在下一轮。
+            if (ev.xclient.message_type == a_xdnd_enter) {
+                g_xdnd_source = (Window)ev.xclient.data.l[0];
+                if (XE_TRACE()) fprintf(stderr, "[XDND] Enter source=0x%lx win=0x%lx\n",
+                                        (unsigned long)g_xdnd_source, (unsigned long)ev.xclient.window);
+                break;
+            }
+            if (ev.xclient.message_type == a_xdnd_position) {
+                Window src = (Window)ev.xclient.data.l[0];
+                long x = (ev.xclient.data.l[2] >> 16) & 0xFFFF;
+                long y = ev.xclient.data.l[2] & 0xFFFF;
+                // 回 XdndStatus：接受 + 不想要位置回传（X 坐标 0）
+                XEvent st;
+                memset(&st, 0, sizeof(st));
+                st.xclient.type = ClientMessage;
+                st.xclient.window = src;
+                st.xclient.message_type = a_xdnd_status;
+                st.xclient.format = 32;
+                st.xclient.data.l[0] = (long)ev.xclient.window;   // target
+                st.xclient.data.l[1] = 1;                          // accept
+                st.xclient.data.l[2] = 0;                          // no rect
+                st.xclient.data.l[3] = 0;
+                st.xclient.data.l[4] = a_xdnd_action_copy;
+                XSendEvent(d, src, False, NoEventMask, &st);
+                if (XE_TRACE()) fprintf(stderr, "[XDND] Position (%ld,%ld) → 回 XdndStatus(accept)\n", x, y);
+                break;
+            }
+            if (ev.xclient.message_type == a_xdnd_leave) {
+                if (XE_TRACE()) fprintf(stderr, "[XDND] Leave source=0x%lx\n", (unsigned long)g_xdnd_source);
+                g_xdnd_source = None;
+                break;
+            }
+            if (ev.xclient.message_type == a_xdnd_drop) {
+                // 下一轮：XConvertSelection(text/uri-list) → 解析文件路径 → 构造 DROPFILES → WM_DROPFILES
+                if (XE_TRACE()) fprintf(stderr, "[XDND] Drop（取文件列表那一步未实现，D-011）\n");
+                g_xdnd_source = None;
+                break;
             }
             break;
 

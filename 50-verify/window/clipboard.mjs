@@ -12,6 +12,7 @@
 
 import { spawnSync } from 'node:child_process';
 import { parseArgs, finish, exists, which } from '../lib/run.mjs';
+import fs from 'node:fs';
 import { startXvfb, waitDisplay, sleep, startApp, findWindow } from '../lib/app-session.mjs';
 
 const started = Date.now();
@@ -56,7 +57,7 @@ try {
   // ③ XDND：**真的去读窗口的 XdndAware 属性**（D-011 第一步已实现"声明"，
   //   但"处理 XdndEnter/Position/Drop"那一层还没做 ⇒ 本步只验声明面）。
   {
-    let xdndOk = false, xdndValue = null, win = null;
+    let xdndOk = false, xdndValue = null, win = null, xdndMsg = null;
     const app = await startApp({ sample: 'WpfFirstWindow', scr: 'SCR-01', display: xvfb.display });
     if (app.ok) {
       win = await findWindow(xvfb.display, 'WpfFirstWindow [SCR-01]', 25000);
@@ -67,17 +68,28 @@ try {
         const txt = (rp.stdout || '').trim();
         const m = txt.match(/=\s*(\S+)/);
         if (m && !/no such atom|not found/i.test(txt)) { xdndOk = true; xdndValue = m[1]; }
+        // 再验**消息层**：扮演拖放源发 XdndEnter/Position，看 shim 是否回 XdndStatus(accept)
+        const probe = '40-build/native-shim/bin/xdnd-probe';
+        if (fs.existsSync(probe)) {
+          const r2 = spawnSync(probe, [win.id], { encoding: 'utf8', timeout: 20000,
+                                                 env: { ...process.env, DISPLAY: xvfb.display } });
+          const line2 = (r2.stdout || '').trim().split(String.fromCharCode(10)).pop();
+          try { xdndMsg = JSON.parse(line2); } catch { xdndMsg = null; }
+        }
       }
       app.kill();
     }
     // ⚠️ **口径**：ACC-012 要的是"XDND 拖入"，不是"声明可接收"。
     //   声明面通过（有 XdndAware）只证明窗口愿意接，**不证明拖入的事件能到应用**。
     //   所以 ok 只能是 delivered（本轮恒 false），declared 单独记 —— 不接受"声明通过 = PASS"。
+    const msgOk = !!(xdndMsg && xdndMsg.status_received && xdndMsg.accepted);
     steps.push({
-      step: 'xdnd', ok: false, pending: true, declared: xdndOk, declared_value: xdndValue,
-      note: xdndOk
-        ? `窗口已声明 XdndAware（版本 ${xdndValue}）；但 XdndEnter/Position/Drop → WM_DROPFILES 那一层未做，拖入事件仍到不了应用（D-011）`
-        : '窗口没有 XdndAware 属性（XDND 声明面缺失，D-011）',
+      step: 'xdnd', ok: false, pending: true,
+      declared: xdndOk, declared_value: xdndValue,
+      status_received: !!(xdndMsg && xdndMsg.status_received),
+      note: (xdndOk ? `窗口声明 XdndAware(${xdndValue})；` : '缺 XdndAware；')
+        + (msgOk ? 'XdndEnter/Position 已收到并回 XdndStatus(accept)，' : '消息层未通，')
+        + '但 XdndDrop 的"取文件列表 → 构造 HDROP → WM_DROPFILES"未做，拖入后应用仍收不到文件（D-011）',
     });
   }
 } catch (e) {
