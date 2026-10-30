@@ -129,6 +129,13 @@ int32_t DwmIsCompositionEnabled(BOOL *enabled)
 int32_t DwmGetWindowAttribute(void *hwnd, DWORD attr, void *val, DWORD cb)
 { (void)hwnd; (void)attr; (void)val; (void)cb; return (int32_t)0x80004001; }                          /* E_NOTIMPL */
 
+// ── UIAutomationCore（MOD-81 的原生面）─────────────────────────────────────
+// 【口径】设计上 UIA 由**托管桥**替代（AT-SPI over D-Bus，MOD-81）；桥未就绪时，这里给的是
+//   「没有 UIA 客户端在监听」这个**真话**（FALSE），不是"假装有"。
+//   为什么必须有落点：WPF 的 `TextCompositionManager` 在每次文本合成完成时问一次
+//   `UiaClientsAreListening()`；缺这条导出 ⇒ 键盘一入字符就 `DllNotFoundException`（实测崩）。
+int32_t UiaClientsAreListening(void) { return 0; }   /* FALSE：没有 UIA/AT-SPI 客户端订阅 */
+
 // ── shell32：只补"调用方真的会碰"的三个 + ExtractIconEx 的别名已在 win32_misc.c ──
 typedef struct { void *hIcon; int32_t iIcon; DWORD dwAttributes; uint16_t szDisplayName[260]; uint16_t szTypeName[80]; } SHFILEINFOW;
 UINT_PTR SHGetFileInfoW(const uint16_t *path, DWORD attrs, SHFILEINFOW *fi, UINT cb, UINT flags)

@@ -79,6 +79,11 @@ namespace Ldp.A11y
                             try { win.Activate(); } catch { }
                             Dump(win, outPath, scr, app);
                             Debug("dumped");
+                            // 事件回放判据要在输入后重新读数：LDP_A11Y_REPEAT=1 时每 400 ms 重写同一文件
+                            if (Environment.GetEnvironmentVariable("LDP_A11Y_REPEAT") == "1")
+                            {
+                                StartRepeat(win, outPath, scr, app);
+                            }
                             done = true;
                         }), DispatcherPriority.Background);
                     }
@@ -99,6 +104,39 @@ namespace Ldp.A11y
             }
         }
 
+        private static bool g_repeatStarted;
+
+        // 重复导出：后台线程每 400 ms 在 UI 线程上重写同一个 JSON（seq 递增）。
+        // 用途 = 事件回放判据（ACC-010）：输入前取一次、输入后再取一次，比 value 字段。
+        private static void StartRepeat(Window win, string outPath, string scr, Application app)
+        {
+            if (g_repeatStarted) return;
+            g_repeatStarted = true;
+            Dispatcher d = app.Dispatcher;
+            var t = new Thread(() =>
+            {
+                while (true)
+                {
+                    Thread.Sleep(400);
+                    try
+                    {
+                        d.Invoke(new Action(() =>
+                        {
+                            if (win.IsVisible) Dump(win, outPath, scr, app);
+                        }), DispatcherPriority.Background);
+                    }
+                    catch
+                    {
+                        return; // 应用在退出：停止重复
+                    }
+                }
+            })
+            { IsBackground = true, Name = "ldp-a11y-repeat" };
+            t.Start();
+        }
+
+        private static int g_seq;
+
         private static void Dump(Window win, string outPath, string scr, Application app)
         {
             var nodes = new List<Node>();
@@ -115,7 +153,7 @@ namespace Ldp.A11y
             sb.Append("  \"env\": {\"runner\": \"uia-startup-hook\", \"dpi\": ").Append(DpiOf(win).ToString(CultureInfo.InvariantCulture))
               .Append(", \"theme\": \"(unknown)\", \"wm\": ").Append(win.IsActive ? "true" : "false")
               .Append(", \"note\": \"UIA 树（AutomationPeer），非 AT-SPI 总线\"},\n");
-            sb.Append("  \"seq\": 1,\n");
+            sb.Append("  \"seq\": ").Append(++g_seq).Append(",\n");
             // child_count：按 path 段前缀统计（与 50-verify/a11y/snapshot.mjs 的 childCounts 同口径）
             var counts = new Dictionary<string, int>(StringComparer.Ordinal);
             foreach (Node n in nodes) counts[n.Path] = 0;
@@ -277,6 +315,10 @@ namespace Ldp.A11y
                 if (visible) states.Add("visible");
                 if (ctl != null && !ctl.IsEnabled) states.Add("!enabled");
             }
+            // 焦点是**跨控件通用**的状态（AT-SPI 里就是 FOCUSED），不只在窗口分支里判
+            bool focused = false;
+            try { focused = el.IsKeyboardFocused; } catch { }
+            if (focused && !states.Contains("focused")) states.Add("focused");
             n.States = states;
             n.Actions = actions;
 

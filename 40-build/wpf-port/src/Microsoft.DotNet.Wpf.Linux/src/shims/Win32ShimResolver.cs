@@ -120,6 +120,12 @@ namespace WpfLinux.Shims.UIAutomation
             "gdiplus.dll",      // GdiplusStartup 等（第三方图像 helper；查询类返回空结果、创建类如实失败）
             "msimg32.dll",      // AlphaBlend/TransparentBlt（本 shim 的 gdi32 面只占位 ⇒ 如实失败）
             "dwmapi.dll",       // DWM 合成/玻璃（Linux 由 X11 合成器负责 ⇒ 如实返回"不支持"）
+            // MOD-81：WPF 的文本/自动化路径会 P/Invoke `UIAutomationCore.dll`（如
+            //   TextCompositionManager → UiaClientsAreListening）。设计口径是「托管桥替代」
+            //   （AT-SPI over D-Bus），但**在桥就绪前**至少要有落点，否则键盘输入一产生字符
+            //   就 `DllNotFoundException`（实测：TextBox 一收到 WM_CHAR 应用就崩）。
+            //   shim 侧 `UiaClientsAreListening` 恒 FALSE（没有 UIA 客户端监听）—— 这是真话。
+            "UIAutomationCore.dll",
         };
 
         /// <summary>
