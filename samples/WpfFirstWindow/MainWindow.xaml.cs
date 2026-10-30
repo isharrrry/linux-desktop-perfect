@@ -13,7 +13,6 @@ namespace LinuxDesktopPerfect.Samples.WpfFirstWindow
             string scr = ScrArg();
             Title = "WpfFirstWindow" + (scr == null ? "" : " [" + scr + "]");
             TitleText.Text = Title;
-            // DPI 读数：结构判据的数据源。文案格式由元素属性表定死（DPI 1xx (yyy%)），别改。
             Loaded += (s, e) =>
             {
                 DpiScale dpi = VisualTreeHelper.GetDpi(this);
@@ -25,17 +24,31 @@ namespace LinuxDesktopPerfect.Samples.WpfFirstWindow
             };
         }
 
-        // --scr SCR-0x：只影响窗口标题，不做其他事（骨架不实现业务逻辑）
+        // DragOver 必须把 Effects 设成非 None，否则 WPF 不会触发 Drop
+        private void OnFileDragOver(object sender, DragEventArgs e)
+        {
+            e.Effects = e.Data.GetDataPresent(DataFormats.FileDrop) ? DragDropEffects.Copy : DragDropEffects.None;
+            e.Handled = true;
+        }
+
+        private void OnFileDrop(object sender, DragEventArgs e)
+        {
+            string text = "drop=none";
+            if (e.Data.GetDataPresent(DataFormats.FileDrop))
+            {
+                string[] files = e.Data.GetData(DataFormats.FileDrop) as string[];
+                if (files != null && files.Length > 0) text = "drop=" + files[0];
+            }
+            DropText.Text = text;
+            AutomationProperties.SetName(DropText, text);
+            e.Handled = true;
+        }
+
         private static string ScrArg()
         {
             string[] args = Environment.GetCommandLineArgs();
-            for (int i = 0; i < args.Length - 1; i++)
-            {
-                if (args[i] == "--scr")
-                {
-                    return args[i + 1];
-                }
-            }
+            for (int i = 0; i < args.Length - 1; ++i)
+                if (args[i] == "--scr") return args[i + 1];
             return null;
         }
     }
