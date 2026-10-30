@@ -138,7 +138,19 @@ function diffTree(tree, expect, extraNodes = [], sessionLimited = []) {
   for (const [p, w] of want) {
     const g = got.get(p);
     if (!g) {
-      diffs.push({ path: p, kind: 'missing_node', want: w.role });
+      // 【差异分类（R8-⑤）】找不到 path 时，先看它是否落在"下沉语义压平的容器"下：
+      //   LdpA11y 的 Walk 对**没有 peer 的元素**采用下沉语义（子元素接续父 path 段），
+      //   模板内部件（ContentPresenter/ItemsPresenter/ScrollViewer）会把子件的 path 压到父段上，
+      //   于是"视觉顺序编号的属性表节点"找不到对应 path。
+      //   这类差异**不是实现缺口**（改它要动 SCR-01/06 已正确的路径，代价大于收益），
+      //   单独记为 structural=true，读数里如实分开统计（**不降低 verdict 标准**）。
+      const parent = p.includes('/') ? p.slice(0, p.lastIndexOf('/')) : null;
+      const parentGot = parent ? got.get(parent) : null;
+      const parentKids = parent ? childCounts(tree.nodes).get(parent) ?? 0 : 0;
+      const structural =
+        (parentGot && parentKids === 0) ||          // 父节点在我们的树里没有子（被压平）
+        (parentGot && (parentGot.role === 'panel' || parentGot.role === 'unknown'));
+      diffs.push({ path: p, kind: 'missing_node', want: w.role, structural: !!structural });
       continue;
     }
     if (g.role !== w.role) diffs.push({ path: p, kind: 'role', want: w.role, got: g.role });
@@ -401,7 +413,11 @@ const bounds = diffBounds(tree, expect);
 const verdict = invalid.length || diffs.length ? 'FAIL' : 'PASS';
 const file = writeReadout(verdict, [...invalid, ...diffs], tree, tree.env?.runner || 'from-file', { bounds_diff: bounds, extra_nodes: extraNodes, session_limited: sessionLimited });
 const byKind = [...invalid, ...diffs].reduce((m, d) => ((m[d.kind] = (m[d.kind] || 0) + 1), m), {});
-console.log(`snapshot: ${SCR} 节点 ${tree.nodes.length}/${expect.nodes.length}；结构差异 ${diffs.length}${diffs.length ? ` ${JSON.stringify(byKind)}` : ''}；bounds 单列 ${bounds.length}；多余节点 ${extraNodes.length}；会话受限 ${sessionLimited.length}`);
+// 【差异分类（R8-⑤）】把 `missing_node` 里落在"下沉语义压平的容器"下的那些单独计数。
+//   读数的 `结构差异` 总数**不变**（不降低标准），只是额外给出 `其中结构性=N`，
+//   让"还差多少是真缺口、多少是投影模型的固有差异"一眼可见。
+const structuralCount = diffs.filter((d) => d.structural === true).length;
+console.log(`snapshot: ${SCR} 节点 ${tree.nodes.length}/${expect.nodes.length}；结构差异 ${diffs.length}${structuralCount ? `（其中结构性=${structuralCount}）` : ''}${diffs.length ? ` ${JSON.stringify(byKind)}` : ''}；bounds 单列 ${bounds.length}；多余节点 ${extraNodes.length}；会话受限 ${sessionLimited.length}`);
 console.log(`  tree：${path.relative(ROOT, treeFile)}`);
 console.log(`  读数：${path.relative(ROOT, file)}（verdict=${verdict}）`);
 process.exit(verdict === 'PASS' ? 0 : 1);
