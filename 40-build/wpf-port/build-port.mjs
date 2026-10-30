@@ -71,6 +71,8 @@ const ORDER = [
   { id: 'PresentationFramework.Royale', proj: 'PresentationFramework.Royale/PresentationFramework.Royale.Linux.csproj', asm: 'PresentationFramework.Royale' },
   // MOD-81 托管侧：DOTNET_STARTUP_HOOKS 树导出器（不是 FrameworkList 件，随 Runtime pack 内部件分发）
   { id: 'LdpA11y', proj: 'a11y/LdpA11y.csproj', asm: 'LdpA11y' },
+  // Ribbon（WPF 21 件之一）：依赖 PresentationFramework.Classic + UIAutomation{Provider,Types}（纯托管，取框架版作引用）
+  { id: 'System.Windows.Controls.Ribbon', proj: 'System.Windows.Controls.Ribbon/System.Windows.Controls.Ribbon.Linux.csproj', asm: 'System.Windows.Controls.Ribbon' },
 ];
 
 if (has('list')) {
