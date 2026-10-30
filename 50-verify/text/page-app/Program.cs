@@ -3,6 +3,7 @@
 using System;
 using System.IO;
 using System.Text;
+using System.Threading;
 using System.Windows;
 using System.Windows.Documents;
 
@@ -17,6 +18,23 @@ namespace LdpVerify.Page
         protected override void OnStartup(StartupEventArgs e)
         {
             base.OnStartup(e);
+            // 看门狗：分页测量在字体回退缺口下可能**卡住**（D-019，实测 40 s 不返回）。
+            //   卡住比失败更难查 —— 所以这里主动在 20 s 后写一份"超时"读数并退出，
+            //   让判据拿到的是**读数**而不是"进程被 kill、什么都没有"。
+            var watchdog = new Thread(() =>
+            {
+                Thread.Sleep(20000);
+                try
+                {
+                    File.WriteAllText(_out,
+                        "{\"ok\":false,\"type\":\"WatchdogTimeout\",\"error\":\"分页测量 20 s 未返回（D-019）\"}\n");
+                }
+                catch { }
+                // 用 WPF 的正常退出通道（Environment.Exit 会绕过 WPF 清理，实测 SIGABRT）
+                try { Current.Dispatcher.Invoke(() => Shutdown(3)); } catch { Environment.Exit(3); }
+            });
+            watchdog.IsBackground = true;
+            watchdog.Start();
             string json;
             try
             {

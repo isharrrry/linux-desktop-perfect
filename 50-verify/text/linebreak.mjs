@@ -9,7 +9,10 @@
 //
 // 用法：node 50-verify/text/linebreak.mjs
 
+import fs from 'node:fs';
+import { spawnSync } from 'node:child_process';
 import { parseArgs, finish, exists, runCmd } from '../lib/run.mjs';
+const { startXvfb, waitDisplay, DOTNET_ROOT, FRAMEWORK_DIR } = await import('../lib/app-session.mjs');
 
 const started = Date.now();
 const { opts } = parseArgs();
@@ -78,6 +81,31 @@ for (const text of BIDI_CASES) {
 }
 
 // ③分页/宿主集成未接：判 DEGRADED（不是 PASS）
+// 分页（ACC-015 的"分页"面）：跑 50-verify/text/page-app，读它写的 JSON。
+//   D-019：分页测量在字体回退缺口下会**卡住**；page-app 自带 20 s 看门狗，
+//   所以这里拿到的是"WatchdogTimeout"读数而不是"进程被 kill、什么都没有"。
+let pagination = null;
+{
+  const appDll = '50-verify/text/page-app/bin/Release/net10.0/PageApp.dll';
+  if (fs.existsSync(appDll)) {
+    const out = '/tmp/ldp-page-result.json';
+    fs.rmSync(out, { force: true });
+    const xv = startXvfb();
+    try {
+      if (await waitDisplay(xv.display)) {
+        spawnSync('sh', ['-c',
+          `DISPLAY=${xv.display} DOTNET_ROOT=${DOTNET_ROOT} DOTNET_ReadyToRun=0 ` +
+          `WPF_LINUX_WIN32_SHIM=${FRAMEWORK_DIR}/libwpfwin32.so ` +
+          `timeout 30 ${DOTNET_ROOT}/dotnet ${appDll} ${out} > /tmp/ldp-page-app.log 2>&1`],
+          { encoding: 'utf8', timeout: 45000 });
+      }
+    } finally {
+      xv.kill();
+    }
+    try { pagination = JSON.parse(fs.readFileSync(out, 'utf8')); } catch { pagination = null; }
+  }
+}
+
 const degradeReason = '换行与双向已双路径验；FlowDocument/RichTextBox 分页与 PTS 缺口转接（MOD-33/34 宿主集成）未实现，DEGRADED ≠ PASS';
 finish({
   acc: 'ACC-015',
