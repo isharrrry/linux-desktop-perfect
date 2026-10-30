@@ -380,6 +380,23 @@ void wpf_x11_set_input_focus(HWND hwnd)
     XFlush(g_wpf.dpy);
     XUNLOCK();
     wpf_x11_focus_note_request(hwnd);
+    // 【补丁 F8（D-008 最后一跳）】**激活语义**必须同步派发。
+    //   修前本函数只做 X 侧的 XSetInputFocus，一个消息都不发；而 X 的 FocusIn 回送
+    //   会被 `wpf_x11_focus_is_echo` 当"自己请求的回送"吃掉 ⇒ 窗口永远收不到激活通知。
+    //   实测后果链：`Window.IsActive` 恒 false → `HwndMouseInputProvider` 不更新 MouseDevice
+    //   按钮态 → 路由 MouseDown 里 `e.ButtonState=Released` → `TextEditor.OnMouseDown` 首行 return
+    //   → 鼠标点 TextBox 永不聚焦（D-008）。
+    //   Win32 顺序：WM_ACTIVATE(WA_ACTIVE) 先，WM_SETFOCUS 后；失活窗口补 WA_INACTIVE。
+    {
+        static HWND g_active_hwnd = NULL;
+        if (g_active_hwnd != hwnd) {
+            HWND prev = g_active_hwnd;
+            g_active_hwnd = hwnd;
+            if (prev) wpf_dispatch_to_window(prev, WM_ACTIVATE, 0 /*WA_INACTIVE*/, 0);
+            wpf_dispatch_to_window(hwnd, WM_ACTIVATE, 1 /*WA_ACTIVE*/, 0);
+            wpf_dispatch_to_window(hwnd, WM_SETFOCUS, 0, 0);
+        }
+    }
     wpf_key_diag("SETFOCUS → XSetInputFocus(window=0x%llx)",
                  (unsigned long long)(uintptr_t)hwnd);
 }
@@ -1506,8 +1523,15 @@ int wpf_x11_pump_into_queue(wpf_thread *t)
                 break;
             }
             wpf_lock(); g_focus_window = h; pthread_mutex_unlock(&g_wpf.lock);
+            // 【补丁 F8（D-008 最后一跳）】`WM_ACTIVATE` 必须发 —— 修前本 shim 只有 WM_SETFOCUS。
+            //   实测后果：WPF 的 `Window.IsActive` 恒 false（树读数 active=False）⇒
+            //   `HwndMouseInputProvider` 不更新 MouseDevice 按钮态 ⇒ 路由 MouseDown 里
+            //   `e.ButtonState = Released`（`TextEditor.OnMouseDown` 首行就 return）
+            //   ⇒ 鼠标点进 TextBox 永远不聚焦。
+            //   Win32 顺序：窗口获得激活时先 WM_ACTIVATE(WA_ACTIVE)，紧随 WM_SETFOCUS。
+            push(t, h, WM_ACTIVATE, 1 /*WA_ACTIVE*/, 0, 0, 0);
             push(t, h, WM_SETFOCUS, 0, 0, 0, 0);
-            produced++;
+            produced += 2;
             // 【KEY_DIAG】焦点事件带 mode/detail：detail=NotifyPointer 说明"焦点其实是
             //   PointerRoot、靠指针进入偶然产生"（我们没调 XSetInputFocus 时的典型形态）。
             wpf_key_diag("FOCUSIN window=0x%llx mode=%d detail=%d（1=NotifyNormal 2=NotifyGrab 3=NotifyUngrab "
