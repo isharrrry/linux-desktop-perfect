@@ -243,9 +243,9 @@ namespace Ldp.A11y
                     if (IsContainer(el))
                     {
                         Walk(child, childPath, outNodes);
-                        // 【暂时关闭】段落节点一旦真的建出来，dump 就卡住（Tag 已能读到 String[]，
-                        //   说明应用侧缓存生效；卡在投影侧建节点之后）。先关掉保证树导出，
-                        //   下一步定位"建节点"这步为什么卡（见 D-015 第十五步）。
+                        // 【关掉】见 D-015 第十六步：连"只建 1 个段落节点"都会让 dump 卡住
+                        //   ⇒ 卡点在把节点加进 outNodes 之后（JSON 写出/ChildCount 统计一侧），
+                        //   不在 Block 访问、也不在节点数量。恢复本行前先定位那一步。
                     }
                 }
                 else
@@ -261,7 +261,7 @@ namespace Ldp.A11y
         /// **绝不在投影路径上遍历 `Block`** —— 实测访问 Block 会触发同步排版并让 dump 卡住。
         /// Tag 没有缓存的宿主直接跳过（节点缺失会在 snapshot 的 missing_node 里如实体现）。
         /// </summary>
-        private static void WalkDocumentBlocks(UIElement host, string path, List<Node> outNodes)
+        private static void WalkDocumentBlocks(UIElement host, string path, List<Node> outNodes, int maxBlocks = 64)
         {
             try
             {
@@ -288,7 +288,7 @@ namespace Ldp.A11y
                 int idx = 0;
                 foreach (string entry in cached)
                 {
-                    if (idx >= 64) break;
+                    if (idx >= maxBlocks) break;
                     bool isList = entry != null && entry.StartsWith("L|", StringComparison.Ordinal);
                     string text = entry == null ? string.Empty : entry.Substring(entry.IndexOf('|') + 1);
                     if (text.Length > 40) text = text.Substring(0, 40);
