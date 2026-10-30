@@ -148,6 +148,10 @@ namespace WpfLinux.Shims.UIAutomation
             //   本工程让它与 WindowsCodecs 共用同一个 `libwpfwic.so`（两者都是 WIC 家族），
             //   那两个入口在 `src/mscms.c` 里用 lcms2 实现。
             "WindowsCodecsExt.dll",
+            // `mscms.dll`：`ColorContext` 构造时会 `OpenColorProfileW`（ColorContext.cs:115-130 一带），
+            //   色彩转换时用 `CreateMultiProfileTransform/TranslateColors`。本工程在
+            //   `src/mscms.c` 里用 lcms2 实现了这一族，与 WIC 共用同一个 `libwpfwic.so`。
+            "mscms.dll",
 
             // `ole32.dll` 放进 **WIC 组**（不放 Win32 组）——主控 2026-09 裁定，理由三条：
             //   1) PC 的 ole32 声明全编译集只有 2 处，同一个类：

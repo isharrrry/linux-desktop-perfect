@@ -67,6 +67,8 @@ static void probe_lcms(void)
 typedef struct {
     uint32_t magic;
     cmsHPROFILE profile;
+    uint8_t *raw;        // 原始 ICC 字节（GetColorProfileHeader 需要）
+    uint32_t raw_len;
 } ldp_hprofile;
 #define PROFILE_MAGIC 0x4c445031u   /* 'LDP1' */
 
@@ -95,6 +97,41 @@ void *OpenColorProfileW(void *pProfile, const uint16_t *name, uint32_t access, u
     if (!h) { s_lcms.close_profile(prof); return NULL; }
     h->magic = PROFILE_MAGIC;
     h->profile = prof;
+    h->raw = (uint8_t *)malloc(blob->len);
+    if (h->raw) { memcpy(h->raw, blob->bytes, blob->len); h->raw_len = blob->len; }
+    return h;
+}
+
+// `OpenColorProfile(PROFILE* pProfile, DWORD dwDesiredAccess, DWORD dwShareMode, DWORD dwCreationMode)`
+// 这是 WPF 实际调的**ANSI 版**（见 UnsafeNativeMethods.Mscms.OpenColorProfile）。
+// PROFILE 结构（Windows 的）：
+//   struct { DWORD dwType; PVOID pProfileData; DWORD cbDataSize; };
+//   dwType: 1 = PROFILE_FILENAME，2 = PROFILE_MEMBUFFER。我们只支持 MEMBUFFER
+//   （文件名形态不做：libwpfwic 没有"按路径读 profile"的语义，硬凑只会变成静默错误）。
+uint32_t s_dummy_type;   /* 占位，避免空翻译单元告警 */
+
+void *OpenColorProfile(void *pProfile, uint32_t access, uint32_t share, uint32_t creation)
+{
+    (void)access; (void)share; (void)creation;
+    if (!pProfile) return NULL;
+    struct PROFILE_SHAPE { uint32_t dwType; void *pProfileData; uint32_t cbDataSize; } *p = (void *)pProfile;
+    if (p->dwType != 2 /* PROFILE_MEMBUFFER */ || !p->pProfileData || p->cbDataSize == 0) {
+        if (getenv("LDP_WIC_TRACE")) {
+            fprintf(stderr, "[MSCMS] OpenColorProfile: 只支持 PROFILE_MEMBUFFER（got type=%u）\n", p->dwType);
+            fflush(stderr);
+        }
+        return NULL;
+    }
+    probe_lcms();
+    if (!s_lcms.ok) return NULL;
+    cmsHPROFILE prof = s_lcms.open_mem(p->pProfileData, p->cbDataSize);
+    if (!prof) return NULL;
+    ldp_hprofile *h = (ldp_hprofile *)calloc(1, sizeof(ldp_hprofile));
+    if (!h) { s_lcms.close_profile(prof); return NULL; }
+    h->magic = PROFILE_MAGIC;
+    h->profile = prof;
+    h->raw = (uint8_t *)malloc(p->cbDataSize);
+    if (h->raw) { memcpy(h->raw, p->pProfileData, p->cbDataSize); h->raw_len = p->cbDataSize; }
     return h;
 }
 
@@ -104,6 +141,7 @@ int CloseColorProfile(void *h)
     if (!p || p->magic != PROFILE_MAGIC) return 0;
     probe_lcms();
     if (s_lcms.ok && p->profile) s_lcms.close_profile(p->profile);
+    if (p->raw) free(p->raw);
     p->magic = 0;
     free(p);
     return 1;
@@ -151,6 +189,22 @@ int DeleteColorTransform(void *h)
     if (s_lcms.ok && t->transform) s_lcms.delete_transform(t->transform);
     t->magic = 0;
     free(t);
+    return 1;
+}
+
+// `GetColorProfileHeader(SafeProfileHandle phProfile, PROFILEHEADER* pHeader)`
+// Windows 的 PROFILEHEADER 与 ICC 的 128 字节头**布局一致**（大端字段在 ICC 里，但
+//   Windows 的 PROFILEHEADER 把同样的字节序列按 DWORD 原样搬），所以这里直接把
+//   profile 的头 128 字节拷出去 —— 不做字节序转换（与 Windows 行为一致）。
+int GetColorProfileHeader(void *h, void *header)
+{
+    ldp_hprofile *p = (ldp_hprofile *)h;
+    if (!p || p->magic != PROFILE_MAGIC || !header) return 0;
+    probe_lcms();
+    if (!s_lcms.ok) return 0;
+    // lcms2 没有"取原始头"的 API，但我们登记 profile 时保留了原始字节
+    if (!p->raw || p->raw_len < 128) return 0;
+    memcpy(header, p->raw, 128);
     return 1;
 }
 
