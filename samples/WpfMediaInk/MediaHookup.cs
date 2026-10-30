@@ -17,13 +17,22 @@ namespace LinuxDesktopPerfect.Samples.WpfMediaInk
         [System.Runtime.CompilerServices.ModuleInitializer]
         internal static void Init()
         {
+            Diag("Init: 注册类处理器 typeof(MediaWindow)=" + typeof(MediaWindow).AssemblyQualifiedName);
             EventManager.RegisterClassHandler(typeof(MediaWindow), FrameworkElement.LoadedEvent,
                 new RoutedEventHandler(OnLoaded));
         }
 
+        // 诊断**写文件**而不是 stderr：本项目的日志通道被钩子/重定向/管道吞过三次
+        //   （读数缺失被误读成"处理器没跑"），文件是唯一不会被吞的通道。
+        private static void Diag(string msg)
+        {
+            try { System.IO.File.AppendAllText("/tmp/ldp-media-hook.log", msg + "\n"); } catch { }
+        }
+
         private static void OnLoaded(object sender, RoutedEventArgs e)
         {
-            if (sender is not MediaWindow w) return;
+            Diag("OnLoaded fired: sender=" + (sender == null ? "null" : sender.GetType().FullName));
+            if (sender is not MediaWindow w) { Diag("sender 不是 MediaWindow，跳过"); return; }
             try
             {
                 var player = new MediaPlayer();
@@ -38,13 +47,12 @@ namespace LinuxDesktopPerfect.Samples.WpfMediaInk
                 if (pause != null) pause.Click += (s2, e2) => { player.Pause(); SetState(state, "PAUSED"); };
 
                 SetState(state, player.Source == null ? "READY" : "READY");
-                Console.Error.WriteLine("[MEDIA] hookup: play=" + (play != null) + " pause=" + (pause != null)
+                Diag("hookup: play=" + (play != null) + " pause=" + (pause != null)
                     + " state=" + (state != null) + " media=" + (media ?? "null"));
-                Console.Error.Flush();
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine("media-hookup: " + ex.Message);
+                Diag("EXCEPTION: " + ex);
             }
         }
 
