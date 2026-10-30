@@ -14,8 +14,10 @@
 // MSG 正常解析（详见 handoff U2 专节 / src/Linux/build/Directory.Upstream.props 的注释）。
 //
 // 因此：**自产 WPF 程序集的 AssemblyVersion 必须严格大于 4.0.0.0**。
-// 版本号取 4.0.0.1：与 WPF 历史上的 4.0.0.0 同主次版本，仅补丁位 +1，
-// 既赢得冲突解析，又不改变任何 API/绑定语义（这些程序集均未强命名）。
+// 本仓取 10.0.0.0：两个条件同时满足 —— ①大于空门面的 4.0.0.0（冲突解析赢）；
+// ②与 [#pack 文件清单](40-build/pack/FrameworkList.xml) 的 AssemblyVersion 逐件一致
+//   （09 §4 补丁项 2「程序集身份」；判据 ACC-004，`50-verify/build/identity.mjs`）。
+// 前身仓取 4.0.0.1 只能满足①，在 ACC-004 的「反射身份 vs 清单」下会红。
 //
 // ── 为什么手写属性而不是打开 GenerateAssemblyInfo ───────────────────────
 // 上游源码自带 LibraryAssemblyInfo.cs / GlobalUsings.cs 等属性文件，打开 SDK
@@ -26,6 +28,6 @@
 
 using System.Reflection;
 
-[assembly: AssemblyVersion("4.0.0.1")]
-[assembly: AssemblyFileVersion("4.0.0.1")]
-[assembly: AssemblyInformationalVersion("4.0.0.1-wpf-linux")]
+[assembly: AssemblyVersion("10.0.0.0")]
+[assembly: AssemblyFileVersion("10.0.1126.37416")]
+[assembly: AssemblyInformationalVersion("10.0.11-wpf-linux")]

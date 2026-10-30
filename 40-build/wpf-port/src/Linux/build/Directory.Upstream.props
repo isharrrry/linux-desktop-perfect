@@ -1,0 +1,174 @@
+<Project>
+  <!--
+    上游 dotnet/wpf 源码根（只读，上游仓库零改动）。
+
+    默认：$(WpfLinuxRoot)（结构上游化后，上游 `src/Microsoft.DotNet.Wpf/**` 直接落在**仓根**下，
+          即「上游仓库根」==「本仓根」；`$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/…` 才是上游 src）。
+    覆盖：MSBuild 属性或环境变量 UPSTREAM_WPF_ROOT / UpstreamWpfRoot
+          （环境变量会被 MSBuild 当全局属性读入，优先级高于此处默认值）。
+
+    本文件由所有 src/Microsoft.DotNet.Wpf.Linux/src/*/*.csproj 在 Sdk.props 之后 Import，
+    使 $(UpstreamWpfRoot) 与 $(WpfLinuxRoot) 在工程内统一可用。
+  -->
+  <!-- ★ `#39`：**自产件配置的唯一声明**（本图所有 `src/Microsoft.DotNet.Wpf.Linux/src/*/*.csproj` 由此拿到它） -->
+  <Import Project="$(MSBuildThisFileDirectory)SelfBuiltConfig.props" />
+
+  <PropertyGroup>
+    <WpfLinuxRoot>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)../../..'))/</WpfLinuxRoot>
+    <UpstreamWpfRoot Condition="'$(UpstreamWpfRoot)' == '' and '$(UPSTREAM_WPF_ROOT)' != ''">$([MSBuild]::EnsureTrailingSlash('$(UPSTREAM_WPF_ROOT)'))</UpstreamWpfRoot>
+    <UpstreamWpfRoot Condition="'$(UpstreamWpfRoot)' == ''">$(WpfLinuxRoot)</UpstreamWpfRoot>
+  </PropertyGroup>
+
+  <!--
+    ==========================================================================
+    M3 新增：让本工程自产程序集优先于 .NET 基础类库中的「同名空门面」
+    ==========================================================================
+
+    问题（2026-09-10 M3 实测定位）：
+      Microsoft.NETCore.App.Ref/10.0.11/ref/net10.0/WindowsBase.dll 是一个
+      「1 个 TypeDef + 30 个 ExportedType 转发」的空门面（AssemblyVersion 4.0.0.0），
+      它随 net10.0 隐式框架引用自动进入 @(Reference)。本工程自产的
+      src/Microsoft.DotNet.Wpf.Linux/src/WindowsBase/bin/Debug/WindowsBase.dll（AssemblyVersion 0.0.0.0）
+      与之同名，于是 Microsoft.NET.ConflictResolution.targets 的
+      ResolvePackageFileConflicts 按「程序集版本高者胜」把它整条丢弃：
+
+        “Reference:WindowsBase”和“Reference:.../ref/net10.0/WindowsBase.dll”之间存在冲突。
+         选择“.../ref/net10.0/WindowsBase.dll”，因为 AssemblyVersion“4.0.0.0”高于“0.0.0.0”。
+
+      后果：UIAutomationTypes 等消费方编译时用的是空门面，
+      `System.Windows.Interop.MSG`（只存在于自产 WindowsBase 中）报 CS0234；
+      且 `Reference` 里的 HintPath 无声失效——报错信息完全不提这一点。
+
+    处理：在 _HandlePackageFileConflicts 之前，把「被本工程 HintPath 引用遮蔽的
+      Microsoft.NETCore.App.Ref 门面」从 @(Reference) 中移除，让冲突根本不发生。
+      必须挂在 _HandlePackageFileConflicts 之前：它是 ResolveAssemblyReferences 的
+      DependsOnTargets，挂在 BeforeTargets="ResolveAssemblyReferences" 上已经太晚。
+
+    适用范围：仅当工程显式 `<Reference><HintPath>` 引用了与门面同名的本地程序集时才生效。
+      WindowsBase.Linux / System.Xaml.Linux 不含此类引用 → 行为完全不变（已复验 0 错 0 警）。
+  -->
+  <Target Name="WpfLinuxDropShadowedReferenceAssemblies"
+          BeforeTargets="_HandlePackageFileConflicts">
+    <ItemGroup>
+      <_WpfRequiredRefProbe Remove="@(_WpfRequiredRefProbe)" />
+      <_WpfFrameworkRefProbe Remove="@(_WpfFrameworkRefProbe)" />
+      <_WpfFrameworkRefToDrop Remove="@(_WpfFrameworkRefToDrop)" />
+      <!--
+        命名陷阱（M3 实测踩到两次，勿简化）：
+        MSBuild 的 %(Filename) 在**第一个点**处切分扩展名，%(Filename)%(Extension) 才等于
+        原始 ItemSpec 的文件名。而两侧 ItemSpec 形态本来就不同：
+          · 本地引用是「程序集简单名」 → `WindowsBase` / `System.Xaml`（无 .dll）
+          · 框架引用是「绝对路径」     → `.../ref/net10.0/WindowsBase.dll`
+        只拼 %(Filename) 会让 `System.Xaml` 退化成 `System` 并与框架 `System.dll`
+        假匹配、无声删掉 System.dll（编译照样过，引用集却变了——真坑）。
+        这里统一成「带 .dll 的完整文件名」再比较：本地补 .dll，框架原样。
+      -->
+      <!-- 本工程显式 HintPath 引用的程序集 -->
+      <_WpfRequiredRefProbe Include="@(Reference)" Condition="'%(Reference.HintPath)' != ''">
+        <RefFileDll>%(Filename)%(Extension).dll</RefFileDll>
+        <RefHint>%(Reference.HintPath)</RefHint>
+      </_WpfRequiredRefProbe>
+      <!-- net10.0 隐式框架引用带来的门面程序集 -->
+      <_WpfFrameworkRefProbe Include="@(Reference)" Condition="'%(Reference.NuGetPackageId)' == 'Microsoft.NETCore.App.Ref'">
+        <RefFileDll>%(Filename)%(Extension)</RefFileDll>
+      </_WpfFrameworkRefProbe>
+    </ItemGroup>
+    <PropertyGroup>
+      <_WpfRequiredRefNames>;@(_WpfRequiredRefProbe->'%(RefFileDll)');</_WpfRequiredRefNames>
+    </PropertyGroup>
+    <ItemGroup>
+      <_WpfFrameworkRefToDrop Include="@(_WpfFrameworkRefProbe)"
+                              Condition="$([System.String]::Copy('$(_WpfRequiredRefNames)').Contains(';%(_WpfFrameworkRefProbe.RefFileDll);'))" />
+    </ItemGroup>
+    <PropertyGroup>
+      <_WpfDroppedRefNames>;@(_WpfFrameworkRefToDrop->'%(RefFileDll)');</_WpfDroppedRefNames>
+    </PropertyGroup>
+    <ItemGroup>
+      <_WpfShadowedLocalRef Include="@(_WpfRequiredRefProbe)"
+                            Condition="'@(_WpfFrameworkRefToDrop)' != '' and $([System.String]::Copy('$(_WpfDroppedRefNames)').Contains(';%(_WpfRequiredRefProbe.RefFileDll);'))" />
+    </ItemGroup>
+    <PropertyGroup>
+      <_WpfShadowedHintPaths>;@(_WpfShadowedLocalRef->'%(RefHint)');</_WpfShadowedHintPaths>
+    </PropertyGroup>
+    <ItemGroup Condition="'@(_WpfFrameworkRefToDrop)' != ''">
+      <Reference Remove="@(_WpfFrameworkRefToDrop)" />
+    </ItemGroup>
+    <Message Importance="normal" Condition="'@(_WpfFrameworkRefToDrop)' != ''"
+             Text="WpfLinux: 已移除被本地引用遮蔽的 .NET 基础类库门面 → @(_WpfFrameworkRefToDrop->'%(RefFileDll)')" />
+  </Target>
+
+  <!--
+    第二个坑（同一根因的下半段，2026-09-10 实测）：
+      仅仅移除 @(Reference) 里的门面只修好了**编译期**。`_HandlePackageFileConflicts` 里
+      ResolvePackageFileConflicts 还会拿 Microsoft.NETCore.App 的 **PlatformManifest**
+      （平台程序集清单，WindowsBase.dll 在里面）来做冲突判定：
+
+        “Platform:WindowsBase.dll”和“Reference:WindowsBase”之间存在冲突。
+         选择“Platform:WindowsBase.dll”，因为 AssemblyVersion“4.0.0.0”高于“0.0.0.0”。
+
+      结果：自产 WindowsBase.dll 既不进 bin/Debug，也不进 *.deps.json——
+      编译 0 错，但运行期根本没有自产 WindowsBase 可用（M6/M7 会直接踩中）。
+      证据：修好编译后 `ls src/Microsoft.DotNet.Wpf.Linux/src/UIAutomationTypes/bin/Debug/` 里没有 WindowsBase.dll。
+
+    处理：在 _HandlePackageFileConflicts **之后**把被遮蔽的本地引用重新放回
+      @(ReferenceCopyLocalPaths)，即恢复 `<Private>true</Private>` 本该有的语义。
+      这里是有意为之的「本地覆盖框架门面」，不是冲突漏判。
+
+    开关：<WpfLinuxCopyShadowedReferencesToOutput>false</...> 可关闭（默认 true）。
+  -->
+  <Target Name="WpfLinuxKeepShadowedReferencesCopyLocal"
+          AfterTargets="_HandlePackageFileConflicts"
+          Condition="'@(_WpfShadowedLocalRef)' != '' and '$(WpfLinuxCopyShadowedReferencesToOutput)' != 'false'">
+    <ItemGroup>
+      <ReferenceCopyLocalPaths Remove="@(_WpfShadowedLocalRef->'%(RefHint)')" />
+      <ReferenceCopyLocalPaths Include="@(_WpfShadowedLocalRef->'%(RefHint)')" />
+    </ItemGroup>
+    <Message Importance="normal"
+             Text="WpfLinux: 已把被框架门面遮蔽的本地程序集放回 copy-local → @(_WpfShadowedLocalRef->'%(RefFileDll)')" />
+  </Target>
+
+  <!--
+    第三个坑：ResolveAssemblyReference 自己也会「看名字」。
+      即使 csproj 写了 `<Private>true</Private>`，只要程序集简单名等于目标框架目录里的
+      某个程序集（WindowsBase 正是），RAR 输出的 ReferencePath 仍被标成
+      `CopyLocal=false / Private=False`（实测），参考集里 System.Xaml 是 true、WindowsBase 是 false。
+      而 `_ComputeUserRuntimeAssemblies` 只把 `%(ReferencePath.CopyLocal)=='true'` 的项
+      写进 UserRuntimeAssembly → *.deps.json。于是 deps.json 里没有 WindowsBase，
+      运行期宿主只会解析到框架门面 → 自产 WindowsBase 等于白编译。
+
+    处理：RAR 跑完后把被遮蔽项的 CopyLocal / IncludeRuntimeDependency 补成 true，
+      只改元数据、不改引用列表，不影响编译。
+  -->
+  <Target Name="WpfLinuxMarkShadowedReferencesAsRuntimeDependency"
+          AfterTargets="ResolveAssemblyReferences"
+          Condition="'@(_WpfShadowedLocalRef)' != ''">
+    <ItemGroup>
+      <ReferencePath Condition="$([System.String]::Copy('$(_WpfShadowedHintPaths)').Contains(';%(ReferencePath.HintPath);'))">
+        <CopyLocal>true</CopyLocal>
+        <IncludeRuntimeDependency>true</IncludeRuntimeDependency>
+      </ReferencePath>
+    </ItemGroup>
+  </Target>
+
+  <!--
+    ⚠️ 仍未闭环（需要主控决策，M6/M7 前必须处理）——编译期以上三步足够，运行期还不够：
+
+      实测（/tmp 上的一次性可执行程序，引用自产 WindowsBase 并 `typeof(System.Windows.Interop.MSG)`）：
+        · 自产 WindowsBase.dll AssemblyVersion = 0.0.0.0（因为 GenerateAssemblyInfo=false，
+          SDK 不会生成 AssemblyVersionAttribute）；
+        · 框架门面 = 4.0.0.0。运行时宿主**按版本高者胜**，即使
+          bin/Debug 下有自产 WindowsBase.dll 且 deps.json 已列出它，仍然绑定到框架门面：
+              System.TypeLoadException: Could not load type 'System.Windows.Interop.MSG'
+              from assembly 'WindowsBase, Version=4.0.0.0, ...'
+        · 反证实验：把同一个 WindowsBase.Linux.csproj 用
+              -p:GenerateAssemblyInfo=true -p:AssemblyVersion=4.0.0.1 -p:FileVersion=4.0.0.1
+              -p:InformationalVersion=4.0.0.1 -p:Version=4.0.0.1
+          重建（0 错 0 警），同一程序即打印
+              asm=WindowsBase, Version=4.0.0.1 ... loc=<app-local 路径>  → MSG 正常解析。
+          即：**自产程序集的 AssemblyVersion 必须严格大于框架门面的 4.0.0.0**，运行期才会赢。
+
+      结论：WindowsBase.Linux.csproj（以及日后所有与框架门面同名的自产程序集）需要补
+      AssemblyVersion/FileVersion（建议 4.0.0.1 或更高）。这一步会改变 WindowsBase.dll 的
+      字节内容与哈希，属主控已验证产物，故本文件不擅自代劳，只在此留档。
+  -->
+</Project>

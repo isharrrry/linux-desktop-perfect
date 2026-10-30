@@ -93,22 +93,38 @@ const attr = (tag, name) => {
   return m ? m[1] : null;
 };
 const flEntries = [...flXml.matchAll(/<File\b[^>]*\/>/g)]
-  .map((m) => ({ asm: attr(m[0], 'AssemblyName'), rel: attr(m[0], 'Path'), type: attr(m[0], 'Type') }))
+  .map((m) => ({ asm: attr(m[0], 'AssemblyName'), rel: attr(m[0], 'Path'), type: attr(m[0], 'Type'), profile: attr(m[0], 'Profile') }))
   .filter((e) => e.asm && e.rel);
 if (!flEntries.length) fail('LDP-E-PACK-205', `FrameworkList 解析出 0 条清单：${rel(FL)}`);
 
-// 自产件索引：参考程序集走 <asm>-ref 项目，实现件走 <asm> 项目（见 03 §3.6）
-function builtFile(asm, kind) {
-  const dirName = kind === 'ref' ? `${asm}-ref` : asm;
-  const p = path.join(ART, dirName, 'Release/net10.0', `${asm}.dll`);
-  return fs.existsSync(p) ? p : null;
+// 自产件索引（03 §3.6）：
+//   实现件 = artifacts/bin/<asm>/…（wpf-port 的 Linux 工程产物，经 build-port.mjs --map 落位；
+//            上游 csproj 直编的产物也落这里，两者同源）
+//   参考件 = artifacts/bin/<asm>-ref/…（上游 csproj 直编的 ref 程序集，身份可能仍是上游 MSFT token）
+// 取件优先级：实现件 > 参考件。理由：自产件之间的引用闭包按**实现件身份**（10.0.0.0 / WCP token）建立，
+// 若某件退回上游 ref 程序集（MSFT token），XAML 编译期会按引用闭包去找 31bf token 的版本而落空（MC1000）。
+const PORT_OUT = path.join(ROOT, '40-build/wpf-port/out');
+// 自产件**只认移植链产物**（wpf-port/out，身份统一 10.0.0.0 / WCP token）。
+// 不认 artifacts/bin：那里既有移植链映射，也有上游 csproj 直编产物（MSFT token），混用会破坏引用闭包。
+function builtFile(asm) {
+  const port = path.join(PORT_OUT, `${asm}.dll`);
+  return fs.existsSync(port) ? port : null;
 }
 const selfAsms = new Map();
 for (const e of flEntries) {
-  const impl = builtFile(e.asm, 'impl');
-  const ref = builtFile(e.asm, 'ref');
-  if (impl || ref) selfAsms.set(e.asm, { impl, ref });
+  const impl = builtFile(e.asm);
+  if (impl) selfAsms.set(e.asm, { impl, ref: null });
 }
+
+// 替换闸门（PACK-SELFBUILT）：只有 WPF Profile 的 21 件**全部**有自产产物时才启用替换。
+// 理由（实测 MC1000，2026-10-30）：自产件按 WCP 公钥签名（token 31bf3856ad364e35），而上游 ref 件是 MSFT token
+// （b77a5c561934e089）。若只替换一部分，XAML 编译期的 MetadataLoadContext 会同时遇到两组身份 ——
+// 自产 PresentationFramework 引用 System.Xaml@31bf，而残留的上游件（如 Ribbon/UIAutomationClient）引用 @b77a
+// ⇒ 报「Could not find assembly 'System.Xaml, Version=10.0.0.0, PublicKeyToken=…'」。
+// 所以替换必须整体生效；未齐时保持上游件（ACC-001/002 可绿），齐了以后一次切换（ACC-004 也才可能全绿）。
+const wpfEntries = flEntries.filter((e) => e.profile === 'WPF');
+const wpfMissing = wpfEntries.filter((e) => !selfAsms.has(e.asm)).map((e) => e.asm);
+const USE_SELF_BUILT = argv.includes('--self-built') || wpfMissing.length === 0;
 
 // ---------------------------------------------------------------- 上游取件（缺失时从 NuGet 缓存打包）
 
@@ -161,12 +177,12 @@ function buildRefPack() {
   const replaced = [];
   for (const e of flEntries) {
     const dst = path.join(dir, e.rel);
-    const self = selfAsms.get(e.asm);
-    const src = self && (self.ref || self.impl);
+    const self = USE_SELF_BUILT ? selfAsms.get(e.asm) : null;
+    const src = self && (self.impl || self.ref);
     if (src) {
       fs.mkdirSync(path.dirname(dst), { recursive: true });
       fs.copyFileSync(src, dst);
-      replaced.push({ asm: e.asm, from: rel(src), kind: self.ref ? 'ref' : 'impl' });
+      replaced.push({ asm: e.asm, from: rel(src), kind: self.impl ? 'impl' : 'ref' });
     } else if (!fs.existsSync(dst)) {
       fail('LDP-E-PACK-205', `Ref 清单缺件：${e.rel}（AssemblyName=${e.asm}）`);
     }
@@ -211,7 +227,7 @@ function buildRuntimePack() {
   // 自产托管件替换（实现件，不是 ref）；未自产的保持上游件
   const libDir = path.join(dir, 'runtimes/linux-x64/lib/net10.0');
   const replaced = [];
-  for (const [asm, self] of selfAsms) {
+  for (const [asm, self] of USE_SELF_BUILT ? selfAsms : []) {
     const dst = path.join(libDir, `${asm}.dll`);
     if (!self.impl || !fs.existsSync(dst)) continue;
     fs.copyFileSync(self.impl, dst);
@@ -282,6 +298,10 @@ const report = {
     native_missing: rtPack.nativeMissing,
     dlls: listPack(rtPack.path).filter((p) => p.endsWith('.dll')),
   },
+  self_built_enabled: USE_SELF_BUILT,
+  self_built_gate: USE_SELF_BUILT
+    ? 'WPF 21 件齐全，替换整体生效'
+    : `WPF 21 件缺 ${wpfMissing.length} 件（${wpfMissing.join(', ')}），替换整体暂不启用：部分替换会让引用闭包 token 断裂（MC1000）`,
   notes: [
     'Ref pack 的 data/FrameworkList.xml 与 40-build/pack/FrameworkList.xml 逐字节一致（契约文件为唯一事实源）',
     'Runtime pack 原生件落 runtimes/linux-x64/native/；libSkiaSharp.so 不随包（概设 §2.4）',

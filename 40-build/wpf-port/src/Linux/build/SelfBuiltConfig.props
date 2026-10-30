@@ -1,0 +1,40 @@
+<Project>
+  <!--
+    ============================================================================
+    SelfBuiltConfig.props —— **"自产件用哪个配置"的唯一声明**（`#39` 阶段 1）
+    ============================================================================
+
+    【为什么要这个文件】切权威件配置（Debug → Release）之前，**没有任何一处**是"配置的源头"：
+    实测（`#39` 侦察）——
+      · `*.csproj` 的 `<HintPath>` 里 **100 处**写死 `bin/Debug`、29 处用 `$(WpfLinuxSelfBuiltConfiguration)`、
+        11 处用 `$(Configuration)`；
+      · `*.sh`/`*.py` 里 **198 处**写死 `bin/Debug`（含 `frame-step.sh` 的 `AUTH_PC`、`close-wave.sh` 的九位读数、
+        应用门禁的 app-local 同步）。
+    ⇒ 那样切换等于"逐个文件 sed"，必然漏、且漏了以后**判据会读错件而不报错**
+      （这正是本仓反复登记的那一族：同一个语义存在多处 ⇒ 必然分叉）。
+
+    【本文件的角色】**唯一声明处**。两条 import 图各 import 它一次（import 不是"第二处逻辑"）：
+      · `src/Linux/build/Directory.Upstream.props` → 所有 `src/Linux/build/*.Linux/*.csproj`
+      · 仓根 `BuildHygiene.props`     → 所有样本工程
+    脚本侧由 `src/Linux/build/selfbuilt-config.sh` **读同一个文件**（唯一解析器），并用
+    `selfbuilt-config.sh` 的**自检模式**断言"脚本读到的值 == MSBuild 求值得到的值"（两颗牙，见该脚本；⚠️ 本注释里**不许**出现连续两个减号 —— XML 注释的硬规矩，本波已踩过一次）。
+
+    【当前值】**Debug** —— `#39` 阶段 1 **刻意不改值**（先建立单一来源；改值属阶段 2，
+    那时同趟改的只有这一行 ⇒ 位移面可枚举）。切 Release 的动机与判据见
+    `docs/WAVE39-PREREGISTRATION.md`（`D-G47`：真实第三方应用被 `Debug.Assert` 终止）。
+    ============================================================================
+  -->
+  <PropertyGroup>
+    <WpfLinuxSelfBuiltConfiguration Condition="'$(WpfLinuxSelfBuiltConfiguration)' == ''">Release</WpfLinuxSelfBuiltConfiguration>
+    <!--
+      ⏪ **dated（`TASK-根治-提交号载体`）**：产物**不再内嵌 `HEAD`**。
+      SDK 默认把 `SourceRevisionId`（= 提交号）编进 `AssemblyInformationalVersion`（`1.0.0+<HEAD>`）⇒
+      **提交后一重建就位移**（`provider` 现件内嵌 `1.0.0+57840fbe…` 就是现场）；而 `pc`/`dwf` 经
+      `peer=`/`ProjectReference` 随它位移 ⇒ 整波每趟必换一套 sha（`[5c/6]` 结构性红）。
+      本行落在**两条 import 图共用的唯一声明处**（`Directory.Upstream.props` → `src/*/*.csproj` 图；
+      仓根 `BuildHygiene.props` → 样本图 ＋ 手写嵌套工程如 `DirectWrite/Provider`）⇒ **一行覆盖九位全部**。
+      ⚠️ 只关"**把提交号带进版本串**"，不动任何产品逻辑、不动落点、不削弱任何判据。
+    -->
+    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
+  </PropertyGroup>
+</Project>

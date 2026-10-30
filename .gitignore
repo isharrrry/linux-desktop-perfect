@@ -53,5 +53,11 @@ samples/**/obj/
 #     不入库：由 make -C 40-build/text-stack headers 取件，单件 1.3 MB） ---
 40-build/lock/headers/
 
+# --- 判据侧工具与移植链的构建产物（可由 dotnet build / build-port.mjs 重建） ---
+50-verify/**/bin/
+50-verify/**/obj/
+40-build/wpf-port/build-report.json
+40-build/wpf-port/out/
+
 # --- 依赖目录 ---
 node_modules/

@@ -1,0 +1,11 @@
+<Project>
+  <!--
+    由本仓移植链引入：挡掉上层 40-build/Directory.Packages.props 的中央包管理（CPM）。
+    wpf-port 的 Linux 工程沿袭上游写法，在 PackageReference 上直接写版本；CPM 打开时
+    NuGet 会报 NU1008（PackageReference 项无法定义版本）。上游快照里也没有 CPM。
+    与 40-build/appliers/apply.mjs 对派生树的处理同源（同一个理由、同一种写法）。
+  -->
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+</Project>

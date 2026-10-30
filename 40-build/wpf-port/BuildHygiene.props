@@ -1,0 +1,66 @@
+<!--
+  ============================================================================
+  BuildHygiene.props —— `D-R8`：**不依赖 `$(BaseIntermediateOutputPath)` 指向哪里**的
+  产物目录排除。**全仓唯一实现**（`#21` P2 / lane W21B 收敛来的那一行）。
+  ============================================================================
+
+  【它解决什么】
+  SDK 把"排除产物目录"表达成**当前生效值**的绝对路径，共四处（本机 SDK `10.0.111`）：
+
+    ~/.dotnet/sdk/10.0.111/Sdks/Microsoft.NET.Sdk/targets/
+      Microsoft.NET.Sdk.DefaultItems.targets:35   <DefaultItemExcludes>…;$(BaseOutputPath)/**</…>
+      Microsoft.NET.Sdk.DefaultItems.targets:37   <DefaultItemExcludes>…;$(BaseIntermediateOutputPath)/**</…>
+      Microsoft.NET.DefaultOutputPaths.targets:126 <DefaultItemExcludes>…;$(OutputPath)/**</…>
+      Microsoft.NET.DefaultOutputPaths.targets:127 <DefaultItemExcludes>…;$(IntermediateOutputPath)/**</…>
+
+    默认情形下 `BaseIntermediateOutputPath=obj\`（`DefaultOutputPaths.targets:113`）⇒ 工程目录下的
+    `obj/` 恰好被排除。**但**一旦命令行把它改指向仓外（lane 车道常用的"私有 obj"手法）
+
+      dotnet build … -p:BaseOutputPath=<仓外>/bin/ -p:BaseIntermediateOutputPath=<仓外>/obj/
+
+    这四条就全部指向仓外 ⇒ **工程目录下的 `obj/` 不再被任何一条覆盖** ⇒ 默认 glob
+    （`Microsoft.NET.Sdk.DefaultItems.props:36`，`Compile Include="**/*.cs" Exclude="$(DefaultItemExcludes);…"`）
+    把里面**陈旧**的 `obj/**/*.AssemblyInfo.cs` 收进编译 ⇒ 与 SDK 本趟新生成的那份撞成
+    `CS0579`（`#20` 实测单趟 `16×CS0579`；`#21` W21B 实测暴露集见
+    `src/Linux/build/MilBridge/W21B-report.md`）。
+
+  【为什么这一行放在这里能生效（MSBuild 求值次序，实测）】
+  MSBuild 的求值分趟：**先把所有属性（props → 工程体 → targets）算完，再求值任何 Item**。
+  ⇒ `DefaultItemExcludes` 无论在哪一趟被追加，那条 glob 看到的都是**最终值**（W21B 实测：
+  工程体里加一行与在 `.props` 里加一行，对 `-getItem:Compile` 的效果相同）。
+  本文件的写法与 SDK 自己在 `UseArtifactsOutput` 分支的写法（`DefaultOutputPaths.targets:133`
+  的 `bin/**;obj/**`）同形 ⇒ **短式、相对工程目录、不写死绝对路径**（写死会在工程被复制/移动后静默失效）。
+
+  【它为什么**不**叫 `Directory.Build.props`（刻意的，不是疏忽）】
+  本件**不做自动导入**，理由是实测出来的、不是口味：
+    · 自动导入的作用域 = "向上找**最近的** `Directory.Build.props`"。仓内已有
+      `src/Microsoft.DotNet.Wpf.Linux/src/DirectWrite/Directory.Build.props` 与 `src/Microsoft.DotNet.Wpf.Linux/src/PresentationBuildTasks/Directory.Build.props`
+      ⇒ 放在**任何**单层（含仓库根）都会**留下洞**，除非再逐子树补导入文件；
+    · 而"唯一没有洞的层"是仓库根 —— 那会给本仓**约 120 个工程**（含正在被并行车道的 P1 重建的
+      `src/Microsoft.DotNet.Wpf.Linux/src/PresentationCore` 等权威工程）各注入一个新的求值输入。
+  ⇒ 本件选择**显式导入**：作用域 = **恰好**实测暴露集（`grep -rl 'BuildHygiene.props'` 扫 `*.csproj` 即全部用户），
+  可逐工程 `cmp` 证明"编译文件集合未变"。理由与两种被否决的落点逐条写在报告 §2。
+
+  【怎么用（给下一个新建工程的作者）】
+  在 csproj 的 `<Project …>` 里加**一行**（深度无关，故用 `GetPathOfFileAbove`）：
+
+      <Import Project="$([MSBuild]::GetPathOfFileAbove('BuildHygiene.props'))" />
+
+  **不要**加 `Condition="Exists(…)"`：文件找不到时**大声失败**（MSB4019）比静默不受保护好
+  —— 静默失效正是本缺陷（`D-R8`）赖以长期存活的那种"没被看着的保护"（纪律 37④）。
+
+  【不要把它放到指纹覆盖面里】
+  `src/Linux/build/bridge-src-fp.sh:42-46` 的 `BRIDGE_SRC_FP` 收 `src/Microsoft.DotNet.Wpf.Linux/src/WpfGfx/**` 与 `src/Linux/build/MilBridge/**`
+  下的 `*.cs`/`*.csproj`/`*.props`/`*.targets`/`*.resx`（排除 `bin/` `obj/` `.artifacts/` 与
+  `src/Linux/build/MilBridge/{tests,alt-route-b,spike}`）⇒ 本文件放**仓库根**，不在那两个根之下，指纹不动。
+  ============================================================================
+-->
+<Project>
+
+  <!-- ★ `#39`：**自产件配置的唯一声明**（样本图由此拿到同一个值；两条图各 import 一次，声明只有 `src/Linux/build/SelfBuiltConfig.props` 一处） -->
+  <Import Project="$(MSBuildThisFileDirectory)src/Linux/build/SelfBuiltConfig.props" />
+  <PropertyGroup>
+    <DefaultItemExcludes>$(DefaultItemExcludes);obj/**;bin/**</DefaultItemExcludes>
+  </PropertyGroup>
+
+</Project>

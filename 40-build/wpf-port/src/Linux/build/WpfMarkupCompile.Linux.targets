@@ -1,0 +1,25 @@
+<Project>
+  <!--
+    T1 · 让 SDK 的 WindowsDesktop 标记编译目标使用 Linux 原生版 PresentationBuildTasks。
+
+    实现方式：SDK 的 Microsoft.WinFX.targets 中：
+        <_PresentationBuildTasksAssembly Condition="'$(_PresentationBuildTasksAssembly)'==''">
+            ...\tools\$(_PresentationBuildTasksTfm)\PresentationBuildTasks.dll
+        </_PresentationBuildTasksAssembly>
+        <UsingTask TaskName="Microsoft.Build.Tasks.Windows.MarkupCompilePass1"
+                   AssemblyFile="$(_PresentationBuildTasksAssembly)" />
+    该属性带 "==''" 条件，因此**先设值者胜**。src/Linux/samples/HelloWpf/HelloWpf.csproj 在
+    导入 Sdk.targets 之前把它指向我们编译的 Linux 版本，从而接管全部 8 个任务。
+
+    验证方式（应看到我们自己 build 目录下的路径）：
+        dotnet build src/Linux/samples/HelloWpf -c Release -v:diag \
+          | grep -oE 'Using "MarkupCompilePass[12]" task from assembly "[^"]*"'
+  -->
+
+  <Target Name="CheckPbtLinuxAssembly" BeforeTargets="MarkupCompilePass1">
+    <Error Condition="!Exists('$(_PresentationBuildTasksAssembly)')"
+           Text="找不到 Linux 版标记编译器：$(_PresentationBuildTasksAssembly)。请先执行：dotnet build src/Microsoft.DotNet.Wpf.Linux/src/PresentationBuildTasks -c $(PbtLinuxConfiguration)" />
+    <Message Importance="high"
+             Text="使用 Linux 原生标记编译器: $(_PresentationBuildTasksAssembly)" />
+  </Target>
+</Project>

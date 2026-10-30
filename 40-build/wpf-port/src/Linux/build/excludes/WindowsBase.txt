@@ -1,0 +1,13 @@
+# WindowsBase 剔除清单（port-lib 读取；每行一个路径片段，子串匹配）
+#
+# SplashScreen.cs —— WindowsBase 中唯一深度依赖 Windows 原生栈的文件，剔除理由：
+#   需要 7 个 WIC COM 接口（IWICImagingFactory/IWICStream/IWICBitmapDecoder/
+#   IWICBitmapFrameDecode/IWICBitmapSource/IWICFormatConverter/IWICBitmapFlipRotator，
+#   约 70 个 vtbl 槽须与 wincodec.idl 逐槽对齐）、ComScope<T>/IID/IStream/CLSCTX、
+#   GetDcScope/CreateDcScope/SelectObjectScope、13 个 P/Invoke。
+#   离线无 CsWin32、无 winmd，凭记忆写 70 个 vtbl 槽 =「能编译但语义错」的类型
+#   （ComScope<T> 带 unmanaged 约束无法用于接口类型，CS8377 反证形态不可推断）。
+#   API 缺口仅 System.Windows.SplashScreen 一个类型。
+#   恢复条件（U2 后续）：联网取 Microsoft.Windows.CsWin32 + NativeMethods.txt 真实生成；
+#   或 Linux 侧用 X11/Wayland 原生窗口 + Skia 图像解码重写。
+System/Windows/SplashScreen.cs

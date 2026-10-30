@@ -1,0 +1,187 @@
+# PresentationCore 剔除清单（port-lib 读取；每行一个路径片段，子串匹配）
+#
+# 总体口径
+# --------
+# 本清单每一条都来自实测，不是「让 csproj 看起来能编」的静默剔除。实测环境与复现命令：
+#   SDK 10.0.111 / net10.0；cd REPO && dotnet build src/Microsoft.DotNet.Wpf.Linux/src/PresentationCore/PresentationCore.Linux.csproj
+#   全量（1366 条 Compile，含本清单全部文件）              → 484 条唯一错误
+#   剔除 A 类 9 文件后（E1）                              → 404 条唯一错误（−80，新增 0）
+#   再剔除 B 类 8 文件后（E2）                            → 362 条唯一错误（−50，新增 8）
+# 详细错误分类、错误样例与逐文件计数见 docs/U2-PresentationCore-prep.md §2。
+#
+# ---------------------------------------------------------------------------
+# A 类：上游本来就没编进 PresentationCore 的文件（port-lib 默认 glob 误纳，9 个）
+# ---------------------------------------------------------------------------
+# 背景：上游 PresentationCore.csproj 用的是 <EnableDefaultItems>false</EnableDefaultItems>，
+# 而 port-lib.py 只识别 <EnableDefaultCompileItems>false</EnableDefaultCompileItems>，
+# 于是走了「SDK 默认 glob」分支，把项目目录下这 9 个上游刻意不编的文件也加了进来。
+# 这是一处 port-lib 的口径缺口（未改 port-lib，按纪律用本清单兜住），
+# 一旦 port-lib 支持 EnableDefaultItems 即可整段删除本类。
+
+# 【A1】上游把该文件显式注释掉，并在同一行写明理由（PresentationCore.csproj:798）：
+#   <!-- Empty and clashes with NativeMethods in WindowsBase, which we require
+#        <Compile Include="System\Windows\Media\NativeMethodsMilCoreApi.cs" /> -->
+# 文件体是 `namespace MS.Win32 { internal static partial class NativeMethods { } }`（空类）。
+# 它与 WindowsBase.dll 里的 MS.Win32.NativeMethods 同名同命名空间，C# 规则下
+# 「本编译内的类型胜过引用程序集」→ 整个 WindowsBase 的 NativeMethods 被空类遮蔽，
+# 于是 NativeMethods.RECT / POINT / XFORM / MOUSEMOVEPOINT / PROCESS_DPI_AWARENESS /
+# MONITOR_DPI_TYPE 全部 CS0426。
+# 实测：该文件自身 0 条错误，但引发跨 14 个文件、30 条 CS0426 级联
+# （HwndTarget.cs / HwndSource.cs / HwndMouseInputProvider.cs / DpiUtil*.cs /
+#   PointUtil.cs / SafeSecurityHelper.cs / exports.cs / wgx_commands.cs /
+#   UnsafeNativeMethodsTablet.cs / NativeRecognizer.cs …）；
+# 剔除后这 30 条归零。恢复条件：永不恢复（上游语义如此）。
+PresentationCore/System/Windows/Media/NativeMethodsMilCoreApi.cs
+
+# 【A2】上游 csproj 里以注释形式禁用（PresentationCore.csproj:817）：
+#   <!--Compile Include="System\Windows\Media\printcontext.cs" /-->
+# 实测纳入编译：16 条错误（CS0234 ×5 + CS0246 ×11），全部因 System.Printing
+# （PrintSystemEDocumentJob / JobTicket / XpsDocument 等）不在 PresentationCore
+# 的依赖面内 —— 该文件属于打印子系统的历史遗留。恢复条件：随打印栈（ReachFramework /
+# System.Printing）整体移植时一并评估。
+PresentationCore/System/Windows/Media/printcontext.cs
+
+# 【A3~A6】FontCache / FontFace 的历史遗留文件，上游 4 个文件都不在 Compile 列表里
+# （PresentationCore.csproj 无任何 FontCache/CachedFontFace 等条目）。
+# 实测纳入编译的错误数：IPCCacheManager 8、CachedCompositeFamily 9、
+# CachedFontFace 4、CachedFontFamily 4，合计 25。
+# 代表错误：
+#   IPCCacheManager.cs         CS0246 `Protocol` + CS0234 `Microsoft.Internal.*`（IPC 私有栈）
+#   CachedCompositeFamily.cs   CS0535/CS0539/CS0540 + CS0426 `FamilyCollection.Cached*`
+#                              （与在编的 FamilyCollection.cs 版本不同代）
+#   CachedFontFace.cs /
+#   CachedFontFamily.cs        CS0426 `FamilyCollection.CachedFace/CachedFamily`（同上）
+# 恢复条件：这些是「缓存分层」重构的中间产物，上游已用 MS/internal/FontCache/ 下的
+# 现值替代；除非将来要回退到旧缓存实现，否则不恢复。
+PresentationCore/MS/internal/FontCache/IPCCacheManager.cs
+PresentationCore/MS/internal/FontFace/CachedCompositeFamily.cs
+PresentationCore/MS/internal/FontCache/CachedFontFace.cs
+PresentationCore/MS/internal/FontCache/CachedFontFamily.cs
+
+# 【A7】FontCacheLogic.cs：实测 2 条（CS0234 Microsoft.Internal + CS0246）。
+# 同 A3~A6 的历史遗留口径；上游未列入 Compile。
+PresentationCore/MS/internal/FontCache/FontCacheLogic.cs
+
+# 【A8~A9】两个「别名重复」文件：实测各 1 条 CS1537
+# （using 别名"SR"以前在此命名空间中出现过），因为 PresentationCore 的
+# GlobalUsings.cs 已经 `global using SR = MS.Internal.PresentationCore.SR;`。
+# 上游两者都未列入 Compile。恢复条件：不恢复（除非删掉 GlobalUsings 的 global alias，
+# 那会牵连全工程，不做）。
+PresentationCore/System/Windows/Media/Generated/ColorCollectionConverter.cs
+PresentationCore/System/Windows/Media/GlyphCache.cs
+
+# ---------------------------------------------------------------------------
+# B 类：OLE 剪贴板 / DragDrop 栈（扫描报告 §1.4 点名的 8 文件 → 实测收敛为 7 个）
+# ---------------------------------------------------------------------------
+# 【M4 收官更新】`System/Windows/OleServicesContext.cs` **已放回编译集**（不剔除）。
+#   实测依据：它单独纳入编译时 **0 条错误**（它只依赖 MS.Win32/Dispatcher/IComDataObject
+#   与 DragDrop.cs 里的 UnsafeNativeMethods.IOleDropTarget，均不在私有包内），
+#   而剔除它会新增 3 条 CS0103（DragDrop.cs:455/472/577 引用 OleServicesContext）。
+#   → 「8 文件」是扫描报告的静态归类；按实测口径，真正必须剔除的是 7 个。
+#   放回后 B 类剔除的错误代价：−50 → −50（OleServicesContext 原为 0 错），新增从 12 降到 9。
+#
+# 决定：**剔除**（不是「shim 可解」）。三条实测依据：
+#
+# (1) 依赖的是一个离线拿不到的私有程序集。8 个文件全部 `using System.Private.Windows.*`
+#     （WinForms 私有包 System.Private.Windows.Core 的 Ole/Nrbf 泛型宿主）。
+#     实测 NuGet 可达性：`PackageReference System.Private.Windows.Core` →
+#     **NU1101 找不到包**（镜像 huaweicloud 中不存在此 ID），
+#     即无法像 System.Formats.Nrbf 那样用包把它补回来。
+#
+# (2) 纳入编译的错误量与错误性质（E1 实测，8 文件合计 50 条）：
+#       dataobject.cs            26（CS0538 ×15 + CS0246 ×9 + CS0234 ×2）
+#       Ole/WpfOleServices.cs    14（CS0538 ×3  + CS0246 ×7 + CS0234 ×4）
+#       DataFormat.cs             4      DataObjectAdapter.cs  2
+#       Nrbf/WpfNrbfSerializer.cs 2      DataFormats.cs        1
+#       clipboard.cs              1      OleServicesContext.cs 0
+#     代表错误：
+#       CS0234 命名空间"System"中不存在类型或命名空间名"Private"
+#       CS0246 未能找到类型或命名空间名"IDataObjectInternal<,>"/"IOleServices"/
+#              "IComVisibleDataObject"/"IDataFormat<>"/"INrbfSerializer"
+#       CS0538 '显式接口声明中的"System.Com.IDataObject.Interface"不是接口'
+#       CS0246 命名空间"Windows.Win32"中不存在类型或命名空间名"System"
+#     注意误差口径：clipboard.cs 只有 1 条错误，是「错误类型抑制级联」造成的假象 ——
+#     其宿主 ClipboardCore<T> 解析失败后整文件退化为错误类型，不代表工作量小。
+#     真正的工作量是**重建 4 个泛型宿主**（DataFormatsCore<T> / DragDropHelper<,> /
+#     ClipboardCore<T> / Composition<,,>）+ IOleServices + PInvokeCore，
+#     依据只有调用点、没有 WinForms 私有包源码 —— 正是 src/Linux/build/excludes/WindowsBase.txt
+#     里 SplashScreen 的失败模式（能编译但语义错）。
+#
+# (3) 剔除的代价可量化且很小：E1→E2 实测 −50 条错误，只新增 8 条
+#     （GlobalUsings.cs 里 4 个 global alias 失效 7 条 + DragDrop.cs:560 引用 DataObject 1 条）。
+#     这 8 条是「公开 API 面被挖掉」的可见代价。
+#     【M4 收官】这 8 条（含 OleServicesContext 放回前的 3 条，共 11 条）**已由占位文件清零**：
+#     src/Microsoft.DotNet.Wpf.Linux/src/shims/PresentationCore.OleApi.Stubs.cs（经 src/Microsoft.DotNet.Wpf.Linux/src/shims/PresentationCore.shims.txt
+#     自动编入本工程）提供 DataObject / Clipboard / DataFormats / DataFormat 四个公开类型
+#     与 WpfOleServices / WpfNrbfSerializer / System.Private.Windows.Ole 四个泛型宿主的
+#     **最小 API 面**；运行期一律抛 PlatformNotSupportedException（消息指向 handoff U13），
+#     **不返回空集合/默认值假装成功**。
+#
+# 恢复条件（二选一 + 占位文件的下线条件，均为路线级决定）：
+#   ① 路线乙（推荐）：在 Linux 侧按 X11 selection / Xdnd 语义重写 DataObject / Clipboard /
+#      DataFormats / DataFormat 四个公开类型 → **直接替换** src/Microsoft.DotNet.Wpf.Linux/src/shims/PresentationCore.OleApi.Stubs.cs
+#      （删除该文件对 PresentationCore.shims.txt 的引用即可），OLE 栈的私有宿主不再需要。
+#   ② 路线甲：联网取 System.Private.Windows.Core 的等价实现（或 CsWin32 真实生成），
+#      按调用点重建上述泛型宿主（扫描报告估 500–1000 行），并配 COM vtbl 保真测试
+#      （src/Microsoft.DotNet.Wpf.Linux/src/shims/WindowsWin32.Shim.cs 已备好 FORMATETC/STGMEDIUM/TYMED/DVASPECT/
+#       CLIPBOARD_FORMAT/DV_E_TYMED 这些可字节验证的地基，见该文件追加段落）。
+#      该路线下占位文件同样需要下线（真实现取代占位）。
+#   ③ 占位文件自身的下线条件：任一公开类型获得真实 Linux 实现，或本工程不再需要
+#      「公开 API 面完整」这一编译期属性（例如改为按 API 子集编译）。
+# 另：System/Windows/Nrbf/SerializationRecordExtensions.cs **不剔除**（实测 0 条错误），
+#     避免过度剔除。
+PresentationCore/System/Windows/dataobject.cs
+PresentationCore/System/Windows/clipboard.cs
+PresentationCore/System/Windows/Ole/WpfOleServices.cs
+PresentationCore/System/Windows/DataFormats.cs
+PresentationCore/System/Windows/Ole/DataObjectAdapter.cs
+PresentationCore/System/Windows/DataFormat.cs
+PresentationCore/System/Windows/Nrbf/WpfNrbfSerializer.cs
+
+# ---------------------------------------------------------------------------
+# D 类：模块初始化器（Windows-only 原生预装载）—— 剔除
+# ---------------------------------------------------------------------------
+# ModuleInitializer.cs（PresentationCore 的 [ModuleInitializer]，36 行）
+#
+# 实测证据（/tmp/m4/oleprobe，硬证据）：只要**触碰 PresentationCore 的任意类型**，
+# `<Module>` 的静态构造就抛
+#     TypeInitializationException -> DllNotFoundException:
+#     Unable to load shared library 'user32.dll' or one of its dependencies
+# 因为该初始化器第一条就是 `IsProcessDpiAware()` → `[DllImport("user32.dll")]
+# SetProcessDPIAware_Internal()`；随后还有 `DWriteLoader.LoadDWrite()`
+# （NativeLibrary.Load("dwrite.dll")，Linux 上同样必然抛 DllNotFoundException）。
+# 即：**不剔除它，PresentationCore.dll 在 Linux 上根本无法加载**（编译期完全看不出来）。
+#
+# 剔除依据（Linux 上这三件事都无对象可做，不是"砍功能"）：
+#   1. SetProcessDPIAware：Windows 的 DPI 感知是 Win32 概念，Linux 无对应语义；
+#   2. DWriteLoader.LoadDWrite/UnloadDWrite：装载的是 Windows 的 dwrite.dll；
+#      Linux 侧文本栈由 M1 Skia 承接，且 DWriteLoader 自身仍可被显式调用
+#      （它就是"装载失败即抛异常"的诚实实现）；
+#   3. MS.Internal.NativeWPFDLLLoader.LoadDwrite()：上游本就是空实现（保留方法锚点）。
+# 编译期安全性：`ModuleInitializer` 类型**无任何其它引用**（已 grep 全树确认为空），
+# 剔除后 0 新增错误、0 新增警告（实测）。
+#
+# 恢复条件：Linux 侧文本栈确定后，若需要"加载失败即报错"的早期失败语义，
+# 可改为在 PresentationCore 之外（宿主/测试）显式调用 DWriteLoader.LoadDWrite()，
+# 而不是恢复该模块初始化器；
+# 另一条路线是提供 ELF 形式的 `user32.dll`/`dwrite.dll` 原生占位（不推荐：伪造的
+# user32 会掩盖真实的 API 缺失，且与本项目"宁可抛异常也不假成功"的口径冲突）。
+PresentationCore/ModuleInitializer.cs
+
+# ---------------------------------------------------------------------------
+# C 类：扫描报告 §4.4 点名的「毒点」，**实测后不剔除**（记录在案，防止后人误加）
+# ---------------------------------------------------------------------------
+# 以下文件实测纳入编译 0 条错误，故**不**列入本清单：
+#   System/Windows/InterOp/D3DImage.cs（957 行）      0 错 —— D3D11 互操作全靠
+#       InteropDeviceBitmap_* 声明 + DUCE 通道，编译期无缺口；运行期需 stub/降级，
+#       但那是 M5 的事，不需要在编译期剔除（否则会挖掉公开类型 D3DImage）。
+#   System/Windows/Media/Imaging/BitmapSource.cs（1961）0 错
+#   System/Windows/Media/Imaging/BitmapMetadata.cs（1538）0 错
+#   System/Windows/Media/UnsafeNativeMethodsMilCoreApi.cs（1158，109 条 WIC P/Invoke）0 错
+#   MS/internal/TextFormatting/LineServices.cs        4 错（缺 GlyphOffset，见下）
+#   MS/Win32/UnsafeNativeMethodsPenimc.cs / UnsafeNativeMethodsTablet.cs 0 错
+# 结论：扫描报告「WIC 栈需要 12 个 vtbl 槽 shim」「D3DImage 建议剔除」两条，
+# 在实测口径下都不成立 —— WIC 全走不透明句柄，编译期零缺口。
+# LineServices.cs 的 4 条错误属于 DirectWriteForwarder 托管面缺失（GlyphOffset），
+# 应由新的 DWriteForwarder 托管 shim 解决，不应剔除文件（GlyphRun/FormattedText
+# 是公开 API 的必经路径）。
