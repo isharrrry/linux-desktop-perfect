@@ -10,17 +10,24 @@ TARGET  := $(BINDIR)/libwpfwic.so
 SRCS    := $(wildcard $(SRCDIR)/*.c)
 OBJS    := $(patsubst $(SRCDIR)/%.c,$(OBJDIR)/%.o,$(SRCS))
 
-.PHONY: all clean symbols
+.PHONY: all clean symbols probes
 
 all: $(TARGET)
 
 $(TARGET): $(OBJS)
 	@mkdir -p $(BINDIR)
-	$(CC) -shared -fPIC -o $@ $(OBJS) -Wl,-soname,libwpfwic.so
+	$(CC) -shared -fPIC -o $@ $(OBJS) -Wl,-soname,libwpfwic.so -lz
 
 $(OBJDIR)/%.o: $(SRCDIR)/%.c
 	@mkdir -p $(OBJDIR)
-	$(CC) $(CSTD) $(OPT) $(WARN) -fPIC -fvisibility=default -c -o $@ $<
+	$(CC) $(CSTD) $(OPT) $(WARN) -fPIC -fvisibility=default -Isrc -c -o $@ $<
+
+# 探针：解码链路 + PNG 直解
+probes: $(TARGET)
+	@mkdir -p $(BINDIR)
+	$(CC) $(CSTD) $(OPT) $(WARN) -Isrc -o $(BINDIR)/wic-dec-probe tools/wic-dec-probe.c -ldl
+	$(CC) $(CSTD) $(OPT) $(WARN) -Isrc -o $(BINDIR)/ldp-png-probe tools/../src/png_probe.c $(OBJDIR)/png_decode.o -lz 2>/dev/null || true
+	@echo "== WIC 探针就绪：$(BINDIR)/wic-dec-probe"
 
 symbols: $(TARGET)
 	@nm -D --defined-only $(TARGET) | awk '{print $$3}' | sort | head -60

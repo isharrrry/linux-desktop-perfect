@@ -38,6 +38,18 @@ const { startXvfb, waitDisplay, startApp, findWindow, waitMapped, sleep, DOTNET_
       try { wicProbe = JSON.parse(line); } catch { wicProbe = { raw: line }; }
     }
   }
+  // WIC 解码链路探针（D-018 第二步）：工厂 → 从文件名建解码器 → GetSize。
+  //   有 testdata 的 PNG 时跑真解，读数里带 dims —— 这样"解码真的通了"是可验的，不是靠推断。
+  let wicDecode = null;
+  {
+    const probe = '40-build/wic-dwrite/bin/wic-dec-probe';
+    const png = '40-build/wic-dwrite/testdata/rgb-7x5.png';
+    if (fs.existsSync(probe) && fs.existsSync(png)) {
+      const r = spawnSync(probe, [png], { encoding: 'utf8', timeout: 30000 });
+      const line = (r.stdout || '').trim().split(String.fromCharCode(10)).pop();
+      try { wicDecode = JSON.parse(line); } catch { wicDecode = { raw: line }; }
+    }
+  }
   const xvfb = startXvfb();
   let app = null;
   const steps = [];
@@ -59,13 +71,15 @@ const { startXvfb, waitDisplay, startApp, findWindow, waitMapped, sleep, DOTNET_
   const bad = steps.filter((s) => !s.ok);
   finish({
     acc: 'ACC-018', started,
-    env: { ...env, dotnet_root: DOTNET_ROOT, wic_probe: wicProbe, wic_mapping_enabled: resolverFlag === '1', windows_codecs_pinvoke_sites: Number(pInvokeCount) || 0, steps },
+    env: { ...env, dotnet_root: DOTNET_ROOT, wic_probe: wicProbe, wic_decode_chain: wicDecode, wic_mapping_enabled: resolverFlag === '1', windows_codecs_pinvoke_sites: Number(pInvokeCount) || 0, steps },
     expectRef: 'ACC-018：五格式',
     verdict: 'FAIL',
     diff: [
       ...missingNotes,
       ...bad.map((s) => `${s.step} 失败：${JSON.stringify(s).slice(0, 240)}`),
-      wicProbe && wicProbe.loaded
+      wicDecode && wicDecode.loaded && wicDecode.hr_size === 0 && wicDecode.dims && wicDecode.dims[0] > 0
+        ? `缺口：**PNG 解码链路已通**（工厂 hr_create=${wicDecode.hr_create}、文件名入口 hr_fromfile=${wicDecode.hr_fromfile}、GetSize=${wicDecode.dims.join('x')}），但 ①五格式里的 JPEG/TIFF/GIF/BMP 未实现 ②WPF 主路径是 CreateDecoderFromStream（IStream 由 milcore 造），那条还没接 ③ICC 未做（D-018 后续）`
+        : wicProbe && wicProbe.loaded
         ? `缺口：libwpfwic.so 骨架已就位（工厂入口可建 hr_create=${wicProbe.hr_create}），但解码入口明确返回 E_NOTIMPL（hr_decode=${wicProbe.hr_decode}）⇒ 五格式解码/ICC 仍未实现（D-018 后续）；resolver 的 WIC 映射已开=${resolverFlag === '1'}，WindowsCodecs P/Invoke 站点 ${pInvokeCount} 处`
         : `缺口：libwpfwic.so 未实现（resolver 的 WIC 映射已开=${resolverFlag === '1'}，WindowsCodecs P/Invoke 站点 ${pInvokeCount} 处）`,
     ],
