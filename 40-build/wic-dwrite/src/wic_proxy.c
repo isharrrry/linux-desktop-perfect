@@ -391,6 +391,26 @@ int32_t IWICBitmapCodecInfo_DoesSupportChroma_Proxy(void *info, int32_t *support
     return S_OK_;
 }
 
+// ── ole32 的两个入口（WIC 组把 `ole32.dll` 映射到本 so）───────────────────────────
+// resolver 的 `WicMappedLibraries` 把 `ole32.dll` 放进 **WIC 组**（理由见那里的三条裁定：
+// PC 侧 ole32 声明只有 `CoInitialize/CoUninitialize` 两处、调用点是 WIC bootstrap 的 SafeHandle）。
+// 所以这两个名字必须由 **libwpfwic.so** 导出 —— 修前没有 ⇒
+// `EntryPointNotFoundException: CoInitialize in ole32.dll`（实测：WIC 链路一路补到编解码器
+// 信息之后撞上它）。Linux 上没有 COM 单元，"初始化成功"是真话。
+int32_t CoInitialize(void *pvReserved) { (void)pvReserved; return 0; }        /* S_OK */
+int32_t CoInitializeEx(void *pvReserved, uint32_t flags) { (void)pvReserved; (void)flags; return 0; }
+void    CoUninitialize(void) { }
+void    CoFreeUnusedLibraries(void) { }
+
+// ── 帧计数（WPF 建好解码器后会问"有几帧"）───────────────────────────────────
+int32_t IWICBitmapDecoder_GetFrameCount_Proxy(void *decoder, uint32_t *count)
+{
+    wic_decoder *d = (wic_decoder *)decoder;
+    if (!d || d->magic != WIC_DECODER_MAGIC || !count) return 0x80070057;
+    *count = 1;   // PNG 是单帧
+    return S_OK_;
+}
+
 // ── 未实现的 WIC 入口：明确失败（数量与 WPF 的 P/Invoke 面一一对应，后续逐个填实）──
 #define WIC_STUB(name) \
     int32_t name(void) { \

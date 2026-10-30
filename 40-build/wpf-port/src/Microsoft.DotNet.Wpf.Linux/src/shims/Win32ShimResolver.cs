@@ -126,10 +126,10 @@ namespace WpfLinux.Shims.UIAutomation
             //   就 `DllNotFoundException`（实测：TextBox 一收到 WM_CHAR 应用就崩）。
             //   shim 侧 `UiaClientsAreListening` 恒 FALSE（没有 UIA 客户端监听）—— 这是真话。
             "UIAutomationCore.dll",
-            // ole32：WPF 的成像路径会先 `CoInitializeEx`（`BitmapImage` → WIC 之前），
-            //   本 shim 提供 CoInitialize/CoInitializeEx/CoUninitialize（Linux 上没有 COM 单元，
-            //   "初始化成功"是真话；CoCreateInstance 仍如实失败）。
-            "ole32.dll",
+            // ⚠️ `ole32.dll` **不在这里**：按主控 2026-09 的裁定它属于 **WIC 组**
+            //   （`WicMappedLibraries`，映射到 libwpfwic.so）。那组的 `CoInitialize/CoUninitialize`
+            //   两个名字由 `40-build/wic-dwrite/src/wic_proxy.c` 导出 —— 修前那边漏了，
+            //   表现是 `EntryPointNotFoundException: CoInitialize in ole32.dll`。
         };
 
         /// <summary>
