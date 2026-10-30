@@ -160,6 +160,28 @@ const POINT_PATCHES = [
         private IntPtr HwndTargetFilterMessage(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)`,
     why: 'P20 的辅助方法：从 HDROP 读文件列表（补丁项 20b，D-011）',
   },
+  {
+    patch: 'P21',
+    file: 'src/Microsoft.DotNet.Wpf/src/Shared/MS/Win32/HwndWrapper.cs',
+    find: `            // The default result for messages we handle is 0.
+            IntPtr result = IntPtr.Zero;
+            WindowMessage message = (WindowMessage)msg;`,
+    replace: `            // 【WPF-on-Linux 补丁 P21】诊断：WM_DROPFILES 是否真的到达 WPF 的窗口过程。
+            //   为什么要在这一层：P20 在 \`HwndTargetFilterMessage\`（hook 链中的一环）里处理
+            //   WM_DROPFILES，而实测那行诊断 0 次 —— 所以要先确认消息有没有进到 WndProc 入口，
+            //   再往下才是"它没被派发给那一个 hook"的问题（D-011 第十一步）。
+            if (msg == 0x0233 /* WM_DROPFILES */)
+            {
+                Console.Error.WriteLine("[P21] HwndWrapper.WndProc 收到 WM_DROPFILES hwnd=0x" + hwnd.ToInt64().ToString("x")
+                    + " wParam=0x" + wParam.ToInt64().ToString("x") + " hooks=" + ((_hooks == null) ? 0 : _hooks.Length));
+                Console.Error.Flush();
+            }
+
+            // The default result for messages we handle is 0.
+            IntPtr result = IntPtr.Zero;
+            WindowMessage message = (WindowMessage)msg;`,
+    why: '确认 WM_DROPFILES 是否到达 WPF 的 WndProc 入口（补丁项 21，D-011）',
+  },
 ];
 
 for (const rel of files) {
