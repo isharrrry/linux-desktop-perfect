@@ -54,6 +54,30 @@ namespace MilBridge
             return hr;
         }
 
+        /// <summary>
+        /// 用一段 ICC profile 字节登记一个「颜色上下文」，返回它的句柄。
+        /// 供 libwpfwic 的 `GetColorContexts` 使用：WPF 拿到句柄后会调
+        /// `IWICColorContext_GetProfileBytes/GetType`（这两个导出在 bridge 里），
+        /// 所以句柄必须登记进 `MilColorContextTable` 才查得到 —— 这正是本函数存在的理由。
+        /// type: 0=Uninitialized 1=ExifColorSpace 2=Profile（与 WIC 的 WICColorContextType 同序）。
+        /// </summary>
+        [UnmanagedCallersOnly(EntryPoint = "LdpMilColorContextFromProfile")]
+        public static IntPtr LdpMilColorContextFromProfile(byte* profile, uint length, uint type)
+        {
+            if (profile == null || length == 0) return IntPtr.Zero;
+            byte[] bytes = new byte[length];
+            System.Runtime.InteropServices.Marshal.Copy((IntPtr)profile, bytes, 0, (int)length);
+            var ctx = new MilColorContext
+            {
+                ProfileBytes = bytes,
+                Type = type == 2 ? MilWicColorContextType.WICColorContextProfile
+                                 : (type == 1 ? MilWicColorContextType.WICColorContextExifColorSpace
+                                              : MilWicColorContextType.WICColorContextUninitialized),
+                ExifColorSpace = 0,
+            };
+            return MilColorContextTable.Register(ctx);
+        }
+
         /// <summary>在流里定位；origin 用 COM 的 STREAM_SEEK_* 语义（0=SET 1=CUR 2=END）。</summary>
         [UnmanagedCallersOnly(EntryPoint = "LdpMilStreamSeek")]
         public static int LdpMilStreamSeek(void* handle, long offset, uint origin, long* newPos)

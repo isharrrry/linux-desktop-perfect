@@ -106,6 +106,39 @@ int32_t ldp_png_decode(const uint8_t *data, size_t len, ldp_png_image *out, char
         return E_NOTIMPL_;
     }
 
+    // iCCP：`name\0` + 1 字节压缩方式 + zlib 压缩的 ICC profile
+    uint8_t *icc = NULL;
+    uint32_t icc_len = 0;
+    {
+        size_t o2 = 8;
+        while (o2 + 12 <= len) {
+            uint32_t cl = be32(data + o2);
+            const char *ty = (const char *)(data + o2 + 4);
+            if (memcmp(ty, "iCCP", 4) == 0 && cl > 2) {
+                const uint8_t *body = data + o2 + 8;
+                size_t name_len = 0;
+                while (name_len < cl && body[name_len] != 0) name_len++;
+                if (name_len + 2 <= cl && body[name_len + 1] == 0) {
+                    const uint8_t *z = body + name_len + 2;
+                    size_t zlen = cl - name_len - 2;
+                    // 解压到一个宽松的缓冲（ICC profile 通常 < 1 MB）
+                    size_t cap2 = 1 << 20;
+                    uint8_t *out2 = (uint8_t *)malloc(cap2);
+                    if (out2) {
+                        uLongf dl = (uLongf)cap2;
+                        if (uncompress(out2, &dl, z, (uLong)zlen) == Z_OK && dl > 128) {
+                            icc = out2;
+                            icc_len = (uint32_t)dl;
+                        } else {
+                            free(out2);   // 解不出来就当没有（不假装成功）
+                        }
+                    }
+                }
+            }
+            o2 += 12 + (size_t)cl;
+        }
+    }
+
     // 第一步：反滤波（逐字节，按 channels 处理）→ 得到未滤波的扫描行
     uint8_t *plain = (uint8_t *)malloc(stride * (size_t)height);
     if (!plain) { snprintf(error, error_cap, "内存不足（plain）"); free(raw); return E_NOTIMPL_; }
@@ -151,10 +184,15 @@ int32_t ldp_png_decode(const uint8_t *data, size_t len, ldp_png_image *out, char
     out->height = height;
     out->has_alpha = (channels == 4);
     out->bgra = bgra;
+    out->icc = icc;
+    out->icc_len = icc_len;
     return 0;
 }
 
 void ldp_png_free(ldp_png_image *img)
 {
-    if (img && img->bgra) { free(img->bgra); img->bgra = NULL; }
+    if (!img) return;
+    if (img->bgra) { free(img->bgra); img->bgra = NULL; }
+    if (img->icc) { free(img->icc); img->icc = NULL; }
+    img->icc_len = 0;
 }

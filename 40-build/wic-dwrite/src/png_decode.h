@@ -6,7 +6,9 @@
 typedef struct {
     uint32_t width, height;
     int has_alpha;
-    uint8_t *bgra;   // width*height*4，BGRA8888
+    uint8_t *bgra;          // width*height*4，BGRA8888
+    uint8_t *icc;           // iCCP 内嵌的 ICC profile（无则为 NULL）
+    uint32_t icc_len;
 } ldp_png_image;
 
 int32_t ldp_png_decode(const uint8_t *data, size_t len, ldp_png_image *out, char *error, size_t error_cap);

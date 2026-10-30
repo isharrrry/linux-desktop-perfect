@@ -574,8 +574,26 @@ int32_t IWICImagingFactory_CreateBitmapFromMemory_Proxy(void *factory, uint32_t 
 int32_t IWICBitmapFrameDecode_GetColorContexts_Proxy(void *decoder, uint32_t count,
                                                      void **contexts, uint32_t *actual)
 {
-    (void)decoder; (void)count; (void)contexts;
     if (actual) *actual = 0;
+    wic_decoder *d = (wic_decoder *)decoder;
+    if (!d || d->magic != WIC_DECODER_MAGIC) return 0x80070057;
+    // 没有内嵌 ICC ⇒ 0 个上下文（真值）
+    if (!d->img.icc || d->img.icc_len == 0) return S_OK_;
+    if (count == 0 || contexts == NULL) { if (actual) *actual = 1; return S_OK_; }   // 只问数量
+    // 句柄必须登记进 bridge 的 MilColorContextTable，WPF 后面的
+    // IWICColorContext_GetProfileBytes/GetType（落在 MilCore）才查得到。
+    typedef void *(*fn_reg)(uint8_t *, uint32_t, uint32_t);
+    static fn_reg reg = (fn_reg)-1;
+    if (reg == (fn_reg)-1) {
+        reg = (fn_reg)dlsym(RTLD_DEFAULT, "LdpMilColorContextFromProfile");
+        if (!reg) {
+            void *h = dlopen("wpfgfx_cor3.so", RTLD_NOW | RTLD_NOLOAD);
+            if (h) reg = (fn_reg)dlsym(h, "LdpMilColorContextFromProfile");
+        }
+    }
+    if (!reg) return S_OK_;   // 没有 bridge ⇒ 拿不到句柄，如实返回 0 个
+    void *handle = reg(d->img.icc, d->img.icc_len, 2 /* WICColorContextProfile */);
+    if (handle) { contexts[0] = handle; if (actual) *actual = 1; }
     return S_OK_;
 }
 
