@@ -46,6 +46,8 @@ samples/**/obj/
 # --- 上游 framework pack 取件缓存（39 MB；取件命令见 40-build/lock/README.md） ---
 40-build/lock/packs/*.nupkg
 40-build/lock/packs/ref-extract/
+# UIAutomation 引用（Ribbon 编译用；从已安装框架复制，不随仓分发）
+40-build/lock/refs/
 
 # --- pack 组装读数（生成物：由 node 40-build/pack/build-pack.mjs 重建） ---
 40-build/pack/pack-report.json
