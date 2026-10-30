@@ -30,7 +30,8 @@ TARGET   = $(BINDIR)/libwpfwin32.so
 #   → 布局在 render pass 里抛 → 退出码 134）。
 SRCS     = $(SRCDIR)/win32_core.c $(SRCDIR)/win32_msg.c $(SRCDIR)/win32_x11.c \
            $(SRCDIR)/win32_misc.c $(SRCDIR)/win32_exports.c \
-           $(SRCDIR)/win32_classification.c $(SRCDIR)/win32_unicode_tables.c
+           $(SRCDIR)/win32_classification.c $(SRCDIR)/win32_unicode_tables.c \
+           $(SRCDIR)/win32_oem.c $(SRCDIR)/win32_gdiplus.c $(SRCDIR)/win32_pts.c
 OBJS     = $(patsubst $(SRCDIR)/%.c,$(OBJDIR)/%.o,$(SRCS))
 DEPS     = $(SRCDIR)/win32_abi.h $(SRCDIR)/win32_internal.h
 
@@ -56,6 +57,13 @@ abi-check: tests/abi_layout.c $(DEPS)
 
 test: abi-check
 	@$(BINDIR)/abi-layout
+
+# 判据侧的两个 C 探针：假合成器（造「有合成器」一极）+ DWM 探测（读实现真值）
+probes: $(TARGET)
+	@mkdir -p $(BINDIR)
+	$(CC) $(CSTD) $(OPT) $(WARN) -o $(BINDIR)/fake-compositor tools/fake-compositor.c -lX11
+	$(CC) $(CSTD) $(OPT) $(WARN) -o $(BINDIR)/dwm-probe tools/dwm-probe.c -L$(BINDIR) -lwpfwin32 -Wl,-rpath,'$$ORIGIN'
+	@echo "== 探针就绪：$(BINDIR)/fake-compositor、$(BINDIR)/dwm-probe"
 
 symbols: $(TARGET)
 	@echo "导出符号总数：$$(nm -D --defined-only $(TARGET) | wc -l)"

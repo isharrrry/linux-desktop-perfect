@@ -118,7 +118,13 @@ int32_t DwmExtendFrameIntoClientArea(void *hwnd, const MARGINS *m) { (void)hwnd;
 int32_t DwmSetWindowAttribute(void *hwnd, DWORD attr, const void *val, DWORD cb)
 { (void)hwnd; (void)attr; (void)val; (void)cb; return 0; }                                            /* S_OK（忽略）*/
 int32_t DwmEnableBlurBehindWindow(void *hwnd, const void *bb) { (void)hwnd; (void)bb; return 0; }      /* S_OK（无效果）*/
-int32_t DwmIsCompositionEnabled(BOOL *enabled) { if (enabled) *enabled = 0; return 0; }               /* S_OK + 关闭 */
+int32_t DwmIsCompositionEnabled(BOOL *enabled)
+{
+    /* MOD-24 的 DwmProbe：合成与否是**会话属性**（X11 上由 _NET_WM_CM_S<n> 的 selection 所有者表示），
+       不再恒 FALSE —— 「有合成器就复用其上屏路径，没有就直上屏」是 ACC-026 的两极。 */
+    if (enabled) *enabled = wpf_x11_compositor_present() ? 1 : 0;
+    return 0;                                                                                         /* S_OK */
+}
 // `DwmGetWindowAttribute` 不同：调用方要**真值**（扩展边框/圆角），编不出来 ⇒ 如实失败。
 int32_t DwmGetWindowAttribute(void *hwnd, DWORD attr, void *val, DWORD cb)
 { (void)hwnd; (void)attr; (void)val; (void)cb; return (int32_t)0x80004001; }                          /* E_NOTIMPL */

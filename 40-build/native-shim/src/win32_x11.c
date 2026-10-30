@@ -2261,3 +2261,18 @@ void wpf_x11_apply_wm_hints(HWND hwnd, const char *cls,
     XFlush(g_wpf.dpy);
     XUNLOCK();
 }
+
+// ── DWM 合成探测（MOD-24 的 DwmProbe）──────────────────────────────────────
+// 口径：X11 的合成器由 `_NET_WM_CM_S<screen>` 这个 selection 的**所有者**表示（EWMH）。
+//   有所有者 ⇒ 合成器在跑 ⇒ `DwmIsCompositionEnabled` 返回 TRUE（WPF 走合成路径）；
+//   没有 ⇒ FALSE（直接上屏）。这与「Linux 上没有 DWM 玻璃」不矛盾：合成与否是**会话属性**，
+//   不是"有没有 DWM"。ACC-026 的两极就是这条 selection 的有/无。
+int wpf_x11_compositor_present(void)
+{
+    if (!wpf_x11_ensure()) return 0;
+    Display *dpy = g_wpf.dpy;
+    if (!dpy) return 0;
+    Atom a = XInternAtom(dpy, "_NET_WM_CM_S0", False);
+    if (a == None) return 0;
+    return XGetSelectionOwner(dpy, a) != None ? 1 : 0;
+}
