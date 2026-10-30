@@ -1305,6 +1305,19 @@ int wpf_x11_pump_into_queue(wpf_thread *t)
                     wpf_lock();
                     if (down) g_wpf.key_state[vk] |= 0x80;
                     else      g_wpf.key_state[vk] &= (uint8_t)~0x80;
+                    // 诊断（有界，env 门控）：确认翻译层真的登记了鼠标键态。
+                    //   `WPF_LINUX_KEYSTATE_TRACE=1` 时每进程打 12 行 —— D-008 的下一步要靠这条读数
+                    //   （已确认：按下时表=0x80、释放时 0x00；但**整批抽干**后 WPF 才派发，
+                    //    所以 GetKeyState 在 Preview MouseDown 里读到的已经是 0x00）。
+                    {
+                        static int ks_on = -1, ksn = 0;
+                        if (ks_on < 0) { const char *e = getenv("WPF_LINUX_KEYSTATE_TRACE"); ks_on = (e && *e && *e != '0') ? 1 : 0; }
+                        if (!ks_on) { /* 无 trace */ }
+                        else if (ksn++ < 12) {
+                            fprintf(stderr, "[MSK] vk=0x%x down=%d table=0x%02x\n", vk, down, g_wpf.key_state[vk]);
+                            fflush(stderr);
+                        }
+                    }
                     pthread_mutex_unlock(&g_wpf.lock);
                 }
             }

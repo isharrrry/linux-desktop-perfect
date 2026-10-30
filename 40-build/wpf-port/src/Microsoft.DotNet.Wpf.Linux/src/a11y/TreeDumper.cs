@@ -23,6 +23,8 @@ using System.Text;
 using System.Threading;
 using System.Windows;
 using System.Windows.Automation.Peers;
+using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Windows.Input;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
@@ -119,7 +121,7 @@ namespace Ldp.A11y
             {
                 // 路由事件层追踪：比 InputManager.PreProcessInput 更靠后、更接近控件实际收到的事件，
                 // 用来判定「事件到窗口了但命中的是别的元素」还是「根本没到控件」。
-                win.PreviewMouseDown += (s, e) => Debug("Routed MouseDown pos=" + e.GetPosition(win) + " src=" + (e.OriginalSource == null ? "null" : e.OriginalSource.GetType().Name) + " btn=" + e.ChangedButton + " state=" + e.ButtonState + " left=" + Mouse.LeftButton + " active=" + win.IsActive + " stylus=" + (e.StylusDevice == null ? "null" : e.StylusDevice.Name) + " handled=" + e.Handled);
+                win.PreviewMouseDown += (s, e) => Debug("Routed MouseDown pos=" + e.GetPosition(win) + " src=" + (e.OriginalSource == null ? "null" : e.OriginalSource.GetType().Name) + " btn=" + e.ChangedButton + " state=" + e.ButtonState + " left=" + Mouse.LeftButton + " active=" + win.IsActive + " stylus=" + (e.StylusDevice == null ? "null" : e.StylusDevice.Name) + " devActive=" + MouseDeviceActive() + " ksLB=" + ((ushort)NativeGetKeyState(0x01)).ToString("x4") + " handled=" + e.Handled);
                 win.PreviewMouseUp += (s, e) => Debug("Routed MouseUp pos=" + e.GetPosition(win) + " src=" + (e.OriginalSource == null ? "null" : e.OriginalSource.GetType().Name));
                 win.PreviewMouseMove += (s, e) => Debug("Routed MouseMove pos=" + e.GetPosition(win));
             }
@@ -460,6 +462,27 @@ namespace Ldp.A11y
             catch (Exception e)
             {
                 return "(error: " + e.GetType().Name + ")";
+            }
+        }
+
+        // MouseDevice.IsActive 是 internal（= _inputSource != null）：反射读，用于区分
+        //   「事件到了但 MouseDevice 认为没激活」与「激活了但按钮态没更新」。
+        [DllImport("user32.dll", EntryPoint = "GetKeyState")]
+        private static extern short NativeGetKeyState(int vk);
+
+        private static string MouseDeviceActive()
+        {
+            try
+            {
+                InputDevice dev = InputManager.Current.PrimaryMouseDevice;
+                if (dev == null) return "nodev";
+                PropertyInfo pi = dev.GetType().GetProperty("IsActive", BindingFlags.NonPublic | BindingFlags.Instance);
+                if (pi == null) return "noprop";
+                return ((bool)pi.GetValue(dev)) ? "true" : "false";
+            }
+            catch (Exception e)
+            {
+                return "(err:" + e.GetType().Name + ")";
             }
         }
 
