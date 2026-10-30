@@ -6,9 +6,9 @@
 
 | 构件 | 状态 | 判据读数 |
 |---|---|---|
-| MOD-31 字体枚举与匹配（`FcFontList`/`FcFontMatch`） | 已实现 | 本机 414 族；`bin/dwp-probe --fonts` / `--match` |
+| MOD-31 字体枚举、匹配与回退链（`FcFontList`/`FcFontMatch`/`FcFontSort`） | 已实现 | **ACC-013 PASS**（两类路径回退链前 10 项一致、三类样本无缺字）；`--fonts`/`--match`/`--fallback` |
 | MOD-32 shaping（HarfBuzz `hb_shape`） | 已实现 | **ACC-014 PASS**（拉丁/天城文/CJK 三组，与 `hb-oracle.py` 逐项一致） |
-| MOD-33 断行（ICU `ubrk_*`，UAX#14） | 已实现（导出与冒烟） | `bin/dwp-probe --breaks`；`FlowDocument` 接入待 MOD-33 托管侧 |
+| MOD-33 断行（ICU `ubrk_*`，UAX#14）与双向（`ubidi_*`） | 已实现 | **ACC-015 DEGRADED**：换行与双向双路径逐项一致；`FlowDocument`/分页宿主集成未做 |
 | MOD-35 轮廓（`FT_Outline_Decompose`） | 已实现 | **ACC-016 PASS**（CFF/OTF 与 TrueType 两类，96 px 非空且包围盒不退化） |
 | MOD-34 段落/PTS 转接 | 未实现 | 依赖 MOD-16 缺口表（R-002） |
 | MOD-36 IME 桥 | 未实现 | 依赖 D-Bus 会话（S2 的 ACC-017） |

@@ -83,6 +83,38 @@ int main(int argc, char **argv)
         free(clusters);
         return 0;
     }
+    if (strcmp(mode, "--fallback") == 0) {
+        const char *family = argc >= 3 ? argv[2] : "";
+        const char *text = argc >= 4 ? argv[3] : "";
+        char buf[8192];
+        int n = dwp_fallback(family, text, buf, (int)sizeof(buf));
+        if (n < 0) return fail(n);
+        printf("{\"count\":%d,\"families\":[", n);
+        const char *p2 = buf;
+        for (int i = 0; i < n; i++) {
+            const char *nl = strchr(p2, '\n');
+            int len = nl ? (int)(nl - p2) : (int)strlen(p2);
+            printf("%s\"%.*s\"", i ? "," : "", len, p2);
+            if (!nl) break;
+            p2 = nl + 1;
+        }
+        printf("]}\n");
+        return 0;
+    }
+    if (strcmp(mode, "--bidi") == 0) {
+        if (argc < 3) return fail(DWP_E_INVALIDARG);
+        int n = dwp_bidi_levels(argv[2], NULL, 0);
+        if (n < 0) return fail(n);
+        int *levels = (int *)calloc((size_t)(n > 0 ? n : 1), sizeof(int));
+        if (!levels) return fail(DWP_E_LINE_FAILED);
+        n = dwp_bidi_levels(argv[2], levels, n);
+        if (n < 0) return fail(n);
+        printf("{\"count\":%d,\"levels\":[", n);
+        for (int i = 0; i < n; i++) printf("%s%d", i ? "," : "", levels[i]);
+        printf("]}\n");
+        free(levels);
+        return 0;
+    }
     if (strcmp(mode, "--breaks") == 0) {
         if (argc < 3) return fail(DWP_E_INVALIDARG);
         int n = dwp_line_breaks(argv[2], NULL, 0);

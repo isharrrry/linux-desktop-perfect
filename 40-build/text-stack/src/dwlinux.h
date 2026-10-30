@@ -64,6 +64,14 @@ int dwp_match(const char *family, DwpMatch *out);
 int dwp_shape(const char *family, const char *text, int size,
               uint32_t *glyphs, int32_t *advances, uint32_t *clusters, int cap);
 
+/* 回退链（MOD-31）：按 fontconfig `FcFontSort` 顺序把候选族名写入 buf（每行一个，NUL 结尾），
+ * 返回写入的族数；负值为错误码。family 传 NULL 或空串表示「不指定族，按字符选」。 */
+int dwp_fallback(const char *family, const char *text, char *buf, int cap);
+
+/* 双向级别（MOD-33）：对 text 跑 ICU `ubidi`，把每段的级别写入 levels（按字节偏移对齐的近似：
+ * 每个段 = 一个 UTF-16 字符的级别序列）；返回级别数；负值为错误码。 */
+int dwp_bidi_levels(const char *text, int *levels, int cap);
+
 /* 断行（MOD-33）：UAX#14 机会点的 UTF-8 字节偏移写入 byte_offsets；
  * 返回断点数（含末尾）；负值为错误码。 */
 int dwp_line_breaks(const char *text, int *byte_offsets, int cap);

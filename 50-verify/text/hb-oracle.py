@@ -38,6 +38,11 @@ FC.FcPatternDestroy.argtypes = [ctypes.c_void_p]
 FC.FcFontSetDestroy.argtypes = [ctypes.c_void_p]
 FC.FcFontList.argtypes = [ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p]
 FC.FcFontList.restype = ctypes.c_void_p
+FC.FcFontSort.argtypes = [ctypes.c_void_p, ctypes.c_void_p, ctypes.c_int, ctypes.POINTER(ctypes.c_void_p), ctypes.POINTER(ctypes.c_int)]
+FC.FcFontSort.restype = ctypes.c_void_p
+FC.FcPatternCreate.restype = ctypes.c_void_p
+FC.FcPatternAddString.argtypes = [ctypes.c_void_p, ctypes.c_char_p, ctypes.c_char_p]
+FC.FcCharSetDestroy.argtypes = [ctypes.c_void_p]
 
 
 class FcFontSet(ctypes.Structure):
@@ -69,6 +74,41 @@ def font_match(family):
     out = {"file": file_s.value.decode("utf-8"), "index": idx.value, "family": (fam.value or b"").decode("utf-8")}
     FC.FcPatternDestroy(match)
     return out
+
+
+def fallback(family, text=""):
+    """回退链：FcFontSort 顺序的候选族（与 C 侧 dwp_fallback 同源不同实现）。"""
+    if family:
+        pat = FC.FcNameParse(family.encode("utf-8"))
+    else:
+        pat = FC.FcPatternCreate()
+        FC.FcPatternAddString(pat, b"family", b"sans")
+    if not pat:
+        raise RuntimeError("pattern create failed")
+    FC.FcConfigSubstitute(FC.FcConfigGetCurrent(), pat, _FC_MATCH_PATTERN)
+    FC.FcDefaultSubstitute(pat)
+    res = ctypes.c_int(0)
+    charset = ctypes.c_void_p()
+    fset = FC.FcFontSort(FC.FcConfigGetCurrent(), pat, 1, ctypes.byref(charset), ctypes.byref(res))
+    FC.FcPatternDestroy(pat)
+    if not fset:
+        raise RuntimeError("FcFontSort failed")
+    fs = ctypes.cast(fset, ctypes.POINTER(FcFontSet)).contents
+    fams = []
+    last = None
+    for i in range(fs.nfont):
+        fam = ctypes.c_char_p()
+        if FC.FcPatternGetString(fs.fonts[i], b"family", 0, ctypes.byref(fam)) != 0 or not fam.value:
+            continue
+        name = fam.value.decode("utf-8")
+        if name == last:
+            continue
+        last = name
+        fams.append(name)
+    FC.FcFontSetDestroy(fset)
+    if charset.value:
+        FC.FcCharSetDestroy(charset)
+    return {"count": len(fams), "families": fams}
 
 
 def fonts():
@@ -206,6 +246,43 @@ def breaks(text):
     return {"utf16_offsets": offs, "byte_offsets": byte_offs}
 
 
+def bidi_levels(text):
+    """ICU ubidi：段落级双向解析后的每字符级别（独立第二路径）。"""
+    ubidi_openSized = icu_sym(UC, "ubidi_openSized")
+    ubidi_openSized.argtypes = [ctypes.c_int32, ctypes.c_int32, ctypes.POINTER(ctypes.c_int)]
+    ubidi_openSized.restype = ctypes.c_void_p
+    ubidi_setPara = icu_sym(UC, "ubidi_setPara")
+    ubidi_setPara.argtypes = [ctypes.c_void_p, ctypes.POINTER(ctypes.c_uint16), ctypes.c_int32, ctypes.c_ubyte, ctypes.c_void_p, ctypes.POINTER(ctypes.c_int)]
+    ubidi_getLevels = icu_sym(UC, "ubidi_getLevels")
+    ubidi_getLevels.argtypes = [ctypes.c_void_p, ctypes.POINTER(ctypes.c_int)]
+    ubidi_getLevels.restype = ctypes.POINTER(ctypes.c_ubyte)
+    ubidi_getLength = icu_sym(UC, "ubidi_getLength")
+    ubidi_getLength.argtypes = [ctypes.c_void_p]
+    ubidi_close = icu_sym(UC, "ubidi_close")
+    ubidi_close.argtypes = [ctypes.c_void_p]
+
+    data = text.encode("utf-8")
+    u16 = (ctypes.c_uint16 * (len(data) * 2 + 16))()
+    err = ctypes.c_int(0)
+    n16 = ctypes.c_int32(0)
+    u_strFromUTF8(u16, len(u16), ctypes.byref(n16), data, len(data), ctypes.byref(err))
+    if err.value > 0:
+        raise RuntimeError("u_strFromUTF8 failed: %d" % err.value)
+    uerr = ctypes.c_int(0)
+    bidi = ubidi_openSized(n16.value, 0, ctypes.byref(uerr))
+    if not bidi:
+        raise RuntimeError("ubidi_openSized failed: %d" % uerr.value)
+    ubidi_setPara(bidi, u16, n16.value, 0xFE, None, ctypes.byref(uerr))
+    if uerr.value > 0:
+        ubidi_close(bidi)
+        raise RuntimeError("ubidi_setPara failed: %d" % uerr.value)
+    lv = ubidi_getLevels(bidi, ctypes.byref(uerr))
+    n = ubidi_getLength(bidi)
+    out = [int(lv[i]) for i in range(n)]
+    ubidi_close(bidi)
+    return {"count": len(out), "levels": out}
+
+
 def main():
     mode = sys.argv[1] if len(sys.argv) > 1 else "--shape"
     if mode == "--fonts":
@@ -215,6 +292,10 @@ def main():
     payload = json.loads(sys.stdin.read() or "{}")
     if mode == "--shape":
         out = shape(payload["family"], payload["text"], int(payload.get("size", 16)))
+    elif mode == "--fallback":
+        out = fallback(payload.get("family", ""), payload.get("text", ""))
+    elif mode == "--bidi":
+        out = bidi_levels(payload["text"])
     elif mode == "--breaks":
         out = breaks(payload["text"])
     elif mode == "--match":

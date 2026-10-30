@@ -50,6 +50,10 @@ static struct {
     FcResult (*FcPatternGetInteger)(const FcPattern *, const char *, int, int *);
     void (*FcPatternDestroy)(FcPattern *);
     FcFontSet *(*FcFontList)(FcConfig *, FcPattern *, FcObjectSet *);
+    FcFontSet *(*FcFontSort)(FcConfig *, FcPattern *, FcBool, FcCharSet **, FcResult *);
+    FcPattern *(*FcPatternCreate)(void);
+    FcBool (*FcPatternAddString)(FcPattern *, const char *, const FcChar8 *);
+    void (*FcCharSetDestroy)(FcCharSet *);
     void (*FcFontSetDestroy)(FcFontSet *);
     /* freetype */
     FT_Error (*FT_Init_FreeType)(FT_Library *);
@@ -151,6 +155,10 @@ int dwp_init(void)
     BIND(g.h_fc, FcPatternGetInteger, "FcPatternGetInteger", NULL);
     BIND(g.h_fc, FcPatternDestroy, "FcPatternDestroy", NULL);
     BIND(g.h_fc, FcFontList, "FcFontList", NULL);
+    BIND(g.h_fc, FcFontSort, "FcFontSort", NULL);
+    BIND(g.h_fc, FcPatternCreate, "FcPatternCreate", NULL);
+    BIND(g.h_fc, FcPatternAddString, "FcPatternAddString", NULL);
+    BIND(g.h_fc, FcCharSetDestroy, "FcCharSetDestroy", NULL);
     BIND(g.h_fc, FcFontSetDestroy, "FcFontSetDestroy", NULL);
 
     BIND(g.h_ft, FT_Init_FreeType, "FT_Init_FreeType", NULL);
@@ -337,6 +345,115 @@ int dwp_shape(const char *family, const char *text, int size,
     g.hb_buffer_destroy(buf);
     g.hb_font_destroy(font);
     face_close(&fh);
+    return out;
+}
+
+int dwp_fallback(const char *family, const char *text, char *buf, int cap)
+{
+    int rc = dwp_init();
+    if (rc < 0) return rc;
+    if (!buf || cap <= 0) return DWP_E_INVALIDARG;
+
+    FcPattern *pat = NULL;
+    if (family && family[0]) {
+        pat = g.FcNameParse((const FcChar8 *)family);
+    } else {
+        pat = g.FcPatternCreate();
+        if (pat) {
+            g.FcPatternAddString(pat, FC_FAMILY, (const FcChar8 *)"sans");
+        }
+    }
+    if (!pat) return DWP_E_FC_UNAVAILABLE;
+    g.FcConfigSubstitute(g.FcConfigGetCurrent(), pat, FcMatchPattern);
+    g.FcDefaultSubstitute(pat);
+    FcResult result = FcResultMatch;
+    FcCharSet *charset = NULL;
+    FcFontSet *set = g.FcFontSort(g.FcConfigGetCurrent(), pat, FcTrue, &charset, &result);
+    g.FcPatternDestroy(pat);
+    if (!set) return DWP_E_NO_MATCH;
+
+    int written = 0;
+    size_t used = 0;
+    char last[256] = { 0 };
+    for (int i = 0; i < set->nfont && used + 1 < (size_t)cap; i++) {
+        FcChar8 *fam = NULL;
+        if (g.FcPatternGetString(set->fonts[i], FC_FAMILY, 0, &fam) != FcResultMatch || !fam) continue;
+        if (strncmp(last, (const char *)fam, sizeof(last)) == 0) continue;
+        snprintf(last, sizeof(last), "%s", (const char *)fam);
+        int n = snprintf(buf + used, (size_t)cap - used, "%s\n", (const char *)fam);
+        if (n <= 0) break;
+        used += (size_t)n;
+        written++;
+    }
+    g.FcFontSetDestroy(set);
+    if (charset) g.FcCharSetDestroy(charset);
+    return written;
+}
+
+/* ---------------------------------------------------------------- MOD-33 双向 */
+
+typedef struct UBiDi UBiDi;
+enum { UBIDI_DEFAULT_LTR = 0xfe };
+static UBiDi *(*ubidi_openSized)(int32_t, int32_t, UErrorCode *);
+static void (*ubidi_close)(UBiDi *);
+static void (*ubidi_setPara)(UBiDi *, const UChar *, int32_t, uint8_t, uint8_t *, UErrorCode *);
+static const uint8_t *(*ubidi_getLevels)(UBiDi *, UErrorCode *);
+static int32_t (*ubidi_getLength)(UBiDi *);
+
+static void bind_bidi(void)
+{
+    if (ubidi_openSized) return;
+    ubidi_openSized = (UBiDi * (*)(int32_t, int32_t, UErrorCode *))sym(g.h_uc, "ubidi_openSized_70", "ubidi_openSized");
+    ubidi_close = (void (*)(UBiDi *))sym(g.h_uc, "ubidi_close_70", "ubidi_close");
+    ubidi_setPara = (void (*)(UBiDi *, const UChar *, int32_t, uint8_t, uint8_t *, UErrorCode *))sym(g.h_uc, "ubidi_setPara_70", "ubidi_setPara");
+    ubidi_getLevels = (const uint8_t *(*)(UBiDi *, UErrorCode *))sym(g.h_uc, "ubidi_getLevels_70", "ubidi_getLevels");
+    ubidi_getLength = (int32_t (*)(UBiDi *))sym(g.h_uc, "ubidi_getLength_70", "ubidi_getLength");
+}
+
+int dwp_bidi_levels(const char *text, int *levels, int cap)
+{
+    int rc = dwp_init();
+    if (rc < 0) return rc;
+    if (!text) return DWP_E_INVALIDARG;
+    bind_bidi();
+    if (!ubidi_openSized || !ubidi_setPara || !ubidi_getLevels || !ubidi_getLength) return DWP_E_LINE_FAILED;
+
+    int len = (int)strlen(text);
+    int u16cap = len * 2 + 16;
+    UChar *u16 = (UChar *)calloc((size_t)u16cap, sizeof(UChar));
+    if (!u16) return DWP_E_LINE_FAILED;
+    UErrorCode err = U_ZERO_ERROR;
+    int32_t n16 = 0;
+    g.u_strFromUTF8(u16, u16cap, &n16, text, len, &err);
+    if (U_FAILURE(err)) {
+        free(u16);
+        return DWP_E_LINE_FAILED;
+    }
+    UErrorCode uerr = U_ZERO_ERROR;
+    UBiDi *bidi = ubidi_openSized(n16, 0, &uerr);
+    if (!bidi || U_FAILURE(uerr)) {
+        if (bidi) ubidi_close(bidi);
+        free(u16);
+        return DWP_E_LINE_FAILED;
+    }
+    ubidi_setPara(bidi, u16, n16, (uint8_t)UBIDI_DEFAULT_LTR, NULL, &uerr);
+    if (U_FAILURE(uerr)) {
+        ubidi_close(bidi);
+        free(u16);
+        return DWP_E_LINE_FAILED;
+    }
+    const uint8_t *lv = ubidi_getLevels(bidi, &uerr);
+    int32_t n = ubidi_getLength(bidi);
+    int out = (int)n;
+    if (U_FAILURE(uerr) || !lv) {
+        ubidi_close(bidi);
+        free(u16);
+        return DWP_E_LINE_FAILED;
+    }
+    if (levels && cap < (int)n) out = DWP_E_INVALIDARG;
+    else if (levels) for (int32_t i = 0; i < n; i++) levels[i] = (int)lv[i];
+    ubidi_close(bidi);
+    free(u16);
     return out;
 }
 
