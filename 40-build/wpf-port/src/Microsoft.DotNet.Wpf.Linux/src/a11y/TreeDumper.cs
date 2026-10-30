@@ -65,7 +65,6 @@ namespace Ldp.A11y
                     }
                     else
                     {
-                        InstallInputTrace();
                         Dispatcher d = app.Dispatcher;
                         d.Invoke(new Action(() =>
                         {
@@ -75,6 +74,7 @@ namespace Ldp.A11y
                                 if (i % 20 == 0) Debug("tick " + i + " win=" + (win != null) + " visible=" + (win != null && win.IsVisible));
                                 return;
                             }
+                            InstallInputTrace(win);   // 必须在 UI 线程上注册事件处理器（跨线程会 InvalidOperationException）
                             Debug("dumping i=" + i);
                             // 快照前把窗口激活：Xvfb 无窗口管理器时焦点不由 WM 给，
                             // 不激活就读不到 active（AT-SPI 语义里 frame 应有 active）
@@ -111,10 +111,19 @@ namespace Ldp.A11y
 
         // 输入链追踪（仅 LDP_A11Y_DEBUG 设置时）：把 WPF 侧真正看到的鼠标/键盘输入记进 debug 文件。
         // 用途：判据「点击后控件不聚焦」要能区分「WPF 根本没收到鼠标事件」与「收到了但命中测试/焦点没落对」。
-        private static void InstallInputTrace()
+        private static void InstallInputTrace(Window win)
         {
             if (g_inputTraceInstalled || string.IsNullOrEmpty(DebugPath)) return;
             g_inputTraceInstalled = true;
+            try
+            {
+                // 路由事件层追踪：比 InputManager.PreProcessInput 更靠后、更接近控件实际收到的事件，
+                // 用来判定「事件到窗口了但命中的是别的元素」还是「根本没到控件」。
+                win.PreviewMouseDown += (s, e) => Debug("Routed MouseDown pos=" + e.GetPosition(win) + " src=" + (e.OriginalSource == null ? "null" : e.OriginalSource.GetType().Name));
+                win.PreviewMouseUp += (s, e) => Debug("Routed MouseUp pos=" + e.GetPosition(win) + " src=" + (e.OriginalSource == null ? "null" : e.OriginalSource.GetType().Name));
+                win.PreviewMouseMove += (s, e) => Debug("Routed MouseMove pos=" + e.GetPosition(win));
+            }
+            catch { }
             try
             {
                 InputManager.Current.PreProcessInput += (s, e) =>

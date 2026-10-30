@@ -1533,8 +1533,22 @@ HWND GetDesktopWindow(void)
 
 HWND GetActiveWindow(void) { return GetDesktopWindow(); }
 HWND GetForegroundWindow(void) { return GetDesktopWindow(); }
-HWND SetActiveWindow(HWND hwnd) { (void)hwnd; return GetForegroundWindow(); }
-HWND SetForegroundWindow(HWND hwnd) { (void)hwnd; return GetForegroundWindow(); }
+// 【补丁 F7（D-008 收尾）】`Activate()`/`SetForegroundWindow` 必须**真把 X 输入焦点给窗口**。
+//   修前两者都是空实现（只返回旧窗口）⇒ WPF 认为"窗口没被激活" ⇒ `Keyboard.Focus()` 被拒
+//   ⇒ 鼠标点进 TextBox 后 `IsKeyboardFocused` 恒 false（实测：路由事件已到 TextBoxView 却不聚焦）。
+//   这与 `ShowWindow` 里的补丁 F2 是同一条路径（`wpf_x11_set_input_focus`），X 焦点到窗口后
+//   WPF 的 active 判定与焦点链才成立。
+HWND SetActiveWindow(HWND hwnd)
+{
+    if (hwnd) wpf_x11_set_input_focus(hwnd);
+    return hwnd;
+}
+HWND SetForegroundWindow(HWND hwnd)
+{
+    if (!hwnd) return NULL;
+    wpf_x11_set_input_focus(hwnd);
+    return hwnd;
+}
 
 // BringWindowToTop：X11 上的等价物是 `XRaiseWindow`（把窗口提到同层栈顶）。
 // 【为什么必须有】AvalonDock 的 `LayoutAutoHideWindowControl.BuildWindowCore` 直接
