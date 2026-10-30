@@ -24,8 +24,13 @@ SRCDIR   = src
 OBJDIR   = obj
 BINDIR   = bin
 TARGET   = $(BINDIR)/libwpfwin32.so
+# classification（MILGetClassificationTables）+ Unicode 分类表（生成物）：
+#   托管侧 `PresentationCore/MS/internal/Classification` 的静态构造直接调它，是任何文本测量的必经之路。
+#   两个 .c 缺一份，PresentationNative 面就少一组入口（实测缺 classification 时 TypeEntryPointNotFound
+#   → 布局在 render pass 里抛 → 退出码 134）。
 SRCS     = $(SRCDIR)/win32_core.c $(SRCDIR)/win32_msg.c $(SRCDIR)/win32_x11.c \
-           $(SRCDIR)/win32_misc.c $(SRCDIR)/win32_exports.c
+           $(SRCDIR)/win32_misc.c $(SRCDIR)/win32_exports.c \
+           $(SRCDIR)/win32_classification.c $(SRCDIR)/win32_unicode_tables.c
 OBJS     = $(patsubst $(SRCDIR)/%.c,$(OBJDIR)/%.o,$(SRCS))
 DEPS     = $(SRCDIR)/win32_abi.h $(SRCDIR)/win32_internal.h
 
