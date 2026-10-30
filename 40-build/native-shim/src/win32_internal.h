@@ -592,6 +592,10 @@ uint16_t *wpf_utf8_to_utf16_dup(const char *s);
 
 // X11 后端（win32_x11.c）
 int      wpf_x11_ensure(void);                 // 0 = 失败（错误在 g_wpf.dpy_error）
+// 剪贴板（win32_clipboard.c）：X11 selection 的真身 + Win32 面的存取
+void     wpf_clip_on_selection_request(const void *xselectionrequest);
+void     wpf_clip_store(const char *utf8, size_t len, HWND owner);
+const char *wpf_clip_content(size_t *out_len);
 void     wpf_x11_flush(void);
 int      wpf_x11_pending(void);
 int      wpf_x11_pump_into_queue(wpf_thread *t);   // 把待处理 X 事件转成 MSG 入队，返回条数

@@ -3,8 +3,8 @@
 # 列：lib	symbol	status	owner	since[	note]（note 为可选列；为空时省略，行尾不留制表符）
 # status 判定：impl=实现侧有该符号；stub=函数体仅常量返回；gap=声明有实现无（note 写替代路径）
 # lib 列：若实现将落在哪个自产 .so（概设 §2.4）；status=gap 表示当前无实现，不是没登记
-# 规模：1166 行（impl 565 / stub 4 / gap 597）
-# 输入：上游 1534 条 DllImport 声明（另有 0 条属性块后无 extern 声明被跳过）、native-shim 487 个导出、milcore 109 个导出
+# 规模：1175 行（impl 575 / stub 4 / gap 596）
+# 输入：上游 1534 条 DllImport 声明（另有 0 条属性块后无 extern 声明被跳过）、native-shim 497 个导出、milcore 109 个导出
 # 排除：wpf_*（shim 内部件）、WpfLinuxWin32_*（桥件，非 Win32 契约入口）
 libwpfgfx_linux.so	GetNextPerfElementId	impl	MOD-25	10.0.11
 libwpfgfx_linux.so	IWICColorContext_GetExifColorSpace_Proxy	impl	MOD-25	10.0.11
@@ -260,6 +260,7 @@ libwpfwin32.so	CallWindowProcW	impl	MOD-02	10.0.11	shim 额外导出（上游未
 libwpfwin32.so	ChangeWindowMessageFilter	impl	MOD-11	10.0.11
 libwpfwin32.so	ChangeWindowMessageFilterEx	impl	MOD-11	10.0.11
 libwpfwin32.so	ClientToScreen	impl	MOD-11	10.0.11
+libwpfwin32.so	CloseClipboard	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
 libwpfwin32.so	CloseHandle	impl	MOD-15	10.0.11
 libwpfwin32.so	ClosePrinter	gap	MOD-82	10.0.11	打印路径走 CUPS（MOD-82）；未实现
 libwpfwin32.so	CloseThemeData	gap	MOD-04	10.0.11	无实现（uxtheme）
@@ -285,6 +286,7 @@ libwpfwin32.so	CompressionNative_Inflate	gap	MOD-15	10.0.11	无实现（system.i
 libwpfwin32.so	CompressionNative_InflateEnd	gap	MOD-15	10.0.11	无实现（system.io.compression.native）
 libwpfwin32.so	CompressionNative_InflateInit2_	gap	MOD-15	10.0.11	无实现（system.io.compression.native）
 libwpfwin32.so	ConvertStringSecurityDescriptorToSecurityDescriptor	gap	MOD-15	10.0.11	无实现（advapi32）
+libwpfwin32.so	CountClipboardFormats	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
 libwpfwin32.so	CreateBitmap	impl	MOD-13	10.0.11
 libwpfwin32.so	CreateCaret	impl	MOD-11	10.0.11
 libwpfwin32.so	CreateCompatibleBitmap	impl	MOD-13	10.0.11
@@ -417,6 +419,7 @@ libwpfwin32.so	DwmIsCompositionEnabled	impl	MOD-11	10.0.11
 libwpfwin32.so	DwmSetIconicLivePreviewBitmap	gap	MOD-11	10.0.11	无实现（dwmapi）
 libwpfwin32.so	DwmSetIconicThumbnail	gap	MOD-11	10.0.11	无实现（dwmapi）
 libwpfwin32.so	DwmSetWindowAttribute	impl	MOD-11	10.0.11
+libwpfwin32.so	EmptyClipboard	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
 libwpfwin32.so	EnableMenuItem	impl	MOD-11	10.0.11
 libwpfwin32.so	EnableNonClientDpiScaling	impl	MOD-11	10.0.11
 libwpfwin32.so	EnableWindow	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
@@ -428,6 +431,7 @@ libwpfwin32.so	EndPaint	impl	MOD-11	10.0.11
 libwpfwin32.so	EndPanningFeedback	impl	MOD-04	10.0.11
 libwpfwin32.so	EndPanningFeedbackW	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
 libwpfwin32.so	EnumChildWindows	gap	MOD-11	10.0.11	无实现（user32）
+libwpfwin32.so	EnumClipboardFormats	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
 libwpfwin32.so	EnumDisplayMonitors	impl	MOD-11	10.0.11
 libwpfwin32.so	EnumThreadWindows	impl	MOD-11	10.0.11
 libwpfwin32.so	EventRegister	gap	MOD-15	10.0.11	无实现（advapi32）
@@ -567,6 +571,7 @@ libwpfwin32.so	GetClassName	impl	MOD-11	10.0.11
 libwpfwin32.so	GetClassNameA	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
 libwpfwin32.so	GetClassNameW	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
 libwpfwin32.so	GetClientRect	impl	MOD-11	10.0.11
+libwpfwin32.so	GetClipboardData	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
 libwpfwin32.so	GetClipboardFormatName	gap	MOD-11	10.0.11	无实现（user32）
 libwpfwin32.so	GetComboBoxInfo	gap	MOD-11	10.0.11	无实现（user32）
 libwpfwin32.so	GetConfidenceLevel	gap	MOD-83	10.0.11	无实现（mshwgst）
@@ -754,7 +759,7 @@ libwpfwin32.so	IntersectRect	gap	MOD-11	10.0.11	无实现（user32）
 libwpfwin32.so	InvalidateRect	impl	MOD-11	10.0.11
 libwpfwin32.so	InvokePattern_Invoke	gap	MOD-81	10.0.11	托管桥替代（MOD-81，AT-SPI over D-Bus）；无原生入口
 libwpfwin32.so	IsChild	impl	MOD-11	10.0.11
-libwpfwin32.so	IsClipboardFormatAvailable	gap	MOD-11	10.0.11	无实现（user32）
+libwpfwin32.so	IsClipboardFormatAvailable	impl	MOD-11	10.0.11
 libwpfwin32.so	IsDebuggerPresent	stub	MOD-15	10.0.11
 libwpfwin32.so	IsHungAppWindow	gap	MOD-11	10.0.11	无实现（user32）
 libwpfwin32.so	IsIconic	impl	MOD-11	10.0.11
@@ -871,6 +876,7 @@ libwpfwin32.so	OleInitialize	gap	MOD-63	10.0.11	无实现（ole32）
 libwpfwin32.so	OleIsCurrentClipboard	gap	MOD-63	10.0.11	无实现（ole32）
 libwpfwin32.so	OleSetClipboard	gap	MOD-63	10.0.11	无实现（ole32）
 libwpfwin32.so	OleUninitialize	gap	MOD-63	10.0.11	无实现（ole32）
+libwpfwin32.so	OpenClipboard	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
 libwpfwin32.so	OpenFileMapping	gap	MOD-15	10.0.11	无实现（kernel32）
 libwpfwin32.so	OpenPrinterA	gap	MOD-82	10.0.11	打印路径走 CUPS（MOD-82）；未实现
 libwpfwin32.so	OpenPrinterW	gap	MOD-82	10.0.11	打印路径走 CUPS（MOD-82）；未实现
@@ -913,6 +919,8 @@ libwpfwin32.so	RegisterClassEx	impl	MOD-11	10.0.11
 libwpfwin32.so	RegisterClassExA	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
 libwpfwin32.so	RegisterClassExW	impl	MOD-11	10.0.11
 libwpfwin32.so	RegisterClipboardFormat	gap	MOD-11	10.0.11	无实现（user32）
+libwpfwin32.so	RegisterClipboardFormatA	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	RegisterClipboardFormatW	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
 libwpfwin32.so	RegisterDllForSxSCOM	gap	MOD-84	10.0.11	PenImc 替身（MOD-84，libinput/XInput2）；未实现
 libwpfwin32.so	RegisterDragDrop	gap	MOD-63	10.0.11	无实现（ole32）
 libwpfwin32.so	RegisterHotKey	gap	MOD-11	10.0.11	无实现（user32）
@@ -971,6 +979,7 @@ libwpfwin32.so	SetClassLongPtr	impl	MOD-11	10.0.11
 libwpfwin32.so	SetClassLongPtrA	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
 libwpfwin32.so	SetClassLongPtrW	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
 libwpfwin32.so	SetClassLongW	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	SetClipboardData	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
 libwpfwin32.so	SetCurrentProcessExplicitAppUserModelID	gap	MOD-15	10.0.11	无实现（shell32）
 libwpfwin32.so	SetCursor	impl	MOD-11	10.0.11
 libwpfwin32.so	SetDisablePenImcBoundsCheckProtection	gap	MOD-84	10.0.11	PenImc 替身（MOD-84，libinput/XInput2）；未实现

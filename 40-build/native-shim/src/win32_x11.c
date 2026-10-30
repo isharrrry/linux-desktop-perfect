@@ -1653,9 +1653,15 @@ int wpf_x11_pump_into_queue(wpf_thread *t)
             }
             break;
 
+        case SelectionRequest:
+            // 【MOD-63 剪贴板】别的客户端来要 CLIPBOARD 的内容：把本地数据写进它给的 property
+            //   并回 SelectionNotify。修前这里和 default 一样直接丢弃 ⇒ 本进程拥有的剪贴板
+            //   对其它客户端永远"空"，跨进程复制粘贴必然失败。
+            wpf_clip_on_selection_request(&ev.xselectionrequest);
+            break;
+
         default:
-            // SelectionRequest / VisibilityNotify 等对 WPF
-            // 输入与窗口生命周期没有语义 → 丢弃。不产生假消息。
+            // VisibilityNotify 等对 WPF 输入与窗口生命周期没有语义 → 丢弃。不产生假消息。
             break;
         }
         XLOCK();
