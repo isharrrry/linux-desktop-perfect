@@ -146,14 +146,23 @@ void wpf_clip_on_selection_request(const void *xselectionrequest)
 // ── 读取别人的 selection（同步等 SelectionNotify，带超时）─────────────────────
 static char *clip_fetch_selection(void)
 {
-    if (!wpf_x11_ensure()) return NULL;
+    if (!wpf_x11_ensure()) {
+        // 如实带上失败原因（g_wpf.dpy_error），否则现场只剩一个 NULL 无从下手
+        fprintf(stderr, "[CLIP-FETCH] X11 不可用：%s\n", g_wpf.dpy_error);
+        fflush(stderr);
+        return NULL;
+    }
     Display *d = g_wpf.dpy;
     Atom cl = XInternAtom(d, "CLIPBOARD", False);
     Atom target = XInternAtom(d, "UTF8_STRING", False);
     Atom prop = XInternAtom(d, "LDP_CLIP_FETCH", False);
-    Window self = (Window)(uintptr_t)(g_clip_owner ? g_clip_owner : g_wpf.root);
+    // requestor 必须是**请求方自己的窗口**（不是 root）：SelectionNotify 是直接投给 requestor 的，
+    // 而 root 窗口没有任何客户端 select 输入 ⇒ 用 root 当 requestor 时通知永远收不到（D-010 的真现场）。
+    Window self = clip_owner_window();
+    if (self == None) self = (Window)(uintptr_t)(g_clip_owner ? g_clip_owner : g_wpf.root);
 
-        XConvertSelection(d, cl, target, prop, self, CurrentTime);
+        if (getenv("CLIP_PROBE_TRACE")) { fprintf(stderr, "[CLIP-FETCH] convert sel=%lu target=%lu self=0x%lx\n", (unsigned long)cl, (unsigned long)target, (unsigned long)self); fflush(stderr); }
+    XConvertSelection(d, cl, target, prop, self, CurrentTime);
     XFlush(d);
 
     // 最多等 2 s：把到达的事件过一遍（SelectionNotify 之外的就不打扰别人，直接吞掉）
@@ -162,6 +171,7 @@ static char *clip_fetch_selection(void)
                 while (XPending(d)) {
             XEvent ev;
             XNextEvent(d, &ev);
+            if (getenv("CLIP_PROBE_TRACE")) { fprintf(stderr, "[CLIP-FETCH] event type=%d\n", ev.type); fflush(stderr); }
             if (getenv("CLIP_PROBE_TRACE")) { fprintf(stderr, "[CLIP-FETCH] event type=%d\n", ev.type); fflush(stderr); }
             if (ev.type == SelectionNotify && ev.xselection.selection == cl && ev.xselection.property != None) {
                 Atom type = None;

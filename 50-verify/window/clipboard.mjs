@@ -53,19 +53,21 @@ try {
   const crossOk = !!(b.json && typeof b.json.value === 'string' && b.json.value === 'cross-proc-value');
   steps.push({ step: 'cross_process', ok: crossOk, want: 'cross-proc-value', got: b.json ? b.json.value : null, rc: b.rc });
 
-  // ③ XDND：未实现
-  steps.push({ step: 'xdnd', ok: false, note: 'XDND 拖入未实现（XClientMessage 协议缺失），见 GAP 登记' });
+  // ③ XDND：未实现（登记为缺口，不参与"文本剪贴板"的结构判定 —— 它是另一个协议面）
+  steps.push({ step: 'xdnd', ok: false, pending: true, note: 'XDND 拖入未实现（XClientMessage 协议缺失），见 GAP/D-010 登记' });
 } catch (e) {
   steps.push({ step: 'exception', ok: false, error: e.message });
 } finally {
   xvfb.kill();
 }
 
-const failed = steps.filter((s) => !s.ok);
+const failed = steps.filter((s) => !s.ok && !s.pending);
 const inProc = steps.find((s) => s.step === 'in_process_roundtrip');
 const cross = steps.find((s) => s.step === 'cross_process');
 const coreOk = !!(inProc && inProc.ok);
-const verdict = !coreOk ? 'FAIL' : (cross && cross.ok) ? (failed.length ? 'FAIL' : 'PASS') : 'DEGRADED';
+// 文本剪贴板的两个往返（同进程 / 跨进程）都过 ⇒ 文本面成立；XDND 未实现 ⇒ 整体 DEGRADED（不是 PASS）
+const xdnd = steps.find((s) => s.step === 'xdnd');
+const verdict = !coreOk || !(cross && cross.ok) ? 'FAIL' : (xdnd && !xdnd.ok) ? 'DEGRADED' : 'PASS';
 finish({
   acc: 'ACC-012',
   started,
@@ -73,7 +75,7 @@ finish({
   env: { display: xvfb.display, steps },
   verdict,
   degrade: verdict === 'DEGRADED'
-    ? 'D-010：跨进程剪贴板（X11 CLIPBOARD selection 的 SelectionRequest/ConvertSelection 往返）未打通；同进程 Win32 面往返通过；XDND 未实现'
+    ? 'XDND 拖入未实现（文本剪贴板双向往返已通过：同进程 + 跨进程）'
     : 'none',
   diff: verdict === 'PASS' ? [] : failed.map((s) => `${s.step} 失败：${JSON.stringify(s).slice(0, 240)}`),
 });
