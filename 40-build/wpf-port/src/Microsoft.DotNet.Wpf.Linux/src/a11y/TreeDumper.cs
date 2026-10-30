@@ -240,13 +240,58 @@ namespace Ldp.A11y
                     outNodes.Add(BuildNode(el, peer, childPath, child));
                     // 只对「容器」继续递归：控件（Button/TextBox 等）的内部视觉件（ContentPresenter/TextBlock/
                     // ScrollViewer）不是独立 accessible 对象，递归会让路径与元素属性表错位。
-                    if (IsContainer(el)) Walk(child, childPath, outNodes);
+                    if (IsContainer(el))
+                    {
+                        Walk(child, childPath, outNodes);
+                        WalkDocumentBlocks(el, childPath, outNodes);
+                    }
                 }
                 else
                 {
                     Walk(child, path, outNodes);
                 }
             }
+        }
+
+        /// <summary>
+        /// 文档宿主的**逻辑树**投影（D-015 第十三步）。
+        /// 只读 `FlowDocument.Tag` 里应用侧预先缓存的段落文本（`"P|…"` / `"L|…"`），
+        /// **绝不在投影路径上遍历 `Block`** —— 实测访问 Block 会触发同步排版并让 dump 卡住。
+        /// Tag 没有缓存的宿主直接跳过（节点缺失会在 snapshot 的 missing_node 里如实体现）。
+        /// </summary>
+        private static void WalkDocumentBlocks(UIElement host, string path, List<Node> outNodes)
+        {
+            try
+            {
+                System.Windows.Documents.FlowDocument doc = null;
+                if (host is System.Windows.Controls.FlowDocumentScrollViewer sv) doc = sv.Document;
+                else if (host is System.Windows.Controls.FlowDocumentReader rdr) doc = rdr.Document;
+                else if (host is System.Windows.Controls.RichTextBox rtb) doc = rtb.Document;
+                if (doc == null) return;
+                if (doc.Tag is not string[] cached || cached.Length == 0) return;
+
+                int idx = 0;
+                foreach (string entry in cached)
+                {
+                    if (idx >= 64) break;
+                    bool isList = entry != null && entry.StartsWith("L|", StringComparison.Ordinal);
+                    string text = entry == null ? string.Empty : entry.Substring(entry.IndexOf('|') + 1);
+                    if (text.Length > 40) text = text.Substring(0, 40);
+                    outNodes.Add(new Node
+                    {
+                        Path = path + "/" + idx.ToString(CultureInfo.InvariantCulture),
+                        Role = isList ? "list" : "paragraph",
+                        Name = text,
+                        States = new List<string> { "visible" },
+                        Actions = new List<string>(),
+                        Value = null,
+                        Relations = new List<string>(),
+                        ChildCount = 0,
+                    });
+                    idx++;
+                }
+            }
+            catch { }
         }
 
         private static bool IsContainer(UIElement el)
