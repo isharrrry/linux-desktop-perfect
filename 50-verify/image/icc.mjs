@@ -41,6 +41,18 @@ const { startXvfb, waitDisplay, startApp, findWindow, waitMapped, sleep, DOTNET_
   // 应用内（端到端）：BitmapImage 加载**带内嵌 ICC** 的 PNG。
   //   读数带 ok/格式；ICC 的"色差阈值"那一半仍要 mscms（未实现），所以本判据仍 FAIL ——
   //   但"profile 能被 WIC 导出并被 WPF 接受"这一环由此可验。
+  // mscms 面探针：用 libwpfwic 导出的 mscms 入口做一次真实色彩转换（lcms2 引擎）。
+  //   sRGB→sRGB 应为**恒等**；恒等不成立就说明引擎没接上或转错了。
+  let mscms = null;
+  {
+    const probe = '40-build/wic-dwrite/bin/mscms-probe';
+    const icc = '40-build/wic-dwrite/testdata/srgb.icc';
+    if (fs.existsSync(probe) && fs.existsSync(icc)) {
+      const r = spawnSync(probe, [icc], { encoding: 'utf8', timeout: 30000 });
+      const line = (r.stdout || '').trim().split(String.fromCharCode(10)).pop();
+      try { mscms = JSON.parse(line); } catch { mscms = { raw: line }; }
+    }
+  }
   let wicApp = null;
   {
     const appDll = '50-verify/image/wic-app/bin/Release/net10.0/WicApp.dll';
@@ -85,15 +97,16 @@ const { startXvfb, waitDisplay, startApp, findWindow, waitMapped, sleep, DOTNET_
   const bad = steps.filter((s) => !s.ok);
   finish({
     acc: 'ACC-019', started,
-    env: { ...env, dotnet_root: DOTNET_ROOT, wic_probe: wicProbe, wic_app_icc: wicApp, wic_mapping_enabled: resolverFlag === '1', windows_codecs_pinvoke_sites: Number(pInvokeCount) || 0, steps },
+    env: { ...env, dotnet_root: DOTNET_ROOT, wic_probe: wicProbe, wic_app_icc: wicApp, mscms_probe: mscms, wic_mapping_enabled: resolverFlag === '1', windows_codecs_pinvoke_sites: Number(pInvokeCount) || 0, steps },
     expectRef: 'ACC-019：ICC',
     verdict: 'FAIL',
     diff: [
       ...missingNotes,
       ...bad.map((s) => `${s.step} 失败：${JSON.stringify(s).slice(0, 240)}`),
       wicApp && wicApp.ok
-        ? `缺口：**带内嵌 ICC 的 PNG 能在应用内加载**（BitmapImage：${wicApp.width}x${wicApp.height}/${wicApp.format}；profile 经 bridge 的 MilColorContextTable 传过去），` +
-          `但 ①ICC 的**色彩转换**（mscms 面：CreateMultiProfileTransform/TranslateColors 等）未实现 ②因此"色差阈值"这一半无处可比（D-018 后续）`
+        ? `缺口：**带内嵌 ICC 的 PNG 能在应用内加载**（BitmapImage：${wicApp.width}x${wicApp.height}/${wicApp.format}），` +
+          `**mscms 色彩转换引擎已接 lcms2**（探针：translate=${mscms && mscms.translate_ret}、sRGB→sRGB 恒等=${mscms && mscms.identity}），` +
+          `但 ①WPF 的渲染管线还没把"按 profile 转换后的像素"接到帧上（即色差阈值仍无对象可比）②非 RGB8 的像素类型未支持（D-018 后续）`
         : wicProbe && wicProbe.loaded
         ? `缺口：libwpfwic.so 就位（工厂 hr_create=${wicProbe.hr_create}），但带 ICC 的 PNG 在应用内未加载成功（wic_app=${JSON.stringify(wicApp).slice(0, 160)}）；resolver 的 WIC 映射已开=${resolverFlag === '1'}`
         : `缺口：libwpfwic.so 未实现（resolver 的 WIC 映射已开=${resolverFlag === '1'}，WindowsCodecs P/Invoke 站点 ${pInvokeCount} 处）`,
