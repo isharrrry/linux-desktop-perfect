@@ -329,6 +329,11 @@ int wpf_queue_pop(wpf_thread *t, WPF_MSG *out, HWND hwndFilter, UINT lo, UINT hi
             //   表示摘的是唯一节点 ⇒ 队列真为空，此时 tail 才是 NULL）。
             if (t->tail == v) t->tail = prev;
             *out = v->msg;
+            if (getenv("WPF_LINUX_XDND_DIAG") && out->message == 0x0233 /* WM_DROPFILES */) {
+                fprintf(stderr, "[XDND-POP] WM_DROPFILES hwnd=0x%lx wp=0x%lx tid=%lu\n",
+                        (unsigned long)out->hwnd, (unsigned long)out->wParam, wpf_msgflow_tid());
+                fflush(stderr);
+            }
             last_mods = v->mods;
             wpf_keystate_note_pop_mods(out, v->mods);   // [D-K1] 按**这条消息**登记修饰位
             // [D-K1 · 波 24 修法乙]**按键类消息**取出时，让**实时表**采纳这条消息时刻的修饰键状态。
