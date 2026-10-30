@@ -76,6 +76,88 @@ const POINT_PATCHES = [
                 }`,
     why: 'InkCanvas 的实时墨迹线程要求 STA（COM）→ Linux 上 PlatformNotSupportedException 直接崩（补丁项 19，D-013）',
   },
+  {
+    patch: 'P20',
+    file: 'src/Microsoft.DotNet.Wpf/src/PresentationCore/System/Windows/InterOp/HwndSource.cs',
+    find: `                HwndTarget hwndTarget = _hwndTarget;
+                if (hwndTarget != null)
+                {
+                    result = hwndTarget.HandleMessage((WindowMessage)msg, wParam, lParam);`,
+    replace: `                HwndTarget hwndTarget = _hwndTarget;
+                // 【WPF-on-Linux 补丁 P20】把 \`WM_DROPFILES\` 转成应用的 \`Drop\` 事件。
+                //   背景：WPF 的拖放走 OLE（RegisterDragDrop + IDropTarget），Linux 上没有 OLE；
+                //   而本项目的 shim 已把 XDND 拖放翻译成 \`WM_DROPFILES\` + HDROP（见 D-011）。
+                //   上游 PresentationCore 里**没有任何 WM_DROPFILES 处理**（grep 实证），所以这里补上：
+                //   读 HDROP 的文件列表 → 构造 DataObject(FileDrop) → 在 RootVisual 上触发 DropEvent。
+                //   只对"没有 OLE 拖放目标"的情况生效（Linux 恒真；Windows 上 RegisterDragDrop 会先接手）。
+                if (msg == 0x0233 /* WM_DROPFILES */ && wParam != IntPtr.Zero)
+                {
+                    try
+                    {
+                        string[] paths = WpfLinuxDroppedFiles(wParam);
+                        if (paths != null && paths.Length > 0 && hwndTarget != null && hwndTarget.RootVisual != null)
+                        {
+                            DataObject data = new DataObject(DataFormats.FileDrop, paths);
+                            DragEventArgs dropArgs = new DragEventArgs(
+                                data, DragDropKeyStates.None, DragDropEffects.Copy,
+                                hwndTarget.RootVisual, new Point(0, 0));
+                            dropArgs.RoutedEvent = DragDrop.DropEvent;
+                            hwndTarget.RootVisual.RaiseEvent(dropArgs);
+                            handled = true;
+                        }
+                    }
+                    catch (Exception)
+                    {
+                        // 拖放是"锦上添花"：任何异常都不能把窗口消息循环打崩
+                    }
+                }
+                if (hwndTarget != null)
+                {
+                    result = hwndTarget.HandleMessage((WindowMessage)msg, wParam, lParam);`,
+    why: 'WPF 拖放走 OLE（Linux 无），而 shim 已把 XDND 翻成 WM_DROPFILES + HDROP → 补上这条转换（补丁项 20，D-011）',
+  },
+  {
+    patch: 'P20b',
+    file: 'src/Microsoft.DotNet.Wpf/src/PresentationCore/System/Windows/InterOp/HwndSource.cs',
+    find: `        private IntPtr HwndTargetFilterMessage(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)`,
+    replace: `        /// <summary>
+        /// 【WPF-on-Linux 补丁 P20b】从 \`WM_DROPFILES\` 的 HDROP 里读出文件路径列表。
+        /// HDROP 由本项目的 win32 shim 构造（X DnD 的 uri-list 翻译而来），
+        /// 通过 \`DragQueryFileW\`（iFile = 0xFFFFFFFF 取个数）与 \`DragFinish\` 访问 —— 这三个
+        /// 入口在 libwpfwin32.so 里实现，且已加入映射表（kernel32/user32 组）。
+        /// </summary>
+        [System.Runtime.InteropServices.DllImport("user32.dll", CharSet = System.Runtime.InteropServices.CharSet.Unicode)]
+        private static extern uint WpfLinuxDragQueryFileW(IntPtr hDrop, uint iFile, char[] lpszFile, uint cch);
+
+        [System.Runtime.InteropServices.DllImport("user32.dll")]
+        private static extern void WpfLinuxDragFinish(IntPtr hDrop);
+
+        private static string[] WpfLinuxDroppedFiles(IntPtr hDrop)
+        {
+            try
+            {
+                int count = (int)WpfLinuxDragQueryFileW(hDrop, 0xFFFFFFFFu, null, 0);
+                if (count <= 0) return null;
+                string[] paths = new string[count];
+                for (int i = 0; i < count; ++i)
+                {
+                    int len = (int)WpfLinuxDragQueryFileW(hDrop, (uint)i, null, 0);
+                    if (len <= 0) { paths[i] = string.Empty; continue; }
+                    char[] buf = new char[len + 1];
+                    WpfLinuxDragQueryFileW(hDrop, (uint)i, buf, (uint)buf.Length);
+                    paths[i] = new string(buf, 0, len);
+                }
+                return paths;
+            }
+            finally
+            {
+                WpfLinuxDragFinish(hDrop);
+            }
+        }
+
+        private IntPtr HwndTargetFilterMessage(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)`,
+    why: 'P20 的辅助方法：从 HDROP 读文件列表（补丁项 20b，D-011）',
+  },
 ];
 
 for (const rel of files) {
