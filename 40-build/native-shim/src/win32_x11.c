@@ -861,7 +861,20 @@ static void push(wpf_thread *t, HWND hwnd, uint32_t msg, WPARAM wp, LPARAM lp,
     m.time = (uint32_t)wpf_now_ms();
     m.pt_x = px;
     m.pt_y = py;
-    wpf_queue_push(t, &m);
+    // 【Win32 语义：窗口消息只投给**创建该窗口的线程**】
+    //   修前这里一律用"当前泵线程" `t`。后果（D-013 的现场）：InkCanvas 的墨迹线程在跑
+    //   自己的 Dispatcher 时也会 pump X 事件，于是主窗口的 `WM_SIZE` 被投进**墨迹线程**的队列，
+    //   派发时 `Window.WmSizeChanged → CompositionTarget.VerifyAPIReadOnly` 直接抛
+    //   "The calling thread cannot access this object"。
+    //   改成按 `wpf_window.owner_thread` 路由后，任何线程 pump 都只会给自己的窗口投消息。
+    wpf_thread *target = t;
+    {
+        wpf_lock();
+        wpf_window *w = wpf_window_find(hwnd);
+        if (w && w->owner_thread) target = (wpf_thread *)w->owner_thread;
+        pthread_mutex_unlock(&g_wpf.lock);
+    }
+    wpf_queue_push(target, &m);
 }
 
 // 客户区坐标（X11 事件的 x/y 已经是相对事件窗口的客户区坐标，无需转换）。
