@@ -271,9 +271,67 @@ static int jpeg_decode_block(jpeg_ctx *c, int comp_idx, int32_t *coef)
     return 0;
 }
 
-// 【当前实现状态】解析 + 霍夫曼 + IDCT 已就位；但"按 MCU 组装整图 / 上采样 / YCbCr→RGB"
-//   还没接上 ⇒ `ldp_jpeg_decode` **明确返回 E_NOTIMPL**（不返回半成品图像）。
-//   下一步：在 SOS 之后按 MCU 循环解块、填 plane、最后上采样与色彩转换。
+// ── MCU 循环 + 上采样 + 色彩转换 ────────────────────────────────────────────────
+// 【当前实现范围】Baseline、8 位、1 或 3 分量（灰度 / YCbCr）。上采样用**最近邻**
+//   （不做 fancy upsampling —— 那是"更好看"，不是"能解码"；先保证像素正确再说）。
+static int jpeg_decode_scan(jpeg_ctx *c, int nscans, char *error, size_t cap)
+{
+    const int mcu_w = 8 * c->hmax;          // 一个 MCU 覆盖的像素宽度
+    const int mcu_h = 8 * c->vmax;
+    const int mcus_x = (c->width + mcu_w - 1) / mcu_w;
+    const int mcus_y = (c->height + mcu_h - 1) / mcu_h;
+
+    for (int i = 0; i < nscans; ++i) {
+        int pw = c->comp[i].pw, ph = c->comp[i].ph;
+        c->comp[i].plane = (uint8_t *)calloc((size_t)pw * ph, 1);
+        if (!c->comp[i].plane) { snprintf(error, cap, "内存不足（plane）"); return -1; }
+    }
+
+    int32_t coef[64];
+    int mcu_idx = 0;
+    for (int my = 0; my < mcus_y; ++my) {
+        for (int mx = 0; mx < mcus_x; ++mx) {
+            // restart interval：到点就重置 DC 预测并跳过重启标记
+            if (c->restart_interval && mcu_idx && mcu_idx % c->restart_interval == 0) {
+                c->bitcnt = 0;
+                int m = jpeg_read_marker(c);
+                if (m < 0 || m < 0xD0 || m > 0xD7) {
+                    snprintf(error, cap, "重启标记异常（0x%02x）", m);
+                    return -1;
+                }
+                for (int i = 0; i < c->ncomp; ++i) c->comp[i].dc_pred = 0;
+            }
+            mcu_idx++;
+
+            for (int ci = 0; ci < c->ncomp; ++ci) {
+                int bh = c->comp[ci].h, bv = c->comp[ci].v;
+                for (int by = 0; by < bv; ++by) {
+                    for (int bx = 0; bx < bh; ++bx) {
+                        if (jpeg_decode_block(c, ci, coef) < 0) {
+                            snprintf(error, cap, "熵解码失败（MCU %d,%d 分量 %d）", mx, my, ci);
+                            return -1;
+                        }
+                        uint8_t blk[64];
+                        jpeg_idct(coef, c->comp[ci].q, blk, 8);
+                        int px0 = (mx * bh + bx) * 8;
+                        int py0 = (my * bv + by) * 8;
+                        for (int y = 0; y < 8; ++y) {
+                            int py = py0 + y;
+                            if (py >= c->comp[ci].ph) break;
+                            for (int x = 0; x < 8; ++x) {
+                                int px = px0 + x;
+                                if (px >= c->comp[ci].pw) break;
+                                c->comp[ci].plane[(size_t)py * c->comp[ci].pw + px] = blk[y * 8 + x];
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    return 0;
+}
+
 int32_t ldp_jpeg_decode(const uint8_t *data, size_t len, ldp_png_image *out, char *error, size_t cap)
 {
     if (!data || !out) return E_INVALIDARG_;
@@ -284,12 +342,12 @@ int32_t ldp_jpeg_decode(const uint8_t *data, size_t len, ldp_png_image *out, cha
     if (!c) return E_NOTIMPL_;
     c->data = data; c->size = len; c->pos = 2;
 
-    int ok = 0;
+    int ok = 0, nscans = 0;
     for (;;) {
         int m = jpeg_read_marker(c);
         if (m < 0) break;
-        if (m == 0xD9) break;                  // EOI
-        if (m == 0xD8) continue;               // SOI
+        if (m == 0xD9) break;
+        if (m == 0xD8) continue;
         int lo = jpeg_getc(c), hi = jpeg_getc(c);
         if (lo < 0 || hi < 0) break;
         int seglen = (lo << 8) | hi;
@@ -300,7 +358,6 @@ int32_t ldp_jpeg_decode(const uint8_t *data, size_t len, ldp_png_image *out, cha
         else if (m == 0xC2) { snprintf(error, cap, "渐进式 JPEG（SOF2）未实现"); free(c); return E_NOTIMPL_; }
         else if (m == 0xDD) { c->restart_interval = (jpeg_getc(c) << 8) | jpeg_getc(c); }
         else if (m == 0xDA) {
-            // SOS：接上分量 → 霍夫曼表，然后**这里本应开始 MCU 循环**
             int ns = jpeg_getc(c);
             if (ns < 1 || ns > c->ncomp) break;
             for (int i = 0; i < ns; ++i) {
@@ -308,28 +365,70 @@ int32_t ldp_jpeg_decode(const uint8_t *data, size_t len, ldp_png_image *out, cha
                 int tdta = jpeg_getc(c);
                 int ci = -1;
                 for (int k = 0; k < c->ncomp; ++k) if (c->comp[k].id == cs) ci = k;
-                if (ci < 0) { ok = -1; break; }
+                if (ci < 0) break;
                 int td = tdta >> 4, ta = tdta & 0x0F;
                 c->comp[ci].dc = c->has_dc[td] ? &c->dc_tables[td] : NULL;
                 c->comp[ci].ac = c->has_ac[ta] ? &c->ac_tables[ta] : NULL;
                 for (int q = 0; q < 64; ++q) c->comp[ci].q[q] = c->q_tables[c->comp[ci].tq][q];
             }
-            if (ok < 0) break;
+            // 跳过 SOS 尾部的 3 个字节（Ss, Se, Ah/Al）
+            jpeg_getc(c); jpeg_getc(c); jpeg_getc(c);
+            c->bitcnt = 0;
+            nscans = ns;
+            if (jpeg_decode_scan(c, nscans, error, cap) < 0) { ok = -1; break; }
             ok = 1;
-            break;   // 解析到 SOS 即止（MCU 循环尚未实现）
+            break;
         } else {
             c->pos += (size_t)(seglen - 2);
         }
     }
 
-    if (ok == 1) {
-        snprintf(error, cap,
-                 "JPEG 头解析通过（%dx%d，%d 分量，基线），但 MCU 组装/上采样/色彩转换尚未实现 —— 如实返回 E_NOTIMPL",
-                 c->width, c->height, c->ncomp);
+    if (ok != 1 || nscans < 1) {
+        if (ok == 0) snprintf(error, cap, "JPEG 解析失败（未遇到可用的 SOS）");
+        for (int i = 0; i < c->ncomp; ++i) free(c->comp[i].plane);
+        free(c);
+        return E_INVALIDARG_;
+    }
+
+    // 上采样（最近邻）+ 色彩转换 → BGRA
+    uint8_t *bgra = (uint8_t *)malloc((size_t)c->width * c->height * 4);
+    if (!bgra) {
+        for (int i = 0; i < c->ncomp; ++i) free(c->comp[i].plane);
         free(c);
         return E_NOTIMPL_;
     }
-    snprintf(error, cap, "JPEG 解析失败（未遇到可用的 SOS）");
+    for (int y = 0; y < c->height; ++y) {
+        for (int x = 0; x < c->width; ++x) {
+            uint8_t *dst = bgra + ((size_t)y * c->width + x) * 4;
+            if (c->ncomp == 1) {
+                int sx = x * c->comp[0].pw / c->width;
+                int sy = y * c->comp[0].ph / c->height;
+                uint8_t g = c->comp[0].plane[(size_t)sy * c->comp[0].pw + sx];
+                dst[0] = dst[1] = dst[2] = g;
+                dst[3] = 255;
+            } else {
+                int sx0 = x * c->comp[0].pw / c->width, sy0 = y * c->comp[0].ph / c->height;
+                int sx1 = x * c->comp[1].pw / c->width, sy1 = y * c->comp[1].ph / c->height;
+                int sx2 = x * c->comp[2].pw / c->width, sy2 = y * c->comp[2].ph / c->height;
+                int Y  = c->comp[0].plane[(size_t)sy0 * c->comp[0].pw + sx0];
+                int Cb = c->comp[1].plane[(size_t)sy1 * c->comp[1].pw + sx1] - 128;
+                int Cr = c->comp[2].plane[(size_t)sy2 * c->comp[2].pw + sx2] - 128;
+                int r = Y + (int)(1.402 * Cr);
+                int g = Y - (int)(0.344136 * Cb + 0.714136 * Cr);
+                int b = Y + (int)(1.772 * Cb);
+                if (r < 0) r = 0; if (r > 255) r = 255;
+                if (g < 0) g = 0; if (g > 255) g = 255;
+                if (b < 0) b = 0; if (b > 255) b = 255;
+                dst[0] = (uint8_t)b; dst[1] = (uint8_t)g; dst[2] = (uint8_t)r; dst[3] = 255;
+            }
+        }
+    }
+    for (int i = 0; i < c->ncomp; ++i) free(c->comp[i].plane);
+
+    out->width = (uint32_t)c->width;
+    out->height = (uint32_t)c->height;
+    out->has_alpha = 0;
+    out->bgra = bgra;
     free(c);
-    return E_INVALIDARG_;
+    return 0;
 }
