@@ -300,6 +300,10 @@ namespace Ldp.A11y
             if (el is Canvas) return true;
             if (el is StatusBar) return true;
             if (el is Panel) return true;
+            // ItemsControl 的项是**真正的 UIElement**（ListBoxItem/ComboBoxItem/TreeViewItem…），
+            //   它们的 AutomationPeer 必须被递归出来。修前这里没有 ItemsControl ⇒ SCR-02 的
+            //   `0/1/0`（字体族列表项）在树里根本不存在（missing_node 的直接原因）。
+            if (el is ItemsControl) return true;
             // Ribbon 的容器族（Ribbon/RibbonTab/RibbonGroup/…）内部是可访问对象，必须递归；
             // 直接用类型名判断，避免 LdpA11y 反向依赖 System.Windows.Controls.Ribbon。
             string tn = el.GetType().FullName;
