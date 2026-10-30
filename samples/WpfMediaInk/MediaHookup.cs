@@ -38,6 +38,9 @@ namespace LinuxDesktopPerfect.Samples.WpfMediaInk
                 if (pause != null) pause.Click += (s2, e2) => { player.Pause(); SetState(state, "PAUSED"); };
 
                 SetState(state, player.Source == null ? "READY" : "READY");
+                Console.Error.WriteLine("[MEDIA] hookup: play=" + (play != null) + " pause=" + (pause != null)
+                    + " state=" + (state != null) + " media=" + (media ?? "null"));
+                Console.Error.Flush();
             }
             catch (Exception ex)
             {
