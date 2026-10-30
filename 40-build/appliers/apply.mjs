@@ -22,7 +22,8 @@ const SRC = arg('src', path.join(ROOT, '40-build/upstream/wpf'));
 const DST = arg('dst', path.join(ROOT, '40-build/build/wpf'));
 const CHECK = argv.includes('--check');
 const SKIP_DIRS = new Set(['redist', 'tests', '.git']);
-const TEXT_EXT = new Set(['.csproj', '.props', '.targets', '.csproj', '.projitems', '.props', '.targets', '.csdef']);
+// `.cs` 也要在列：定点补丁（如 P19 的 STA 降级）落在源码文件上，不在列表里就静默不生效。
+const TEXT_EXT = new Set(['.csproj', '.props', '.targets', '.csproj', '.projitems', '.props', '.targets', '.csdef', '.cs']);
 const TFM_RE = /net1[01]\.0-windows(?:[\d.]+)?/g;
 
 function walk(dir, base = dir, out = []) {
@@ -54,6 +55,26 @@ const POINT_PATCHES = [
     find: `<PbtTfm Condition="'$(MSBuildRuntimeType)'=='Core'">net6.0</PbtTfm>`,
     replace: `<PbtTfm Condition="'$(MSBuildRuntimeType)'=='Core'">net10.0</PbtTfm>`,
     why: 'PBT 工程的 TargetFrameworks 是 net472;net10.0，而 Pbt.props 写死 net6.0 → NETSDK1005（补丁项 16）',
+  },
+  {
+    patch: 'P19',
+    file: 'src/Microsoft.DotNet.Wpf/src/PresentationCore/System/Windows/Input/Stylus/Common/DynamicRendererThreadManager.cs',
+    find: `                inkingThread.SetApartmentState(ApartmentState.STA);`,
+    replace: `                // 【WPF-on-Linux 补丁 P19】STA 是 COM 的线程单元语义，.NET 在非 Windows 上
+                //   \`Thread.SetApartmentState\` 直接抛 \`PlatformNotSupportedException: COM Interop is not
+                //   supported on this platform.\`。上游这里只是"让墨迹线程是 STA"，Linux 上没有 COM
+                //   可隔离 ⇒ 降级为**不改单元状态**（线程照常起，Dispatcher 照常跑），并打一行诊断。
+                //   实测触发链：InkCanvas 可见 → WispStylusPlugInCollection.UpdateState →
+                //   DynamicRenderer.CreateRealTimeVisuals → 本函数 ⇒ 整个样本进程启动即崩（D-013）。
+                try
+                {
+                    inkingThread.SetApartmentState(ApartmentState.STA);
+                }
+                catch (PlatformNotSupportedException)
+                {
+                    System.Diagnostics.Debug.WriteLine("WPF-on-Linux: 墨迹线程的 STA 单元不可用（无 COM），按 MTA 继续。");
+                }`,
+    why: 'InkCanvas 的实时墨迹线程要求 STA（COM）→ Linux 上 PlatformNotSupportedException 直接崩（补丁项 19，D-013）',
   },
 ];
 
