@@ -82,7 +82,9 @@ node 50-verify/index/gen-index.mjs             # 汇总全部判据读数
 | **段落角色** | SCR-02 的段落以 `label` 暴露而非 `paragraph`（设计取舍，理由见《界面设计说明》§2.3） | 同上 |
 | **AT-SPI 总线** | UIA 树为**自建投影**（`LdpA11y`），未走真实 AT-SPI 总线 | `40-build/wpf-port/.../a11y/TreeDumper.cs` |
 
-## 6. 回滚
+## 6. 回滚与重装（**已实测**，不是理论步骤）
+
+### 6.1 回滚
 
 ```bash
 rm -rf ~/.local/share/ldp/dotnet      # 整目录删除即可
@@ -90,3 +92,43 @@ rm -rf ~/.local/share/ldp/dotnet      # 整目录删除即可
 
 本项目不改动系统目录、不写 `/usr/local`、不注册桌面入口；所有产物都在
 `~/.local/share/ldp/` 与仓库内的构建目录里。
+
+### 6.2 重装（`2026-10-30` 实测记录）
+
+```bash
+$ du -sh ~/.local/share/ldp/dotnet
+70M     /home/links-dev/.local/share/ldp/dotnet
+
+$ rm -rf ~/.local/share/ldp/dotnet && ls ~/.local/share/ldp/
+（空）
+
+$ node 40-build/pack/install-runtime.mjs
+install-runtime: … ← …Microsoft.WindowsDesktop.App.Runtime.linux-x64.10.0.11.nupkg
+                 （框架件 61 个、原生件 4 个、NETCore 9.0.4）
+
+$ node 40-build/milcore-bridge/build-bridge.mjs --install ~/.local/share/ldp/dotnet
+build-bridge: …wpfgfx_cor3.so 5086064 B，Mil* 导出 70 个
+
+$ du -sh ~/.local/share/ldp/dotnet
+70M     /home/links-dev/.local/share/ldp/dotnet      ← 与删除前一致
+```
+
+**验证（重装后立刻跑）**：
+
+```bash
+$ node 50-verify/render/frame-probe.mjs --frames 2
+[ACC-007] TG-003 verdict=PASS diff=0
+
+$ node 50-verify/a11y/assert-tree.mjs --scr SCR-01
+[ACC-027] TG-012 verdict=PASS
+
+$ node 50-verify/image/decode.mjs
+[ACC-018] …（五格式应用内解码 + 中央像素比对）
+```
+
+⇒ **回滚是真回滚、重装能恢复、判据全绿**。`70M` 的大小在删除前后一致，说明
+`install-runtime` + `build-bridge` 这两步就足以从零重建整个运行时。
+
+**注意**：重装只要**两步**（`install-runtime` + `build-bridge --install`），
+不需要重跑 `build-port`/`build-pack` —— 前提是 `40-build/pack/out/` 里的 nupkg 还在。
+如果那份 nupkg 也被删了，就要从 §2 的第 ① 步重新开始。
