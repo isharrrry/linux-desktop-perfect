@@ -339,6 +339,7 @@ function buildRuntimePack() {
     { name: 'libwpfgfx_linux.so', dirs: [SHIM] },
     { name: 'libwpfwic.so', dirs: [path.join(ROOT, '40-build/wic-dwrite/bin'), SHIM] },
     { name: 'libdwlinux.so', dirs: [path.join(ROOT, '40-build/text-stack/bin'), SHIM] },
+    { name: 'libldpmedia.so', dirs: [path.join(ROOT, '40-build/media-bridge/bin')] },
   ];
   const natives = [];
   for (const want of nativeWanted) {
