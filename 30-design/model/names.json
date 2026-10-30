@@ -1,0 +1,49 @@
+{
+  "version": "0.1",
+  "updated": "2026-10-30",
+  "description": "LinuxDesktopPerfect 名称与文档清单的机器可读版本；人读以 00-admin/术语表.md 为准。",
+  "documents": {
+    "README": "README.md",
+    "术语表": "00-admin/术语表.md",
+    "引用与名称规范": "00-admin/引用与名称规范.md",
+    "决策记录": "00-admin/决策记录.md",
+    "需求输入": "10-input/需求输入-20261030.md",
+    "需求与验收判据文档": "20-spec/需求与验收判据文档.md",
+    "概要设计": "30-design/概要设计.md",
+    "已知坑与降级清单": "70-operate/已知坑清单.md"
+  },
+  "software": [
+    { "canonical": "LinuxDesktopPerfect", "aliases": ["LDP", "wpf-linux-perfect"] },
+    { "canonical": "WPFOnLinux", "aliases": ["wpf-linux", "旧仓"] },
+    { "canonical": "dotnet/wpf", "aliases": ["上游 WPF"] },
+    { "canonical": "自产件", "aliases": ["自建件", "本地件"] },
+    { "canonical": "框架包", "aliases": ["pack", "WindowsDesktop pack"] },
+    { "canonical": "wpf-port", "aliases": ["移植层"] },
+    { "canonical": "native-shim", "aliases": ["Win32 shim", "libwpfwin32"] },
+    { "canonical": "milcore", "aliases": ["渲染后端", "MIL 后端"] },
+    { "canonical": "text-stack", "aliases": ["文本栈"] },
+    { "canonical": "wic-dwrite", "aliases": ["图像字体 provider"] },
+    { "canonical": "winforms-compat", "aliases": ["WinForms 兼容层"] },
+    { "canonical": "service-adapters", "aliases": ["服务适配层"] },
+    { "canonical": "applier", "aliases": ["补丁器", "生成器"] },
+    { "canonical": "派生树", "aliases": ["build 树", "生成树"] },
+    { "canonical": "上游快照", "aliases": ["upstream", "只读源"] },
+    { "canonical": "DUCE", "aliases": ["MIL 命令流"] },
+    { "canonical": "PTS", "aliases": ["段落文本系统"] },
+    { "canonical": "诚实降级", "aliases": ["降级"] },
+    { "canonical": "缺陷册", "aliases": ["已知坑清单", "降级清单"] },
+    { "canonical": "验收判据", "aliases": ["ACC"] }
+  ],
+  "systems": [
+    { "canonical": "Linux 桌面", "aliases": ["桌面环境", "宿主桌面"] },
+    { "canonical": "X11 服务器", "aliases": ["X server", "Xorg"] },
+    { "canonical": "dotnet SDK", "aliases": ["SDK", ".NET SDK"] },
+    { "canonical": "构建机", "aliases": ["CI", "构建环境"] },
+    { "canonical": "上游仓", "aliases": ["上游仓库"] }
+  ],
+  "checks": {
+    "excludeDirs": [".git", "node_modules", "90-archive"],
+    "forbidBareMdPaths": true,
+    "forbidLineno": true
+  }
+}
