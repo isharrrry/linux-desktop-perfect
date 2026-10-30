@@ -510,6 +510,9 @@ namespace WpfGfx.Linux.Interop
                 MilDeviceObjectKind.Factory, null, $"factory sdk=0x{SDKVersion:X8}");
 
             ppIFactory = factory.Handle;
+            // 【R9-⑮ 结论】返回值探针证过：本导出**也没有被调用**（改成 E_UNEXPECTED 后
+            //   上层异常仍是 E_NOTIMPL）。三个候选（MediaPlayer / EventProxy / Factory）全部排除
+            //   ⇒ 异常发生在更早的层，见已知坑 D-022 的 R9-⑮。探针已撤，恢复 S_OK。
             return HResult.S_OK;
         }
 
