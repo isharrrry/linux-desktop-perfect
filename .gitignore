@@ -39,5 +39,15 @@ _selftest_*.md
 .idea/
 *.user
 
+# --- 样本构建产物（派生：dotnet build 生成，可由 node 50-verify/build/build-sample.mjs 重建） ---
+samples/**/bin/
+samples/**/obj/
+
+# --- 上游 framework pack 取件缓存（39 MB；取件命令见 40-build/lock/README.md） ---
+40-build/lock/packs/*.nupkg
+
+# --- pack 组装读数（生成物：由 node 40-build/pack/build-pack.mjs 重建） ---
+40-build/pack/pack-report.json
+
 # --- 依赖目录 ---
 node_modules/

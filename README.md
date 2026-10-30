@@ -92,8 +92,8 @@ WPF 源码 → 自产 Ref pack 编译 → 自产 Runtime pack 加载
 | 文档门禁 | 5 条检查器（链接/文档包/编号/覆盖/自检）全 `rc=0` |
 | 本体 | V0.1：[《本体说明》](本体/本体说明.md)，24 类/26 关系/40 规则/11 动作/18 术语；校验器与模型页就绪 |
 | 开工前置 | **5/6 满足**（[《09-开工前置与切片计划》](30-design/设计文档包/09-开工前置与切片计划.md) §2.4：B1~B5、B7~B10 已关闭，B6 六件桩件完成三件） |
-| 实现骨架 | 已起：上游快照（整仓 7,380 文件，可用 `SNAPSHOT.json` 复算）+ milcore 71 个 `.cs` + native-shim 56 件 + wpf-port 341 件 + 四个契约文件 + 7 个样本工程 + 3 个桩件 + 环境探头 |
-| S1 进度 | ①`libwpfwin32.so` 编译通过（191 KB，ABI 断言全过，488 导出）；②符号对拍首份**红**（清单 impl 483 中 103 未导出、`.so` 多 105）；③派生树生成通过（7,026 文件，`apply --check` 绿）；④派生编译**已跑通**：`WindowsBase.dll` 1,023,488 B（离线桩包 + 4 个构建属性 + 系统 perl，降级 D-002）；⑤界面结构 diff 通路跑通（fake 源 11/11 节点 0 差异，判 **DEGRADED**；真桥 `SKIP`）；⑥30 条判据脚本全部落地（索引表 30/30），过程类 ACC-029/030 PASS、缺对象的如实 FAIL；⑦首错台账：14 件中 7 件编过（含 `WindowsBase`、`System.Xaml`、UIAutomation 两件），8 件的三类首错见 [build-matrix.json](40-build/build-matrix.json)；⑧pack 与首帧待 PBT 还原后继续 |
+| 实现骨架 | 已起：上游快照（整仓 7,380 文件，可用 `SNAPSHOT.json` 复算）+ milcore 71 个 `.cs` + native-shim 56 件 + wpf-port 341 件 + 四个契约文件 + 7 个样本工程 + 6 个桩件 + 环境探头 + **自产 pack 组装（`40-build/pack/build-pack.mjs`）+ 自产 targets（`40-build/sdk/`）** |
+| S1 进度 | ①`libwpfwin32.so` 编译通过（191 KB，ABI 断言全过，488 导出）；②符号对拍首份**红**（清单 impl 483 中 103 未导出、`.so` 多 105）；③派生树生成通过（7,026 文件，`apply --check` 绿）；④派生编译**已跑通**：`WindowsBase.dll` 1,023,488 B（离线桩包 + 4 个构建属性 + 系统 perl，降级 D-002）；⑤界面结构 diff 通路跑通（fake 源 11/11 节点 0 差异，判 **DEGRADED**；真桥 `SKIP`）；⑥30 条判据脚本全部落地（索引表 30/30）；⑦首错台账：14 件中 8 件编过（含 `WindowsBase`、`System.Xaml`、`PresentationBuildTasks`），其余首错见 [build-matrix.json](40-build/build-matrix.json)；⑧**pack 组装完成**：`build-pack.mjs` 产出 Ref（清单 55 条逐件命中、自产替换 8 件）与 `Runtime.linux-x64`（含 `libwpfwin32.so`）；**7 个样本构建全绿**（全部样本 `dotnet build -c Release` rc=0，XAML 走自产 PBT）；⑨ACC-001/002/003 三份 PASS 读数落 `50-verify/读数/`；⑩首帧与运行时（Runtime pack 安装、MOD-81 树导出）仍待，排在下一模块 |
 | 代码 | 未开始（迁移方案见概要设计 §2.5） |
 
 ---

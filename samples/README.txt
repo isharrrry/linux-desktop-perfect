@@ -12,5 +12,5 @@
   WinFormsBasics      SCR-07  WinForms 兼容层与 MSAA 桥
 
 全部工程用 --scr SCR-0x 启动（只改标题，不实现业务逻辑）。
-当前运行时未就绪：dotnet build 会因自产 pack 未发布而失败，属预期的红读数（见 50-verify/读数/ACC-001/）。
+dotnet build 走 samples/Directory.Build.props 注入的自产 targets：先跑 node 40-build/pack/build-pack.mjs（ACC-001/002 读数见 50-verify/读数/ACC-001/）。
 

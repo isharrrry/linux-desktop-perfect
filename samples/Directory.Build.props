@@ -1,0 +1,9 @@
+<!--
+  样本工程的构建接线：只注入 targets，不改 7 个样本 .csproj（ADR-006：应用只写 TargetFramework）。
+  由 samples/Directory.Build.props 自动引入；判据见 ACC-001/ACC-002。
+-->
+<Project>
+
+  <Import Project="$(MSBuildThisFileDirectory)../40-build/sdk/LinuxDesktopPerfect.WindowsDesktop.props" />
+
+</Project>

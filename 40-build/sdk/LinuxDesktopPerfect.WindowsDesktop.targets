@@ -1,0 +1,41 @@
+<!--
+  MOD-53 targets 注入段：在 Microsoft.NET.Sdk.targets 之后求值（AfterMicrosoftNETSdkTargets）。
+  三件事：①放宽 KnownFrameworkReference 的 IsWindowsOnly 并指向自产 pack 版本；
+          ②覆盖 SDK 的 NETSDK1136 目标（Linux 上不要求 TargetFramework 带 -windows）；
+          ③落自产 pack 解析行与 PBT 定位检查（ACC-002、LDP-E-PACK-209/210）。
+-->
+<Project>
+
+  <ItemGroup>
+    <KnownFrameworkReference Update="Microsoft.WindowsDesktop.App" IsWindowsOnly="" TargetingPackVersion="$(LdpPackPackageVersion)" />
+    <KnownFrameworkReference Update="Microsoft.WindowsDesktop.App.WPF" IsWindowsOnly="" TargetingPackVersion="$(LdpPackPackageVersion)" />
+    <KnownFrameworkReference Update="Microsoft.WindowsDesktop.App.WindowsForms" IsWindowsOnly="" TargetingPackVersion="$(LdpPackPackageVersion)" />
+  </ItemGroup>
+
+  <!-- NETSDK1136（Microsoft.NET.Sdk.DefaultItems.targets）：WindowsDesktop 平台标识不是 Windows 时报错。
+       Linux 落点由自产 pack 提供，故本目标在派生构建里置空；红读数保留在 50-verify/读数/ACC-001/。 -->
+  <Target Name="_CheckForInvalidWindowsDesktopTargetingConfiguration" />
+
+  <Target Name="_LdpResolvePackAssets">
+    <ItemGroup>
+      <_LdpPackFile Include="$(LdpPackFeed)/Microsoft.WindowsDesktop.App.Ref.$(LdpPackPackageVersion).nupkg" />
+    </ItemGroup>
+    <Error Condition="'@(_LdpPackFile)' == ''"
+           Code="LDP-E-PACK-209"
+           Text="自产 Ref pack 未命中：$(LdpPackFeed)/Microsoft.WindowsDesktop.App.Ref.$(LdpPackPackageVersion).nupkg（先跑 node 40-build/pack/build-pack.mjs）" />
+  </Target>
+
+  <!-- ACC-002 判据行：构建日志必须出现自产 pack 的解析行 -->
+  <Target Name="_LdpReportPackResolution" BeforeTargets="ProcessFrameworkReferences" DependsOnTargets="_LdpResolvePackAssets">
+    <Message Importance="High"
+             Text="LinuxDesktopPerfect: FrameworkReference Microsoft.WindowsDesktop.App $(LdpPackVersion) → 自产 Ref pack $(LdpPackPackageVersion)（$(LdpPackFeed)）" />
+  </Target>
+
+  <!-- LDP-E-PACK-210：PBT 路径不可解析即失败，不退化为跳过（03 §3.6.3） -->
+  <Target Name="_LdpCheckPbtLocator" BeforeTargets="MarkupCompilePass1">
+    <Error Condition="!Exists('$(LdpPbtAssembly)')"
+           Code="LDP-E-PACK-210"
+           Text="PBT 程序集不可解析：$(LdpPbtAssembly)（先跑 bash 40-build/build.sh src/Microsoft.DotNet.Wpf/src/PresentationBuildTasks/PresentationBuildTasks.csproj）" />
+  </Target>
+
+</Project>

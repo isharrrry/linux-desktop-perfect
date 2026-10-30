@@ -1,0 +1,37 @@
+<!--
+  MOD-53 targets：让 UseWPF=true 在 Linux 解析到自产 pack（ADR-006、09 §4 补丁项 6/16/17）
+  由 samples/Directory.Build.props 引入；不改应用工程文件，应用侧只写 TargetFramework。
+  解析链（03 §3.6.3）：FrameworkReference → WindowsDesktop 包版本 → RID 条件 → 自产 pack
+  求值顺序要求：本文件必须在 Microsoft.WinFX.targets 之前求值，故 PbtLocator 写在这里而不是 targets 里。
+-->
+<Project>
+
+  <PropertyGroup>
+    <_LdpRepoRoot>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)../..'))/</_LdpRepoRoot>
+    <LdpDerivedTree Condition="'$(LdpDerivedTree)' == ''">$(_LdpRepoRoot)40-build/build/wpf</LdpDerivedTree>
+    <LdpPackFeed Condition="'$(LdpPackFeed)' == ''">$(_LdpRepoRoot)40-build/pack/out</LdpPackFeed>
+    <LdpPackVersion Condition="'$(LdpPackVersion)' == ''">10.0.11</LdpPackVersion>
+    <LdpPackPackageVersion Condition="'$(LdpPackPackageVersion)' == ''">$(LdpPackVersion)</LdpPackPackageVersion>
+    <LdpPbtAssembly Condition="'$(LdpPbtAssembly)' == ''">$(LdpDerivedTree)/artifacts/bin/PresentationBuildTasks/Release/net10.0/PresentationBuildTasks.dll</LdpPbtAssembly>
+
+    <!-- OSVersion：WindowsDesktop targets 需要它，Linux 上给固定值，不读注册表 -->
+    <OSVersion Condition="'$(OSVersion)' == ''">10.0.0.0</OSVersion>
+  </PropertyGroup>
+
+  <!-- 第一道闸门：SDK 默认只在 Windows 平台标记下引入 WindowsDesktop targets；
+       样本工程在 Directory.Build.props 之后求值，此处 UseWPF 尚未定义，故无条件打开（仅样本目录引入本文件）。 -->
+  <PropertyGroup>
+    <ImportWindowsDesktopTargets Condition="'$(ImportWindowsDesktopTargets)' == ''">true</ImportWindowsDesktopTargets>
+  </PropertyGroup>
+
+  <!-- PbtLocator：自产任务程序集优先；路径不可解析时由 targets 报 LDP-E-PACK-210，不回落 Windows 路径 -->
+  <PropertyGroup>
+    <_PresentationBuildTasksAssembly Condition="'$(_LdpUseOwnPbt)' != 'false'">$([System.IO.Path]::GetFullPath('$(LdpPbtAssembly)'))</_PresentationBuildTasksAssembly>
+  </PropertyGroup>
+
+  <!-- 第二道闸门：BundledVersionsPatch + NETSDK1136 覆盖（见同名 targets） -->
+  <PropertyGroup>
+    <AfterMicrosoftNETSdkTargets>$(AfterMicrosoftNETSdkTargets);$(MSBuildThisFileDirectory)LinuxDesktopPerfect.WindowsDesktop.targets</AfterMicrosoftNETSdkTargets>
+  </PropertyGroup>
+
+</Project>
