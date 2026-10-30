@@ -698,6 +698,7 @@ int32_t WICCreateColorContext_Proxy(void *factory, void **context)
 {
     if (!context) return E_NOTIMPL_;
     *context = NULL;
+    if (getenv("LDP_WIC_TRACE")) { fprintf(stderr, "[WIC-ICC] WICCreateColorContext\n"); fflush(stderr); }
     if (getenv("LDP_WIC_TRACE")) {
         fprintf(stderr, "[WIC-ICC] WICCreateColorContext(factory=%p valid=%d)\n", factory, wpf_wic_factory_valid(factory));
         fflush(stderr);
@@ -708,6 +709,15 @@ int32_t WICCreateColorContext_Proxy(void *factory, void **context)
     if (!make) return E_NOTIMPL_;   // 没有 bridge ⇒ 造不出可用的上下文（如实失败）
     void *h = make(NULL, 0, 0);     // 空上下文
     if (!h) return E_NOTIMPL_;
+    // 若刚有过一次 OpenColorProfile（`ColorContext(new Uri(icc))` 的实测路径），
+    //   把那份 profile 预登记到这个新 context 上 —— 见 mscms.c 里 wic_last_opened_profile 的注释。
+    extern const uint8_t *wic_last_opened_profile(uint32_t *len);
+    uint32_t plen = 0;
+    const uint8_t *prof = wic_last_opened_profile(&plen);
+    if (prof && plen) {
+        wic_ctx_profile_set(h, prof, plen);
+        if (getenv("LDP_WIC_TRACE")) { fprintf(stderr, "[WIC-ICC]   新 context 预登记 profile %u 字节\n", plen); fflush(stderr); }
+    }
     *context = h;
     return S_OK_;
 }

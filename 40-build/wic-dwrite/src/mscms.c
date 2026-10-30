@@ -18,6 +18,21 @@
 #define E_NOTIMPL_    0x80004001
 #define E_INVALIDARG_ 0x80070057
 
+// 「最近一次 OpenColorProfile 读到的 profile」—— 给 `WICCreateColorContext` 用。
+// 【为什么需要这条启发式】`ColorContext(new Uri(icc))` 的实测路径是：
+//   `OpenColorProfile`（读文件得字节）→ `WICCreateColorContext`（造 WIC context）
+//   —— 而**没有**调用 `IWICColorContext_InitializeFromMemory`（trace 实测），
+//   于是我们无法从 WIC 侧拿到 dst profile。单线程的色彩转换场景下"最近一次"是可靠的；
+//   多线程并发转换时它可能串味，这条限制写在这里、也写进已知坑清单。
+static uint8_t *s_last_profile;
+static uint32_t s_last_profile_len;
+
+const uint8_t *wic_last_opened_profile(uint32_t *len)
+{
+    if (len) *len = s_last_profile_len;
+    return s_last_profile;
+}
+
 // ── lcms2 的四个入口（不透明句柄，手写声明是安全的）──
 typedef void *cmsHPROFILE;
 typedef void *cmsHTRANSFORM;
@@ -87,6 +102,7 @@ typedef struct {
 void *OpenColorProfileW(void *pProfile, const uint16_t *name, uint32_t access, uint32_t share, uint32_t creation)
 {
     (void)name; (void)access; (void)share; (void)creation;
+    if (getenv("LDP_WIC_TRACE")) { fprintf(stderr, "[MSCMS] OpenColorProfileW(pProfile=%p)\n", pProfile); fflush(stderr); }
     if (!pProfile) return NULL;
     probe_lcms();
     if (!s_lcms.ok) return NULL;
@@ -103,6 +119,12 @@ void *OpenColorProfileW(void *pProfile, const uint16_t *name, uint32_t access, u
     // 也登记进 libwpfwic 的 context→profile 表：色彩转换按句柄查表取字节（不跨模块、不解引用未知句柄）
     { extern void wic_ctx_profile_set(void *ctx, const uint8_t *data, uint32_t len);
       if (h->raw) wic_ctx_profile_set(h, h->raw, h->raw_len); }
+    if (h->raw) {
+        free(s_last_profile);
+        s_last_profile = (uint8_t *)malloc(h->raw_len);
+        if (s_last_profile) { memcpy(s_last_profile, h->raw, h->raw_len); s_last_profile_len = h->raw_len; }
+        else s_last_profile_len = 0;
+    }
     return h;
 }
 
@@ -114,9 +136,16 @@ void *OpenColorProfileW(void *pProfile, const uint16_t *name, uint32_t access, u
 //   （文件名形态不做：libwpfwic 没有"按路径读 profile"的语义，硬凑只会变成静默错误）。
 uint32_t s_dummy_type;   /* 占位，避免空翻译单元告警 */
 
+
 void *OpenColorProfile(void *pProfile, uint32_t access, uint32_t share, uint32_t creation)
 {
     (void)access; (void)share; (void)creation;
+    if (getenv("LDP_WIC_TRACE")) {
+        struct PROFILE_SHAPE { uint32_t dwType; void *pProfileData; uint32_t cbDataSize; } *dbg = (void *)pProfile;
+        fprintf(stderr, "[MSCMS] OpenColorProfile(type=%u data=%p size=%u)\n",
+                dbg ? dbg->dwType : 0, dbg ? dbg->pProfileData : NULL, dbg ? dbg->cbDataSize : 0);
+        fflush(stderr);
+    }
     if (!pProfile) return NULL;
     struct PROFILE_SHAPE { uint32_t dwType; void *pProfileData; uint32_t cbDataSize; } *p = (void *)pProfile;
     if (p->dwType != 2 /* PROFILE_MEMBUFFER */ || !p->pProfileData || p->cbDataSize == 0) {
@@ -138,6 +167,12 @@ void *OpenColorProfile(void *pProfile, uint32_t access, uint32_t share, uint32_t
     if (h->raw) { memcpy(h->raw, p->pProfileData, p->cbDataSize); h->raw_len = p->cbDataSize; }
     { extern void wic_ctx_profile_set(void *ctx, const uint8_t *data, uint32_t len);
       if (h->raw) wic_ctx_profile_set(h, h->raw, h->raw_len); }
+    if (h->raw) {
+        free(s_last_profile);
+        s_last_profile = (uint8_t *)malloc(h->raw_len);
+        if (s_last_profile) { memcpy(s_last_profile, h->raw, h->raw_len); s_last_profile_len = h->raw_len; }
+        else s_last_profile_len = 0;
+    }
     return h;
 }
 
