@@ -286,3 +286,25 @@ fs.writeFileSync(
 );
 
 console.log(`apply: 复制 ${copied} 个文件 → ${path.relative(ROOT, DST)}；P1 改写 ${rewrites.length} 个文件；P16 定点 ${extraRewrites.length} 处；P3 映射 ${dllTargets.mapping.length} 条`);
+
+// ── K-002 的自动化：重建派生树会清掉 `artifacts/`（含 PresentationBuildTasks）────────
+// 【为什么在这里做】上游 csproj 的 `_LdpCheckPbtLocator` 一旦找不到 PBT 就**直接报错**
+//   （LDP-E-PACK-210），而 `apply` 是"重建派生树"的动作 ⇒ 每次 apply 之后样本就编不了。
+//   这个坑已经人工处理过三次（K-002），34 s × 3 全是白花；所以在这里自动补回：
+//   只在 PBT 缺失时才跑（存在时不碰，保证 apply 的幂等/无副作用）。
+//   `--check` 模式不写盘（那是"只比对不落盘"的语义），也不重建。
+if (!CHECK) {
+  const pbt = path.join(DST, 'artifacts/bin/PresentationBuildTasks/Release/net10.0/PresentationBuildTasks.dll');
+  if (!fs.existsSync(pbt)) {
+    console.log('apply: PBT 缺失（K-002，apply 重建派生树会清掉 artifacts/）→ 自动重建 PresentationBuildTasks …');
+    const { spawnSync } = await import('node:child_process');
+    const r = spawnSync('bash', ['40-build/build.sh',
+      'src/Microsoft.DotNet.Wpf/src/PresentationBuildTasks/PresentationBuildTasks.csproj'],
+      { stdio: 'inherit', cwd: ROOT });
+    if (r.status !== 0) {
+      console.log('apply: ⚠️ 自动重建 PBT 失败（后续 dotnet build 会报 LDP-E-PACK-210，请手动跑上面那条命令）');
+    } else {
+      console.log('apply: PBT 已重建');
+    }
+  }
+}
