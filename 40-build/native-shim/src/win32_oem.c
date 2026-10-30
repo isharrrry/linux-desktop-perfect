@@ -105,6 +105,16 @@ BOOL TransparentBlt(void *a, int32_t b, int32_t c, int32_t d, int32_t e, void *f
     wpf_set_last_error(E_NOTIMPL_CODE); return 0;
 }
 
+// ── ole32：COM 初始化（Linux 上没有 COM，但"初始化成功/反初始化"是**真话**）────
+// 【为什么必须有】WPF 的 `BitmapImage` 在走 WIC 之前会 `CoInitializeEx`（上游 `Imaging` 路径），
+//   本 shim 原来完全没有这三个入口 ⇒ `EntryPointNotFoundException: CoInitialize in ole32.dll`
+//   （实测：WIC 链路一路补到编解码器信息之后撞上它）。
+//   口径：Linux 上不存在 COM 单元 ⇒ 初始化"成功"但不做任何事（`CoCreateInstance` 仍如实失败）。
+int32_t CoInitialize(void *pvReserved) { (void)pvReserved; return 0; }        /* S_OK */
+int32_t CoInitializeEx(void *pvReserved, uint32_t flags) { (void)pvReserved; (void)flags; return 0; }
+void    CoUninitialize(void) { }
+void    CoFreeUnusedLibraries(void) { }
+
 // ── dwmapi：DWM 合成 ───────────────────────────────────────────────────────
 // 【语义对齐（`#35` 波实测订正）】原先把这几个一律返回 `NOT_SUPPORTED`（"没有 DWM"）——
 //   **那是错的口径**：Windows 上"**有 DWM 但合成被关闭**"是**合法且常见**的状态，此时

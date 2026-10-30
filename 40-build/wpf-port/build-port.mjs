@@ -148,10 +148,14 @@ const failed = rows.filter((r) => r.rc !== 0).length;
 // 刻意不落派生树 artifacts/bin：上游 csproj 直编（build.sh）也会往那里写同名件（身份是上游 MSFT token），
 // 两条链互相覆盖会让「自产件引用闭包」断裂（实测表现为 XAML 编译期 MC1000：找不到同 token 的 System.Xaml）。
 let mapped = [];
-if (MAP && !failed) {
+if (MAP) {
+  // 只映射**构建成功**的件：一个失败（如 ReachFramework 的 XPS codegen 缺口，D-017）不该
+  // 让另外 26 个自产件都停在旧版本上（实测：那会让 pack 拿到过期的 resolver，WIC 链路白改）。
   fs.rmSync(OUT, { recursive: true, force: true });
   fs.mkdirSync(OUT, { recursive: true });
+  const okSet = new Set(rows.filter((r) => r.rc === 0).map((r) => r.id));
   for (const item of ORDER) {
+    if (!okSet.has(item.id)) continue;
     const src = artifactOf(item);
     if (!fs.existsSync(src)) continue;
     const dst = path.join(OUT, `${item.asm}.dll`);

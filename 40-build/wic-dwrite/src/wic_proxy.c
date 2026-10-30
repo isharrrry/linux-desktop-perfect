@@ -235,6 +235,162 @@ int32_t IWICImagingFactory_CreateDecoderFromFileHandle_Proxy(void *factory, void
     return S_OK_;
 }
 
+// ── 组件信息（WPF 建好解码器后要它：GetDecoderInfo → IWICComponentInfo_*）─────────────
+// 这些入口返回的是**编解码器元信息**（CLSID/作者/版本/友好名），不是像素；
+// 按 WIC 的真实语义填 PNG 解码器的值（CLSID 用 Windows 的 PNG 解码器 CLSID，便于调用方比对）。
+typedef struct { uint32_t magic; } wic_component_info;
+#define WIC_INFO_MAGIC 0x57494349u   /* 'WICI' */
+
+int32_t IWICBitmapDecoder_GetDecoderInfo_Proxy(void *decoder, void **out)
+{
+    if (!out) return E_NOTIMPL_;
+    *out = NULL;
+    wic_decoder *d = (wic_decoder *)decoder;
+    if (!d || d->magic != WIC_DECODER_MAGIC) return 0x80070057;
+    // 本实现只有一个解码器（PNG）⇒ 组件信息可以是个静态单例（调用方只读）
+    static wic_component_info s_info;
+    s_info.magic = WIC_INFO_MAGIC;
+    *out = &s_info;
+    return S_OK_;
+}
+
+int32_t IWICComponentInfo_GetCLSID_Proxy(void *info, uint8_t *clsid)
+{
+    wic_component_info *ci = (wic_component_info *)info;
+    if (!ci || ci->magic != WIC_INFO_MAGIC || !clsid) return 0x80070057;
+    // CLSID_WICPngDecoder = {389ea17b-5078-4cde-b6ef-25c15175c751}
+    static const uint8_t png_clsid[16] = {
+        0x7b, 0xa1, 0x9e, 0x38, 0x78, 0x50, 0xde, 0x4c,
+        0xb6, 0xef, 0x25, 0xc1, 0x51, 0x75, 0xc7, 0x51
+    };
+    memcpy(clsid, png_clsid, 16);
+    return S_OK_;
+}
+
+// GetAuthor/GetVersion/GetSpecVersion/GetFriendlyName 的共同形状：
+//   (THIS, cchBuf, StringBuilder(=wchar_t*), out actual)；cchBuf 是**含结尾 0** 的容量。
+static int32_t copy_component_string(const char *src, uint32_t cchBuf, uint16_t *buf, uint32_t *actual)
+{
+    if (!actual) return 0x80070057;
+    size_t n = strlen(src);
+    *actual = (uint32_t)n + 1;   // 语义：需要的字符数（含结尾 0）
+    if (!buf || cchBuf == 0) return S_OK_;   // 只问长度
+    if (cchBuf < n + 1) return 0x80070057 + 0;  // 缓冲区不足（如实失败）
+    for (size_t i = 0; i < n; ++i) buf[i] = (uint16_t)(unsigned char)src[i];
+    buf[n] = 0;
+    return S_OK_;
+}
+
+int32_t IWICComponentInfo_GetAuthor_Proxy(void *info, uint32_t cch, uint16_t *buf, uint32_t *actual)
+{
+    wic_component_info *ci = (wic_component_info *)info;
+    if (!ci || ci->magic != WIC_INFO_MAGIC) return 0x80070057;
+    return copy_component_string("LinuxDesktopPerfect (WIC shim)", cch, buf, actual);
+}
+
+int32_t IWICComponentInfo_GetVersion_Proxy(void *info, uint32_t cch, uint16_t *buf, uint32_t *actual)
+{
+    wic_component_info *ci = (wic_component_info *)info;
+    if (!ci || ci->magic != WIC_INFO_MAGIC) return 0x80070057;
+    return copy_component_string("1.0.0.0", cch, buf, actual);
+}
+
+int32_t IWICComponentInfo_GetSpecVersion_Proxy(void *info, uint32_t cch, uint16_t *buf, uint32_t *actual)
+{
+    wic_component_info *ci = (wic_component_info *)info;
+    if (!ci || ci->magic != WIC_INFO_MAGIC) return 0x80070057;
+    return copy_component_string("1.0.0.0", cch, buf, actual);
+}
+
+int32_t IWICComponentInfo_GetFriendlyName_Proxy(void *info, uint32_t cch, uint16_t *buf, uint32_t *actual)
+{
+    wic_component_info *ci = (wic_component_info *)info;
+    if (!ci || ci->magic != WIC_INFO_MAGIC) return 0x80070057;
+    return copy_component_string("PNG Decoder (LinuxDesktopPerfect)", cch, buf, actual);
+}
+
+// ── 编解码器能力信息（IWICBitmapCodecInfo_*）─────────────────────────────────
+// WPF 拿到解码器后会问"这是什么容器/支持哪些 MIME/是否支持动画"等。对 PNG：
+//   container=GUID_ContainerFormatPng、mime=image/png、ext=.png、lossless=true、动画/多帧=false。
+static int32_t copy_ascii_string(const char *src, uint32_t cch, uint16_t *buf, uint32_t *actual)
+{
+    return copy_component_string(src, cch, buf, actual);
+}
+
+int32_t IWICBitmapCodecInfo_GetContainerFormat_Proxy(void *info, uint8_t *guid)
+{
+    wic_component_info *ci = (wic_component_info *)info;
+    if (!ci || ci->magic != WIC_INFO_MAGIC || !guid) return 0x80070057;
+    // GUID_ContainerFormatPng = {1b7cfaf4-713f-473c-bbcd-6137425faeaf}
+    static const uint8_t png_container[16] = {
+        0xf4, 0xaf, 0x7c, 0x1b, 0x3f, 0x71, 0x3c, 0x47,
+        0xbb, 0xcd, 0x61, 0x37, 0x42, 0x5f, 0xae, 0xaf
+    };
+    memcpy(guid, png_container, 16);
+    return S_OK_;
+}
+
+int32_t IWICBitmapCodecInfo_GetDeviceManufacturer_Proxy(void *info, uint32_t cch, uint16_t *buf, uint32_t *actual)
+{
+    wic_component_info *ci = (wic_component_info *)info;
+    if (!ci || ci->magic != WIC_INFO_MAGIC) return 0x80070057;
+    return copy_ascii_string("LinuxDesktopPerfect", cch, buf, actual);
+}
+
+int32_t IWICBitmapCodecInfo_GetDeviceModels_Proxy(void *info, uint32_t cch, uint16_t *buf, uint32_t *actual)
+{
+    wic_component_info *ci = (wic_component_info *)info;
+    if (!ci || ci->magic != WIC_INFO_MAGIC) return 0x80070057;
+    return copy_ascii_string("", cch, buf, actual);
+}
+
+int32_t IWICBitmapCodecInfo_GetMimeTypes_Proxy(void *info, uint32_t cch, uint16_t *buf, uint32_t *actual)
+{
+    wic_component_info *ci = (wic_component_info *)info;
+    if (!ci || ci->magic != WIC_INFO_MAGIC) return 0x80070057;
+    return copy_ascii_string("image/png", cch, buf, actual);
+}
+
+int32_t IWICBitmapCodecInfo_GetFileExtensions_Proxy(void *info, uint32_t cch, uint16_t *buf, uint32_t *actual)
+{
+    wic_component_info *ci = (wic_component_info *)info;
+    if (!ci || ci->magic != WIC_INFO_MAGIC) return 0x80070057;
+    return copy_ascii_string(".png", cch, buf, actual);
+}
+
+// 这四个查询的签名相同：(THIS, out BOOL)
+int32_t IWICBitmapCodecInfo_DoesSupportAnimation_Proxy(void *info, int32_t *supported)
+{
+    wic_component_info *ci = (wic_component_info *)info;
+    if (!ci || ci->magic != WIC_INFO_MAGIC) return 0x80070057;
+    if (supported) *supported = 0;   // PNG（单帧）不支持动画
+    return S_OK_;
+}
+
+int32_t IWICBitmapCodecInfo_DoesSupportLossless_Proxy(void *info, int32_t *supported)
+{
+    wic_component_info *ci = (wic_component_info *)info;
+    if (!ci || ci->magic != WIC_INFO_MAGIC) return 0x80070057;
+    if (supported) *supported = 1;   // PNG 是无损
+    return S_OK_;
+}
+
+int32_t IWICBitmapCodecInfo_DoesSupportMultiframe_Proxy(void *info, int32_t *supported)
+{
+    wic_component_info *ci = (wic_component_info *)info;
+    if (!ci || ci->magic != WIC_INFO_MAGIC) return 0x80070057;
+    if (supported) *supported = 0;
+    return S_OK_;
+}
+
+int32_t IWICBitmapCodecInfo_DoesSupportChroma_Proxy(void *info, int32_t *supported)
+{
+    wic_component_info *ci = (wic_component_info *)info;
+    if (!ci || ci->magic != WIC_INFO_MAGIC) return 0x80070057;
+    if (supported) *supported = 0;
+    return S_OK_;
+}
+
 // ── 未实现的 WIC 入口：明确失败（数量与 WPF 的 P/Invoke 面一一对应，后续逐个填实）──
 #define WIC_STUB(name) \
     int32_t name(void) { \
@@ -254,11 +410,6 @@ WIC_STUB(IWICBitmapFrameDecode_GetThumbnail_Proxy)
 WIC_STUB(IWICBitmapSource_GetResolution_Proxy)
 WIC_STUB(IWICBitmapSource_GetColorContexts_Proxy)
 WIC_STUB(IWICBitmapFrameDecode_GetMetadataQueryReader_Proxy)
-WIC_STUB(IWICComponentInfo_GetCLSID_Proxy)
-WIC_STUB(IWICComponentInfo_GetAuthor_Proxy)
-WIC_STUB(IWICComponentInfo_GetVersion_Proxy)
-WIC_STUB(IWICComponentInfo_GetSpecVersion_Proxy)
-WIC_STUB(IWICComponentInfo_GetFriendlyName_Proxy)
 WIC_STUB(IWICMetadataQueryReader_GetMetadataByName_Proxy)
 WIC_STUB(IWICMetadataQueryReader_GetEnumerator_Proxy)
 WIC_STUB(IEnumString_Next_WIC_Proxy)
