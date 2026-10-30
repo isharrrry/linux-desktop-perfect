@@ -26,9 +26,13 @@
 // 统一的分派：按文件头选解码器（PNG 签名 / BMP "BM"）。新增格式在这里加一行。
 int ldp_bmp_decode(const uint8_t *data, size_t len, ldp_png_image *out, char *error, size_t cap);
 int ldp_is_bmp(const uint8_t *data, size_t len);
+int ldp_gif_decode(const uint8_t *data, size_t len, ldp_png_image *out, char *error, size_t cap);
+int ldp_is_gif(const uint8_t *data, size_t len);
+int ldp_is_gif89(const uint8_t *data, size_t len);
 static int32_t wic_decode_any(const uint8_t *buf, size_t len, ldp_png_image *img, char *err, size_t cap)
 {
     if (ldp_is_bmp(buf, len)) return ldp_bmp_decode(buf, len, img, err, cap);
+    if (ldp_is_gif(buf, len) || ldp_is_gif89(buf, len)) return ldp_gif_decode(buf, len, img, err, cap);
     return ldp_png_decode(buf, len, img, err, cap);
 }
 

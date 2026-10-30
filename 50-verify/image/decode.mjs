@@ -74,6 +74,7 @@ const { startXvfb, waitDisplay, startApp, findWindow, waitMapped, sleep, DOTNET_
         { name: 'rgba-4x3', png: '40-build/wic-dwrite/testdata/rgba-4x3.png', out: '/tmp/ldp-wic-rgba.json' },
         { name: 'rgb-9x6.bmp', png: '40-build/wic-dwrite/testdata/rgb-9x6.bmp', out: '/tmp/ldp-wic-bmp.json' },
         { name: 'rgba-5x4.bmp', png: '40-build/wic-dwrite/testdata/rgba-5x4.bmp', out: '/tmp/ldp-wic-bmp2.json' },
+        { name: 'indexed-8x6.gif', png: '40-build/wic-dwrite/testdata/indexed-8x6.gif', out: '/tmp/ldp-wic-gif.json' },
       ];
       const results = [];
       const xv = startXvfb();
@@ -127,9 +128,9 @@ const { startXvfb, waitDisplay, startApp, findWindow, waitMapped, sleep, DOTNET_
       ...missingNotes,
       ...bad.map((s) => `${s.step} 失败：${JSON.stringify(s).slice(0, 240)}`),
       wicApp && wicApp.cases && wicApp.cases.length > 0 && wicApp.cases.every((c) => c.ok)
-        ? `缺口：**PNG 与 BMP 的应用内解码已通**（BitmapImage 真加载：${wicApp.cases.map((c) => `${c.case}=${c.width}x${c.height}/${c.format}`).join('、')}；` +
+        ? `缺口：**PNG / BMP / GIF 的应用内解码已通**（BitmapImage 真加载：${wicApp.cases.map((c) => `${c.case}=${c.width}x${c.height}/${c.format}`).join('、')}；` +
           `探针层：文件名 ${wicDecode.dims.join('x')}、流入口 ${wicStream && wicStream.hr_stream === 0 ? wicStream.dims.join('x') : '未通'}），` +
-          `但 ①五格式里的 JPEG/TIFF/GIF 未实现 ②ICC 未做（D-018 后续）`
+          `但 ①五格式里的 JPEG/TIFF 未实现 ②ICC 未做（D-018 后续）`
         : wicDecode && wicDecode.loaded && wicDecode.hr_size === 0 && wicDecode.dims && wicDecode.dims[0] > 0
         ? `缺口：**PNG 解码链路已通**（文件名入口 ${wicDecode.dims.join('x')}${wicStream && wicStream.hr_stream === 0 ? `、流入口 ${wicStream.dims.join('x')}` : '、流入口未通'}），但 ①应用内（BitmapImage）未通 ②五格式里的 JPEG/TIFF/GIF/BMP 未实现 ③ICC 未做（D-018 后续）`
         : wicProbe && wicProbe.loaded
