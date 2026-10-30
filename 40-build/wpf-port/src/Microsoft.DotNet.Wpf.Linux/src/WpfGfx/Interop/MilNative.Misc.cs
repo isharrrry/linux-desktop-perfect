@@ -234,6 +234,9 @@ namespace WpfGfx.Linux.Interop
                 MilDeviceObjectKind.EventProxy, pEventProxyDescriptor, "event proxy");
 
             ppEventProxy = proxy.Handle;
+            // 【R9-⑭ 结论】返回值探针证过：本导出**也没有被调用**（改成 E_UNEXPECTED 后
+            //   上层异常仍是 E_NOTIMPL）⇒ 根因不在它，而在 `FactoryMaker` 的构造（`MILCreateFactory`）。
+            //   探针已撤，恢复 S_OK。
             return HResult.S_OK;
         }
 
