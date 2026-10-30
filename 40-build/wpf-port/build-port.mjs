@@ -63,6 +63,8 @@ const ORDER = [
   { id: 'ReachFramework', proj: 'ReachFramework/ReachFramework.Linux.csproj', asm: 'ReachFramework' },
   { id: 'PresentationFramework', proj: 'PresentationFramework/PresentationFramework.Linux.csproj', asm: 'PresentationFramework' },
   { id: 'PresentationFramework.Classic', proj: 'PresentationFramework.Classic/PresentationFramework.Classic.Linux.csproj', asm: 'PresentationFramework.Classic' },
+  // MOD-81 托管侧：DOTNET_STARTUP_HOOKS 树导出器（不是 FrameworkList 件，随 Runtime pack 内部件分发）
+  { id: 'LdpA11y', proj: 'a11y/LdpA11y.csproj', asm: 'LdpA11y' },
 ];
 
 if (has('list')) {

@@ -128,8 +128,11 @@ if (has('smoke')) {
 fs.mkdirSync(DEST, { recursive: true });
 const hostBin = path.join(SYS_DOTNET, 'dotnet');
 if (!fs.existsSync(hostBin)) fail('LDP-E-PACK-207', `系统 dotnet 根不可用：${hostBin}`);
-fs.copyFileSync(hostBin, path.join(DEST, 'dotnet'));
-fs.chmodSync(path.join(DEST, 'dotnet'), 0o755);
+// 原子替换：目标 host 可能正被跑着的应用占用（ETXTBSY），先写临时名再 rename
+const hostTmp = path.join(DEST, '.dotnet.tmp');
+fs.copyFileSync(hostBin, hostTmp);
+fs.chmodSync(hostTmp, 0o755);
+fs.renameSync(hostTmp, path.join(DEST, 'dotnet'));
 const fxrSrc = path.join(SYS_DOTNET, 'host/fxr');
 if (fs.existsSync(fxrSrc)) {
   const fxrDst = path.join(DEST, 'host/fxr');

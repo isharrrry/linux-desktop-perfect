@@ -63,6 +63,8 @@ const INNER_ASSETS = {
   DirectWriteForwarder: path.join(ROOT, '40-build/wpf-port/out/DirectWriteForwarder.dll'),
   'DirectWrite.Linux.Provider': path.join(ROOT, '40-build/wpf-port/out/DirectWrite.Linux.Provider.dll'),
   ...(SKIA_DLL ? { SkiaSharp: SKIA_DLL } : {}),
+  // MOD-81 托管侧：DOTNET_STARTUP_HOOKS 树导出器（判据用，随框架分发）
+  LdpA11y: path.join(ROOT, '40-build/wpf-port/out/LdpA11y.dll'),
 };
 
 const fail = (code, msg) => {

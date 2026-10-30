@@ -1,0 +1,40 @@
+<Project>
+  <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk" />
+  <Import Project="$(MSBuildThisFileDirectory)../../../Linux/build/Directory.Upstream.props" />
+  <!--
+    MOD-81 的托管侧第一半（AutomationPeerAdapter）：把活的 WPF 结构树导出成 IF-071 形状的 JSON。
+    形态是 **DOTNET_STARTUP_HOOKS 钩子**：不改样本、不改框架，由判据侧用环境变量挂上：
+      DOTNET_STARTUP_HOOKS=本程序集路径 LDP_A11Y_DUMP=/tmp/tree.json dotnet 样本.dll
+    这样「结构判据」读的是**真 UIA 树**（AutomationPeer），不是 fake 桩件。
+    引用取自 build-port 的 map 产物目录（wpf-port/out），与自产件同一批身份。
+  -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <AssemblyName>LdpA11y</AssemblyName>
+    <RootNamespace>Ldp.A11y</RootNamespace>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <EnableDefaultEmbeddedResourceItems>false</EnableDefaultEmbeddedResourceItems>
+    <NoWarn>$(NoWarn);CS8002;CA1416;CS1591</NoWarn>
+    <LangVersion>latest</LangVersion>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <GenerateDependencyFile>false</GenerateDependencyFile>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <EnablePInvokeAnalyzer>false</EnablePInvokeAnalyzer>
+    <ProduceReferenceAssembly>false</ProduceReferenceAssembly>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="WindowsBase"><HintPath>$(WpfLinuxRoot)out/WindowsBase.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="System.Xaml"><HintPath>$(WpfLinuxRoot)out/System.Xaml.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="PresentationCore"><HintPath>$(WpfLinuxRoot)out/PresentationCore.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="PresentationFramework"><HintPath>$(WpfLinuxRoot)out/PresentationFramework.dll</HintPath><Private>false</Private></Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="StartupHook.cs" />
+    <Compile Include="TreeDumper.cs" />
+  </ItemGroup>
+  <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
+</Project>

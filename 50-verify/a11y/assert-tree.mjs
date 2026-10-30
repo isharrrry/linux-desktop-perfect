@@ -33,19 +33,29 @@ if (self.status !== 0) {
   });
 }
 
-// ②取树并 diff
-const r = spawnSync('node', [snapshot, '--fake', '--scr', scr], { encoding: 'utf8', timeout: 180000 });
+// ②取树并 diff：优先真 UIA 树（--uia，DOTNET_STARTUP_HOOKS 挂 LdpA11y），
+//    真树不可用（未安装/未实现）时才回落 fake 源 —— 回落的判定必须是 DEGRADED，不是 PASS。
+const uia = spawnSync('node', [snapshot, '--uia', '--scr', scr], { encoding: 'utf8', timeout: 300000 });
+const useUia = uia.status === 0;
+if (!useUia) {
+  spawnSync('node', [snapshot, '--fake', '--scr', scr], { encoding: 'utf8', timeout: 180000 });
+}
 const after = latestReadout('ACC-027');
 const env = {
   scr,
   selftest: selfLine,
-  snapshot_rc: r.status === null ? -1 : r.status,
+  snapshot_rc: useUia ? uia.status : -1,
   snapshot: after?.file,
-  runner: 'fake',
+  runner: useUia ? 'uia-startup-hook' : 'fake',
   bounds_diff: (after?.data?.bounds_diff || []).length,
+  extra_nodes: (after?.data?.extra_nodes || []).length,
+  session_limited: (after?.data?.session_limited || []).length,
 };
 // ③判定：DEGRADED 不算通过
-const verdict = after?.data?.verdict === 'PASS' ? 'DEGRADED' : after?.data?.verdict === 'FAIL' ? 'FAIL' : 'SKIP';
+// 真 UIA 树：PASS/FAIL 直接采信；fake 源：结构通路通过也只能判 DEGRADED（08 §1.5）
+const verdict = after?.data?.verdict === 'PASS'
+  ? (useUia ? 'PASS' : 'DEGRADED')
+  : after?.data?.verdict === 'FAIL' ? 'FAIL' : 'SKIP';
 const diffs = after?.data?.diff?.map((d) => (typeof d === 'string' ? d : JSON.stringify(d))) || [];
 finish({
   acc: 'ACC-027', started, env,

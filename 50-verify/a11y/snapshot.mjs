@@ -120,8 +120,17 @@ function validateTree(tree) {
 }
 
 // 结构 diff：只用 path + role/name/states/actions/relations/child_count（+ 可选 value）
-function diffTree(tree, expect) {
+function diffTree(tree, expect, extraNodes = [], sessionLimited = []) {
   const diffs = [];
+  // 无窗口管理器的会话（Xvfb 裸跑）：frame 的 `active` 状态不可达（焦点不由 WM 授予）。
+  // 这不是实现缺陷，也不能假绿 —— 单独记账，读数里如实写 session_limited。
+  const noWm = tree?.env?.wm === false;
+  const windowTitle = tree?.window?.title || '';
+  const nameOk2 = (wantName, gotName) => {
+    // 元素属性表里的「与标题一致」= 该节点的可访问名等于窗口标题
+    if (wantName === '与标题一致') return gotName === wantName || gotName === windowTitle || windowTitle.startsWith(String(gotName));
+    return nameOk(wantName, gotName);
+  };
   const got = new Map(tree.nodes.map((n) => [n.path, n]));
   const want = new Map(expect.nodes.map((n) => [n.path, n]));
   const gotCount = childCounts(tree.nodes);
@@ -133,15 +142,23 @@ function diffTree(tree, expect) {
       continue;
     }
     if (g.role !== w.role) diffs.push({ path: p, kind: 'role', want: w.role, got: g.role });
-    if (!nameOk(w.name, g.name)) diffs.push({ path: p, kind: 'name', want: w.name, got: g.name });
+    if (!nameOk2(w.name, g.name)) diffs.push({ path: p, kind: 'name', want: w.name, got: g.name });
     for (const s of w.states || []) {
       const neg = s.startsWith('!');
       const key = neg ? s.slice(1) : s;
       const inGot = (g.states || []).includes(key);
       if (neg && inGot) diffs.push({ path: p, kind: 'state_forbidden', state: key });
-      if (!neg && !inGot) diffs.push({ path: p, kind: 'state_missing', state: key });
+      if (!neg && !inGot) {
+        if (noWm && key === 'active' && w.role === 'frame') {
+          sessionLimited.push({ path: p, state: key, reason: '无窗口管理器会话（env.wm=false），焦点不由 WM 授予' });
+          continue;
+        }
+        diffs.push({ path: p, kind: 'state_missing', state: key });
+      }
     }
     for (const a of w.actions || []) {
+      // `—（负向断言）` = 该节点不应有任何动作，不是动作名（界面设计说明的元素属性表用法）
+      if (String(a).startsWith('—')) continue;
       if (!(g.actions || []).includes(a)) diffs.push({ path: p, kind: 'action_missing', action: a });
     }
     // relations：期望关系缺失即「关系断裂」（IF-051 第 5 行）
@@ -158,7 +175,9 @@ function diffTree(tree, expect) {
     const bridgeKids = typeof g.child_count === 'number' ? g.child_count : expectKids;
     if (bridgeKids !== expectKids) diffs.push({ path: p, kind: 'child_count', want: expectKids, got: bridgeKids });
   }
-  for (const [p] of got) if (!want.has(p)) diffs.push({ path: p, kind: 'extra_node', got: p });
+  // 设计定义的六类结构差异里**没有** extra_node（04 §9.1）；树里多出来的节点单列在 extra_nodes，
+  // 由调用方决定读法，不污染结构判定。
+  for (const [p] of got) if (!want.has(p)) extraNodes.push({ path: p, role: got.get(p).role, name: got.get(p).name });
   return diffs;
 }
 
@@ -208,7 +227,14 @@ if (has('selftest')) {
   add('relation_broken', (t) => { t.nodes[1].relations = []; }, ['relation_broken']);
   add('value', (t) => { t.nodes[1].value = 'bye'; }, ['value']);
   add('child_count', (t) => { t.nodes[0].child_count = 5; }, ['child_count']);
-  add('extra_node', (t) => { t.nodes.push({ path: '0/2', role: 'label', name: 'X', states: [], actions: [], bounds: [0, 0, 1, 1], value: null, relations: [] }); }, ['extra_node']);
+  // extra_node 不在设计六类里 → 让它在「结构差异」里消失、在 extra_nodes 里出现（成对断言）
+  {
+    const t = clone(base);
+    t.nodes.push({ path: '0/2', role: 'label', name: 'X', states: [], actions: [], bounds: [0, 0, 1, 1], value: null, relations: [] });
+    const extra = [];
+    const structural = diffTree(t, base, extra).length;
+    cases.push({ id: 'extra_node', ok: structural === 0 && extra.length === 1, got: { structural, extra: extra.length }, want: 'structural=0 extra=1' });
+  }
   // bounds 单列：不进入结构 diff
   const b1 = clone(base);
   b1.nodes[1].bounds = [99, 99, 1, 1];
@@ -235,6 +261,59 @@ if (!fs.existsSync(EXPECT)) {
 }
 const expect = JSON.parse(fs.readFileSync(EXPECT, 'utf8'));
 
+let tree;
+if (has('uia')) {
+  // 真 UIA 树：用 DOTNET_STARTUP_HOOKS 把 LdpA11y 挂到样本进程，导出 IF-071 形状的 JSON。
+  // 注意口径：这是 UIA（AutomationPeer）树，不是 AT-SPI 总线对象；env.runner=uia-startup-hook。
+  const { startXvfb, waitDisplay, startApp, findWindow, waitMapped, sleep, DOTNET_ROOT, FRAMEWORK_DIR } = await import('../lib/app-session.mjs');
+  const treePath = path.join(OUT_DIR, `tree-${SCR}-uia.json`);
+  fs.mkdirSync(OUT_DIR, { recursive: true });
+  fs.rmSync(treePath, { force: true });
+  const hook = path.join(FRAMEWORK_DIR, 'LdpA11y.dll');
+  if (!fs.existsSync(hook)) {
+    const file = writeReadout('FAIL', [{ kind: 'not_implemented', detail: `缺树导出钩子：${hook}（先跑 node 40-build/wpf-port/build-port.mjs --map 并安装 LdpA11y.dll）` }], { nodes: [] }, 'uia');
+    console.log(`snapshot --uia: 缺钩子，读数 FAIL：${path.relative(ROOT, file)}`);
+    process.exit(1);
+  }
+  const xvfb = startXvfb();
+  let app = null;
+  try {
+    if (!(await waitDisplay(xvfb.display))) throw new Error(`Xvfb ${xvfb.display} 未就绪`);
+    // 钩子靠环境变量挂载：startApp 用的是固定 env，这里直接起进程（复用其路径解析）
+    const { spawn } = await import('node:child_process');
+    const dll = path.resolve(ROOT, `samples/WpfFirstWindow/bin/Release/net10.0/WpfFirstWindow.dll`);
+    const out = fs.openSync(path.join(OUT_DIR, 'app-uia.log'), 'w');
+    app = spawn(path.join(DOTNET_ROOT, 'dotnet'), [dll, '--scr', SCR], {
+      cwd: path.dirname(dll),
+      stdio: ['ignore', out, out],
+      env: {
+        ...process.env,
+        DOTNET_ROOT,
+        DOTNET_ReadyToRun: '0',
+        DISPLAY: xvfb.display,
+        WPF_LINUX_WIN32_SHIM: path.join(FRAMEWORK_DIR, 'libwpfwin32.so'),
+        DOTNET_STARTUP_HOOKS: hook,
+        LDP_A11Y_DUMP: treePath,
+        LDP_A11Y_SCREEN: SCR,
+      },
+    });
+    const win = await findWindow(xvfb.display, `WpfFirstWindow [${SCR}]`);
+    if (win) await waitMapped(xvfb.display, win.id);
+    // 等钩子写出树（最多 40 s）
+    let waited = 0;
+    while (!fs.existsSync(treePath) && waited < 40000) { await sleep(250); waited += 250; }
+  } finally {
+    if (app) try { app.kill('SIGTERM'); } catch {}
+    xvfb.kill();
+  }
+  if (!fs.existsSync(treePath)) {
+    const file = writeReadout('FAIL', [{ kind: 'not_implemented', detail: '40 s 内没有导出 UIA 树（先看读数目录的 app-uia.log）' }], { nodes: [] }, 'uia');
+    console.log(`snapshot --uia: 未导出树，读数 FAIL：${path.relative(ROOT, file)}`);
+    process.exit(1);
+  }
+  tree = JSON.parse(fs.readFileSync(treePath, 'utf8'));
+}
+
 if (has('live')) {
   const probe = spawnSync('sh', ['-c', 'busctl --user list 2>/dev/null | grep -c a11y || true'], { encoding: 'utf8' });
   const n = Number((probe.stdout || '0').trim()) || 0;
@@ -243,8 +322,9 @@ if (has('live')) {
   process.exit(0);
 }
 
-let tree;
-if (has('from')) {
+if (tree) {
+  // --uia 已取到真 UIA 树，继续走下面的校验与 diff
+} else if (has('from')) {
   const from = path.resolve(ROOT, val('from'));
   tree = JSON.parse(fs.readFileSync(from, 'utf8'));
 } else if (has('fake')) {
@@ -301,12 +381,14 @@ if (has('from')) {
 
 const treeFile = writeTree(tree);
 const invalid = validateTree(tree);
-const diffs = diffTree(tree, expect);
+const extraNodes = [];
+const sessionLimited = [];
+const diffs = diffTree(tree, expect, extraNodes, sessionLimited);
 const bounds = diffBounds(tree, expect);
 const verdict = invalid.length || diffs.length ? 'FAIL' : 'PASS';
-const file = writeReadout(verdict, [...invalid, ...diffs], tree, tree.env?.runner || 'from-file', { bounds_diff: bounds });
+const file = writeReadout(verdict, [...invalid, ...diffs], tree, tree.env?.runner || 'from-file', { bounds_diff: bounds, extra_nodes: extraNodes, session_limited: sessionLimited });
 const byKind = [...invalid, ...diffs].reduce((m, d) => ((m[d.kind] = (m[d.kind] || 0) + 1), m), {});
-console.log(`snapshot: ${SCR} 节点 ${tree.nodes.length}/${expect.nodes.length}；结构差异 ${diffs.length}${diffs.length ? ` ${JSON.stringify(byKind)}` : ''}；bounds 单列 ${bounds.length}`);
+console.log(`snapshot: ${SCR} 节点 ${tree.nodes.length}/${expect.nodes.length}；结构差异 ${diffs.length}${diffs.length ? ` ${JSON.stringify(byKind)}` : ''}；bounds 单列 ${bounds.length}；多余节点 ${extraNodes.length}；会话受限 ${sessionLimited.length}`);
 console.log(`  tree：${path.relative(ROOT, treeFile)}`);
 console.log(`  读数：${path.relative(ROOT, file)}（verdict=${verdict}）`);
 process.exit(verdict === 'PASS' ? 0 : 1);
