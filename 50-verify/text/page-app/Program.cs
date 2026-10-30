@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading;
 using System.Windows;
 using System.Windows.Documents;
+using System.Windows.Media;
 
 namespace LdpVerify.Page
 {
@@ -44,6 +45,11 @@ namespace LdpVerify.Page
                 doc.PageHeight = 300;
                 doc.PagePadding = new Thickness(20);
                 doc.ColumnWidth = 400;
+                // 显式指定一个**可解析**的族：日志里 DEJAVU SANS 的 fallback=no/resolved 成功，
+                //   而 GEORGIA / GLOBAL USER INTERFACE 都是 resolved=none。分页要逐字测量，
+                //   落在"解析不到"的族上就可能反复重试（D-019 的现象）。
+                doc.FontFamily = new FontFamily("DejaVu Sans");
+                doc.FontSize = 12;
                 var sb = new StringBuilder();
                 for (int i = 0; i < 120; ++i) sb.Append("第 ").Append(i + 1).Append(" 行：LinuxDesktopPerfect 的 FlowDocument 分页验证文本。\n");
                 doc.Blocks.Add(new Paragraph(new Run(sb.ToString())));
