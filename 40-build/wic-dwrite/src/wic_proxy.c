@@ -231,6 +231,7 @@ int32_t IWICImagingFactory_CreateDecoderFromStream_Proxy(void *factory, void *st
     free(buf);
     if (hr != 0) { free(d); return hr; }
     d->magic = WIC_DECODER_MAGIC;
+    wic_track_add(d);
     *out = d;
     return S_OK_;
 }
@@ -263,6 +264,7 @@ int32_t IWICImagingFactory_CreateDecoderFromFileHandle_Proxy(void *factory, void
     free(buf);
     if (hr != 0) { free(d); return hr; }
     d->magic = WIC_DECODER_MAGIC;
+    wic_track_add(d);
     *out = d;
     return S_OK_;
 }
@@ -492,6 +494,37 @@ int32_t CoInitializeEx(void *pvReserved, uint32_t flags) { (void)pvReserved; (vo
 void    CoUninitialize(void) { }
 void    CoFreeUnusedLibraries(void) { }
 
+// ── 颜色上下文（ICC）：PNG 无内嵌 profile ⇒ 实际数量 0（不是"忘了实现"）─────────────
+// WPF 用它判断"要不要做色彩管理"。返回 0 个上下文是**真值**：本解码器只解像素，
+// 不做 ICC 解析（D-018 的 ICC 分支仍缺，见已知坑清单）。
+int32_t IWICBitmapFrameDecode_GetColorContexts_Proxy(void *decoder, uint32_t count,
+                                                     void **contexts, uint32_t *actual)
+{
+    (void)decoder; (void)count; (void)contexts;
+    if (actual) *actual = 0;
+    return S_OK_;
+}
+
+// ── 缩略图：PNG 没有内嵌缩略图 ⇒ 按 WIC 语义返回 WINCODEC_ERR_CODECNOTHUMBNAIL ──────
+// 为什么要用这个专用码而不是 E_NOTIMPL：WPF 的 `EnsureThumbnail` 认这个码为"确实没有缩略图"
+// 并**正常跳过**；返回 E_NOTIMPL 会被当成"实现缺失"抛 NotImplementedException（实测踩过）。
+int32_t IWICBitmapFrameDecode_GetThumbnail_Proxy(void *decoder, void **thumb)
+{
+    if (thumb) *thumb = NULL;
+    (void)decoder;
+    return (int32_t)0x88982F44;   /* WINCODEC_ERR_CODECNOTHUMBNAIL（上游 wgx_error.cs 的值） */
+}
+
+// ── 分辨率（UpdateCachedSettings 会问；PNG 没存 DPI 时按 WIC 的默认 96）────────────
+int32_t IWICBitmapSource_GetResolution_Proxy(void *source, double *dpiX, double *dpiY)
+{
+    wic_decoder *d = (wic_decoder *)source;
+    if (!d || d->magic != WIC_DECODER_MAGIC) return 0x80070057;
+    if (dpiX) *dpiX = 96.0;
+    if (dpiY) *dpiY = 96.0;
+    return S_OK_;
+}
+
 // ── 帧计数（WPF 建好解码器后会问"有几帧"）───────────────────────────────────
 int32_t IWICBitmapDecoder_GetFrameCount_Proxy(void *decoder, uint32_t *count)
 {
@@ -516,9 +549,6 @@ WIC_STUB(IWICImagingFactory_CreateBitmapFromSource_Proxy)
 WIC_STUB(IWICImagingFactory_CreateBitmapFromMemory_Proxy)
 WIC_STUB(IWICImagingFactory_CreateBitmapFromHICON_Proxy)
 WIC_STUB(IWICImagingFactory_CreateFormatConverter_Proxy)
-WIC_STUB(IWICBitmapFrameDecode_GetThumbnail_Proxy)
-WIC_STUB(IWICBitmapSource_GetResolution_Proxy)
-WIC_STUB(IWICBitmapSource_GetColorContexts_Proxy)
 WIC_STUB(IWICBitmapFrameDecode_GetMetadataQueryReader_Proxy)
 WIC_STUB(IWICMetadataQueryReader_GetMetadataByName_Proxy)
 WIC_STUB(IWICMetadataQueryReader_GetEnumerator_Proxy)
