@@ -250,7 +250,16 @@ static int jpeg_decode_block(jpeg_ctx *c, int comp_idx, int32_t *coef)
     jpeg_huff *dc = c->comp[comp_idx].dc;
     jpeg_huff *ac = c->comp[comp_idx].ac;
     if (!dc || !ac) return -1;
+    if (getenv("LDP_JPEG_TRACE")) {
+        fprintf(stderr, "[JPEG] block comp=%d pos=%zu bitcnt=%d dcmax[1..3]=%d,%d,%d dcmax[4..6]=%d,%d,%d acmax[1]=%d count_dc=%d count_ac=%d\n",
+                comp_idx, c->pos, c->bitcnt,
+                dc->maxcode[1], dc->maxcode[2], dc->maxcode[3],
+                dc->maxcode[4], dc->maxcode[5], dc->maxcode[6],
+                ac->maxcode[1], dc->count, ac->count);
+        fflush(stderr);
+    }
     int t = jpeg_decode_huff(c, dc);
+    if (getenv("LDP_JPEG_TRACE")) { fprintf(stderr, "[JPEG]   DC t=%d\n", t); fflush(stderr); }
     if (t < 0) return -1;
     int diff = jpeg_extend(jpeg_getbits(c, t), t);
     c->comp[comp_idx].dc_pred += diff;
