@@ -31,8 +31,9 @@ namespace LdpVerify.Wic
             }
             catch (Exception ex)
             {
-                json = string.Format("{{\"ok\":false,\"type\":\"{0}\",\"error\":\"{1}\"}}",
-                    ex.GetType().Name, ex.Message.Replace("\\", "\\\\").Replace("\"", "\\\""));
+                json = string.Format("{{\"ok\":false,\"type\":\"{0}\",\"error\":\"{1}\",\"stack\":\"{2}\"}}",
+                    ex.GetType().Name, ex.Message.Replace("\\", "\\\\").Replace("\"", "\\\""),
+                    (ex.StackTrace ?? "").Replace("\\", "\\\\").Replace("\"", "\\\"").Replace("\r", "").Replace("\n", " | "));
             }
             File.WriteAllText(_out, json + "\n");
             Shutdown(0);

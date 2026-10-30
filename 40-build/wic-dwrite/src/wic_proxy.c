@@ -15,6 +15,7 @@
 
 #define _GNU_SOURCE
 #include <dlfcn.h>
+#include <pthread.h>
 #include <unistd.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -50,11 +51,41 @@ int wpf_wic_factory_valid(const void *p)
 // WPF 的主路径是 `CreateDecoderFromStream`（IStream 由 milcore 的 MILCreateStream 造），
 // 这里先实现**文件路径**入口（`CreateDecoderFromFilename`）把解码链路打通：
 // 探针可以直接验证"PNG 能解出正确像素"，之后再把 stream 入口接到同一个解码器上。
-typedef struct {
+typedef struct wic_decoder {
     uint32_t magic;
+    int refcount;              // WicShim_AddRef/Release 的账
+    struct wic_decoder *next;  // 活句柄表（WicShim_HandleCount 用）
     ldp_png_image img;
 } wic_decoder;
 #define WIC_DECODER_MAGIC 0x57494344u   /* 'WICD' */
+
+static wic_decoder *s_live = NULL;
+static int s_live_count = 0;
+static int s_peak_count = 0;
+static pthread_mutex_t s_live_lock = PTHREAD_MUTEX_INITIALIZER;
+
+static void wic_track_add(wic_decoder *d)
+{
+    pthread_mutex_lock(&s_live_lock);
+    d->refcount = 1;
+    d->next = s_live;
+    s_live = d;
+    s_live_count++;
+    if (s_live_count > s_peak_count) s_peak_count = s_live_count;
+    pthread_mutex_unlock(&s_live_lock);
+}
+
+static int wic_track_drop(wic_decoder *d)
+{
+    pthread_mutex_lock(&s_live_lock);
+    wic_decoder **pp = &s_live;
+    while (*pp && *pp != d) pp = &(*pp)->next;
+    if (*pp == d) { *pp = d->next; s_live_count--; }
+    pthread_mutex_unlock(&s_live_lock);
+    return 1;
+}
+
+
 
 int32_t IWICImagingFactory_CreateDecoderFromFilename_Proxy(void *factory, const uint16_t *wpath,
                                                             void *guidVendor, uint32_t access,
@@ -90,6 +121,7 @@ int32_t IWICImagingFactory_CreateDecoderFromFilename_Proxy(void *factory, const 
     free(buf);
     if (hr != 0) { free(d); return hr; }
     d->magic = WIC_DECODER_MAGIC;
+    wic_track_add(d);
     *out = d;
     return S_OK_;
 }
@@ -233,6 +265,64 @@ int32_t IWICImagingFactory_CreateDecoderFromFileHandle_Proxy(void *factory, void
     d->magic = WIC_DECODER_MAGIC;
     *out = d;
     return S_OK_;
+}
+
+// ── 句柄归属/引用计数契约（bridge 的 MilExternalHandleBridge 要这 5 个导出）──────────
+// 为什么必须有：WPF 把 WIC 返回的指针包进 `SafeMILHandle`，释放时走 `MILRelease` →
+//   bridge 的 `MilExternalHandleBridge.TryReleaseExternal` 会 dlsym 这五个名字来决定
+//   "这个句柄是不是 libwpfwic 的、该由谁回收"。缺它们 ⇒ bridge 归不了账 ⇒
+//   `MILRelease` 返回 `E_HANDLE(0x80070006)`（实测：WIC 链路走到这一步就抛 COMException）。
+int WicShim_OwnsHandle(void *handle)
+{
+    wic_decoder *d = (wic_decoder *)handle;
+    if (!d) return 0;
+    pthread_mutex_lock(&s_live_lock);
+    int owned = 0;
+    for (wic_decoder *it = s_live; it; it = it->next) if (it == d) { owned = 1; break; }
+    pthread_mutex_unlock(&s_live_lock);
+    return owned;
+}
+
+int WicShim_AddRef(void *handle)
+{
+    wic_decoder *d = (wic_decoder *)handle;
+    if (!d) return 0;
+    pthread_mutex_lock(&s_live_lock);
+    d->refcount++;
+    int n = d->refcount;
+    pthread_mutex_unlock(&s_live_lock);
+    return n;
+}
+
+int WicShim_Release(void *handle)
+{
+    wic_decoder *d = (wic_decoder *)handle;
+    if (!d) return 0;
+    pthread_mutex_lock(&s_live_lock);
+    int n = --d->refcount;
+    pthread_mutex_unlock(&s_live_lock);
+    if (n > 0) return n;
+    wic_track_drop(d);
+    ldp_png_free(&d->img);
+    d->magic = 0;
+    free(d);
+    return 0;
+}
+
+int WicShim_HandleCount(void)
+{
+    pthread_mutex_lock(&s_live_lock);
+    int n = s_live_count;
+    pthread_mutex_unlock(&s_live_lock);
+    return n;
+}
+
+int WicShim_PeakHandleCount(void)
+{
+    pthread_mutex_lock(&s_live_lock);
+    int n = s_peak_count;
+    pthread_mutex_unlock(&s_live_lock);
+    return n;
 }
 
 // ── 组件信息（WPF 建好解码器后要它：GetDecoderInfo → IWICComponentInfo_*）─────────────
