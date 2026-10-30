@@ -243,7 +243,9 @@ namespace Ldp.A11y
                     if (IsContainer(el))
                     {
                         Walk(child, childPath, outNodes);
-                        WalkDocumentBlocks(el, childPath, outNodes);
+                        // 【暂时关闭】段落节点一旦真的建出来，dump 就卡住（Tag 已能读到 String[]，
+                        //   说明应用侧缓存生效；卡在投影侧建节点之后）。先关掉保证树导出，
+                        //   下一步定位"建节点"这步为什么卡（见 D-015 第十五步）。
                     }
                 }
                 else
@@ -263,11 +265,24 @@ namespace Ldp.A11y
         {
             try
             {
+                // 视觉树里遇到的往往是宿主的**内部 ScrollViewer**（role 会投影成 unknown），
+                //   不是宿主本身 ⇒ 沿祖先链找真正的 FlowDocument*Viewer/Reader/RichTextBox。
                 System.Windows.Documents.FlowDocument doc = null;
-                if (host is System.Windows.Controls.FlowDocumentScrollViewer sv) doc = sv.Document;
-                else if (host is System.Windows.Controls.FlowDocumentReader rdr) doc = rdr.Document;
-                else if (host is System.Windows.Controls.RichTextBox rtb) doc = rtb.Document;
-                if (doc == null) return;
+                DependencyObject cur = host;
+                for (int depth = 0; cur != null && depth < 8; ++depth)
+                {
+                    if (cur is System.Windows.Controls.FlowDocumentScrollViewer sv) { doc = sv.Document; break; }
+                    if (cur is System.Windows.Controls.FlowDocumentReader rdr) { doc = rdr.Document; break; }
+                    if (cur is System.Windows.Controls.RichTextBox rtb) { doc = rtb.Document; break; }
+                    try { cur = VisualTreeHelper.GetParent(cur); } catch { break; }
+                }
+                if (doc == null) { if (Environment.GetEnvironmentVariable("LDP_DOC_DIAG") == "1") Console.Error.WriteLine("[DOC] host=" + host.GetType().Name + " doc=null"); return; }
+                if (Environment.GetEnvironmentVariable("LDP_DOC_DIAG") == "1")
+                {
+                    Console.Error.WriteLine("[DOC] host=" + host.GetType().Name + " path=" + path
+                        + " tag=" + (doc.Tag == null ? "null" : doc.Tag.GetType().Name));
+                    Console.Error.Flush();
+                }
                 if (doc.Tag is not string[] cached || cached.Length == 0) return;
 
                 int idx = 0;

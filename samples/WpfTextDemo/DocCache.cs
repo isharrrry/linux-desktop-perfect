@@ -13,11 +13,18 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
 using System.Windows.Media;
+using System.Runtime.CompilerServices;
 
 namespace LinuxDesktopPerfect.Samples.WpfTextDemo
 {
     internal static class DocCache
     {
+        // 【为什么需要这一行】静态类的静态构造**只在类被使用时**才执行；没人引用 DocCache，
+        //   类处理器就永远不会注册（实测症状：`doc.Tag` 一直是 null）。
+        //   `[ModuleInitializer]` 在模块加载时强制跑一次 ⇒ 注册一定发生。
+        [System.Runtime.CompilerServices.ModuleInitializer]
+        internal static void Init() { RuntimeHelpers.RunClassConstructor(typeof(DocCache).TypeHandle); }
+
         static DocCache()
         {
             EventManager.RegisterClassHandler(typeof(TextWindow), FrameworkElement.LoadedEvent,
