@@ -21,7 +21,7 @@ const missingNotes = missing.map((m) => `缺被测对象：${m.path}（${m.why}�
 // 真跑：WIC 的承载面是 `libwpfwic.so`（IWICImagingFactory 等 COM 风格接口）。它不存在时，
 //   本判据要落两件事：①resolver 的 WIC 映射是否已开（`WicEnabledByDefault`）；②起 SCR-03 图像样本，
 //   看有没有别的解码路径（WPF 的 `BitmapDecoder` 在 Linux 上会走 WIC，缺 so 时应如实失败）。
-const { startXvfb, waitDisplay, startApp, findWindow, waitMapped, sleep, DOTNET_ROOT } = await import('../lib/app-session.mjs');
+const { startXvfb, waitDisplay, startApp, findWindow, waitMapped, sleep, DOTNET_ROOT, FRAMEWORK_DIR } = await import('../lib/app-session.mjs');
 {
   const { spawnSync } = await import('node:child_process');
   const resolverFlag = (spawnSync('sh', ['-c', 'grep -c "WicEnabledByDefault = true" 40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/shims/Win32ShimResolver.cs'], { encoding: 'utf8' }).stdout.trim() || '0');
@@ -58,6 +58,33 @@ const { startXvfb, waitDisplay, startApp, findWindow, waitMapped, sleep, DOTNET_
       try { wicStream = JSON.parse(line); } catch { wicStream = { raw: line }; }
     }
   }
+  // 应用内解码（端到端）：WicApp 用自产 WPF 的 BitmapImage 加载 testdata 的 PNG。
+  //   现状（D-018）：resolver 已把 WindowsCodecs 映射到 libwpfwic，WPF 依次调用
+  //   CreateDecoderFromFileHandle（已实现）→ GetDecoderInfo（未实现）⇒ EntryPointNotFound。
+  //   读数里带 error_type，缺口演进一目了然。
+  let wicApp = null;
+  {
+    const appDll = '50-verify/image/wic-app/bin/Release/net10.0/WicApp.dll';
+    const png = '40-build/wic-dwrite/testdata/rgb-7x5.png';
+    const outJson = '/tmp/ldp-wic-result.json';
+    const so = '40-build/wic-dwrite/bin/libwpfwic.so';
+    if (fs.existsSync(appDll) && fs.existsSync(png) && fs.existsSync(so)) {
+      fs.rmSync(outJson, { force: true });
+      const xv = startXvfb();
+      try {
+        if (await waitDisplay(xv.display)) {
+          spawnSync('sh', ['-c',
+            `DISPLAY=${xv.display} DOTNET_ROOT=${DOTNET_ROOT} DOTNET_ReadyToRun=0 ` +
+            `WPF_LINUX_WIN32_SHIM=${FRAMEWORK_DIR}/libwpfwin32.so WPF_LINUX_WIC_SHIM=${so} ` +
+            `timeout 40 ${DOTNET_ROOT}/dotnet ${appDll} ${png} ${outJson} > /tmp/ldp-wic-app.log 2>&1`],
+            { encoding: 'utf8', timeout: 60000 });
+        }
+      } finally {
+        xv.kill();
+      }
+      try { wicApp = JSON.parse(fs.readFileSync(outJson, 'utf8')); } catch { wicApp = null; }
+    }
+  }
   const xvfb = startXvfb();
   let app = null;
   const steps = [];
@@ -79,7 +106,7 @@ const { startXvfb, waitDisplay, startApp, findWindow, waitMapped, sleep, DOTNET_
   const bad = steps.filter((s) => !s.ok);
   finish({
     acc: 'ACC-018', started,
-    env: { ...env, dotnet_root: DOTNET_ROOT, wic_probe: wicProbe, wic_decode_chain: wicDecode, wic_stream_chain: wicStream, wic_mapping_enabled: resolverFlag === '1', windows_codecs_pinvoke_sites: Number(pInvokeCount) || 0, steps },
+    env: { ...env, dotnet_root: DOTNET_ROOT, wic_probe: wicProbe, wic_decode_chain: wicDecode, wic_stream_chain: wicStream, wic_app: wicApp, wic_mapping_enabled: resolverFlag === '1', windows_codecs_pinvoke_sites: Number(pInvokeCount) || 0, steps },
     expectRef: 'ACC-018：五格式',
     verdict: 'FAIL',
     diff: [

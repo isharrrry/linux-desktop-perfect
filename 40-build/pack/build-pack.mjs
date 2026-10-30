@@ -333,18 +333,23 @@ function buildRuntimePack() {
   // 自产原生件：4 个 .so（MOD-52 的 NativeAssetMap，IF-023 布局）
   const nativeDir = path.join(dir, 'runtimes/linux-x64/native');
   fs.mkdirSync(nativeDir, { recursive: true });
-  const nativeWanted = ['libwpfwin32.so', 'libwpfgfx_linux.so', 'libwpfwic.so', 'libdwlinux.so'];
+  // 每个原生件可能有多个来源目录（libwpfwic 与 libdwlinux 各有自己的构建目录）
+  const nativeWanted = [
+    { name: 'libwpfwin32.so', dirs: [SHIM] },
+    { name: 'libwpfgfx_linux.so', dirs: [SHIM] },
+    { name: 'libwpfwic.so', dirs: [path.join(ROOT, '40-build/wic-dwrite/bin'), SHIM] },
+    { name: 'libdwlinux.so', dirs: [path.join(ROOT, '40-build/text-stack/bin'), SHIM] },
+  ];
   const natives = [];
-  for (const n of nativeWanted) {
-    const src = path.join(SHIM, n);
-    if (fs.existsSync(src)) {
-      fs.copyFileSync(src, path.join(nativeDir, n));
-      fs.chmodSync(path.join(nativeDir, n), 0o755);
-      natives.push({ name: n, from: rel(src), bytes: fs.statSync(src).size });
-    }
+  for (const want of nativeWanted) {
+    const src = want.dirs.map((d) => path.join(d, want.name)).find((p) => fs.existsSync(p));
+    if (!src) continue;
+    fs.copyFileSync(src, path.join(nativeDir, want.name));
+    fs.chmodSync(path.join(nativeDir, want.name), 0o755);
+    natives.push({ name: want.name, from: rel(src), bytes: fs.statSync(src).size });
   }
   // 原生件缺失不阻止组装，但必须如实记录（S1 只强依赖 libwpfwin32.so）
-  const nativeMissing = nativeWanted.filter((n) => !natives.some((x) => x.name === n));
+  const nativeMissing = nativeWanted.map((w) => w.name).filter((n) => !natives.some((x) => x.name === n));
   if (nativeMissing.includes('libwpfwin32.so')) {
     fail('LDP-E-PACK-207', '原生资产缺失：libwpfwin32.so（先跑 make -C 40-build/native-shim）');
   }

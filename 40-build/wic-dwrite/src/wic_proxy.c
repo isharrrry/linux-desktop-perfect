@@ -15,6 +15,7 @@
 
 #define _GNU_SOURCE
 #include <dlfcn.h>
+#include <unistd.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -202,12 +203,46 @@ int32_t IWICImagingFactory_CreateDecoderFromStream_Proxy(void *factory, void *st
     return S_OK_;
 }
 
+// ── 文件句柄入口（WPF 的 FileStream 路径走这条）────────────────────────────────
+// WPF 的 `BitmapDecoder` 在 `FileStream` 支持 SafeFileHandle 时会走
+// `CreateDecoderFromFileHandle(factory, SafeFileHandle, ref Guid, flags, out decoder)`。
+// Linux 上 SafeFileHandle 就是 **fd**（`CreateFileW` 在本 shim 里是 stub，WPF 用托管 FileStream）。
+// 用 `pread` 从 0 读全文件（不改 fd 偏移，避免影响调用方后续读）。
+int32_t IWICImagingFactory_CreateDecoderFromFileHandle_Proxy(void *factory, void *hFile,
+                                                              void *guidVendor, uint32_t metadataFlags,
+                                                              void **out)
+{
+    (void)guidVendor; (void)metadataFlags;
+    if (!out) return E_NOTIMPL_;
+    *out = NULL;
+    if (!wpf_wic_factory_valid(factory) || !hFile) return 0x80070057;
+    int fd = (int)(intptr_t)hFile;
+    off_t size = lseek(fd, 0, SEEK_END);
+    if (size <= 0) return 0x80070057;
+    if (lseek(fd, 0, SEEK_SET) < 0) return 0x80070057;
+    uint8_t *buf = (uint8_t *)malloc((size_t)size);
+    if (!buf) return E_NOTIMPL_;
+    ssize_t got = read(fd, buf, (size_t)size);
+    if (got != (ssize_t)size) { free(buf); return E_NOTIMPL_; }
+    wic_decoder *d = (wic_decoder *)calloc(1, sizeof(wic_decoder));
+    if (!d) { free(buf); return E_NOTIMPL_; }
+    char err[256] = { 0 };
+    int32_t hr = ldp_png_decode(buf, (size_t)size, &d->img, err, sizeof(err));
+    free(buf);
+    if (hr != 0) { free(d); return hr; }
+    d->magic = WIC_DECODER_MAGIC;
+    *out = d;
+    return S_OK_;
+}
+
 // ── 未实现的 WIC 入口：明确失败（数量与 WPF 的 P/Invoke 面一一对应，后续逐个填实）──
 #define WIC_STUB(name) \
-    int32_t name(void) { return E_NOTIMPL_; }
+    int32_t name(void) { \
+        if (getenv("LDP_WIC_TRACE")) { fprintf(stderr, "[WIC-STUB] %s 被调用（返回 E_NOTIMPL）\n", #name); fflush(stderr); } \
+        return E_NOTIMPL_; \
+    }
 
 WIC_STUB(WICSetEncoderFormat_Proxy)
-WIC_STUB(IWICImagingFactory_CreateDecoderFromFileHandle_Proxy)
 WIC_STUB(IWICImagingFactory_CreateEncoder_Proxy)
 WIC_STUB(IWICImagingFactory_CreateComponentInfo_Proxy)
 WIC_STUB(IWICImagingFactory_CreateBitmap_Proxy)
