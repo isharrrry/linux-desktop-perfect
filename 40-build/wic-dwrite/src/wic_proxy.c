@@ -650,8 +650,9 @@ int32_t IWICBitmapFrameDecode_GetColorContexts_Proxy(void *decoder, uint32_t cou
     if (actual) *actual = 0;
     wic_decoder *d = (wic_decoder *)decoder;
     if (getenv("LDP_WIC_TRACE")) {
-        fprintf(stderr, "[WIC-ICC] GetColorContexts(count=%u, contexts=%p, decoder=%p magic_ok=%d icc_len=%u)\n",
-                count, (void *)contexts, (void *)decoder, (d && d->magic == WIC_DECODER_MAGIC) ? 1 : 0,
+        fprintf(stderr, "[WIC-ICC] GetColorContexts(count=%u, contexts=%p ctx0=%p decoder=%p magic_ok=%d icc_len=%u)\n",
+                count, (void *)contexts, (contexts && count > 0) ? contexts[0] : NULL,
+                (void *)decoder, (d && d->magic == WIC_DECODER_MAGIC) ? 1 : 0,
                 (d && d->magic == WIC_DECODER_MAGIC) ? d->img.icc_len : 0);
         fflush(stderr);
     }
@@ -660,22 +661,23 @@ int32_t IWICBitmapFrameDecode_GetColorContexts_Proxy(void *decoder, uint32_t cou
     if (!d->img.icc || d->img.icc_len == 0) return S_OK_;
     if (count == 0 || contexts == NULL) { if (actual) *actual = 1; return S_OK_; }   // 只问数量
     // WIC 语义：**填充调用方给的已有 context**（不是创建新的）。若没给 context 就只报数量。
-    if (contexts[0] == NULL) { if (actual) *actual = 0; return S_OK_; }
+    if (contexts[0] == NULL) {
+        if (getenv("LDP_WIC_TRACE")) { fprintf(stderr, "[WIC-ICC]   ctx0 为 NULL ⇒ 只能回填 0 个\n"); fflush(stderr); }
+        if (actual) *actual = 0;
+        return S_OK_;
+    }
     // 句柄必须登记进 bridge 的 MilColorContextTable，WPF 后面的
     // IWICColorContext_GetProfileBytes/GetType（落在 MilCore）才查得到。
-    typedef void *(*fn_reg)(uint8_t *, uint32_t, uint32_t);
-    static fn_reg reg = (fn_reg)-1;
-    if (reg == (fn_reg)-1) {
-        reg = (fn_reg)dlsym(RTLD_DEFAULT, "LdpMilColorContextFromProfile");
-        if (!reg) {
-            void *h = dlopen("wpfgfx_cor3.so", RTLD_NOW | RTLD_NOLOAD);
-            if (h) reg = (fn_reg)dlsym(h, "LdpMilColorContextFromProfile");
-        }
-    }
-    if (!reg) return S_OK_;   // 没有 bridge ⇒ 拿不到句柄，如实返回 0 个
+    // ⚠️ 这里只需要 SetProfile：句柄是 WPF 通过 `WICCreateColorContext` 拿的、
+    //   由本 shim 转手 bridge 登记的。修前这里还留着一段按**裸名** dlopen 找
+    //   `LdpMilColorContextFromProfile` 的旧代码，找不到就 `return S_OK_` 早退 ——
+    //   于是 SetProfile 永远调不到（实测 trace 里只剩第一次调用）。
     typedef int32_t (*fn_set)(void *, uint8_t *, uint32_t, uint32_t);
     fn_set set = (fn_set)wic_color_context_bridge("LdpMilColorContextSetProfile");
-    if (!set) return S_OK_;
+    if (!set) {
+        if (getenv("LDP_WIC_TRACE")) { fprintf(stderr, "[WIC-ICC]   bridge 缺 LdpMilColorContextSetProfile\n"); fflush(stderr); }
+        return S_OK_;
+    }
     int32_t hr = set(contexts[0], d->img.icc, d->img.icc_len, 2 /* WICColorContextProfile */);
     if (getenv("LDP_WIC_TRACE")) {
         fprintf(stderr, "[WIC-ICC]   SetProfile(ctx=%p) => 0x%08x\n", contexts[0], (unsigned)hr);
