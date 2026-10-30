@@ -29,8 +29,21 @@ namespace LdpVerify.Wic
                                              BitmapCreateOptions.None, BitmapCacheOption.OnLoad);
                 if (string.IsNullOrEmpty(_dstIcc))
                 {
-                    json = string.Format("{{\"ok\":true,\"width\":{0},\"height\":{1},\"format\":\"{2}\"}}",
-                        bmp.PixelWidth, bmp.PixelHeight, bmp.Format);
+                    // 普通模式也回**首像素**：ACC-018 的口径是"像素一致"，只验尺寸不够。
+                    int w0 = bmp.PixelWidth, h0 = bmp.PixelHeight;
+                    int stride0 = w0 * 4;
+                    byte[] px0 = new byte[stride0 * h0];
+                    bmp.CopyPixels(px0, stride0, 0);
+                    var sb0 = new System.Text.StringBuilder();
+                    sb0.Append(string.Format("{{\"ok\":true,\"width\":{0},\"height\":{1},\"format\":\"{2}\",\"pixels\":[",
+                        w0, h0, bmp.Format));
+                    // 首像素 + **中央像素**：JPEG 的 (0,0) 落在色度下采样的边缘上，
+                    //   中央像素更能代表"这张图解码对不对"（ACC-018 用中央像素比对）。
+                    int cx0 = (h0 / 2) * stride0 + (w0 / 2) * 4;
+                    sb0.Append(string.Format("[{0},{1},{2},{3}]", px0[0], px0[1], px0[2], px0[3]));
+                    sb0.Append(string.Format(",[{0},{1},{2},{3}]", px0[cx0], px0[cx0 + 1], px0[cx0 + 2], px0[cx0 + 3]));
+                    sb0.Append("]}");
+                    json = sb0.ToString();
                 }
                 else
                 {

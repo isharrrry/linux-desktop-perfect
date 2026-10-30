@@ -62,6 +62,19 @@ const { startXvfb, waitDisplay, startApp, findWindow, waitMapped, sleep, DOTNET_
   //   现状（D-018）：resolver 已把 WindowsCodecs 映射到 libwpfwic，WPF 依次调用
   //   CreateDecoderFromFileHandle（已实现）→ GetDecoderInfo（未实现）⇒ EntryPointNotFound。
   //   读数里带 error_type，缺口演进一目了然。
+  // 像素比对参考值（由 PIL 独立算出，取**中央像素**的 RGB）：
+  //   PNG/BMP/GIF/TIFF 是无损格式，容差 2；JPEG 有损 + 我们用的是**最近邻色度上采样**
+  //   （PIL 用 fancy），中央像素会差几十 —— 那条只验"能解出正确尺寸与格式"，
+  //   不把"上采样实现差异"当成解码错误（口径写在这里，避免以后被当成回归）。
+  const PIXEL_REF = {
+    'rgb-7x5': { rgb: [10, 20, 30], tol: 2 },
+    'rgba-4x3': { rgb: null, tol: 2 },              // RGBA 样例源色 (0,255,0,128) 的半透明合成由 PIL 定，这里不硬编码
+    'rgb-9x6.bmp': { rgb: [12, 34, 56], tol: 2 },
+    'rgba-5x4.bmp': { rgb: null, tol: 2 },
+    'indexed-8x6.gif': { rgb: [0, 0, 0], tol: 2 },
+    'rgb-11x7.tif': { rgb: [20, 40, 60], tol: 2 },
+    'rgb-16x12.jpg': { rgb: [37, 82, 121], tol: 60, lossy: true },
+  };
   let wicApp = null;
   {
     const appDll = '50-verify/image/wic-app/bin/Release/net10.0/WicApp.dll';
@@ -94,7 +107,23 @@ const { startXvfb, waitDisplay, startApp, findWindow, waitMapped, sleep, DOTNET_
           }
           let parsed = null;
           try { parsed = JSON.parse(fs.readFileSync(c.out, 'utf8')); } catch { parsed = null; }
-          results.push({ case: c.name, ok: !!(parsed && parsed.ok), ...(parsed || { reason: '无读数' }) });
+          // 像素比对（中央像素 = pixels[1]；没有就判失败）
+          const ref = PIXEL_REF[c.name];
+          let pix_ok = true, max_delta = null;
+          if (ref && ref.rgb) {
+            const px = parsed && parsed.pixels && parsed.pixels[1];
+            if (!px) { pix_ok = false; }
+            else {
+              // BGRA → RGB
+              max_delta = Math.max(Math.abs(px[2] - ref.rgb[0]), Math.abs(px[1] - ref.rgb[1]), Math.abs(px[0] - ref.rgb[2]));
+              pix_ok = max_delta <= ref.tol;
+            }
+          }
+          results.push({
+            case: c.name, ok: !!(parsed && parsed.ok) && pix_ok,
+            pix_ok, max_delta, tol: ref ? ref.tol : null, lossy: !!(ref && ref.lossy),
+            ...(parsed || { reason: '无读数' }),
+          });
         }
       } finally {
         xv.kill();
@@ -125,7 +154,7 @@ const { startXvfb, waitDisplay, startApp, findWindow, waitMapped, sleep, DOTNET_
     acc: 'ACC-018', started,
     env: { ...env, dotnet_root: DOTNET_ROOT, wic_probe: wicProbe, wic_decode_chain: wicDecode, wic_stream_chain: wicStream, wic_app: wicApp, wic_mapping_enabled: resolverFlag === '1', windows_codecs_pinvoke_sites: Number(pInvokeCount) || 0, steps },
     expectRef: 'ACC-018：五格式',
-    verdict: 'FAIL',
+    verdict: (wicApp && wicApp.cases && wicApp.cases.length === 7 && wicApp.cases.every((c) => c.ok)) ? 'PASS' : 'FAIL',
     diff: [
       ...missingNotes,
       ...bad.map((s) => `${s.step} 失败：${JSON.stringify(s).slice(0, 240)}`),
