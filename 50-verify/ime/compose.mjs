@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 // ACC-017：IME 四条路径
 // 结构：参数解析 → 能力探测 → 三分判定（真跑 / 缺被测对象 FAIL / 环境缺件 SKIP-DEGRADED）
+import fs from 'node:fs';
+import path from 'node:path';
 import { parseArgs, finish, exists, which, runCmd } from '../lib/run.mjs';
 
 const started = Date.now();
@@ -23,7 +25,13 @@ const missingNotes = missing.map((m) => `缺被测对象：${m.path}（${m.why}�
 const { startXvfb, waitDisplay, startApp, findWindow, waitMapped, sleep, DOTNET_ROOT } = await import('../lib/app-session.mjs');
 {
   const { spawnSync } = await import('node:child_process');
-  const ximInShim = Number(spawnSync('sh', ['-c', 'grep -c "XOpenIM\|XCreateIC\|XIM_" 40-build/native-shim/src/*.c | awk -F: "{s+=\$2} END {print s+0}"'], { encoding: 'utf8' }).stdout.trim() || 0);
+  // 用 node 自己数（shell 里的引号/awk 转义很容易数成 0 —— 实测踩过）
+  let ximInShim = 0;
+  for (const f of fs.readdirSync('40-build/native-shim/src')) {
+    if (!f.endsWith('.c')) continue;
+    const txt = fs.readFileSync(path.join('40-build/native-shim/src', f), 'utf8');
+    ximInShim += (txt.match(/XOpenIM|XCreateIC|XFilterEvent|XIM_/g) || []).length;
+  }
   const xvfb = startXvfb();
   let app = null;
   const steps = [];
@@ -50,7 +58,9 @@ const { startXvfb, waitDisplay, startApp, findWindow, waitMapped, sleep, DOTNET_
     diff: [
       ...missingNotes,
       ...bad.map((s) => `${s.step} 失败：${JSON.stringify(s).slice(0, 240)}`),
-      `缺口：shim 无 XIM 入口（XOpenIM/XCreateIC 计数 = ${ximInShim}），也不产生 WM_IME_* ⇒ 预编辑/提交/取消/候选窗四条路径都没有承载面；方向是 XIM 协议（X 自带，不依赖 ibus daemon）或 ibus 的 D-Bus 桥`,
+      ximInShim > 0
+        ? `缺口：shim 已有 XIM 入口（XOpenIM/XFilterEvent 等共 ${ximInShim} 处），但**输入上下文（IC）的预编辑/提交回调 → WM_IME_*** 这一层还没做，且本机没有输入法服务器（XOpenIM 返回 NULL）⇒ 四条路径仍无法验证（D-014 第二步）`
+        : `缺口：shim 无 XIM 入口（计数 = ${ximInShim}），也不产生 WM_IME_* ⇒ 四条路径都没有承载面`,
     ],
   });
 }

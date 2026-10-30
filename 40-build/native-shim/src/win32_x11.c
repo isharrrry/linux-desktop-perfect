@@ -58,6 +58,36 @@
 //   两者混用会把"调用托管窗口过程"这段也圈进去（那是必须放锁的）。
 static pthread_mutex_t g_xlock = PTHREAD_MUTEX_INITIALIZER;
 #define XLOCK()   pthread_mutex_lock(&g_xlock)
+
+// ── XIM（输入法）接入：D-014 的第一步 ───────────────────────────────────────
+// 【为什么是 XIM 而不是 ibus】XIM 是 X11 自带的输入法协议（`Xlib` 里就有 XOpenIM/XCreateIC），
+//   不需要 D-Bus daemon；ibus/ibus-xim 只是"实现 XIM 的服务器之一"。本 shim 先接 XIM 这条腿：
+//   · `XOpenIM` 成功 ⇒ 说明**当前环境有输入法服务器**（没有时返回 NULL，如实记录）；
+//   · 每个顶层窗口建立自己的 IC（输入上下文），焦点切换时 Set/UnsetICFocus；
+//   · 事件泵对收到的每个 X 事件先过一遍 `XFilterEvent`（被 IM 消费的事件不再翻译成键盘消息）。
+//   ⚠️ 还没做的一层：IC 的预编辑/提交回调 → `WM_IME_*` 消息（WPF 的 Ime 路径要这些消息）。
+//   这一层依赖具体 IM 服务器的协议细节，见 70-operate 的 D-014。
+static XIM  g_xim = NULL;
+static int  g_xim_inited = 0;
+
+static void wpf_xim_init_once(void)
+{
+    if (g_xim_inited) return;
+    g_xim_inited = 1;
+    if (!g_wpf.dpy) return;
+    // 让 Xlib 用 XMODIFIERS（如 `@im=ibus`）挑服务器；没有服务器时这里返回 NULL 是**正常**的
+    XSetLocaleModifiers("");
+    g_xim = XOpenIM(g_wpf.dpy, NULL, NULL, NULL);
+    if (getenv("WPF_LINUX_KEY_DIAG")) {
+        fprintf(stderr, "[XIM] XOpenIM => %s（XMODIFIERS=%s）\n",
+                g_xim ? "ok" : "NULL（无输入法服务器）",
+                getenv("XMODIFIERS") ? getenv("XMODIFIERS") : "(unset)");
+        fflush(stderr);
+    }
+}
+
+int wpf_xim_available(void) { wpf_xim_init_once(); return g_xim != NULL; }
+
 #define XUNLOCK() pthread_mutex_unlock(&g_xlock)
 
 // ── [1400 诊断] Xlib 异步错误捕获 ────────────────────────────────────────────
@@ -186,6 +216,7 @@ int wpf_x11_ensure(void)
     g_wpf.root = RootWindow(d, g_wpf.screen);
     g_wpf.xfd = ConnectionNumber(d);
     g_wpf.x_failed = 0;
+    wpf_xim_init_once();   // D-014：有输入法服务器时建立 XIM 会话（无服务器时内部如实记 NULL）
 
     XLOCK();
     a_wm_protocols = XInternAtom(d, "WM_PROTOCOLS", False);
@@ -1097,6 +1128,17 @@ int wpf_x11_pump_into_queue(wpf_thread *t)
         XEvent ev;
         XNextEvent(d, &ev);
         XUNLOCK();   // 翻译层只碰自有状态；放锁避免和终结器线程上的 XDestroyWindow 互等
+
+        // 【D-014】输入法过滤器：被 IM 消费的键事件（预编辑期间的按键）不再翻译成 WM_KEYDOWN/WM_CHAR。
+        //   没有输入法服务器时 g_xim == NULL，这一段是 no-op（行为与修前完全一致）。
+        //   ⚠️ 必须放在**放锁之后**：XFilterEvent 是 Xlib 调用，且 `continue` 会跳回循环条件（那边要持锁）。
+        if (g_xim != NULL) {
+            XEvent filtered = ev;
+            XLOCK();
+            int consumed = XFilterEvent(&filtered, None);
+            XUNLOCK();
+            if (consumed) { XLOCK(); continue; }
+        }
 
         // 【KEY_DIAG 第一格】"事件到底有没有进到本进程" —— 收到即打（含合成位）。
         //   若注入后这里**一条都没有** ⇒ 事件根本没到我们（注入 id 不是我们的窗口 /

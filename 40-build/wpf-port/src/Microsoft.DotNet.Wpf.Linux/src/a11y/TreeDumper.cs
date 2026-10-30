@@ -259,6 +259,10 @@ namespace Ldp.A11y
             // 直接用类型名判断，避免 LdpA11y 反向依赖 System.Windows.Controls.Ribbon。
             string tn = el.GetType().FullName;
             if (tn != null && tn.StartsWith("System.Windows.Controls.Ribbon.", StringComparison.Ordinal)) return true;
+            // 文档宿主：FlowDocumentReader/ScrollViewer 的工具栏（翻页/缩放/查找）是它内部的控件，
+            // 不递归就看不到"上一页/下一页/页面"这些可访问对象（ACC-015 的分页验证需要它们）。
+            if (el is System.Windows.Controls.FlowDocumentReader) return true;
+            if (el is System.Windows.Controls.FlowDocumentScrollViewer) return true;
             return false;
         }
 
