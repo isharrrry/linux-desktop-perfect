@@ -4,6 +4,42 @@
   "generated_from": "界面图/build-wireframe.mjs --emit-expect（与结构图读同一张表）",
   "nodes": [
     {
+      "path": "0",
+      "role": "frame",
+      "name": "WpfImageGallery",
+      "states": [
+        "showing",
+        "active",
+        "!iconified"
+      ],
+      "actions": [
+        "focus"
+      ],
+      "acc": [
+        "ACC-009",
+        "ACC-027"
+      ],
+      "bounds": null,
+      "value": null,
+      "relations": []
+    },
+    {
+      "path": "0/0",
+      "role": "label",
+      "name": "与标题一致",
+      "states": [
+        "visible"
+      ],
+      "actions": [],
+      "acc": [
+        "ACC-009",
+        "ACC-027"
+      ],
+      "bounds": null,
+      "value": null,
+      "relations": []
+    },
+    {
       "path": "0/0",
       "role": "list",
       "name": "格式",
