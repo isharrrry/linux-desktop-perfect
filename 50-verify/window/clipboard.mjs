@@ -87,14 +87,18 @@ try {
     //   声明面通过（有 XdndAware）只证明窗口愿意接，**不证明拖入的事件能到应用**。
     //   所以 ok 只能是 delivered（本轮恒 false），declared 单独记 —— 不接受"声明通过 = PASS"。
     const msgOk = !!(xdndMsg && xdndMsg.status_received && xdndMsg.accepted);
+    const dropOk = !!(xdndMsg && xdndMsg.selection_served > 0);   // Drop 层：uri-list 被转走并构造了 HDROP
     steps.push({
       step: 'xdnd', ok: false, pending: true,
       declared: xdndOk, declared_value: xdndValue,
       status_received: !!(xdndMsg && xdndMsg.status_received),
+      drop_translated: dropOk,
+      selection_served: xdndMsg ? xdndMsg.selection_served : null,
       raw: xdndRaw,
       note: (xdndOk ? `窗口声明 XdndAware(${xdndValue})；` : '缺 XdndAware；')
-        + (msgOk ? 'XdndEnter/Position 已收到并回 XdndStatus(accept)，' : '消息层未通，')
-        + '但 XdndDrop 的"取文件列表 → 构造 HDROP → WM_DROPFILES"未做，拖入后应用仍收不到文件（D-011）',
+        + (msgOk ? 'XdndEnter/Position 已回 XdndStatus(accept)；' : '消息层未通；')
+        + (dropOk ? 'XdndDrop → XConvertSelection → HDROP → WM_DROPFILES 已走通（探针 serving 了 uri-list）；' : 'Drop 层未通；')
+        + '但"应用侧的 Drop 事件是否真的被触发"未验（需要 AllowDrop=true 的样本），所以本步仍 pending',
     });
   }
 } catch (e) {

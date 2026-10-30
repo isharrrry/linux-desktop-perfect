@@ -60,25 +60,59 @@ int main(int argc, char **argv)
     XSendEvent(d, target, False, NoEventMask, &ev);
     XFlush(d);
 
-    // ④ 等 XdndStatus（最多 2 秒）
-    int got_status = 0, accepted = 0;
-    for (int i = 0; i < 20 && !got_status; ++i) {
+    // ③' 备好 selection 内容（扮演源：Drop 后目标会 XConvertSelection 回来要 uri-list）
+    Atom a_sel = XInternAtom(d, "XdndSelection", False);
+    Atom a_uri = XInternAtom(d, "text/uri-list", False);
+    const char *uri = "file:///tmp/ldp-xdnd-probe.txt\r\n";
+    XSetSelectionOwner(d, a_sel, src, CurrentTime);
+    XFlush(d);
+
+    // ④ 发 XdndDrop
+    memset(&ev, 0, sizeof(ev));
+    ev.xclient.type = ClientMessage;
+    ev.xclient.window = target;
+    ev.xclient.message_type = XInternAtom(d, "XdndDrop", False);
+    ev.xclient.format = 32;
+    ev.xclient.data.l[0] = (long)src;
+    ev.xclient.data.l[2] = (long)CurrentTime;
+    XSendEvent(d, target, False, NoEventMask, &ev);
+    XFlush(d);
+
+    // ⑤ 等 XdndStatus（最多 2 秒）+ 应答目标的 SelectionRequest
+    int got_status = 0, accepted = 0, served_requests = 0;
+    for (int i = 0; i < 30 && !(got_status && served_requests > 0); ++i) {
         while (XPending(d)) {
             XEvent e2;
             XNextEvent(d, &e2);
             if (e2.type == ClientMessage && e2.xclient.message_type == a_status) {
                 got_status = 1;
                 accepted = (int)e2.xclient.data.l[1];
-                break;
+            }
+            if (e2.type == SelectionRequest) {
+                // 目标来要 uri-list：把内容写进它的属性并回 SelectionNotify
+                XSelectionRequestEvent *rq = &e2.xselectionrequest;
+                XChangeProperty(d, rq->requestor, rq->property, a_uri, 8, PropModeReplace,
+                                (const unsigned char *)uri, (int)strlen(uri));
+                XEvent ne;
+                memset(&ne, 0, sizeof(ne));
+                ne.xselection.type = SelectionNotify;
+                ne.xselection.requestor = rq->requestor;
+                ne.xselection.selection = rq->selection;
+                ne.xselection.target = rq->target;
+                ne.xselection.property = rq->property;
+                ne.xselection.time = rq->time;
+                XSendEvent(d, rq->requestor, False, NoEventMask, &ne);
+                XFlush(d);
+                served_requests++;
             }
         }
         usleep(100000);
     }
 
-    printf("{\"ok\":%s,\"aware\":%s,\"version\":%lu,\"status_received\":%s,\"accepted\":%s}\n",
-           (aware && got_status) ? "true" : "false",
+    printf("{\"ok\":%s,\"aware\":%s,\"version\":%lu,\"status_received\":%s,\"accepted\":%s,\"selection_served\":%d}\n",
+           (aware && got_status && served_requests > 0) ? "true" : "false",
            aware ? "true" : "false", ver,
-           got_status ? "true" : "false", accepted ? "true" : "false");
+           got_status ? "true" : "false", accepted ? "true" : "false", served_requests);
     XDestroyWindow(d, src);
     XCloseDisplay(d);
     return (aware && got_status) ? 0 : 3;

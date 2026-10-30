@@ -198,7 +198,23 @@ static Atom a_xdnd_leave = None, a_xdnd_status = None, a_xdnd_selection = None;
 static Atom a_xdnd_action_copy = None, a_xdnd_type_list = None;
 static Atom a_xdnd_action = None;
 static Window g_xdnd_source = None;
+static Window g_xdnd_target = None;   // 接收窗口（Drop 时记下，SelectionNotify 用它定位）
+static Time   g_xdnd_drop_time = 0;
+static Atom   a_uri_list = None;
+// ── HDROP 的自管表示（D-011 第三层）─────────────────────────────────────────────
+// Windows 的 HDROP 是 GlobalAlloc 出来的 DROPFILES + 文件列表；本项目里它是**本 shim 自己
+// 管理的对象**（应用只会把它交回给 DragQueryFile/DragFinish，不会自己解引用）。
+typedef struct {
+    uint32_t magic;
+    int count;
+    char **paths;
+} ldp_hdrop;
+#define HDROP_MAGIC_ 0x48445250u   /* 'HDRP' */
+
 // XDND 诊断开关（与 WPF_LINUX_KEY_DIAG 同风格：只在明确开了才打日志）
+#ifndef WM_DROPFILES
+#define WM_DROPFILES 0x0233
+#endif
 #define XE_TRACE() (getenv("WPF_LINUX_XDND_DIAG") != NULL)   // 当前拖放源窗口（Enter 记下、Leave/Drop 清掉）
 static Atom a_wm_protocols = 0;
 static Atom a_wm_delete_window = 0;
@@ -1760,12 +1776,56 @@ int wpf_x11_pump_into_queue(wpf_thread *t)
                 break;
             }
             if (ev.xclient.message_type == a_xdnd_drop) {
-                // 下一轮：XConvertSelection(text/uri-list) → 解析文件路径 → 构造 DROPFILES → WM_DROPFILES
-                if (XE_TRACE()) fprintf(stderr, "[XDND] Drop（取文件列表那一步未实现，D-011）\n");
+                // Drop：把 XdndSelection 的 `text/uri-list` 转过来。异步 —— 结果在 SelectionNotify 里。
+                if (a_uri_list == None) a_uri_list = XInternAtom(d, "text/uri-list", False);
+                g_xdnd_drop_time = (Time)ev.xclient.data.l[2];
+                g_xdnd_target = (Window)ev.xclient.window;
+                XConvertSelection(d, a_xdnd_selection, a_uri_list, a_uri_list,
+                                  g_xdnd_target, g_xdnd_drop_time);
+                if (XE_TRACE()) fprintf(stderr, "[XDND] Drop → XConvertSelection(text/uri-list)\n");
                 g_xdnd_source = None;
                 break;
             }
             break;
+
+        case SelectionNotify: {
+            // XDND 的 `text/uri-list` 回来了：解析 `file:///path` 行 → 构造 HDROP → WM_DROPFILES
+            if (ev.xselection.property == a_uri_list && ev.xselection.selection == a_xdnd_selection) {
+                Atom type; int fmt = 0; unsigned long n = 0, after = 0;
+                unsigned char *data = NULL;
+                if (XGetWindowProperty(d, ev.xselection.requestor, ev.xselection.property, 0, 65536,
+                                       True, a_uri_list, &type, &fmt, &n, &after, &data) == Success && data) {
+                    // 按行切，取 file:// 开头的（uri-list 允许注释行 `#`）
+                    ldp_hdrop *h = (ldp_hdrop *)calloc(1, sizeof(ldp_hdrop));
+                    if (h) {
+                        h->magic = HDROP_MAGIC_;
+                        char *saveptr = NULL;
+                        for (char *line = strtok_r((char *)data, "\r\n", &saveptr); line;
+                             line = strtok_r(NULL, "\r\n", &saveptr)) {
+                            if (line[0] == '#' || strncmp(line, "file://", 7) != 0) continue;
+                            const char *path = line + 7;
+                            char **np = (char **)realloc(h->paths, sizeof(char *) * (h->count + 1));
+                            if (!np) break;
+                            h->paths = np;
+                            h->paths[h->count] = strdup(path);
+                            if (h->paths[h->count]) h->count++;
+                        }
+                    }
+                    XFree(data);
+                    if (h && h->count > 0) {
+                        // wParam = HDROP；WPF 侧收到 WM_DROPFILES 后会调 DragQueryFile 取路径
+                        push(t, (HWND)(uintptr_t)ev.xselection.requestor, WM_DROPFILES,
+                             (WPARAM)(uintptr_t)h, 0, 0, 0);
+                        produced++;
+                        if (XE_TRACE()) fprintf(stderr, "[XDND] SelectionNotify → HDROP(%d 个路径) → WM_DROPFILES\n", h->count);
+                    } else {
+                        if (XE_TRACE()) fprintf(stderr, "[XDND] SelectionNotify：uri-list 里没有文件路径\n");
+                        if (h) { free(h->paths); free(h); }
+                    }
+                }
+            }
+            break;
+        }
 
         case DestroyNotify: {
             HWND h = (HWND)(uintptr_t)ev.xdestroywindow.window;
@@ -2507,4 +2567,58 @@ int wpf_x11_compositor_present(void)
     Atom a = XInternAtom(dpy, "_NET_WM_CM_S0", False);
     if (a == None) return 0;
     return XGetSelectionOwner(dpy, a) != None ? 1 : 0;
+}
+
+// ── DragQueryFile / DragQueryPoint / DragFinish（D-011 第三层）──────────────────
+// HDROP 是本 shim 自管的对象（见 ldp_hdrop）；WPF 收到 `WM_DROPFILES` 后通过这些入口取路径。
+// 语义与 Win32 一致：iFile = 0xFFFFFFFF 时返回**文件个数**。
+uint32_t DragQueryFileA(void *hDrop, uint32_t iFile, char *lpszFile, uint32_t cch)
+{
+    ldp_hdrop *h = (ldp_hdrop *)hDrop;
+    if (!h || h->magic != HDROP_MAGIC_) return 0;
+    if (iFile == 0xFFFFFFFFu) return (uint32_t)h->count;
+    if (iFile >= (uint32_t)h->count) return 0;
+    uint32_t len = (uint32_t)strlen(h->paths[iFile]);
+    if (!lpszFile || cch == 0) return len;         // 只问长度
+    uint32_t n = len < cch - 1 ? len : cch - 1;
+    memcpy(lpszFile, h->paths[iFile], n);
+    lpszFile[n] = 0;
+    return n;
+}
+
+uint32_t DragQueryFileW(void *hDrop, uint32_t iFile, uint16_t *lpszFile, uint32_t cch)
+{
+    ldp_hdrop *h = (ldp_hdrop *)hDrop;
+    if (!h || h->magic != HDROP_MAGIC_) return 0;
+    if (iFile == 0xFFFFFFFFu) return (uint32_t)h->count;
+    if (iFile >= (uint32_t)h->count) return 0;
+    const char *src = h->paths[iFile];
+    uint32_t len = (uint32_t)strlen(src);
+    if (!lpszFile || cch == 0) return len;
+    uint32_t n = len < cch - 1 ? len : cch - 1;
+    for (uint32_t i = 0; i < n; ++i) lpszFile[i] = (uint16_t)(unsigned char)src[i];
+    lpszFile[n] = 0;
+    return n;
+}
+
+uint32_t DragQueryFile(void *hDrop, uint32_t iFile, char *lpszFile, uint32_t cch)
+{
+    return DragQueryFileA(hDrop, iFile, lpszFile, cch);
+}
+
+int DragQueryPoint(void *hDrop, void *pt)
+{
+    (void)hDrop;
+    if (pt) { ((int32_t *)pt)[0] = 0; ((int32_t *)pt)[1] = 0; }
+    return 1;
+}
+
+void DragFinish(void *hDrop)
+{
+    ldp_hdrop *h = (ldp_hdrop *)hDrop;
+    if (!h || h->magic != HDROP_MAGIC_) return;
+    for (int i = 0; i < h->count; ++i) free(h->paths[i]);
+    free(h->paths);
+    h->magic = 0;
+    free(h);
 }
