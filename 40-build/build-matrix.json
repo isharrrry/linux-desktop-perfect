@@ -1,5 +1,5 @@
 {
-  "generated_by": "S1 首错台账",
+  "generated_by": "S1 首错台账（第二轮：补丁项 16 落地后复测）",
   "generated_at": "2026-10-30T14:05:28Z",
   "snapshot": "40-build/upstream/wpf/SNAPSHOT.json（release/10.0@2565b0112）",
   "entry": "40-build/build.sh <项目相对路径>",
@@ -56,10 +56,14 @@
       "project": "src/Microsoft.DotNet.Wpf/src/PresentationCore/PresentationCore.csproj",
       "rc": 1,
       "duration_ms": 19917,
-      "first_error": "/usr/share/dotnet/sdk/10.0.401/Sdks/Microsoft.NET.Sdk/targets/Microsoft.PackageDependencyResolution.targets(266,5): error NETSDK1004: 找不到资产文件“artifacts/obj/PresentationBuildTasks/project.assets.json”。运行 NuGet 包还原以生成此文件。 [src/Microsoft.DotNet.Wpf/src/PresentationBuildTasks/PresentationBuildTasks.csproj::TargetFramework=net6.0]",
-      "error_kind": "dependency",
+      "first_error": "MSB4278 DirectWriteForwarder.vcxproj 缺 VCTargetsPath（补丁项 18 待做）",
+      "error_kind": "toolchain",
       "artifact": null,
-      "artifact_kind": null
+      "artifact_kind": null,
+      "history": {
+        "round1": "NETSDK1004 PresentationBuildTasks 未还原（net6.0 目标不存在）",
+        "round2": "MSB4278 DirectWriteForwarder.vcxproj 缺 VCTargetsPath（补丁项 18 待做）"
+      }
     },
     {
       "assembly": "PresentationFramework",
@@ -76,10 +80,14 @@
       "project": "src/Microsoft.DotNet.Wpf/src/PresentationUI/PresentationUI.csproj",
       "rc": 1,
       "duration_ms": 24579,
-      "first_error": "/usr/share/dotnet/sdk/10.0.401/Sdks/Microsoft.NET.Sdk/targets/Microsoft.PackageDependencyResolution.targets(266,5): error NETSDK1004: 找不到资产文件“artifacts/obj/PresentationBuildTasks/project.assets.json”。运行 NuGet 包还原以生成此文件。 [src/Microsoft.DotNet.Wpf/src/PresentationBuildTasks/PresentationBuildTasks.csproj::TargetFramework=net6.0]",
-      "error_kind": "dependency",
+      "first_error": "MSB4278 System.Printing.vcxproj + DirectWriteForwarder.vcxproj（补丁项 18）",
+      "error_kind": "toolchain",
       "artifact": null,
-      "artifact_kind": null
+      "artifact_kind": null,
+      "history": {
+        "round1": "NETSDK1004 PresentationBuildTasks 未还原",
+        "round2": "MSB4278 System.Printing.vcxproj + DirectWriteForwarder.vcxproj（补丁项 18）"
+      }
     },
     {
       "assembly": "ReachFramework",
@@ -199,5 +207,17 @@
     "System.Printing 的托管实现由 ReachFramework 工程产出（ReachFramework.csproj:40 'ReachFramework -> System.Printing'），本台账跑的是它的 ref 工程 System.Printing-ref。",
     "error_kind=dependency 表示首错来自被引用的 PresentationBuildTasks（TargetFramework=net6.0）未生成 assets，不是本件源码错误。",
     "全部失败均原样记录、未修代码（本轮只做台账）。"
-  ]
+  ],
+  "patches_applied": [
+    "P1 TFM 改写",
+    "P3 DllImport 映射",
+    "P4 源覆盖",
+    "P9 构建排除",
+    "P16 PBT 接线（PbtTfm net6.0 → net10.0）"
+  ],
+  "next_blocker": "补丁项 18：摘除 DirectWriteForwarder.vcxproj / System.Printing.vcxproj 的 ProjectReference，换 40-build/wpf-port 的托管替身（DWF 替身与 System.Printing 由 ReachFramework 出实现）",
+  "verified_after_p16": {
+    "PresentationBuildTasks": "rc=0（net10.0 编出）",
+    "WindowsBase": "rc=0（回归）"
+  }
 }
