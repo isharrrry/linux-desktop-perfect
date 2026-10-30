@@ -12,7 +12,7 @@
 
 import { spawnSync } from 'node:child_process';
 import { parseArgs, finish, exists, which } from '../lib/run.mjs';
-import { startXvfb, waitDisplay, sleep } from '../lib/app-session.mjs';
+import { startXvfb, waitDisplay, sleep, startApp, findWindow } from '../lib/app-session.mjs';
 
 const started = Date.now();
 const { opts } = parseArgs();
@@ -53,8 +53,33 @@ try {
   const crossOk = !!(b.json && typeof b.json.value === 'string' && b.json.value === 'cross-proc-value');
   steps.push({ step: 'cross_process', ok: crossOk, want: 'cross-proc-value', got: b.json ? b.json.value : null, rc: b.rc });
 
-  // ③ XDND：未实现（登记为缺口，不参与"文本剪贴板"的结构判定 —— 它是另一个协议面）
-  steps.push({ step: 'xdnd', ok: false, pending: true, note: 'XDND 拖入未实现（XClientMessage 协议缺失），见 GAP/D-010 登记' });
+  // ③ XDND：**真的去读窗口的 XdndAware 属性**（D-011 第一步已实现"声明"，
+  //   但"处理 XdndEnter/Position/Drop"那一层还没做 ⇒ 本步只验声明面）。
+  {
+    let xdndOk = false, xdndValue = null, win = null;
+    const app = await startApp({ sample: 'WpfFirstWindow', scr: 'SCR-01', display: xvfb.display });
+    if (app.ok) {
+      win = await findWindow(xvfb.display, 'WpfFirstWindow [SCR-01]', 25000);
+      if (win) {
+        // 直接用 xprop 读属性（不为此在 clip-probe 里加模式：那是另一个协议面）
+        const rp = spawnSync('sh', ['-c', `DISPLAY=${xvfb.display} xprop -id ${win.id} XdndAware 2>/dev/null`],
+                             { encoding: 'utf8', timeout: 15000 });
+        const txt = (rp.stdout || '').trim();
+        const m = txt.match(/=\s*(\S+)/);
+        if (m && !/no such atom|not found/i.test(txt)) { xdndOk = true; xdndValue = m[1]; }
+      }
+      app.kill();
+    }
+    // ⚠️ **口径**：ACC-012 要的是"XDND 拖入"，不是"声明可接收"。
+    //   声明面通过（有 XdndAware）只证明窗口愿意接，**不证明拖入的事件能到应用**。
+    //   所以 ok 只能是 delivered（本轮恒 false），declared 单独记 —— 不接受"声明通过 = PASS"。
+    steps.push({
+      step: 'xdnd', ok: false, pending: true, declared: xdndOk, declared_value: xdndValue,
+      note: xdndOk
+        ? `窗口已声明 XdndAware（版本 ${xdndValue}）；但 XdndEnter/Position/Drop → WM_DROPFILES 那一层未做，拖入事件仍到不了应用（D-011）`
+        : '窗口没有 XdndAware 属性（XDND 声明面缺失，D-011）',
+    });
+  }
 } catch (e) {
   steps.push({ step: 'exception', ok: false, error: e.message });
 } finally {

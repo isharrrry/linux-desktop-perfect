@@ -191,6 +191,7 @@ static void wpf_x11_init_threads(void)
     (void)wpf_x11_ensure();
 }
 
+static Atom a_xdnd_aware = None;
 static Atom a_wm_protocols = 0;
 static Atom a_wm_delete_window = 0;
 static Atom a_net_wm_name = 0;
@@ -565,6 +566,19 @@ uint64_t wpf_x11_create_window(wpf_window *w, const char *title)
         Atom proto[1];
         proto[0] = a_wm_delete_window;
         XSetWMProtocols(d, xid, proto, 1);
+    }
+
+    // ── XDND 拖放接收（D-011 第一步）──────────────────────────────────────────
+    // 【为什么是这一步】WPF 的 `AllowDrop`/`DragOver`/`Drop` 在 Windows 上走 OLE；
+    //   Linux 上要换成 XDND 协议。第一步只需让窗口**声明自己可接收 XDND**：
+    //   设 `XdndAware` 属性（类型 ATOM、值 5 = XDND 协议版本）。
+    //   ⚠️ 还没做的一层：处理 `XdndEnter/Position/Drop/Leave` 并翻译成
+    //   `WM_DROPFILES`（那才是"拖入后应用能收到事件"，见已知坑 D-011）。
+    if (a_xdnd_aware == None) a_xdnd_aware = XInternAtom(d, "XdndAware", False);
+    if (a_xdnd_aware != None) {
+        unsigned long xdnd_version = 5;
+        XChangeProperty(d, xid, a_xdnd_aware, XA_ATOM, 32, PropModeReplace,
+                        (const unsigned char *)&xdnd_version, 1);
     }
 
     XFlush(d);
