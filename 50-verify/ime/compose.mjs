@@ -59,7 +59,7 @@ const { startXvfb, waitDisplay, startApp, findWindow, waitMapped, sleep, DOTNET_
       ...missingNotes,
       ...bad.map((s) => `${s.step} 失败：${JSON.stringify(s).slice(0, 240)}`),
       ximInShim > 0
-        ? `缺口：shim 已有 XIM 入口（XOpenIM/XFilterEvent 等共 ${ximInShim} 处），但**输入上下文（IC）的预编辑/提交回调 → WM_IME_*** 这一层还没做，且本机没有输入法服务器（XOpenIM 返回 NULL）⇒ 四条路径仍无法验证（D-014 第二步）`
+        ? `缺口：shim 已接 XIM（XOpenIM/XFilterEvent/焦点窗口的 XCreateIC+XSetICFocus 共 ${ximInShim} 处），但 ①本机**没有输入法服务器**（XOpenIM 返回 NULL，IC 建不起来）②**预编辑/提交回调 → WM_IME_*** 这一层还没做 ⇒ 四条路径仍无法验证（D-014 第二/三步）`
         : `缺口：shim 无 XIM 入口（计数 = ${ximInShim}），也不产生 WM_IME_* ⇒ 四条路径都没有承载面`,
     ],
   });

@@ -69,6 +69,9 @@ static pthread_mutex_t g_xlock = PTHREAD_MUTEX_INITIALIZER;
 //   这一层依赖具体 IM 服务器的协议细节，见 70-operate 的 D-014。
 static XIM  g_xim = NULL;
 static int  g_xim_inited = 0;
+static XIC  g_xic = NULL;          // 当前窗口的输入上下文（有 IM 服务器时才有）
+static int  g_xic_created = 0;     // 统计：本进程建过几个 IC（判据读数用）
+static Window g_xic_window = None;
 
 static void wpf_xim_init_once(void)
 {
@@ -87,6 +90,37 @@ static void wpf_xim_init_once(void)
 }
 
 int wpf_xim_available(void) { wpf_xim_init_once(); return g_xim != NULL; }
+int wpf_xim_ic_count(void) { return g_xic_created; }
+
+// 给输入焦点窗口建 IC 并 SetICFocus（D-014 第二步）。
+//   没有 IM 服务器时 g_xim == NULL ⇒ 整段 no-op（本机就是这种情况，判据读数如实）。
+void wpf_xim_attach_ic(Window w)
+{
+    wpf_xim_init_once();
+    if (g_xim == NULL || w == None) return;
+    if (g_xic != NULL && g_xic_window == w) { XSetICFocus(g_xic); return; }
+    if (g_xic != NULL) { XUnsetICFocus(g_xic); XDestroyIC(g_xic); g_xic = NULL; }
+    XIMStyles *styles = NULL;
+    if (XGetIMValues(g_xim, XNQueryInputStyle, &styles, NULL) != NULL || styles == NULL) return;
+    XIMStyle want = 0;
+    for (unsigned short i = 0; i < styles->count_styles; ++i) {
+        // 优先"根窗口 + 预编辑在内部"的样式（WPF 的文本视图自己画预编辑）
+        if (styles->supported_styles[i] & XIMPreeditNothing) { want = styles->supported_styles[i]; break; }
+    }
+    if (want == 0 && styles->count_styles > 0) want = styles->supported_styles[0];
+    XFree(styles);
+    if (want == 0) return;
+    g_xic = XCreateIC(g_xim, XNInputStyle, want, XNClientWindow, w, XNFocusWindow, w, NULL);
+    if (g_xic == NULL) return;
+    g_xic_window = w;
+    g_xic_created++;
+    XSetICFocus(g_xic);
+    if (getenv("WPF_LINUX_KEY_DIAG")) {
+        fprintf(stderr, "[XIM] XCreateIC ok（第 %d 个）style=0x%lx window=0x%lx\n",
+                g_xic_created, (unsigned long)want, (unsigned long)w);
+        fflush(stderr);
+    }
+}
 
 #define XUNLOCK() pthread_mutex_unlock(&g_xlock)
 
@@ -411,6 +445,7 @@ void wpf_x11_set_input_focus(HWND hwnd)
     XFlush(g_wpf.dpy);
     XUNLOCK();
     wpf_x11_focus_note_request(hwnd);
+    wpf_xim_attach_ic((Window)(uintptr_t)hwnd);   // D-014 第二步：焦点窗口的输入上下文
     // 【补丁 F8（D-008 最后一跳）】**激活语义**必须同步派发。
     //   修前本函数只做 X 侧的 XSetInputFocus，一个消息都不发；而 X 的 FocusIn 回送
     //   会被 `wpf_x11_focus_is_echo` 当"自己请求的回送"吃掉 ⇒ 窗口永远收不到激活通知。
