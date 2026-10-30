@@ -79,9 +79,10 @@ const appCs = (ns) => L(
   '}',
 );
 
-const windowCs = (ns, cls, title, withTitleText) => L(
+const windowCs = (ns, cls, title, withTitleText, withDpi = false) => L(
   'using System;',
   'using System.Windows;',
+  ...(withDpi ? ['using System.Windows.Automation;', 'using System.Windows.Media;'] : []),
   '',
   'namespace ' + ns,
   '{',
@@ -93,6 +94,20 @@ const windowCs = (ns, cls, title, withTitleText) => L(
   '            string scr = ScrArg();',
   '            Title = "' + title + '" + (scr == null ? "" : " [" + scr + "]");',
   ...(withTitleText ? ['            TitleText.Text = Title;'] : []),
+  ...(withDpi
+    ? [
+        '            // DPI 读数：结构判据的数据源。文案格式由元素属性表定死（DPI 1xx (yyy%)），别改。',
+        '            Loaded += (s, e) =>',
+        '            {',
+        '                DpiScale dpi = VisualTreeHelper.GetDpi(this);',
+        '                int d = (int)Math.Round(dpi.PixelsPerInchX);',
+        '                int pct = (int)Math.Round(dpi.PixelsPerInchX / 96.0 * 100.0);',
+        '                string text = "DPI " + d.ToString("000") + " (" + pct.ToString() + "%)";',
+        '                DpiText.Text = text;',
+        '                AutomationProperties.SetName(DpiText, text);',
+        '            };',
+      ]
+    : []),
   '        }',
   '',
   '        // --scr SCR-0x：只影响窗口标题，不做其他事（骨架不实现业务逻辑）',
@@ -132,7 +147,7 @@ const scr01 = {
     'WpfFirstWindow.csproj': csprojWpf(dir),
     'App.xaml': appXaml(ns, 'MainWindow.xaml'),
     'App.xaml.cs': appCs(ns),
-    'MainWindow.xaml.cs': windowCs(ns, 'MainWindow', 'WpfFirstWindow', true),
+    'MainWindow.xaml.cs': windowCs(ns, 'MainWindow', 'WpfFirstWindow', true, true),
     'MainWindow.xaml': wpfXaml(ns, 'MainWindow', '960', '640', 'WpfFirstWindow', L(
       '    <!-- 对应 SCR-01 元素属性表：路径 0/0 ~ 0/6；读数文本是结构判据的数据源，格式别改 -->',
       '    <StackPanel Margin="12">',
@@ -141,7 +156,7 @@ const scr01 = {
       '        <Button Content="提交" AutomationProperties.Name="提交" Margin="0,8,0,0" />',
       '        <Button Content="不可用示例" AutomationProperties.Name="不可用示例" IsEnabled="False" Margin="0,8,0,0" />',
       '        <StatusBar AutomationProperties.Name="状态" Margin="0,8,0,0">',
-      '            <TextBlock Text="DPI 096 (100%)" AutomationProperties.Name="DPI 096 (100%)" />',
+      '            <TextBlock x:Name="DpiText" Text="DPI 000 (0%)" AutomationProperties.Name="DPI 000 (0%)" />',
       '            <Separator />',
       '            <TextBlock Text="composite=false" AutomationProperties.Name="composite=false" />',
       '            <Separator />',

@@ -10,7 +10,7 @@
         <Button Content="提交" AutomationProperties.Name="提交" Margin="0,8,0,0" />
         <Button Content="不可用示例" AutomationProperties.Name="不可用示例" IsEnabled="False" Margin="0,8,0,0" />
         <StatusBar AutomationProperties.Name="状态" Margin="0,8,0,0">
-            <TextBlock Text="DPI 096 (100%)" AutomationProperties.Name="DPI 096 (100%)" />
+            <TextBlock x:Name="DpiText" Text="DPI 000 (0%)" AutomationProperties.Name="DPI 000 (0%)" />
             <Separator />
             <TextBlock Text="composite=false" AutomationProperties.Name="composite=false" />
             <Separator />

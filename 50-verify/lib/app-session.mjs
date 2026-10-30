@@ -47,9 +47,23 @@ function waitFor(fn, timeoutMs, stepMs = 200) {
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 // 起一个无头 X 会话（08 §3.1 的 Xvfb 基线）
-export function startXvfb(display = `:${90 + Math.floor(Math.random() * 9)}`) {
-  const proc = spawn('Xvfb', [display, '-screen', '0', '1280x1024x24'], { stdio: 'ignore' });
-  return { display, proc, kill: () => { try { proc.kill('SIGTERM'); } catch {} } };
+// 挑一个**当前空闲**的 display：已存在的 Xvfb 会占住编号，贸然复用会连到旧会话
+// （实测症状：`-dpi 120` 起的新会话没起来，应用连到旧 Xvfb，DPI 读数停在默认 100）。
+function pickFreeDisplay() {
+  for (let i = 0; i < 40; i += 1) {
+    const d = `:${100 + Math.floor(Math.random() * 90)}`;
+    const r = spawnSync('sh', ['-c', `DISPLAY=${d} xdpyinfo >/dev/null 2>&1`]);
+    if (r.status !== 0) return d;
+  }
+  return `:${100 + Math.floor(Math.random() * 90)}`;
+}
+
+export function startXvfb(display = pickFreeDisplay(), opts = {}) {
+  const args = [display, '-screen', '0', opts.screen || '1280x1024x24'];
+  // Xvfb 的 -dpi 决定 X server 报告的 screen DPI —— shim 的 GetDpiForWindow 就是读它（ACC-011 的三档来源）
+  if (opts.dpi) args.push('-dpi', String(opts.dpi));
+  const proc = spawn('Xvfb', args, { stdio: 'ignore' });
+  return { display, proc, dpi: opts.dpi || 96, kill: () => { try { proc.kill('SIGTERM'); } catch {} } };
 }
 
 export async function waitDisplay(display, timeoutMs = 15000) {
@@ -57,7 +71,7 @@ export async function waitDisplay(display, timeoutMs = 15000) {
 }
 
 // 起样本应用（带 install-runtime 生成的启动环境：D-005 的 R2R 关闭 + shim 路径）
-export async function startApp({ sample = 'WpfFirstWindow', scr = 'SCR-01', display } = {}) {
+export async function startApp({ sample = 'WpfFirstWindow', scr = 'SCR-01', display, treeDump = null, extraEnv = {} } = {}) {
   const dll = sampleDll(sample);
   if (!fs.existsSync(dll)) return { ok: false, reason: `样本未构建：${path.relative(ROOT, dll)}`, hint: 'node 50-verify/build/build-sample.mjs' };
   if (!fs.existsSync(path.join(DOTNET_ROOT, 'dotnet'))) return { ok: false, reason: `运行时未安装：${path.relative(ROOT, DOTNET_ROOT)}`, hint: 'node 40-build/pack/install-runtime.mjs' };
@@ -75,6 +89,14 @@ export async function startApp({ sample = 'WpfFirstWindow', scr = 'SCR-01', disp
       DISPLAY: display,
       WPF_LINUX_WIN32_SHIM: SHIM,
       LD_LIBRARY_PATH: `${path.join(FRAMEWORK_DIR, 'native')}:${process.env.LD_LIBRARY_PATH || ''}`,
+      ...(treeDump
+        ? {
+            DOTNET_STARTUP_HOOKS: path.join(FRAMEWORK_DIR, 'LdpA11y.dll'),
+            LDP_A11Y_DUMP: treeDump,
+            LDP_A11Y_SCREEN: scr,
+          }
+        : {}),
+      ...extraEnv,
     },
   });
   const trace = () => {
