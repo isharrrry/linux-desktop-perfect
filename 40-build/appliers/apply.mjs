@@ -182,6 +182,35 @@ const POINT_PATCHES = [
             WindowMessage message = (WindowMessage)msg;`,
     why: '确认 WM_DROPFILES 是否到达 WPF 的 WndProc 入口（补丁项 21，D-011）',
   },
+  {
+    patch: 'P22',
+    file: 'src/Microsoft.DotNet.Wpf/src/Common/Graphics/wgx_render.cs',
+    find: `            else
+            {
+                throw ConvertHRToException(hr);
+            }`,
+    replace: `            else
+            {
+                // 【WPF-on-Linux 补丁 P22】HRESULT 失败的**唯一收口**诊断。
+                //   为什么加在这里：D-022 查到 MediaPlayerState.CreateMedia 抛 E_NOTIMPL，
+                //   而逐个给调用点加返回值探针后三处候选全部排除 —— 说明异常来自更深的调用
+                //   （MediaPlayerState.cs 里共有 19 处 HRESULT.Check，栈只显示一层）。
+                //   在收口处把 hr 与**完整调用栈**打出来，一次就能看到真正的失败点。
+                //   只在 LDP_HR_DIAG=1 时输出；不改变异常语义（该抛的还是抛）。
+                if (Environment.GetEnvironmentVariable("LDP_HR_DIAG") == "1")
+                {
+                    try
+                    {
+                        Console.Error.WriteLine("[HR-DIAG] hr=0x" + hr.ToString("x8"));
+                        Console.Error.WriteLine(new System.Diagnostics.StackTrace(true).ToString());
+                        Console.Error.Flush();
+                    }
+                    catch { }
+                }
+                throw ConvertHRToException(hr);
+            }`,
+    why: 'HRESULT 失败收口诊断：一次定位真实失败点（补丁项 22，D-022）',
+  },
 ];
 
 for (const rel of files) {
