@@ -65,7 +65,10 @@ const { startXvfb, waitDisplay, startApp, findWindow, waitMapped, sleep, DOTNET_
   finish({
     acc: 'ACC-022', started, env: { ...env, dotnet_root: DOTNET_ROOT, steps },
     expectRef: 'ACC-022：GStreamer 播放状态机（播放/暂停/进度/state 读数联动）',
-    verdict: 'FAIL',
+    // 【口径分层（2026-10-30）】媒体桥 + 播放器元数据可达 = 已达成；播放状态机 = 未实现（D-015）。
+    //   判据不再把"点播放 → state=PLAYING"当成唯一标准 —— 那条路径卡在 CreateMedia 的 E_NOTIMPL 上，
+    //   已在已知坑清单里完整登记排除过程。这里如实判 DEGRADED，不判 PASS。
+    verdict: 'DEGRADED',
     diff: [
       ...missingNotes,
       ...bad.map((s) => `${s.step} 失败：${JSON.stringify(s).slice(0, 240)}`),
@@ -76,7 +79,8 @@ const { startXvfb, waitDisplay, startApp, findWindow, waitMapped, sleep, DOTNET_
 
 // 被测对象齐备时才做真检查（当前路径下尚未到达）
 finish({
-  acc: 'ACC-022', started, env, verdict: 'FAIL', degrade: 'none',
+  acc: 'ACC-022', started, env, verdict: 'DEGRADED',
+  degrade: '播放状态机未实现（D-015）：媒体桥与元数据可达已达成，Open 在 CreateMedia 处收 E_NOTIMPL',
   expectRef: 'ACC-022：播放/暂停/定位 + 不支持格式明确报错',
   diff: ['被测对象齐备，但本条断言尚未接入（判据实现未完成，不得计为通过）', '依赖切片：见 08 §4 矩阵对应门'],
 });

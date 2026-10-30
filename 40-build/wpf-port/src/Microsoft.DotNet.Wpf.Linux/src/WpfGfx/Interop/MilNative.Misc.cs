@@ -223,8 +223,11 @@ namespace WpfGfx.Linux.Interop
         public static int MILCreateEventProxy(IntPtr pEventProxyDescriptor, out IntPtr ppEventProxy)
         {
             ppEventProxy = IntPtr.Zero;
-            try { System.IO.File.AppendAllText("/tmp/ldp-bridge-media.log",
-                "MILCreateEventProxy called desc=0x" + pEventProxyDescriptor.ToString("x") + "\n"); } catch { }
+            if (Environment.GetEnvironmentVariable("LDP_BRIDGE_DIAG") == "1")
+            {
+                Console.Error.WriteLine("[BRIDGE] MILCreateEventProxy desc=0x" + pEventProxyDescriptor.ToString("x"));
+                Console.Error.Flush();
+            }
             if (pEventProxyDescriptor == IntPtr.Zero) return HResult.E_INVALIDARG;
 
             MilDeviceObject proxy = MilDeviceObjectTable.Register(

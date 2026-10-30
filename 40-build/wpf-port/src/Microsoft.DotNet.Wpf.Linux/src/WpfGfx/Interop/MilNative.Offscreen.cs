@@ -496,8 +496,11 @@ namespace WpfGfx.Linux.Interop
             // 【判别实验】MILCreateFactory 是 MIL 的入口（WPF 启动就会调），用它验证
             //   "bridge 侧写文件的诊断到底有没有生效" —— 上一轮两条媒体导出都没有日志，
             //   需要先排除"诊断通道本身不通"这个可能。
-            try { System.IO.File.AppendAllText("/tmp/ldp-bridge-media.log",
-                "MILCreateFactory called SDK=" + SDKVersion + "\n"); } catch { }
+            if (Environment.GetEnvironmentVariable("LDP_BRIDGE_DIAG") == "1")
+            {
+                Console.Error.WriteLine("[BRIDGE] MILCreateFactory SDK=" + SDKVersion);
+                Console.Error.Flush();
+            }
             ppIFactory = IntPtr.Zero;
 
             if (SDKVersion != MilErrors.MilSdkVersion)
