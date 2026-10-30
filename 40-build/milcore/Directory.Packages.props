@@ -1,0 +1,7 @@
+<Project>
+  <!-- 与 40-build/wpf-port 同源：挡掉上层 40-build/Directory.Packages.props 的中央包管理（CPM）。
+       WpfGfx.Linux 沿用上游写法，在 PackageReference 上直接写版本（SkiaSharp 2.88.9 由 T0 锁定）。 -->
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+</Project>

@@ -58,6 +58,7 @@ samples/**/obj/
 50-verify/**/bin/
 50-verify/**/obj/
 40-build/wpf-port/build-report.json
+40-build/milcore-bridge/bridge-report.json
 40-build/wpf-port/out/
 
 # --- 依赖目录 ---

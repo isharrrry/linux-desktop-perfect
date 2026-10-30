@@ -46,9 +46,23 @@ const OUT = path.join(ROOT, '40-build/pack/out');
 const FL = path.join(ROOT, '40-build/pack/FrameworkList.xml');
 const TMP = fs.mkdtempSync(path.join(os.tmpdir(), 'ldp-pack-'));
 // 自产「内部件」（不在 FrameworkList，但框架运行期需要）：连同 Runtime pack 一起分发
+// 自产「内部件」（不在 FrameworkList，但框架运行期需要）：连同 Runtime pack 一起分发。
+// SkiaSharp 是 DWrite Provider 的托管依赖（2.88.9，T0 锁定），来自 NuGet 缓存。
+const SKIA_DLL = (() => {
+  const base = path.join(os.homedir(), '.nuget/packages/skiasharp');
+  if (!fs.existsSync(base)) return null;
+  for (const v of fs.readdirSync(base).sort().reverse()) {
+    for (const tfm of ['net6.0', 'netstandard2.0', 'netstandard2.1']) {
+      const p = path.join(base, v, 'lib', tfm, 'SkiaSharp.dll');
+      if (fs.existsSync(p)) return p;
+    }
+  }
+  return null;
+})();
 const INNER_ASSETS = {
   DirectWriteForwarder: path.join(ROOT, '40-build/wpf-port/out/DirectWriteForwarder.dll'),
   'DirectWrite.Linux.Provider': path.join(ROOT, '40-build/wpf-port/out/DirectWrite.Linux.Provider.dll'),
+  ...(SKIA_DLL ? { SkiaSharp: SKIA_DLL } : {}),
 };
 
 const fail = (code, msg) => {
@@ -336,7 +350,7 @@ function buildRuntimePack() {
   fixTimes(dir);
   const nupkg = path.join(OUT, `Microsoft.WindowsDesktop.App.Runtime.linux-x64.${VER}.nupkg`);
   zipDir(dir, nupkg);
-  return { path: nupkg, entries: walk(dir).length, replaced, natives, nativeMissing, depsAdded };
+  return { path: nupkg, entries: walk(dir).length, replaced, natives, nativeMissing, depsAdded, nativeWinDlls };
 }
 
 // ---------------------------------------------------------------- 主流程
@@ -389,7 +403,7 @@ const report = {
     natives: rtPack.natives,
     deps_inner_assets: rtPack.depsAdded,
     native_missing: rtPack.nativeMissing,
-    windows_native_excluded: nativeWinDlls,
+    windows_native_excluded: rtPack.nativeWinDlls,
     dlls: listPack(rtPack.path).filter((p) => p.endsWith('.dll')),
   },
   self_built_enabled: USE_SELF_BUILT,

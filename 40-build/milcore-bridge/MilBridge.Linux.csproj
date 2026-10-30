@@ -1,0 +1,60 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    T1 · MilBridge：MilCore 导出桥接层（NativeAOT 共享库）。
+
+    产物 = wpfgfx_cor3.so，导出托管层 108 个 [DllImport("wpfgfx_cor3.dll")] 需要的
+    C ABI 符号；托管层靠 NativeLibrary.SetDllImportResolver 把 wpfgfx_cor3.dll
+    映射到这个 .so（见 src/MilBridge.Resolver/MilCoreDllImportResolver.cs）。
+
+    【为什么可以直接 ProjectReference WpfGfx.Linux】
+    M7a 已经把 MilNative 改成 `public static unsafe partial class`，108 个导出方法
+    全部是 `public static`，参数类型也全部是 public（csproj 里 CS0051 硬约束逼出来的）。
+    因此本工程 **既不需要 InternalsVisibleTo，也不需要额外加 public 门面** —— 这是实测事实，
+    不是推断：见 docs/T1-report.md「Phase 1-B 可见性实测」。
+  -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+
+    <PublishAot>true</PublishAot>
+    <NativeLib>Shared</NativeLib>
+    <!-- 产物名决定文件名：wpfgfx_cor3.so -->
+    <AssemblyName>wpfgfx_cor3</AssemblyName>
+    <RootNamespace>MilBridge</RootNamespace>
+
+    <!-- NativeAOT 裁剪分析器：MilNative 用反射做自检（MissingExports），
+         会触发 IL2xxx。桥接层不改变语义，先关掉分析器并把完整类型元数据打开，
+         让 .so 内的反射行为与托管侧一致（诊断导出需要）。 -->
+    <EnableTrimAnalyzer>false</EnableTrimAnalyzer>
+    <EnableAotAnalyzer>false</EnableAotAnalyzer>
+    <SuppressTrimAnalysisWarnings>true</SuppressTrimAnalysisWarnings>
+    <TrimmerSingleWarn>false</TrimmerSingleWarn>
+    <IlcGenerateCompleteTypeMetadata>true</IlcGenerateCompleteTypeMetadata>
+    <IlcDisableReflection Condition="'$(IlcDisableReflection)' == ''">false</IlcDisableReflection>
+
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <UseSystemResourceKeys>true</UseSystemResourceKeys>
+
+    <!--
+      CA2255：ModuleInitializer 用于库。本工程的 ModuleInitializer **就是机制本身**
+      （在 AOT 镜像内为 SkiaSharp 注册 DllImportResolver），不是误用，故关闭该规则。
+    -->
+    <NoWarn>$(NoWarn);CA2255</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- 本仓布局：桥接层在 40-build/milcore-bridge/，WpfGfx.Linux 在 40-build/milcore/ -->
+    <ProjectReference Include="$(MSBuildThisFileDirectory)../milcore/WpfGfx.Linux.csproj" />
+    <!--
+      MilBridge_Diag_* 需要反射读 WpfGfx.Linux 的 internal 类型（MilChannelRegistry），
+      而这些类型默认不会被 NativeAOT 保留元数据。TrimmerRootAssembly 把整个程序集的
+      元数据钉住；单靠 IlcGenerateCompleteTypeMetadata 不够（实测 ProbeCode=1）。
+    -->
+    <TrimmerRootAssembly Include="WpfGfx.Linux" />
+  </ItemGroup>
+
+</Project>

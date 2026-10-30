@@ -1,0 +1,9 @@
+<Project>
+  <!--
+    40-build/ 根的构建卫生入口：只做转发。
+    移植脚手架（SelfBuiltConfig.props 等）在 40-build/wpf-port/src/Linux/build/ 下，
+    所以 40-build/wpf-port/BuildHygiene.props 才是自洽的那一份；本文件让
+    「位于 40-build/<子系统>/ 的工程」（milcore 等）也能用同一条产物排除规则。
+  -->
+  <Import Project="$(MSBuildThisFileDirectory)wpf-port/BuildHygiene.props" />
+</Project>
