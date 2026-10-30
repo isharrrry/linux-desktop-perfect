@@ -45,6 +45,10 @@ static void jpeg_huff_build(jpeg_huff *h, const uint8_t *bits, const uint8_t *va
         } else {
             h->maxcode[len] = -1;
         }
+        // ⚠️ 这里必须累加 k（该码长贡献了 bits[len-1] 个符号）。
+        //   修前漏了这一步 ⇒ valptr 全是 0 ⇒ 所有码长都从 vals[0] 起算 ⇒
+        //   AC 表解出的符号张冠李戴（全黑图的 EOB 被解成非零系数，一路读到 k>=64）。
+        k += bits[len - 1];
         code <<= 1;
     }
     h->maxcode[16] = 0x7FFFFFFF;
@@ -260,11 +264,17 @@ static int jpeg_decode_block(jpeg_ctx *c, int comp_idx, int32_t *coef)
     }
     int t = jpeg_decode_huff(c, dc);
     if (getenv("LDP_JPEG_TRACE")) { fprintf(stderr, "[JPEG]   DC t=%d\n", t); fflush(stderr); }
-    if (t < 0) return -1;
+    if (t < 0) { if (getenv("LDP_JPEG_TRACE")) fprintf(stderr, "[JPEG]   FAIL at DC\n"); return -1; }
     int diff = jpeg_extend(jpeg_getbits(c, t), t);
     c->comp[comp_idx].dc_pred += diff;
     coef[0] = c->comp[comp_idx].dc_pred;
+    if (getenv("LDP_JPEG_TRACE")) { fprintf(stderr, "[JPEG]   entering AC loop (ac=%p)\n", (void *)ac); fflush(stderr); }
     for (int k = 1; k < 64; ) {
+        if (getenv("LDP_JPEG_TRACE")) {
+            fprintf(stderr, "[JPEG]   AC k=%d bits=%d: ", k, c->bitcnt);
+            for (int L = 1; L <= 8; ++L) fprintf(stderr, "len%d[%d..%d]@%d ", L, ac->mincode[L], ac->maxcode[L], ac->valptr[L]);
+            fprintf(stderr, "\n"); fflush(stderr);
+        }
         int rs = jpeg_decode_huff(c, ac);
         if (rs < 0) return -1;
         int r = rs >> 4, s = rs & 0x0F;
@@ -378,6 +388,12 @@ int32_t ldp_jpeg_decode(const uint8_t *data, size_t len, ldp_png_image *out, cha
                 int td = tdta >> 4, ta = tdta & 0x0F;
                 c->comp[ci].dc = c->has_dc[td] ? &c->dc_tables[td] : NULL;
                 c->comp[ci].ac = c->has_ac[ta] ? &c->ac_tables[ta] : NULL;
+                if (getenv("LDP_JPEG_TRACE")) {
+                    fprintf(stderr, "[JPEG] SOS comp=%d td=%d ta=%d has_dc=%d has_ac=%d -> dc=%p ac=%p\n",
+                            ci, td, ta, c->has_dc[td], c->has_ac[ta],
+                            (void *)c->comp[ci].dc, (void *)c->comp[ci].ac);
+                    fflush(stderr);
+                }
                 for (int q = 0; q < 64; ++q) c->comp[ci].q[q] = c->q_tables[c->comp[ci].tq][q];
             }
             // 跳过 SOS 尾部的 3 个字节（Ss, Se, Ah/Al）
