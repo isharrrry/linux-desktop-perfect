@@ -36,8 +36,12 @@ const REF_PKG = 'microsoft.windowsdesktop.app.ref';
 const REF_VER = '10.0.11';
 const REF_HOME = path.join(os.homedir(), '.nuget/packages', REF_PKG, REF_VER);
 const REF_LABEL = `~/.nuget/packages/${REF_PKG}/${REF_VER}`;
-const SRC_XML = path.join(REF_HOME, 'data/FrameworkList.xml');
-const SRC_REF_DLL_DIR = path.join(REF_HOME, 'ref/net10.0');
+// 来源优先级（2026-10-30）：①40-build/lock/packs/ref-extract（build-pack 解出的只读副本，
+// 不依赖 NuGet 缓存 —— 缓存会被 pack 组装的 PACK-SELFBUILT 清掉）②本机 NuGet 缓存。
+const REF_EXTRACT = path.join(ROOT, '40-build/lock/packs/ref-extract');
+const REF_BASE = fs.existsSync(path.join(REF_EXTRACT, 'data/FrameworkList.xml')) ? REF_EXTRACT : REF_HOME;
+const SRC_XML = path.join(REF_BASE, 'data/FrameworkList.xml');
+const SRC_REF_DLL_DIR = path.join(REF_BASE, 'ref/net10.0');
 
 const errors = [];
 const checkOnly = process.argv.includes('--check');
@@ -101,7 +105,7 @@ const sourceJson = {
   generated_by: '50-verify/contract/scan-must-stub.mjs',
   package: 'Microsoft.WindowsDesktop.App.Ref',
   version: REF_VER,
-  source_path: `${REF_LABEL}/data/FrameworkList.xml`,
+  source_path: REF_BASE === REF_EXTRACT ? '40-build/lock/packs/ref-extract/data/FrameworkList.xml（由 build-pack 从 lock/packs 的 Ref nupkg 解出）' : `${REF_LABEL}/data/FrameworkList.xml`,
   copy_command: `cp "${REF_LABEL}/data/FrameworkList.xml" 40-build/pack/FrameworkList.xml`,
   copy_policy: '原样复制，不改内容、不改编码、不改行尾；差异由 --check 判红',
   stats: {

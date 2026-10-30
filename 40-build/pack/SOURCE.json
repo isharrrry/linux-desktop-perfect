@@ -2,7 +2,7 @@
   "generated_by": "50-verify/contract/scan-must-stub.mjs",
   "package": "Microsoft.WindowsDesktop.App.Ref",
   "version": "10.0.11",
-  "source_path": "~/.nuget/packages/microsoft.windowsdesktop.app.ref/10.0.11/data/FrameworkList.xml",
+  "source_path": "40-build/lock/packs/ref-extract/data/FrameworkList.xml（由 build-pack 从 lock/packs 的 Ref nupkg 解出）",
   "copy_command": "cp \"~/.nuget/packages/microsoft.windowsdesktop.app.ref/10.0.11/data/FrameworkList.xml\" 40-build/pack/FrameworkList.xml",
   "copy_policy": "原样复制，不改内容、不改编码、不改行尾；差异由 --check 判红",
   "stats": {

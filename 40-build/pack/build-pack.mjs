@@ -45,6 +45,11 @@ const SHIM = path.join(ROOT, '40-build/native-shim/bin');
 const OUT = path.join(ROOT, '40-build/pack/out');
 const FL = path.join(ROOT, '40-build/pack/FrameworkList.xml');
 const TMP = fs.mkdtempSync(path.join(os.tmpdir(), 'ldp-pack-'));
+// 自产「内部件」（不在 FrameworkList，但框架运行期需要）：连同 Runtime pack 一起分发
+const INNER_ASSETS = {
+  DirectWriteForwarder: path.join(ROOT, '40-build/wpf-port/out/DirectWriteForwarder.dll'),
+  'DirectWrite.Linux.Provider': path.join(ROOT, '40-build/wpf-port/out/DirectWrite.Linux.Provider.dll'),
+};
 
 const fail = (code, msg) => {
   console.error(`ERROR ${code} ${msg}`);
@@ -245,6 +250,44 @@ function buildRuntimePack() {
   fs.mkdirSync(path.join(dir, 'data'), { recursive: true });
   fs.copyFileSync(FL, path.join(dir, 'data/FrameworkList.xml'));
 
+  const libDir = path.join(dir, 'runtimes/linux-x64/lib/net10.0');
+  // DepsWriter（03 §3.6.2）：把框架 deps.json 从 win-x64 改写为 linux-x64，
+  // 并把自产「内部件」（不在 FrameworkList：DWF / DWrite Provider）登记为框架运行时资产。
+  // 不登记就会出现「框架里明明有 DLL，宿主却报 FileNotFoundException」——实测它不看目录、只看 deps.json。
+  const depsSrc = path.join(libDir, 'Microsoft.WindowsDesktop.App.deps.json');
+  let depsAdded = [];
+  if (fs.existsSync(depsSrc)) {
+    const deps = JSON.parse(fs.readFileSync(depsSrc, 'utf8'));
+    const WIN = '.NETCoreApp,Version=v10.0/win-x64';
+    const LNX = '.NETCoreApp,Version=v10.0/linux-x64';
+    deps.runtimeTarget = { name: LNX, signature: '' };
+    const winTargets = deps.targets[WIN] || {};
+    deps.targets = { '.NETCoreApp,Version=v10.0': {}, [LNX]: {} };
+    for (const [libKey, libVal] of Object.entries(winTargets)) {
+      const linuxKey = libKey.replace('win-x64', 'linux-x64');
+      deps.targets[LNX][linuxKey] = libVal;
+      if (deps.libraries && deps.libraries[libKey]) {
+        deps.libraries[linuxKey] = deps.libraries[libKey];
+        delete deps.libraries[libKey];
+      }
+      // 自产内部件：不属 FrameworkList，但框架加载时需要（PresentationCore 的 module initializer 直接 new）。
+      // deps 条目与文件必须一起落 —— 只写 deps 不落文件，宿主会报
+      // 「An assembly specified in the application dependencies manifest was not found」（实测）。
+      const runtime = libVal.runtime || {};
+      for (const [name, src] of Object.entries(INNER_ASSETS)) {
+        if (!fs.existsSync(src)) continue;
+        const fname = `${name}.dll`;
+        fs.copyFileSync(src, path.join(libDir, fname));
+        if (!runtime[fname]) {
+          runtime[fname] = { assemblyVersion: '1.0.0.0', fileVersion: '1.0.0.0' };
+          depsAdded.push(fname);
+        }
+      }
+      libVal.runtime = runtime;
+    }
+    fs.writeFileSync(depsSrc, JSON.stringify(deps, null, 2) + '\n', 'utf8');
+  }
+
   // 包元数据：沿用上游 nuspec，改 id 与版本（Runtime 包按 RID 区分 id）
   const nuspecSrc = path.join(stage, 'Microsoft.WindowsDesktop.App.Runtime.win-x64.nuspec');
   if (!fs.existsSync(nuspecSrc)) fail('LDP-E-PACK-205', '上游 Runtime 包内缺 nuspec');
@@ -255,7 +298,6 @@ function buildRuntimePack() {
   fs.writeFileSync(path.join(dir, 'Microsoft.WindowsDesktop.App.Runtime.linux-x64.nuspec'), nuspec, 'utf8');
 
   // 自产托管件替换（实现件，不是 ref）；未自产的保持上游件
-  const libDir = path.join(dir, 'runtimes/linux-x64/lib/net10.0');
   const replaced = [];
   for (const [asm, self] of USE_SELF_BUILT ? selfAsms : []) {
     const dst = path.join(libDir, `${asm}.dll`);
@@ -286,7 +328,7 @@ function buildRuntimePack() {
   fixTimes(dir);
   const nupkg = path.join(OUT, `Microsoft.WindowsDesktop.App.Runtime.linux-x64.${VER}.nupkg`);
   zipDir(dir, nupkg);
-  return { path: nupkg, entries: walk(dir).length, replaced, natives, nativeMissing };
+  return { path: nupkg, entries: walk(dir).length, replaced, natives, nativeMissing, depsAdded };
 }
 
 // ---------------------------------------------------------------- 主流程
@@ -294,6 +336,18 @@ function buildRuntimePack() {
 fs.mkdirSync(OUT, { recursive: true });
 const refPack = buildRefPack();
 const rtPack = buildRuntimePack();
+
+// 清缓存前，把 Ref 包解出一份到 lock/packs/ref-extract：
+//   ①让 50-verify/contract/scan-must-stub.mjs 的 --check 不依赖 NuGet 缓存（缓存会被本脚本清掉）；
+//   ②解出的内容只读、可复算（来源是本目录的 ref nupkg）。
+const REF_EXTRACT = path.join(LOCK, 'ref-extract');
+try {
+  fs.rmSync(REF_EXTRACT, { recursive: true, force: true });
+  fs.mkdirSync(REF_EXTRACT, { recursive: true });
+  run('unzip', ['-q', '-o', REF_NUPKG, '-d', REF_EXTRACT]);
+} catch (e) {
+  console.error(`WARN 解出 Ref 包失败（scan-must-stub 将回落 NuGet 缓存）：${e.message}`);
+}
 
 // 包内容变化后清掉全局缓存中的同版目录，避免 restore 命中旧内容（IF-023 同名同版的必要代价）
 const cacheDirs = [
@@ -325,6 +379,7 @@ const report = {
     platform: 'linux-x64',
     self_built: rtPack.replaced,
     natives: rtPack.natives,
+    deps_inner_assets: rtPack.depsAdded,
     native_missing: rtPack.nativeMissing,
     dlls: listPack(rtPack.path).filter((p) => p.endsWith('.dll')),
   },
