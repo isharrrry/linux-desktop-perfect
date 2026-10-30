@@ -572,18 +572,55 @@ int32_t IWICImagingFactory_CreateBitmapFromMemory_Proxy(void *factory, uint32_t 
 // 两个入口是一对：`WICCreateColorContext` 造**空**上下文，`InitializeFromMemory` 再填 profile。
 // WIC 的语义就是"填充已有对象"（不是创建），所以句柄统一登记在 bridge 的 MilColorContextTable，
 // 由 `LdpMilColorContextFromProfile/SetProfile` 两个导出操作。
+// 找到 bridge（wpfgfx_cor3.so）在本进程里的**绝对路径**再 dlopen。
+// 【为什么必须走 /proc/self/maps】.NET 用 RTLD_LOCAL 加载 bridge，符号不进全局符号表；
+//   而 `dlopen("wpfgfx_cor3.so", RTLD_NOLOAD)` 按**文件名**匹配，.NET 加载时用的却是
+//   完整路径 ⇒ 裸名查不到（实测：handle/sym 全 NULL）。maps 里有真路径。
+static void *wic_bridge_handle(void)
+{
+    static void *cached = (void *)-1;
+    if (cached != (void *)-1) return cached;
+    cached = NULL;
+    FILE *f = fopen("/proc/self/maps", "r");
+    if (!f) return NULL;
+    char line[4096];
+    static char path_buf[4096];
+    while (fgets(line, sizeof(line), f)) {
+        char *slash = strstr(line, "/");
+        if (!slash) continue;
+        if (!strstr(slash, "wpfgfx_cor3")) continue;
+        size_t n = strlen(slash);
+        while (n && (slash[n - 1] == '\n' || slash[n - 1] == ' ')) slash[--n] = 0;
+        snprintf(path_buf, sizeof(path_buf), "%s", slash);
+        cached = dlopen(path_buf, RTLD_NOW | RTLD_NOLOAD);
+        break;
+    }
+    fclose(f);
+    return cached;
+}
+
 static void *wic_color_context_bridge(const char *name)
 {
     void *p = dlsym(RTLD_DEFAULT, name);
-    if (p) return p;
-    void *h = dlopen("wpfgfx_cor3.so", RTLD_NOW | RTLD_NOLOAD);
-    return h ? dlsym(h, name) : NULL;
+    if (!p) {
+        void *h = wic_bridge_handle();
+        if (h) p = dlsym(h, name);
+        if (getenv("LDP_WIC_TRACE")) {
+            fprintf(stderr, "[WIC-ICC]   bridge lookup %s: handle=%p sym=%p\n", name, h, p);
+            fflush(stderr);
+        }
+    }
+    return p;
 }
 
 int32_t WICCreateColorContext_Proxy(void *factory, void **context)
 {
     if (!context) return E_NOTIMPL_;
     *context = NULL;
+    if (getenv("LDP_WIC_TRACE")) {
+        fprintf(stderr, "[WIC-ICC] WICCreateColorContext(factory=%p valid=%d)\n", factory, wpf_wic_factory_valid(factory));
+        fflush(stderr);
+    }
     if (!wpf_wic_factory_valid(factory)) return 0x80070057;
     typedef void *(*fn_new)(uint8_t *, uint32_t, uint32_t);
     fn_new make = (fn_new)wic_color_context_bridge("LdpMilColorContextFromProfile");
@@ -612,6 +649,12 @@ int32_t IWICBitmapFrameDecode_GetColorContexts_Proxy(void *decoder, uint32_t cou
 {
     if (actual) *actual = 0;
     wic_decoder *d = (wic_decoder *)decoder;
+    if (getenv("LDP_WIC_TRACE")) {
+        fprintf(stderr, "[WIC-ICC] GetColorContexts(count=%u, contexts=%p, decoder=%p magic_ok=%d icc_len=%u)\n",
+                count, (void *)contexts, (void *)decoder, (d && d->magic == WIC_DECODER_MAGIC) ? 1 : 0,
+                (d && d->magic == WIC_DECODER_MAGIC) ? d->img.icc_len : 0);
+        fflush(stderr);
+    }
     if (!d || d->magic != WIC_DECODER_MAGIC) return 0x80070057;
     // 没有内嵌 ICC ⇒ 0 个上下文（真值）
     if (!d->img.icc || d->img.icc_len == 0) return S_OK_;
@@ -634,6 +677,10 @@ int32_t IWICBitmapFrameDecode_GetColorContexts_Proxy(void *decoder, uint32_t cou
     fn_set set = (fn_set)wic_color_context_bridge("LdpMilColorContextSetProfile");
     if (!set) return S_OK_;
     int32_t hr = set(contexts[0], d->img.icc, d->img.icc_len, 2 /* WICColorContextProfile */);
+    if (getenv("LDP_WIC_TRACE")) {
+        fprintf(stderr, "[WIC-ICC]   SetProfile(ctx=%p) => 0x%08x\n", contexts[0], (unsigned)hr);
+        fflush(stderr);
+    }
     if (hr == 0) { if (actual) *actual = 1; }
     return S_OK_;
 }
