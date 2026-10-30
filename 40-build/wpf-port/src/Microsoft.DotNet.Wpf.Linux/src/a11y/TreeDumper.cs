@@ -23,6 +23,7 @@ using System.Text;
 using System.Threading;
 using System.Windows;
 using System.Windows.Automation.Peers;
+using System.Windows.Input;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Media;
@@ -64,6 +65,7 @@ namespace Ldp.A11y
                     }
                     else
                     {
+                        InstallInputTrace();
                         Dispatcher d = app.Dispatcher;
                         d.Invoke(new Action(() =>
                         {
@@ -105,6 +107,39 @@ namespace Ldp.A11y
         }
 
         private static bool g_repeatStarted;
+        private static bool g_inputTraceInstalled;
+
+        // 输入链追踪（仅 LDP_A11Y_DEBUG 设置时）：把 WPF 侧真正看到的鼠标/键盘输入记进 debug 文件。
+        // 用途：判据「点击后控件不聚焦」要能区分「WPF 根本没收到鼠标事件」与「收到了但命中测试/焦点没落对」。
+        private static void InstallInputTrace()
+        {
+            if (g_inputTraceInstalled || string.IsNullOrEmpty(DebugPath)) return;
+            g_inputTraceInstalled = true;
+            try
+            {
+                InputManager.Current.PreProcessInput += (s, e) =>
+                {
+                    try
+                    {
+                        InputEventArgs input = e.StagingItem == null ? null : e.StagingItem.Input;
+                        if (input is MouseButtonEventArgs mb)
+                        {
+                            Debug("INPUT " + mb.RoutedEvent.Name + " button=" + mb.ChangedButton + " pos=" + mb.GetPosition(null));
+                        }
+                        else if (input is MouseEventArgs mv)
+                        {
+                            Debug("INPUT " + mv.RoutedEvent.Name + " pos=" + mv.GetPosition(null));
+                        }
+                        else if (input is KeyboardFocusChangedEventArgs kf)
+                        {
+                            Debug("INPUT Focus " + kf.RoutedEvent.Name + " new=" + (kf.NewFocus == null ? "null" : kf.NewFocus.GetType().Name));
+                        }
+                    }
+                    catch { }
+                };
+            }
+            catch { }
+        }
 
         // 重复导出：后台线程每 400 ms 在 UI 线程上重写同一个 JSON（seq 递增）。
         // 用途 = 事件回放判据（ACC-010）：输入前取一次、输入后再取一次，比 value 字段。

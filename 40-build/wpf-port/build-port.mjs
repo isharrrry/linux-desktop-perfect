@@ -63,6 +63,12 @@ const ORDER = [
   { id: 'ReachFramework', proj: 'ReachFramework/ReachFramework.Linux.csproj', asm: 'ReachFramework' },
   { id: 'PresentationFramework', proj: 'PresentationFramework/PresentationFramework.Linux.csproj', asm: 'PresentationFramework' },
   { id: 'PresentationFramework.Classic', proj: 'PresentationFramework.Classic/PresentationFramework.Classic.Linux.csproj', asm: 'PresentationFramework.Classic' },
+  // 六主题的其余五件：工程由 gen-theme-projects.mjs 从 Classic 模板生成（XAML 标记编译链同一套接线）
+  { id: 'PresentationFramework.Aero', proj: 'PresentationFramework.Aero/PresentationFramework.Aero.Linux.csproj', asm: 'PresentationFramework.Aero' },
+  { id: 'PresentationFramework.Aero2', proj: 'PresentationFramework.Aero2/PresentationFramework.Aero2.Linux.csproj', asm: 'PresentationFramework.Aero2' },
+  { id: 'PresentationFramework.AeroLite', proj: 'PresentationFramework.AeroLite/PresentationFramework.AeroLite.Linux.csproj', asm: 'PresentationFramework.AeroLite' },
+  { id: 'PresentationFramework.Luna', proj: 'PresentationFramework.Luna/PresentationFramework.Luna.Linux.csproj', asm: 'PresentationFramework.Luna' },
+  { id: 'PresentationFramework.Royale', proj: 'PresentationFramework.Royale/PresentationFramework.Royale.Linux.csproj', asm: 'PresentationFramework.Royale' },
   // MOD-81 托管侧：DOTNET_STARTUP_HOOKS 树导出器（不是 FrameworkList 件，随 Runtime pack 内部件分发）
   { id: 'LdpA11y', proj: 'a11y/LdpA11y.csproj', asm: 'LdpA11y' },
 ];
