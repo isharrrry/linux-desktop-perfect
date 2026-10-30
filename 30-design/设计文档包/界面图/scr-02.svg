@@ -25,35 +25,35 @@
 <text x="82" y="184" font-size="12" fill="#111">选中字体项</text>
 <text x="826" y="184" font-size="10" fill="#666" text-anchor="end">list item · 0/1/0 · 状态 1 / 动作 1 · ACC-013 ACC-027</text>
 </g>
-<g data-path="0/2/0" data-role="paragraph" data-name="正则 汉\p{Han}">
+<g data-path="0/2/0" data-role="label" data-name="正则 汉\p{Han}">
 <rect x="74" y="198" width="760" height="24" rx="3" fill="#f7f7f7" stroke="#d0d0d0"/>
 <text x="82" y="214" font-size="12" fill="#111">CJK 段落</text>
-<text x="826" y="214" font-size="10" fill="#666" text-anchor="end">paragraph · 0/2/0 · 状态 1 / 动作 0 · ACC-013 ACC-027</text>
+<text x="826" y="214" font-size="10" fill="#666" text-anchor="end">label · 0/2/0 · 状态 1 / 动作 0 · ACC-013 ACC-027</text>
 </g>
-<g data-path="0/2/1" data-role="paragraph" data-name="正则 [A-Za-z]">
+<g data-path="0/2/1" data-role="label" data-name="正则 [A-Za-z]">
 <rect x="74" y="228" width="760" height="24" rx="3" fill="#f7f7f7" stroke="#d0d0d0"/>
 <text x="82" y="244" font-size="12" fill="#111">拉丁段落</text>
-<text x="826" y="244" font-size="10" fill="#666" text-anchor="end">paragraph · 0/2/1 · 状态 1 / 动作 0 · ACC-013 ACC-027</text>
+<text x="826" y="244" font-size="10" fill="#666" text-anchor="end">label · 0/2/1 · 状态 1 / 动作 0 · ACC-013 ACC-027</text>
 </g>
-<g data-path="0/2/2" data-role="paragraph" data-name="正则 [→∑≈]">
+<g data-path="0/2/2" data-role="label" data-name="正则 [→∑≈]">
 <rect x="74" y="258" width="760" height="24" rx="3" fill="#f7f7f7" stroke="#d0d0d0"/>
 <text x="82" y="274" font-size="12" fill="#111">符号段落</text>
-<text x="826" y="274" font-size="10" fill="#666" text-anchor="end">paragraph · 0/2/2 · 状态 1 / 动作 0 · ACC-013 ACC-027</text>
+<text x="826" y="274" font-size="10" fill="#666" text-anchor="end">label · 0/2/2 · 状态 1 / 动作 0 · ACC-013 ACC-027</text>
 </g>
-<g data-path="0/3" data-role="paragraph" data-name="含 RTL 字符（正则 \p{Arabic}）">
+<g data-path="0/3" data-role="label" data-name="含 RTL 字符（正则 \p{Arabic}）">
 <rect x="50" y="288" width="784" height="24" rx="3" fill="#f7f7f7" stroke="#d0d0d0"/>
 <text x="58" y="304" font-size="12" fill="#111">复杂脚本段落</text>
-<text x="826" y="304" font-size="10" fill="#666" text-anchor="end">paragraph · 0/3 · 状态 1 / 动作 0 · ACC-014 ACC-027</text>
+<text x="826" y="304" font-size="10" fill="#666" text-anchor="end">label · 0/3 · 状态 1 / 动作 0 · ACC-014 ACC-027</text>
 </g>
-<g data-path="0/4" data-role="paragraph" data-name="正则 行布局">
+<g data-path="0/4" data-role="label" data-name="正则 行布局">
 <rect x="50" y="318" width="784" height="24" rx="3" fill="#f7f7f7" stroke="#d0d0d0"/>
 <text x="58" y="334" font-size="12" fill="#111">行布局段落</text>
-<text x="826" y="334" font-size="10" fill="#666" text-anchor="end">paragraph · 0/4 · 状态 1 / 动作 1 · ACC-015 ACC-027</text>
+<text x="826" y="334" font-size="10" fill="#666" text-anchor="end">label · 0/4 · 状态 1 / 动作 1 · ACC-015 ACC-027</text>
 </g>
-<g data-path="0/5" data-role="paragraph" data-name="正则 CFF">
+<g data-path="0/5" data-role="label" data-name="正则 CFF">
 <rect x="50" y="348" width="784" height="24" rx="3" fill="#f7f7f7" stroke="#d0d0d0"/>
 <text x="58" y="364" font-size="12" fill="#111">CFF 大字号文本</text>
-<text x="826" y="364" font-size="10" fill="#666" text-anchor="end">paragraph · 0/5 · 状态 1 / 动作 0 · ACC-016 ACC-027</text>
+<text x="826" y="364" font-size="10" fill="#666" text-anchor="end">label · 0/5 · 状态 1 / 动作 0 · ACC-016 ACC-027</text>
 </g>
 <g data-path="0/6" data-role="entry" data-name="输入法样本">
 <rect x="50" y="378" width="784" height="24" rx="3" fill="#eef4ff" stroke="#7aa2e8"/>

@@ -78,7 +78,7 @@
     },
     {
       "path": "0/2/0",
-      "role": "paragraph",
+      "role": "label",
       "name": "正则 汉\\p{Han}",
       "states": [
         "visible"
@@ -94,7 +94,7 @@
     },
     {
       "path": "0/2/1",
-      "role": "paragraph",
+      "role": "label",
       "name": "正则 [A-Za-z]",
       "states": [
         "visible"
@@ -110,7 +110,7 @@
     },
     {
       "path": "0/2/2",
-      "role": "paragraph",
+      "role": "label",
       "name": "正则 [→∑≈]",
       "states": [
         "visible"
@@ -126,7 +126,7 @@
     },
     {
       "path": "0/3",
-      "role": "paragraph",
+      "role": "label",
       "name": "含 RTL 字符（正则 \\p{Arabic}）",
       "states": [
         "visible"
@@ -142,7 +142,7 @@
     },
     {
       "path": "0/4",
-      "role": "paragraph",
+      "role": "label",
       "name": "正则 行布局",
       "states": [
         "visible"
@@ -160,7 +160,7 @@
     },
     {
       "path": "0/5",
-      "role": "paragraph",
+      "role": "label",
       "name": "正则 CFF",
       "states": [
         "visible"
