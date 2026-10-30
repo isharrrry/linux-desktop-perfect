@@ -13,6 +13,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "png_decode.h"
 
 #define E_NOTIMPL_    0x80004001
 #define E_INVALIDARG_ 0x80070057
@@ -217,7 +218,7 @@ int GetColorProfileHeader(void *h, void *header)
 //
 // 口径：只支持"源是 WIC 位图源、目标是 32bppBGRA"。其它形态明确失败（不假装成功）。
 typedef struct {
-    uint32_t magic;
+    wic_object hdr;      // 必须第一个字段（与 wic_decoder 共用同一套跟踪/回收）
     uint8_t *bgra;
     uint32_t width, height;
 } ldp_color_transform;
@@ -233,7 +234,8 @@ int32_t WICCreateColorTransform_Proxy(void **transform)
     *transform = NULL;
     ldp_color_transform *t = (ldp_color_transform *)calloc(1, sizeof(ldp_color_transform));
     if (!t) return E_NOTIMPL_;
-    t->magic = COLOR_TRANSFORM_MAGIC;
+    t->hdr.magic = COLOR_TRANSFORM_MAGIC;
+    wic_track_add(t);       // 登记进活表：WPF 会把它包进 SafeMILHandle 并做 QI
     *transform = t;
     return 0;
 }
@@ -243,7 +245,7 @@ int32_t IWICColorTransform_Initialize_Proxy(void *transform, void *source, void 
 {
     (void)guidDestFmt;
     ldp_color_transform *t = (ldp_color_transform *)transform;
-    if (!t || t->magic != COLOR_TRANSFORM_MAGIC || !source) return E_INVALIDARG_;
+    if (!t || t->hdr.magic != COLOR_TRANSFORM_MAGIC || !source) return E_INVALIDARG_;
     if (!srcContext || !dstContext) return E_INVALIDARG_;
     probe_lcms();
     if (!s_lcms.ok) return E_NOTIMPL_;
@@ -274,9 +276,19 @@ int32_t IWICColorTransform_Initialize_Proxy(void *transform, void *source, void 
 int32_t IWICColorTransform_GetSize_Proxy(void *transform, uint32_t *w, uint32_t *h)
 {
     ldp_color_transform *t = (ldp_color_transform *)transform;
-    if (!t || t->magic != COLOR_TRANSFORM_MAGIC) return E_INVALIDARG_;
+    if (!t || t->hdr.magic != COLOR_TRANSFORM_MAGIC) return E_INVALIDARG_;
     if (w) *w = t->width;
     if (h) *h = t->height;
+    return 0;
+}
+
+int32_t IWICColorTransform_GetPixelFormat_Proxy(void *transform, void *guid)
+{
+    ldp_color_transform *t = (ldp_color_transform *)transform;
+    if (!t || t->hdr.magic != COLOR_TRANSFORM_MAGIC) return E_INVALIDARG_;
+    // GUID_WICPixelFormat32bppBGRA = {6fddc324-4e03-4bfe-b185-3d77768dc90f}
+    static const uint8_t bgra[16] = { 0x24,0xc3,0xdd,0x6f,0x03,0x4e,0xfe,0x4b,0xb1,0x85,0x3d,0x77,0x76,0x8d,0xc9,0x0f };
+    if (guid) memcpy(guid, bgra, 16);
     return 0;
 }
 
@@ -284,7 +296,7 @@ int32_t IWICColorTransform_CopyPixels_Proxy(void *transform, const void *rect, u
                                             uint32_t bufferSize, uint8_t *buffer)
 {
     ldp_color_transform *t = (ldp_color_transform *)transform;
-    if (!t || t->magic != COLOR_TRANSFORM_MAGIC || !buffer) return E_INVALIDARG_;
+    if (!t || t->hdr.magic != COLOR_TRANSFORM_MAGIC || !buffer) return E_INVALIDARG_;
     if (rect != NULL) return E_NOTIMPL_;
     size_t row = (size_t)t->width * 4;
     if (stride < row || bufferSize < row * t->height) return E_INVALIDARG_;

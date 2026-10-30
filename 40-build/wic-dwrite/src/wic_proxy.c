@@ -31,6 +31,8 @@ int ldp_is_gif(const uint8_t *data, size_t len);
 int ldp_is_gif89(const uint8_t *data, size_t len);
 int ldp_tiff_decode(const uint8_t *data, size_t len, ldp_png_image *out, char *error, size_t cap);
 int ldp_is_tiff(const uint8_t *data, size_t len);
+#define COLOR_TRANSFORM_MAGIC_ 0x4c445433u   /* LDT3，与 mscms.c 一致 */
+
 static int32_t wic_decode_any(const uint8_t *buf, size_t len, ldp_png_image *img, char *err, size_t cap)
 {
     if (ldp_is_bmp(buf, len)) return ldp_bmp_decode(buf, len, img, err, cap);
@@ -67,21 +69,21 @@ int wpf_wic_factory_valid(const void *p)
 // WPF 的主路径是 `CreateDecoderFromStream`（IStream 由 milcore 的 MILCreateStream 造），
 // 这里先实现**文件路径**入口（`CreateDecoderFromFilename`）把解码链路打通：
 // 探针可以直接验证"PNG 能解出正确像素"，之后再把 stream 入口接到同一个解码器上。
+// 对象头 wic_object 定义在 png_decode.h（mscms.c 也要用同一套跟踪）。
 typedef struct wic_decoder {
-    uint32_t magic;
-    int refcount;              // WicShim_AddRef/Release 的账
-    struct wic_decoder *next;  // 活句柄表（WicShim_HandleCount 用）
+    wic_object hdr;            // 必须是第一个字段（与 ldp_color_transform 共用同一个跟踪机制）
     ldp_png_image img;
 } wic_decoder;
 #define WIC_DECODER_MAGIC 0x57494344u   /* 'WICD' */
 
-static wic_decoder *s_live = NULL;
+static wic_object *s_live = NULL;
 static int s_live_count = 0;
 static int s_peak_count = 0;
 static pthread_mutex_t s_live_lock = PTHREAD_MUTEX_INITIALIZER;
 
-static void wic_track_add(wic_decoder *d)
+void wic_track_add(void *obj)
 {
+    wic_object *d = (wic_object *)obj;
     pthread_mutex_lock(&s_live_lock);
     d->refcount = 1;
     d->next = s_live;
@@ -91,10 +93,10 @@ static void wic_track_add(wic_decoder *d)
     pthread_mutex_unlock(&s_live_lock);
 }
 
-static int wic_track_drop(wic_decoder *d)
+static int wic_track_drop(wic_object *d)
 {
     pthread_mutex_lock(&s_live_lock);
-    wic_decoder **pp = &s_live;
+    wic_object **pp = &s_live;
     while (*pp && *pp != d) pp = &(*pp)->next;
     if (*pp == d) { *pp = d->next; s_live_count--; }
     pthread_mutex_unlock(&s_live_lock);
@@ -136,7 +138,7 @@ int32_t IWICImagingFactory_CreateDecoderFromFilename_Proxy(void *factory, const 
     int32_t hr = wic_decode_any(buf, rd, &d->img, err, sizeof(err));
     free(buf);
     if (hr != 0) { free(d); return hr; }
-    d->magic = WIC_DECODER_MAGIC;
+    d->hdr.magic = WIC_DECODER_MAGIC;
     wic_track_add(d);
     *out = d;
     return S_OK_;
@@ -147,25 +149,40 @@ int32_t IWICBitmapDecoder_GetFrame_Proxy(void *decoder, uint32_t index, void **f
     if (!frame) return E_NOTIMPL_;
     *frame = NULL;
     wic_decoder *d = (wic_decoder *)decoder;
-    if (!d || d->magic != WIC_DECODER_MAGIC) return 0x80070057;
+    if (!d || d->hdr.magic != WIC_DECODER_MAGIC) return 0x80070057;
     if (index != 0) return E_NOTIMPL_;   /* 只支持单帧 */
     *frame = d;                          /* 帧就是解码器本身（单图 PNG 的常见口径） */
     return S_OK_;
 }
 
+// 位图源三入口要同时接受两类对象：解码器（WICD）与色彩转换对象（LDT3）。
+//   两者共用同一个对象头（wic_object），所以这里只按"头 + 载荷布局"分派。
+typedef struct { wic_object hdr; uint8_t *bgra; uint32_t width, height; } ldp_ct_view;
+
 int32_t IWICBitmapSource_GetSize_Proxy(void *source, uint32_t *w, uint32_t *h)
 {
-    wic_decoder *d = (wic_decoder *)source;
-    if (!d || d->magic != WIC_DECODER_MAGIC) return 0x80070057;
-    if (w) *w = d->img.width;
-    if (h) *h = d->img.height;
-    return S_OK_;
+    if (!source) return 0x80070057;
+    wic_object *o = (wic_object *)source;
+    if (o->magic == WIC_DECODER_MAGIC) {
+        wic_decoder *d = (wic_decoder *)source;
+        if (w) *w = d->img.width;
+        if (h) *h = d->img.height;
+        return S_OK_;
+    }
+    if (o->magic == COLOR_TRANSFORM_MAGIC_) {
+        ldp_ct_view *t = (ldp_ct_view *)source;
+        if (w) *w = t->width;
+        if (h) *h = t->height;
+        return S_OK_;
+    }
+    return 0x80070057;
 }
 
 int32_t IWICBitmapSource_GetPixelFormat_Proxy(void *source, void *guid)
 {
-    wic_decoder *d = (wic_decoder *)source;
-    if (!d || d->magic != WIC_DECODER_MAGIC) return 0x80070057;
+    if (!source) return 0x80070057;
+    wic_object *o = (wic_object *)source;
+    if (o->magic != WIC_DECODER_MAGIC && o->magic != COLOR_TRANSFORM_MAGIC_) return 0x80070057;
     // GUID_WICPixelFormat32bppBGRA = {6fddc324-4e03-4bfe-b185-3d77768dc90f}
     static const uint8_t bgra_guid[16] = {
         0x24, 0xc3, 0xdd, 0x6f, 0x03, 0x4e, 0xfe, 0x4b,
@@ -178,14 +195,29 @@ int32_t IWICBitmapSource_GetPixelFormat_Proxy(void *source, void *guid)
 int32_t IWICBitmapSource_CopyPixels_Proxy(void *source, const void *rect, uint32_t stride,
                                           uint32_t bufferSize, uint8_t *buffer)
 {
-    wic_decoder *d = (wic_decoder *)source;
-    if (!d || d->magic != WIC_DECODER_MAGIC || !buffer) return 0x80070057;
-    // 只支持"整幅拷贝"（rect == NULL）
-    if (rect != NULL) return E_NOTIMPL_;
-    size_t row = (size_t)d->img.width * 4;
-    if (stride < row || bufferSize < row * d->img.height) return 0x80070057;
-    for (uint32_t y = 0; y < d->img.height; ++y)
-        memcpy(buffer + (size_t)y * stride, d->img.bgra + (size_t)y * row, row);
+    if (!source || !buffer) return 0x80070057;
+    wic_object *o = (wic_object *)source;
+    if (o->magic != WIC_DECODER_MAGIC && o->magic != COLOR_TRANSFORM_MAGIC_) return 0x80070057;
+    uint32_t w, h;
+    const uint8_t *src_bgra;
+    if (o->magic == WIC_DECODER_MAGIC) {
+        wic_decoder *d = (wic_decoder *)source;
+        w = d->img.width; h = d->img.height; src_bgra = d->img.bgra;
+    } else {
+        ldp_ct_view *t = (ldp_ct_view *)source;
+        w = t->width; h = t->height; src_bgra = t->bgra;
+    }
+    // rect：NULL 或"整幅"都按整幅拷；**部分矩形**明确不支持（返回 E_NOTIMPL，不做近似）
+    uint32_t rx = 0, ry = 0, rw = w, rh = h;
+    if (rect != NULL) {
+        const int32_t *r = (const int32_t *)rect;
+        if (r[0] != 0 || r[1] != 0 || r[2] != (int32_t)w || r[3] != (int32_t)h) return E_NOTIMPL_;
+    }
+    size_t row = (size_t)w * 4;
+    if (stride < row || bufferSize < row * h) return 0x80070057;
+    (void)rx; (void)ry; (void)rw; (void)rh;
+    for (uint32_t y = 0; y < h; ++y)
+        memcpy(buffer + (size_t)y * stride, src_bgra + (size_t)y * row, row);
     return S_OK_;
 }
 
@@ -246,7 +278,7 @@ int32_t IWICImagingFactory_CreateDecoderFromStream_Proxy(void *factory, void *st
     int32_t hr = wic_decode_any(buf, len, &d->img, err, sizeof(err));
     free(buf);
     if (hr != 0) { free(d); return hr; }
-    d->magic = WIC_DECODER_MAGIC;
+    d->hdr.magic = WIC_DECODER_MAGIC;
     wic_track_add(d);
     *out = d;
     return S_OK_;
@@ -279,7 +311,7 @@ int32_t IWICImagingFactory_CreateDecoderFromFileHandle_Proxy(void *factory, void
     int32_t hr = wic_decode_any(buf, (size_t)size, &d->img, err, sizeof(err));
     free(buf);
     if (hr != 0) { free(d); return hr; }
-    d->magic = WIC_DECODER_MAGIC;
+    d->hdr.magic = WIC_DECODER_MAGIC;
     wic_track_add(d);
     *out = d;
     return S_OK_;
@@ -292,18 +324,18 @@ int32_t IWICImagingFactory_CreateDecoderFromFileHandle_Proxy(void *factory, void
 //   `MILRelease` 返回 `E_HANDLE(0x80070006)`（实测：WIC 链路走到这一步就抛 COMException）。
 int WicShim_OwnsHandle(void *handle)
 {
-    wic_decoder *d = (wic_decoder *)handle;
+    wic_object *d = (wic_object *)handle;
     if (!d) return 0;
     pthread_mutex_lock(&s_live_lock);
     int owned = 0;
-    for (wic_decoder *it = s_live; it; it = it->next) if (it == d) { owned = 1; break; }
+    for (wic_object *it = s_live; it; it = it->next) if (it == d) { owned = 1; break; }
     pthread_mutex_unlock(&s_live_lock);
     return owned;
 }
 
 int WicShim_AddRef(void *handle)
 {
-    wic_decoder *d = (wic_decoder *)handle;
+    wic_object *d = (wic_object *)handle;
     if (!d) return 0;
     pthread_mutex_lock(&s_live_lock);
     d->refcount++;
@@ -314,14 +346,19 @@ int WicShim_AddRef(void *handle)
 
 int WicShim_Release(void *handle)
 {
-    wic_decoder *d = (wic_decoder *)handle;
+    wic_object *d = (wic_object *)handle;
     if (!d) return 0;
     pthread_mutex_lock(&s_live_lock);
     int n = --d->refcount;
     pthread_mutex_unlock(&s_live_lock);
     if (n > 0) return n;
     wic_track_drop(d);
-    ldp_png_free(&d->img);
+    if (d->magic == WIC_DECODER_MAGIC) {
+        ldp_png_free(&((wic_decoder *)d)->img);
+    } else if (d->magic == 0x4c445433u /* LDT3，color transform */) {
+        void **payload = (void **)((char *)d + sizeof(wic_object));   // bgra 指针紧随头部
+        if (payload && *payload) { free(*payload); *payload = NULL; }
+    }
     d->magic = 0;
     free(d);
     return 0;
@@ -354,7 +391,7 @@ int32_t IWICBitmapDecoder_GetDecoderInfo_Proxy(void *decoder, void **out)
     if (!out) return E_NOTIMPL_;
     *out = NULL;
     wic_decoder *d = (wic_decoder *)decoder;
-    if (!d || d->magic != WIC_DECODER_MAGIC) return 0x80070057;
+    if (!d || d->hdr.magic != WIC_DECODER_MAGIC) return 0x80070057;
     // 本实现只有一个解码器（PNG）⇒ 组件信息可以是个静态单例（调用方只读）
     static wic_component_info s_info;
     s_info.magic = WIC_INFO_MAGIC;
@@ -521,7 +558,7 @@ int32_t IWICImagingFactory_CreateBitmapFromSource_Proxy(void *factory, void *sou
     *out = NULL;
     if (!wpf_wic_factory_valid(factory) || !source) return 0x80070057;
     wic_decoder *src = (wic_decoder *)source;
-    if (src->magic != WIC_DECODER_MAGIC) return 0x80070057;
+    if (src->hdr.magic != WIC_DECODER_MAGIC) return 0x80070057;
     wic_decoder *d = (wic_decoder *)calloc(1, sizeof(wic_decoder));
     if (!d) return E_NOTIMPL_;
     size_t bytes = (size_t)src->img.width * src->img.height * 4;
@@ -532,7 +569,7 @@ int32_t IWICImagingFactory_CreateBitmapFromSource_Proxy(void *factory, void *sou
     d->img.height = src->img.height;
     d->img.has_alpha = src->img.has_alpha;
     d->img.bgra = copy;
-    d->magic = WIC_DECODER_MAGIC;
+    d->hdr.magic = WIC_DECODER_MAGIC;
     wic_track_add(d);
     *out = d;
     return S_OK_;
@@ -562,7 +599,7 @@ int32_t IWICImagingFactory_CreateBitmapFromMemory_Proxy(void *factory, uint32_t 
     d->img.height = height;
     d->img.has_alpha = 1;
     d->img.bgra = copy;
-    d->magic = WIC_DECODER_MAGIC;
+    d->hdr.magic = WIC_DECODER_MAGIC;
     wic_track_add(d);
     *out = d;
     return S_OK_;
@@ -652,11 +689,11 @@ int32_t IWICBitmapFrameDecode_GetColorContexts_Proxy(void *decoder, uint32_t cou
     if (getenv("LDP_WIC_TRACE")) {
         fprintf(stderr, "[WIC-ICC] GetColorContexts(count=%u, contexts=%p ctx0=%p decoder=%p magic_ok=%d icc_len=%u)\n",
                 count, (void *)contexts, (contexts && count > 0) ? contexts[0] : NULL,
-                (void *)decoder, (d && d->magic == WIC_DECODER_MAGIC) ? 1 : 0,
-                (d && d->magic == WIC_DECODER_MAGIC) ? d->img.icc_len : 0);
+                (void *)decoder, (d && d->hdr.magic == WIC_DECODER_MAGIC) ? 1 : 0,
+                (d && d->hdr.magic == WIC_DECODER_MAGIC) ? d->img.icc_len : 0);
         fflush(stderr);
     }
-    if (!d || d->magic != WIC_DECODER_MAGIC) return 0x80070057;
+    if (!d || d->hdr.magic != WIC_DECODER_MAGIC) return 0x80070057;
     // 没有内嵌 ICC ⇒ 0 个上下文（真值）
     if (!d->img.icc || d->img.icc_len == 0) return S_OK_;
     if (count == 0 || contexts == NULL) { if (actual) *actual = 1; return S_OK_; }   // 只问数量
@@ -697,11 +734,14 @@ int32_t IWICBitmapFrameDecode_GetThumbnail_Proxy(void *decoder, void **thumb)
     return (int32_t)0x88982F44;   /* WINCODEC_ERR_CODECNOTHUMBNAIL（上游 wgx_error.cs 的值） */
 }
 
+#define COLOR_TRANSFORM_MAGIC_ 0x4c445433u   /* 'LDT3'，与 mscms.c 一致 */
 // ── 分辨率（UpdateCachedSettings 会问；PNG 没存 DPI 时按 WIC 的默认 96）────────────
 int32_t IWICBitmapSource_GetResolution_Proxy(void *source, double *dpiX, double *dpiY)
 {
-    wic_decoder *d = (wic_decoder *)source;
-    if (!d || d->magic != WIC_DECODER_MAGIC) return 0x80070057;
+    if (!source) return 0x80070057;
+    wic_object *o = (wic_object *)source;
+    // 解码器与色彩转换对象都按 96 DPI 报（transform 没有自己的 DPI 概念）
+    if (o->magic != WIC_DECODER_MAGIC && o->magic != COLOR_TRANSFORM_MAGIC_) return 0x80070057;
     if (dpiX) *dpiX = 96.0;
     if (dpiY) *dpiY = 96.0;
     return S_OK_;
@@ -711,7 +751,7 @@ int32_t IWICBitmapSource_GetResolution_Proxy(void *source, double *dpiX, double 
 int32_t IWICBitmapDecoder_GetFrameCount_Proxy(void *decoder, uint32_t *count)
 {
     wic_decoder *d = (wic_decoder *)decoder;
-    if (!d || d->magic != WIC_DECODER_MAGIC || !count) return 0x80070057;
+    if (!d || d->hdr.magic != WIC_DECODER_MAGIC || !count) return 0x80070057;
     *count = 1;   // PNG 是单帧
     return S_OK_;
 }
