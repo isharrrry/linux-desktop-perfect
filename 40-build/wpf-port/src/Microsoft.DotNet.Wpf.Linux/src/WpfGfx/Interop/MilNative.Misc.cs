@@ -223,6 +223,8 @@ namespace WpfGfx.Linux.Interop
         public static int MILCreateEventProxy(IntPtr pEventProxyDescriptor, out IntPtr ppEventProxy)
         {
             ppEventProxy = IntPtr.Zero;
+            try { System.IO.File.AppendAllText("/tmp/ldp-bridge-media.log",
+                "MILCreateEventProxy called desc=0x" + pEventProxyDescriptor.ToString("x") + "\n"); } catch { }
             if (pEventProxyDescriptor == IntPtr.Zero) return HResult.E_INVALIDARG;
 
             MilDeviceObject proxy = MilDeviceObjectTable.Register(
