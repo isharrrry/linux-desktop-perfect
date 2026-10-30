@@ -629,7 +629,15 @@ static int pump_once(wpf_thread *t, WPF_MSG *out, HWND filter, UINT lo, UINT hi)
         wpf_lock();
         int n = wpf_x11_pump_into_queue(t);
         pthread_mutex_unlock(&g_wpf.lock);
-        if (n > 0 && wpf_queue_pop(t, out, filter, lo, hi)) return 1;
+        // ⚠️ **不管 n 是多少都要再 pop 一次**（修前是 `if (n > 0 && pop)`）。
+        //   为什么：`wpf_x11_pump_into_queue` 的返回值是"**翻译层产生的**消息数"，
+        //   而队列里还可能有一批**不是翻译层产生**的消息（`PostMessage`、定时器、
+        //   以及**翻译层里跨回调 push 的消息**）—— 它们的 n 可能为 0 但队列确实非空。
+        //   实测现场（D-011）：XDND 的 `WM_DROPFILES` 是在 `SelectionNotify` 处理里
+        //   `push()` 进去的，而那次 pump 的 `n` 统计不到它 ⇒ 修前这一步直接 return 0，
+        //   消息就永远躺在队列里（WndProc 一次都没见到）。
+        (void)n;
+        if (wpf_queue_pop(t, out, filter, lo, hi)) return 1;
     }
     return 0;
 }
