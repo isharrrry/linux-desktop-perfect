@@ -891,7 +891,9 @@ namespace WpfGfx.Linux.Interop
             pcbActual = (uint)profile.Length;
 
             if (profile.Length == 0) return HResult.S_OK;
-            if (pbBuffer == null) return HResult.E_INVALIDARG;
+            // pbBuffer == null 合法：WIC 的语义是"只问需要的长度"（pcbActual 已回填）。
+            //   修前这里返回 E_INVALIDARG，导致调用方拿不到长度、整条色彩转换失败（实测踩过）。
+            if (pbBuffer == null) return HResult.S_OK;
 
             int toCopy = (int)Math.Min(cbBuffer, (uint)profile.Length);
             Array.Copy(profile, 0, pbBuffer, 0, Math.Min(toCopy, pbBuffer.Length));

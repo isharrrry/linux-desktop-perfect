@@ -776,3 +776,6 @@ WIC_STUB(IEnumString_Next_WIC_Proxy)
 WIC_STUB(IPropertyBag2_Write_Proxy)
 WIC_STUB(IPropertyBag2_Read_Proxy)
 WIC_STUB(CheckBitmapBits)
+
+// 对外暴露的 bridge 符号查找（mscms.c 的 IWICColorTransform_Initialize 要用 bridge 的 GetProfileBytes）
+void *wic_bridge_lookup(const char *name) { return wic_color_context_bridge(name); }

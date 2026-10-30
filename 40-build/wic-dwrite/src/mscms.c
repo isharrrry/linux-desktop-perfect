@@ -259,11 +259,55 @@ int32_t IWICColorTransform_Initialize_Proxy(void *transform, void *source, void 
     if (!pixels) return E_NOTIMPL_;
     if (copypixels(source, NULL, w * 4, w * h * 4, pixels) != 0) { free(pixels); return E_INVALIDARG_; }
 
-    // 取两个 profile 的字节（它们由 libwpfwic 从 iCCP 登记，用 bridge 的 GetProfileBytes 拿）
-    //   为了不跨模块依赖，这里直接用 lcms2 的 sRGB 作为目标（源 profile 从 context 里取不到时
-    //   就退化为"不转换"并在 trace 里写明 —— 不静默假装做了色彩管理）。
+    // 取两个 context 的 profile 字节（它们由我们登记进 bridge 的 MilColorContextTable），
+    //   然后**真的做一次 lcms2 转换**——修前这里只是"拷贝像素"，那不是色彩转换。
+    typedef int32_t (*fn_getprofile)(void *, uint32_t, uint8_t *, uint32_t *);
+    // 这个导出在 **bridge**（wpfgfx_cor3.so）里，不在本 so：必须走 /proc/self/maps 找到它。
+    extern void *wic_bridge_lookup(const char *name);   // 定义在 wic_proxy.c
+    fn_getprofile getprofile = (fn_getprofile)wic_bridge_lookup("IWICColorContext_GetProfileBytes_Proxy");
+    if (!getprofile) return E_NOTIMPL_;
+    uint8_t *src_icc = NULL, *dst_icc = NULL;
+    uint32_t src_len = 0, dst_len = 0;
+    if (getprofile(srcContext, 0, NULL, &src_len) != 0 || src_len == 0) { free(pixels); return E_INVALIDARG_; }
+    if (getprofile(dstContext, 0, NULL, &dst_len) != 0 || dst_len == 0) { free(pixels); return E_INVALIDARG_; }
+    src_icc = (uint8_t *)malloc(src_len);
+    dst_icc = (uint8_t *)malloc(dst_len);
+    if (!src_icc || !dst_icc) { free(pixels); free(src_icc); free(dst_icc); return E_NOTIMPL_; }
+    if (getprofile(srcContext, src_len, src_icc, &src_len) != 0 ||
+        getprofile(dstContext, dst_len, dst_icc, &dst_len) != 0) {
+        free(pixels); free(src_icc); free(dst_icc);
+        return E_INVALIDARG_;
+    }
+    cmsHPROFILE ps = s_lcms.open_mem(src_icc, src_len);
+    cmsHPROFILE pd = s_lcms.open_mem(dst_icc, dst_len);
+    cmsHTRANSFORM tr = (ps && pd) ? s_lcms.create_transform(ps, LDP_TYPE_RGB_8, pd, LDP_TYPE_RGB_8, 0, 0) : NULL;
+    if (tr) {
+        // 我们的像素是 BGRA；lcms2 要 RGB → 拆出 RGB 做转换，再写回 BGR（alpha 保持 255）
+        uint8_t *rgb = (uint8_t *)malloc((size_t)w * h * 3);
+        if (rgb) {
+            for (size_t i = 0; i < (size_t)w * h; ++i) {
+                rgb[i * 3 + 0] = pixels[i * 4 + 2];
+                rgb[i * 3 + 1] = pixels[i * 4 + 1];
+                rgb[i * 3 + 2] = pixels[i * 4 + 0];
+            }
+            s_lcms.do_transform(tr, rgb, rgb, w * h);
+            for (size_t i = 0; i < (size_t)w * h; ++i) {
+                pixels[i * 4 + 0] = rgb[i * 3 + 2];
+                pixels[i * 4 + 1] = rgb[i * 3 + 1];
+                pixels[i * 4 + 2] = rgb[i * 3 + 0];
+                pixels[i * 4 + 3] = 255;
+            }
+            free(rgb);
+        }
+        s_lcms.delete_transform(tr);
+    }
+    if (ps) s_lcms.close_profile(ps);
+    if (pd) s_lcms.close_profile(pd);
+    free(src_icc);
+    free(dst_icc);
+    if (!tr) { free(pixels); return E_NOTIMPL_; }
     if (getenv("LDP_WIC_TRACE")) {
-        fprintf(stderr, "[WIC-CT] Initialize: %ux%u（当前实现的目标色彩空间固定为 sRGB）\n", w, h);
+        fprintf(stderr, "[WIC-CT] Initialize: %ux%u，src_icc=%u dst_icc=%u（已用 lcms2 做真实转换）\n", w, h, src_len, dst_len);
         fflush(stderr);
     }
     t->bgra = pixels;
