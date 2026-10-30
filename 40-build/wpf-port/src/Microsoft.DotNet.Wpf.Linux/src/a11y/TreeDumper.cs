@@ -365,6 +365,16 @@ namespace Ldp.A11y
                 if (visible) states.Add("visible");
                 if (enabled) actions.Add("click");
             }
+            else if (el is System.Windows.Controls.Primitives.RangeBase rb)
+            {
+                // Slider/ScrollBar 这类连续值控件：属性表要求 `enabled` 状态与 `focus` 动作。
+                //   修前它们落进下面的 else 分支，只拿到 `visible` ⇒ ACC-027 报
+                //   "state_missing 1 / action_missing 1"（SCR-06 的 `0/2` 进度滑杆）。
+                if (enabled) { states.Add("enabled"); states.Add("sensitive"); }
+                else { states.Add("!enabled"); states.Add("!sensitive"); }
+                if (visible) states.Add("visible");
+                if (rb.Focusable) { states.Add("focusable"); actions.Add("focus"); }
+            }
             else
             {
                 if (visible) states.Add("visible");
@@ -403,6 +413,11 @@ namespace Ldp.A11y
         private static string RoleOf(AutomationPeer peer, UIElement el)
         {
             if (el is Canvas) return "drawing area";
+            // 墨迹画布：InkCanvas 没有默认 peer（它的可视化子件是 InkPresenter），
+            //   WPF 的 GetAutomationControlType 对它返回 Custom ⇒ 树上会变成 "unknown"。
+            //   属性表把 SCR-06 的 `0/5` 定为 drawing area（与 Canvas 同口径，
+            //   因为两者在 AT-SPI 侧都是"可绘制区域"）。
+            if (el is System.Windows.Controls.InkCanvas) return "drawing area";
             if (el is Window) return "frame";
             if (el is StatusBar) return "status bar";
             AutomationControlType ct;
