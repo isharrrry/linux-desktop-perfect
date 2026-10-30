@@ -23,6 +23,15 @@
 #include <string.h>
 #include "png_decode.h"
 
+// 统一的分派：按文件头选解码器（PNG 签名 / BMP "BM"）。新增格式在这里加一行。
+int ldp_bmp_decode(const uint8_t *data, size_t len, ldp_png_image *out, char *error, size_t cap);
+int ldp_is_bmp(const uint8_t *data, size_t len);
+static int32_t wic_decode_any(const uint8_t *buf, size_t len, ldp_png_image *img, char *err, size_t cap)
+{
+    if (ldp_is_bmp(buf, len)) return ldp_bmp_decode(buf, len, img, err, cap);
+    return ldp_png_decode(buf, len, img, err, cap);
+}
+
 #define E_NOTIMPL_ 0x80004001
 #define S_OK_      0
 
@@ -117,7 +126,7 @@ int32_t IWICImagingFactory_CreateDecoderFromFilename_Proxy(void *factory, const 
     wic_decoder *d = (wic_decoder *)calloc(1, sizeof(wic_decoder));
     if (!d) { free(buf); return E_NOTIMPL_; }
     char err[256] = { 0 };
-    int32_t hr = ldp_png_decode(buf, rd, &d->img, err, sizeof(err));
+    int32_t hr = wic_decode_any(buf, rd, &d->img, err, sizeof(err));
     free(buf);
     if (hr != 0) { free(d); return hr; }
     d->magic = WIC_DECODER_MAGIC;
@@ -227,7 +236,7 @@ int32_t IWICImagingFactory_CreateDecoderFromStream_Proxy(void *factory, void *st
     wic_decoder *d = (wic_decoder *)calloc(1, sizeof(wic_decoder));
     if (!d) { free(buf); return E_NOTIMPL_; }
     char err[256] = { 0 };
-    int32_t hr = ldp_png_decode(buf, len, &d->img, err, sizeof(err));
+    int32_t hr = wic_decode_any(buf, len, &d->img, err, sizeof(err));
     free(buf);
     if (hr != 0) { free(d); return hr; }
     d->magic = WIC_DECODER_MAGIC;
@@ -260,7 +269,7 @@ int32_t IWICImagingFactory_CreateDecoderFromFileHandle_Proxy(void *factory, void
     wic_decoder *d = (wic_decoder *)calloc(1, sizeof(wic_decoder));
     if (!d) { free(buf); return E_NOTIMPL_; }
     char err[256] = { 0 };
-    int32_t hr = ldp_png_decode(buf, (size_t)size, &d->img, err, sizeof(err));
+    int32_t hr = wic_decode_any(buf, (size_t)size, &d->img, err, sizeof(err));
     free(buf);
     if (hr != 0) { free(d); return hr; }
     d->magic = WIC_DECODER_MAGIC;
