@@ -68,3 +68,7 @@ node_modules/
 
 # --- AE 基线帧（本仓自产，机器相关；由 ae-compare.mjs --baseline 重建） ---
 50-verify/render/baseline/
+
+# --- WIC shim 构建产物（由 40-build/wic-dwrite 的 make 重建） ---
+40-build/wic-dwrite/obj/
+40-build/wic-dwrite/bin/
