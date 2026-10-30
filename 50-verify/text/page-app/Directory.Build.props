@@ -1,0 +1,6 @@
+<!-- WIC 验证应用的构建接线：与 samples 同一套（注入自产 targets） -->
+<Project>
+
+  <Import Project="$(MSBuildThisFileDirectory)../../../40-build/sdk/LinuxDesktopPerfect.WindowsDesktop.props" />
+
+</Project>
