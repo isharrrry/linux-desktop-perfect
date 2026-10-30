@@ -596,6 +596,7 @@ int      wpf_x11_ensure(void);                 // 0 = 失败（错误在 g_wpf.d
 void     wpf_clip_on_selection_request(const void *xselectionrequest);
 void     wpf_clip_store(const char *utf8, size_t len, HWND owner);
 const char *wpf_clip_content(size_t *out_len);
+int      wpf_clip_pump(int max_ms);
 void     wpf_x11_flush(void);
 int      wpf_x11_pending(void);
 int      wpf_x11_pump_into_queue(wpf_thread *t);   // 把待处理 X 事件转成 MSG 入队，返回条数

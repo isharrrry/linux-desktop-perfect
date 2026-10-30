@@ -25,6 +25,8 @@ extern void *GetClipboardData(unsigned format);
 extern int IsClipboardFormatAvailable(unsigned format);
 /* shim 内部（非导出）：SelectionRequest 的处理入口 */
 extern void wpf_clip_on_selection_request(const void *xselectionrequest);
+/* shim 内部：在**shim 自己的 X 连接**上抽干并处理 SelectionRequest（调用方连接看不到那些事件） */
+extern int wpf_clip_pump(int max_ms);
 
 #define CF_TEXT_ 1u
 #define CF_UNICODETEXT_ 13u
@@ -74,26 +76,13 @@ int main(int argc, char **argv)
         fflush(stdout);
         if (hold_ms > 0) {
             /* 持有 selection：把 X 事件过一遍，SelectionRequest 交给 shim 处理 */
-            Display *dpy = XOpenDisplay(NULL);
-            if (!dpy) { fprintf(stderr, "XOpenDisplay 失败\n"); return 4; }
             signal(SIGTERM, on_term);
             signal(SIGINT, on_term);
+            (void)wpf_clip_pump(1);   // 预热：确认 shim 的 X 连接可用
             for (int waited = 0; waited < hold_ms && !g_stop; waited += 20) {
-                while (XPending(dpy)) {
-                    XEvent ev;
-                    XNextEvent(dpy, &ev);
-                    if (getenv("CLIP_PROBE_TRACE")) fprintf(stderr, "[PROBE-A] event type=%d\n", ev.type);
-                    if (ev.type == SelectionRequest) {
-                        if (getenv("CLIP_PROBE_TRACE")) fprintf(stderr, "[PROBE-A] SelectionRequest target=%lu property=%lu requestor=0x%lx\n",
-                                                                 (unsigned long)ev.xselectionrequest.target,
-                                                                 (unsigned long)ev.xselectionrequest.property,
-                                                                 (unsigned long)ev.xselectionrequest.requestor);
-                        wpf_clip_on_selection_request(&ev.xselectionrequest);
-                    }
-                }
-                usleep(20 * 1000);
+                int n = wpf_clip_pump(20);
+                if (n && getenv("CLIP_PROBE_TRACE")) fprintf(stderr, "[PROBE-A] handled %d SelectionRequest\n", n);
             }
-            XCloseDisplay(dpy);
         }
         return 0;
     }

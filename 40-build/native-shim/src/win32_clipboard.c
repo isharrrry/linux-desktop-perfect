@@ -18,6 +18,7 @@
 #include "win32_internal.h"
 
 #include <X11/Xatom.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -38,6 +39,23 @@ static Atom clip_atom(const char *name)
 {
     if (!wpf_x11_ensure()) return None;
     return XInternAtom(g_wpf.dpy, name, False);
+}
+
+// selection owner 必须是**我们自己的窗口**：X 把 SelectionRequest 直接投到 owner 窗口上，
+// 而 root 窗口没有客户端在听（用 root 当 owner 时，请求会被静默丢掉 —— 这正是 D-010 的现场）。
+static Window clip_owner_window(void)
+{
+    static Window w = None;
+    if (!wpf_x11_ensure()) return None;
+    if (w != None) return w;
+    XSetWindowAttributes a;
+    memset(&a, 0, sizeof(a));
+    a.override_redirect = True;
+    a.event_mask = PropertyChangeMask | StructureNotifyMask;
+    w = XCreateWindow(g_wpf.dpy, g_wpf.root, -10, -10, 1, 1, 0, CopyFromParent, InputOnly,
+                      CopyFromParent, CWOverrideRedirect | CWEventMask, &a);
+    if (w != None) XFlush(g_wpf.dpy);
+    return w;
 }
 
 static void clip_release_selection_locked(void)
@@ -144,6 +162,7 @@ static char *clip_fetch_selection(void)
                 while (XPending(d)) {
             XEvent ev;
             XNextEvent(d, &ev);
+            if (getenv("CLIP_PROBE_TRACE")) { fprintf(stderr, "[CLIP-FETCH] event type=%d\n", ev.type); fflush(stderr); }
             if (ev.type == SelectionNotify && ev.xselection.selection == cl && ev.xselection.property != None) {
                 Atom type = None;
                 int format = 0;
@@ -169,6 +188,30 @@ static char *clip_fetch_selection(void)
         nanosleep(&ts, NULL);
     }
     return NULL;
+}
+
+// ── 公开泵（D-010）───────────────────────────────────────────────────────────
+// 为什么必须由 shim 提供：selection 的 owner 连接是 **shim 的 `g_wpf.dpy`**，
+// 而调用方（探针/宿主）用 `XOpenDisplay` 另开一条连接 —— 两条连接的事件队列不共享，
+// 于是"在调用方的连接上 pump"永远看不到 `SelectionRequest`。这里在 shim 的连接上抽干。
+int wpf_clip_pump(int max_ms)
+{
+    if (!wpf_x11_ensure() || !g_wpf.dpy) return 0;
+    int handled = 0;
+    for (int waited = 0; waited < max_ms; waited += 10) {
+        while (XPending(g_wpf.dpy)) {
+            XEvent ev;
+            XNextEvent(g_wpf.dpy, &ev);
+            if (ev.type == SelectionRequest) {
+                wpf_clip_on_selection_request(&ev.xselectionrequest);
+                handled++;
+            }
+        }
+        if (handled) break;
+        struct timespec ts = { 0, 10 * 1000 * 1000 };
+        nanosleep(&ts, NULL);
+    }
+    return handled;
 }
 
 // ── Win32 面 ────────────────────────────────────────────────────────────────
