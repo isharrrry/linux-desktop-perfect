@@ -69,20 +69,32 @@ const { startXvfb, waitDisplay, startApp, findWindow, waitMapped, sleep, DOTNET_
     const outJson = '/tmp/ldp-wic-result.json';
     const so = '40-build/wic-dwrite/bin/libwpfwic.so';
     if (fs.existsSync(appDll) && fs.existsSync(png) && fs.existsSync(so)) {
-      fs.rmSync(outJson, { force: true });
+      const cases = [
+        { name: 'rgb-7x5', png, out: outJson },
+        { name: 'rgba-4x3', png: '40-build/wic-dwrite/testdata/rgba-4x3.png', out: '/tmp/ldp-wic-rgba.json' },
+      ];
+      const results = [];
       const xv = startXvfb();
       try {
-        if (await waitDisplay(xv.display)) {
-          spawnSync('sh', ['-c',
-            `DISPLAY=${xv.display} DOTNET_ROOT=${DOTNET_ROOT} DOTNET_ReadyToRun=0 ` +
-            `WPF_LINUX_WIN32_SHIM=${FRAMEWORK_DIR}/libwpfwin32.so WPF_LINUX_WIC_SHIM=${so} ` +
-            `timeout 40 ${DOTNET_ROOT}/dotnet ${appDll} ${png} ${outJson} > /tmp/ldp-wic-app.log 2>&1`],
-            { encoding: 'utf8', timeout: 60000 });
+        const ready = await waitDisplay(xv.display);
+        for (const c of cases) {
+          if (!fs.existsSync(c.png)) { results.push({ case: c.name, ok: false, reason: '缺 PNG' }); continue; }
+          fs.rmSync(c.out, { force: true });
+          if (ready) {
+            spawnSync('sh', ['-c',
+              `DISPLAY=${xv.display} DOTNET_ROOT=${DOTNET_ROOT} DOTNET_ReadyToRun=0 ` +
+              `MILBRIDGE_WIC_SO=${so} WPF_LINUX_WIN32_SHIM=${FRAMEWORK_DIR}/libwpfwin32.so WPF_LINUX_WIC_SHIM=${so} ` +
+              `timeout 40 ${DOTNET_ROOT}/dotnet ${appDll} ${c.png} ${c.out} > /tmp/ldp-wic-app.log 2>&1`],
+              { encoding: 'utf8', timeout: 60000 });
+          }
+          let parsed = null;
+          try { parsed = JSON.parse(fs.readFileSync(c.out, 'utf8')); } catch { parsed = null; }
+          results.push({ case: c.name, ok: !!(parsed && parsed.ok), ...(parsed || { reason: '无读数' }) });
         }
       } finally {
         xv.kill();
       }
-      try { wicApp = JSON.parse(fs.readFileSync(outJson, 'utf8')); } catch { wicApp = null; }
+      wicApp = { cases: results };
     }
   }
   const xvfb = startXvfb();
@@ -112,8 +124,12 @@ const { startXvfb, waitDisplay, startApp, findWindow, waitMapped, sleep, DOTNET_
     diff: [
       ...missingNotes,
       ...bad.map((s) => `${s.step} 失败：${JSON.stringify(s).slice(0, 240)}`),
-      wicDecode && wicDecode.loaded && wicDecode.hr_size === 0 && wicDecode.dims && wicDecode.dims[0] > 0
-        ? `缺口：**PNG 解码链路已通**（文件名入口 ${wicDecode.dims.join('x')}${wicStream && wicStream.hr_stream === 0 ? `、流入口 ${wicStream.dims.join('x')}` : '、流入口未通'}），但 ①五格式里的 JPEG/TIFF/GIF/BMP 未实现 ②ICC 未做（D-018 后续）`
+      wicApp && wicApp.cases && wicApp.cases.length > 0 && wicApp.cases.every((c) => c.ok)
+        ? `缺口：**PNG 的应用内解码已通**（BitmapImage 真加载：${wicApp.cases.map((c) => `${c.case}=${c.width}x${c.height}/${c.format}`).join('、')}；` +
+          `探针层：文件名 ${wicDecode.dims.join('x')}、流入口 ${wicStream && wicStream.hr_stream === 0 ? wicStream.dims.join('x') : '未通'}），` +
+          `但 ①五格式里的 JPEG/TIFF/GIF/BMP 未实现 ②ICC 未做（D-018 后续）`
+        : wicDecode && wicDecode.loaded && wicDecode.hr_size === 0 && wicDecode.dims && wicDecode.dims[0] > 0
+        ? `缺口：**PNG 解码链路已通**（文件名入口 ${wicDecode.dims.join('x')}${wicStream && wicStream.hr_stream === 0 ? `、流入口 ${wicStream.dims.join('x')}` : '、流入口未通'}），但 ①应用内（BitmapImage）未通 ②五格式里的 JPEG/TIFF/GIF/BMP 未实现 ③ICC 未做（D-018 后续）`
         : wicProbe && wicProbe.loaded
         ? `缺口：libwpfwic.so 骨架已就位（工厂入口可建 hr_create=${wicProbe.hr_create}），但解码入口明确返回 E_NOTIMPL（hr_decode=${wicProbe.hr_decode}）⇒ 五格式解码/ICC 仍未实现（D-018 后续）；resolver 的 WIC 映射已开=${resolverFlag === '1'}，WindowsCodecs P/Invoke 站点 ${pInvokeCount} 处`
         : `缺口：libwpfwic.so 未实现（resolver 的 WIC 映射已开=${resolverFlag === '1'}，WindowsCodecs P/Invoke 站点 ${pInvokeCount} 处）`,

@@ -494,6 +494,64 @@ int32_t CoInitializeEx(void *pvReserved, uint32_t flags) { (void)pvReserved; (vo
 void    CoUninitialize(void) { }
 void    CoFreeUnusedLibraries(void) { }
 
+// ── 位图物化：CreateBitmapFromSource / CreateBitmapFromMemory ────────────────────
+// WPF 的 `CachedBitmap.InitFromMemoryPtr` 会用这两个入口把"WIC 源"落成一块内存位图。
+// 我们的语义：**拷贝像素**到新的 wic_decoder（引用计数各自独立），不共享 buffer。
+int32_t IWICImagingFactory_CreateBitmapFromSource_Proxy(void *factory, void *source,
+                                                         uint32_t options, void **out)
+{
+    (void)options;
+    if (!out) return E_NOTIMPL_;
+    *out = NULL;
+    if (!wpf_wic_factory_valid(factory) || !source) return 0x80070057;
+    wic_decoder *src = (wic_decoder *)source;
+    if (src->magic != WIC_DECODER_MAGIC) return 0x80070057;
+    wic_decoder *d = (wic_decoder *)calloc(1, sizeof(wic_decoder));
+    if (!d) return E_NOTIMPL_;
+    size_t bytes = (size_t)src->img.width * src->img.height * 4;
+    uint8_t *copy = (uint8_t *)malloc(bytes ? bytes : 1);
+    if (!copy) { free(d); return E_NOTIMPL_; }
+    if (src->img.bgra) memcpy(copy, src->img.bgra, bytes);
+    d->img.width = src->img.width;
+    d->img.height = src->img.height;
+    d->img.has_alpha = src->img.has_alpha;
+    d->img.bgra = copy;
+    d->magic = WIC_DECODER_MAGIC;
+    wic_track_add(d);
+    *out = d;
+    return S_OK_;
+}
+
+int32_t IWICImagingFactory_CreateBitmapFromMemory_Proxy(void *factory, uint32_t width, uint32_t height,
+                                                         void *pixelFormatGuid, uint32_t stride,
+                                                         uint32_t bufferSize, uint8_t *pixels,
+                                                         void **out)
+{
+    if (!out) return E_NOTIMPL_;
+    *out = NULL;
+    if (!wpf_wic_factory_valid(factory) || !pixels || !width || !height) return 0x80070057;
+    // 只接受 32bppBGRA（GUID {6fddc324-4e03-4bfe-b185-3d77768dc90f}）；其它格式明确失败
+    if (pixelFormatGuid) {
+        static const uint8_t bgra[16] = { 0x24,0xc3,0xdd,0x6f,0x03,0x4e,0xfe,0x4b,0xb1,0x85,0x3d,0x77,0x76,0x8d,0xc9,0x0f };
+        if (memcmp(pixelFormatGuid, bgra, 16) != 0) return E_NOTIMPL_;
+    }
+    size_t row = (size_t)width * 4;
+    if (stride < row || (size_t)bufferSize < row * height) return 0x80070057;
+    wic_decoder *d = (wic_decoder *)calloc(1, sizeof(wic_decoder));
+    if (!d) return E_NOTIMPL_;
+    uint8_t *copy = (uint8_t *)malloc(row * height);
+    if (!copy) { free(d); return E_NOTIMPL_; }
+    for (uint32_t y = 0; y < height; ++y) memcpy(copy + y * row, pixels + (size_t)y * stride, row);
+    d->img.width = width;
+    d->img.height = height;
+    d->img.has_alpha = 1;
+    d->img.bgra = copy;
+    d->magic = WIC_DECODER_MAGIC;
+    wic_track_add(d);
+    *out = d;
+    return S_OK_;
+}
+
 // ── 颜色上下文（ICC）：PNG 无内嵌 profile ⇒ 实际数量 0（不是"忘了实现"）─────────────
 // WPF 用它判断"要不要做色彩管理"。返回 0 个上下文是**真值**：本解码器只解像素，
 // 不做 ICC 解析（D-018 的 ICC 分支仍缺，见已知坑清单）。
@@ -545,8 +603,6 @@ WIC_STUB(WICSetEncoderFormat_Proxy)
 WIC_STUB(IWICImagingFactory_CreateEncoder_Proxy)
 WIC_STUB(IWICImagingFactory_CreateComponentInfo_Proxy)
 WIC_STUB(IWICImagingFactory_CreateBitmap_Proxy)
-WIC_STUB(IWICImagingFactory_CreateBitmapFromSource_Proxy)
-WIC_STUB(IWICImagingFactory_CreateBitmapFromMemory_Proxy)
 WIC_STUB(IWICImagingFactory_CreateBitmapFromHICON_Proxy)
 WIC_STUB(IWICImagingFactory_CreateFormatConverter_Proxy)
 WIC_STUB(IWICBitmapFrameDecode_GetMetadataQueryReader_Proxy)
