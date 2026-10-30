@@ -16,7 +16,7 @@ all: $(TARGET)
 
 $(TARGET): $(OBJS)
 	@mkdir -p $(BINDIR)
-	$(CC) -shared -fPIC -o $@ $(OBJS) -Wl,-soname,libwpfwic.so -lz
+	$(CC) -shared -fPIC -o $@ $(OBJS) -Wl,-soname,libwpfwic.so -lz -lm
 
 $(OBJDIR)/%.o: $(SRCDIR)/%.c
 	@mkdir -p $(OBJDIR)

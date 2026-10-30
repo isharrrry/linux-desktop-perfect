@@ -1,0 +1,335 @@
+// JPEG 基线解码（D-018：五格式的最后一格）—— 自写，不借 libjpeg。
+//
+// 【为什么自写】libjpeg 的公开 API 要求调用方精确知道 `jpeg_decompress_struct` 的大小
+//   （`jpeg_CreateDecompress` 会校验相等），而本机只有运行库、没有 `jpeglib.h`；
+//   实测扫 structsize 560..900 全失败、400 会栈溢出（见已知坑 D-018 第十三步）。
+//   ⇒ 只能自写基线（Baseline sequential）解码。
+//
+// 【范围】Baseline 顺序、8 位、Huffman、Y/Cb/Cr 或灰度（1 或 3 分量）、无渐进/算术。
+//   其它（渐进 SOF2、算术、12-bit、CMYK）**明确返回 E_NOTIMPL** —— 不猜。
+
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <math.h>
+#include "png_decode.h"
+
+#define E_NOTIMPL_    0x80004001
+#define E_INVALIDARG_ 0x80070057
+
+int ldp_is_jpeg(const uint8_t *d, size_t len)
+{
+    return len >= 3 && d[0] == 0xFF && d[1] == 0xD8 && d[2] == 0xFF;
+}
+
+// ── 霍夫曼表：用 (码长, 码字) → 符号 的查表法 ──
+typedef struct {
+    int      mincode[17];   // 每个码长能解出的最小码字
+    int      maxcode[17];   // 最大码字（-1 表示该码长没有码字）
+    int      valptr[17];    // 该码长第一个符号在 vals 里的下标
+    uint8_t  vals[256];
+    int      count;
+} jpeg_huff;
+
+static void jpeg_huff_build(jpeg_huff *h, const uint8_t *bits, const uint8_t *vals, int nvals)
+{
+    // 标准做法：按码长累进计算每个长度的 mincode/maxcode/valptr，符号表直接拷 vals。
+    int code = 0, k = 0;
+    for (int len = 1; len <= 16; ++len) {
+        h->valptr[len] = k;
+        h->mincode[len] = code;
+        if (bits[len - 1]) {
+            h->maxcode[len] = code + bits[len - 1] - 1;
+            code += bits[len - 1];
+        } else {
+            h->maxcode[len] = -1;
+        }
+        code <<= 1;
+    }
+    h->maxcode[16] = 0x7FFFFFFF;
+    for (int i = 0; i < nvals && i < 256; ++i) h->vals[i] = vals[i];
+    h->count = nvals < 256 ? nvals : 256;
+}
+
+// ── 解码器状态 ──
+typedef struct {
+    const uint8_t *data;
+    size_t         size, pos;
+    uint32_t       bitbuf;
+    int            bitcnt;
+
+    int            width, height;
+    int            ncomp;
+    int            hmax, vmax;
+    int            progressive;
+    int            restart_interval;
+
+    // 每个分量
+    struct {
+        int id, h, v, tq;
+        jpeg_huff *dc, *ac, *dc_prev_table;
+        uint16_t q[64];
+        int dc_pred;
+        int16_t *coef;      // 每个 8x8 块的量化后系数（本实现只保留当前块）
+        uint8_t *plane;     // 该分量的全图采样（上采样前）
+        int pw, ph;         // 该分量的采样尺寸
+    } comp[4];
+
+    jpeg_huff dc_tables[4], ac_tables[4];
+    int has_dc[4], has_ac[4];
+    uint16_t q_tables[4][64];
+    int has_q[4];
+} jpeg_ctx;
+
+static int jpeg_getc(jpeg_ctx *c)
+{
+    if (c->pos >= c->size) return -1;
+    return c->data[c->pos++];
+}
+
+static int jpeg_getbit(jpeg_ctx *c)
+{
+    if (c->bitcnt == 0) {
+        int b = jpeg_getc(c);
+        if (b < 0) return -1;
+        if (b == 0xFF) {
+            int b2 = jpeg_getc(c);
+            if (b2 != 0x00) { c->pos--; return -1; }   // 撞到标记
+        }
+        c->bitbuf = (uint32_t)b;
+        c->bitcnt = 8;
+    }
+    c->bitcnt--;
+    return (int)((c->bitbuf >> c->bitcnt) & 1);
+}
+
+static int jpeg_getbits(jpeg_ctx *c, int n)
+{
+    int v = 0;
+    for (int i = 0; i < n; ++i) {
+        int b = jpeg_getbit(c);
+        if (b < 0) return 0;
+        v = (v << 1) | b;
+    }
+    return v;
+}
+
+static int jpeg_decode_huff(jpeg_ctx *c, jpeg_huff *h)
+{
+    int code = 0;
+    for (int len = 1; len <= 16; ++len) {
+        int b = jpeg_getbit(c);
+        if (b < 0) return -1;
+        code = (code << 1) | b;
+        if (h->maxcode[len] >= 0 && code <= h->maxcode[len]) {
+            int idx = h->valptr[len] + (code - h->mincode[len]);
+            if (idx < 0 || idx >= h->count) return -1;
+            return h->vals[idx];
+        }
+    }
+    return -1;
+}
+
+static int jpeg_extend(int v, int n)
+{
+    if (n == 0) return 0;
+    return (v < (1 << (n - 1))) ? v - ((1 << n) - 1) : v;
+}
+
+// IDCT：用 double 的朴素实现（性能不重要，正确优先）
+static void jpeg_idct(const int32_t *coef, const uint16_t *q, uint8_t *out, int stride)
+{
+    static const double C[8][8] = {
+        {0.35355339059327373,0.35355339059327373,0.35355339059327373,0.35355339059327373,0.35355339059327373,0.35355339059327373,0.35355339059327373,0.35355339059327373},
+        {0.49039264020161522,0.41573480615127262,0.27778511650980114,0.09754516100806417,-0.09754516100806417,-0.27778511650980114,-0.41573480615127262,-0.49039264020161522},
+        {0.46193976625564337,0.19134171618254492,-0.19134171618254492,-0.46193976625564337,-0.46193976625564337,-0.19134171618254492,0.19134171618254492,0.46193976625564337},
+        {0.41573480615127262,-0.09754516100806417,-0.49039264020161522,-0.27778511650980114,0.27778511650980114,0.49039264020161522,0.09754516100806417,-0.41573480615127262},
+        {0.35355339059327373,-0.35355339059327373,-0.35355339059327373,0.35355339059327373,0.35355339059327373,-0.35355339059327373,-0.35355339059327373,0.35355339059327373},
+        {0.27778511650980114,-0.49039264020161522,0.09754516100806417,0.41573480615127262,-0.41573480615127262,-0.09754516100806417,0.49039264020161522,-0.27778511650980114},
+        {0.19134171618254492,-0.46193976625564337,0.46193976625564337,-0.19134171618254492,-0.19134171618254492,0.46193976625564337,-0.46193976625564337,0.19134171618254492},
+        {0.09754516100806417,-0.27778511650980114,0.41573480615127262,-0.49039264020161522,0.49039264020161522,-0.41573480615127262,0.27778511650980114,-0.09754516100806417},
+    };
+    double tmp[64];
+    for (int i = 0; i < 64; ++i) tmp[i] = (double)(coef[i] * (int32_t)q[i]);
+    double row[64];
+    for (int y = 0; y < 8; ++y)
+        for (int x = 0; x < 8; ++x) {
+            double s = 0.0;
+            for (int u = 0; u < 8; ++u) s += C[x][u] * tmp[y * 8 + u];
+            row[y * 8 + x] = s;
+        }
+    for (int x = 0; x < 8; ++x)
+        for (int y = 0; y < 8; ++y) {
+            double s = 0.0;
+            for (int vv = 0; vv < 8; ++vv) s += C[y][vv] * row[vv * 8 + x];
+            int val = (int)(s + 128.5);
+            if (val < 0) val = 0;
+            if (val > 255) val = 255;
+            out[y * stride + x] = (uint8_t)val;
+        }
+}
+
+// ── 解析 + 熵解码 ───────────────────────────────────────────────────────────────
+static int jpeg_read_marker(jpeg_ctx *c)
+{
+    int b = jpeg_getc(c);
+    while (b >= 0 && b != 0xFF) b = jpeg_getc(c);      // 找 0xFF
+    while (b == 0xFF) b = jpeg_getc(c);                // 跳过填充的 0xFF
+    return b;
+}
+
+static int jpeg_parse_dqt(jpeg_ctx *c, int len)
+{
+    int end = (int)c->pos + len - 2;
+    while ((int)c->pos < end) {
+        int pq = jpeg_getc(c);
+        if (pq < 0) return -1;
+        int prec = pq >> 4, tq = pq & 0x0F;
+        if (tq > 3) return -1;
+        for (int i = 0; i < 64; ++i) {
+            int v = prec ? ((jpeg_getc(c) << 8) | jpeg_getc(c)) : jpeg_getc(c);
+            if (v < 0) return -1;
+            c->q_tables[tq][i] = (uint16_t)v;
+        }
+        c->has_q[tq] = 1;
+    }
+    return 0;
+}
+
+static int jpeg_parse_dht(jpeg_ctx *c, int len)
+{
+    int end = (int)c->pos + len - 2;
+    while ((int)c->pos < end) {
+        int tc_th = jpeg_getc(c);
+        if (tc_th < 0) return -1;
+        int tc = tc_th >> 4, th = tc_th & 0x0F;
+        if (th > 3) return -1;
+        uint8_t bits[16];
+        int total = 0;
+        for (int i = 0; i < 16; ++i) { bits[i] = (uint8_t)jpeg_getc(c); total += bits[i]; }
+        if (total > 256) return -1;
+        uint8_t vals[256];
+        for (int i = 0; i < total; ++i) vals[i] = (uint8_t)jpeg_getc(c);
+        if (tc == 0) { jpeg_huff_build(&c->dc_tables[th], bits, vals, total); c->has_dc[th] = 1; }
+        else         { jpeg_huff_build(&c->ac_tables[th], bits, vals, total); c->has_ac[th] = 1; }
+    }
+    return 0;
+}
+
+static int jpeg_parse_sof(jpeg_ctx *c, int len, int progressive)
+{
+    (void)len;
+    c->progressive = progressive;
+    int prec = jpeg_getc(c);
+    c->height = (jpeg_getc(c) << 8) | jpeg_getc(c);
+    c->width = (jpeg_getc(c) << 8) | jpeg_getc(c);
+    c->ncomp = jpeg_getc(c);
+    if (prec != 8 || c->ncomp < 1 || c->ncomp > 4 || !c->width || !c->height) return -1;
+    c->hmax = c->vmax = 1;
+    for (int i = 0; i < c->ncomp; ++i) {
+        c->comp[i].id = jpeg_getc(c);
+        int hv = jpeg_getc(c);
+        c->comp[i].h = hv >> 4;
+        c->comp[i].v = hv & 0x0F;
+        c->comp[i].tq = jpeg_getc(c);
+        if (c->comp[i].h > c->hmax) c->hmax = c->comp[i].h;
+        if (c->comp[i].v > c->vmax) c->vmax = c->vmax;
+        if (c->comp[i].v > c->vmax) c->vmax = c->comp[i].v;
+        c->comp[i].pw = (c->width * c->comp[i].h + c->hmax - 1) / c->hmax;
+        c->comp[i].ph = (c->height * c->comp[i].v + c->vmax - 1) / c->vmax;
+        c->comp[i].dc_pred = 0;
+    }
+    return 0;
+}
+
+static int jpeg_decode_block(jpeg_ctx *c, int comp_idx, int32_t *coef)
+{
+    memset(coef, 0, 64 * sizeof(int32_t));
+    if (!c->has_dc[0] && !c->has_dc[1] && !c->has_dc[2] && !c->has_dc[3]) return -1;
+    jpeg_huff *dc = c->comp[comp_idx].dc;
+    jpeg_huff *ac = c->comp[comp_idx].ac;
+    if (!dc || !ac) return -1;
+    int t = jpeg_decode_huff(c, dc);
+    if (t < 0) return -1;
+    int diff = jpeg_extend(jpeg_getbits(c, t), t);
+    c->comp[comp_idx].dc_pred += diff;
+    coef[0] = c->comp[comp_idx].dc_pred;
+    for (int k = 1; k < 64; ) {
+        int rs = jpeg_decode_huff(c, ac);
+        if (rs < 0) return -1;
+        int r = rs >> 4, s = rs & 0x0F;
+        if (s == 0) {
+            if (r == 15) { k += 16; continue; }   // ZRL
+            break;                                 // EOB
+        }
+        k += r;
+        if (k >= 64) return -1;
+        coef[k] = jpeg_extend(jpeg_getbits(c, s), s);
+        k++;
+    }
+    return 0;
+}
+
+// 【当前实现状态】解析 + 霍夫曼 + IDCT 已就位；但"按 MCU 组装整图 / 上采样 / YCbCr→RGB"
+//   还没接上 ⇒ `ldp_jpeg_decode` **明确返回 E_NOTIMPL**（不返回半成品图像）。
+//   下一步：在 SOS 之后按 MCU 循环解块、填 plane、最后上采样与色彩转换。
+int32_t ldp_jpeg_decode(const uint8_t *data, size_t len, ldp_png_image *out, char *error, size_t cap)
+{
+    if (!data || !out) return E_INVALIDARG_;
+    memset(out, 0, sizeof(*out));
+    if (!ldp_is_jpeg(data, len)) { snprintf(error, cap, "不是 JPEG（签名不匹配）"); return E_INVALIDARG_; }
+
+    jpeg_ctx *c = (jpeg_ctx *)calloc(1, sizeof(jpeg_ctx));
+    if (!c) return E_NOTIMPL_;
+    c->data = data; c->size = len; c->pos = 2;
+
+    int ok = 0;
+    for (;;) {
+        int m = jpeg_read_marker(c);
+        if (m < 0) break;
+        if (m == 0xD9) break;                  // EOI
+        if (m == 0xD8) continue;               // SOI
+        int lo = jpeg_getc(c), hi = jpeg_getc(c);
+        if (lo < 0 || hi < 0) break;
+        int seglen = (lo << 8) | hi;
+        if (seglen < 2) break;
+        if (m == 0xDB) { if (jpeg_parse_dqt(c, seglen) < 0) break; }
+        else if (m == 0xC4) { if (jpeg_parse_dht(c, seglen) < 0) break; }
+        else if (m == 0xC0) { if (jpeg_parse_sof(c, seglen, 0) < 0) break; }
+        else if (m == 0xC2) { snprintf(error, cap, "渐进式 JPEG（SOF2）未实现"); free(c); return E_NOTIMPL_; }
+        else if (m == 0xDD) { c->restart_interval = (jpeg_getc(c) << 8) | jpeg_getc(c); }
+        else if (m == 0xDA) {
+            // SOS：接上分量 → 霍夫曼表，然后**这里本应开始 MCU 循环**
+            int ns = jpeg_getc(c);
+            if (ns < 1 || ns > c->ncomp) break;
+            for (int i = 0; i < ns; ++i) {
+                int cs = jpeg_getc(c);
+                int tdta = jpeg_getc(c);
+                int ci = -1;
+                for (int k = 0; k < c->ncomp; ++k) if (c->comp[k].id == cs) ci = k;
+                if (ci < 0) { ok = -1; break; }
+                int td = tdta >> 4, ta = tdta & 0x0F;
+                c->comp[ci].dc = c->has_dc[td] ? &c->dc_tables[td] : NULL;
+                c->comp[ci].ac = c->has_ac[ta] ? &c->ac_tables[ta] : NULL;
+                for (int q = 0; q < 64; ++q) c->comp[ci].q[q] = c->q_tables[c->comp[ci].tq][q];
+            }
+            if (ok < 0) break;
+            ok = 1;
+            break;   // 解析到 SOS 即止（MCU 循环尚未实现）
+        } else {
+            c->pos += (size_t)(seglen - 2);
+        }
+    }
+
+    if (ok == 1) {
+        snprintf(error, cap,
+                 "JPEG 头解析通过（%dx%d，%d 分量，基线），但 MCU 组装/上采样/色彩转换尚未实现 —— 如实返回 E_NOTIMPL",
+                 c->width, c->height, c->ncomp);
+        free(c);
+        return E_NOTIMPL_;
+    }
+    snprintf(error, cap, "JPEG 解析失败（未遇到可用的 SOS）");
+    free(c);
+    return E_INVALIDARG_;
+}

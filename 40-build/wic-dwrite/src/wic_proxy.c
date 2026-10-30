@@ -31,6 +31,8 @@ int ldp_is_gif(const uint8_t *data, size_t len);
 int ldp_is_gif89(const uint8_t *data, size_t len);
 int ldp_tiff_decode(const uint8_t *data, size_t len, ldp_png_image *out, char *error, size_t cap);
 int ldp_is_tiff(const uint8_t *data, size_t len);
+int32_t ldp_jpeg_decode(const uint8_t *data, size_t len, ldp_png_image *out, char *error, size_t cap);
+int ldp_is_jpeg(const uint8_t *data, size_t len);
 #define COLOR_TRANSFORM_MAGIC_ 0x4c445433u   /* LDT3，与 mscms.c 一致 */
 
 static int32_t wic_decode_any(const uint8_t *buf, size_t len, ldp_png_image *img, char *err, size_t cap)
@@ -38,6 +40,9 @@ static int32_t wic_decode_any(const uint8_t *buf, size_t len, ldp_png_image *img
     if (ldp_is_bmp(buf, len)) return ldp_bmp_decode(buf, len, img, err, cap);
     if (ldp_is_gif(buf, len) || ldp_is_gif89(buf, len)) return ldp_gif_decode(buf, len, img, err, cap);
     if (ldp_is_tiff(buf, len)) return ldp_tiff_decode(buf, len, img, err, cap);
+    // JPEG：解析骨架已就位（SOF0/DQT/DHT/SOS + 霍夫曼 + IDCT），但 MCU 组装/上采样
+    //   还没接上 ⇒ 这里会返回 E_NOTIMPL 并带明确原因（比"签名不匹配"更准确）。
+    if (ldp_is_jpeg(buf, len)) return ldp_jpeg_decode(buf, len, img, err, cap);
     return ldp_png_decode(buf, len, img, err, cap);
 }
 
