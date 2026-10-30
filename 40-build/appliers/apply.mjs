@@ -92,6 +92,8 @@ const POINT_PATCHES = [
                 //   只对"没有 OLE 拖放目标"的情况生效（Linux 恒真；Windows 上 RegisterDragDrop 会先接手）。
                 if (msg == 0x0233 /* WM_DROPFILES */ && wParam != IntPtr.Zero)
                 {
+                    Console.Error.WriteLine("[P20] WM_DROPFILES wParam=0x" + wParam.ToString("x"));
+                    Console.Error.Flush();
                     try
                     {
                         string[] paths = WpfLinuxDroppedFiles(wParam);
