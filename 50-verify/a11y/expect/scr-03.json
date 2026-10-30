@@ -40,7 +40,7 @@
       "relations": []
     },
     {
-      "path": "0/0",
+      "path": "0/1",
       "role": "list",
       "name": "格式",
       "states": [
@@ -58,7 +58,7 @@
       "relations": []
     },
     {
-      "path": "0/0/0",
+      "path": "0/1/0",
       "role": "list item",
       "name": "png",
       "states": [
@@ -76,7 +76,7 @@
       "relations": []
     },
     {
-      "path": "0/0/1",
+      "path": "0/1/1",
       "role": "list item",
       "name": "jpeg",
       "states": [
@@ -94,7 +94,7 @@
       "relations": []
     },
     {
-      "path": "0/0/2",
+      "path": "0/1/2",
       "role": "list item",
       "name": "gif",
       "states": [
@@ -112,7 +112,7 @@
       "relations": []
     },
     {
-      "path": "0/0/3",
+      "path": "0/1/3",
       "role": "list item",
       "name": "bmp",
       "states": [
@@ -130,7 +130,7 @@
       "relations": []
     },
     {
-      "path": "0/0/4",
+      "path": "0/1/4",
       "role": "list item",
       "name": "tiff",
       "states": [
@@ -148,7 +148,7 @@
       "relations": []
     },
     {
-      "path": "0/1",
+      "path": "0/2",
       "role": "image",
       "name": "当前文件名",
       "states": [
@@ -164,7 +164,7 @@
       "relations": []
     },
     {
-      "path": "0/2",
+      "path": "0/3",
       "role": "label",
       "name": "正则 \\d+×\\d+ [a-z]+",
       "states": [
@@ -180,7 +180,7 @@
       "relations": []
     },
     {
-      "path": "0/3",
+      "path": "0/4",
       "role": "check box",
       "name": "应用 ICC",
       "states": [
@@ -199,7 +199,7 @@
       "relations": []
     },
     {
-      "path": "0/4",
+      "path": "0/5",
       "role": "label",
       "name": "正则 ΔE(00)?=[0-9.]+",
       "states": [

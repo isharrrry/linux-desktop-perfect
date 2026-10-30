@@ -40,7 +40,7 @@
       "relations": []
     },
     {
-      "path": "0/0",
+      "path": "0/1",
       "role": "combo box",
       "name": "打印机",
       "states": [
@@ -58,7 +58,7 @@
       "relations": []
     },
     {
-      "path": "0/1",
+      "path": "0/2",
       "role": "push button",
       "name": "打印",
       "states": [
@@ -76,7 +76,7 @@
       "relations": []
     },
     {
-      "path": "0/2",
+      "path": "0/3",
       "role": "label",
       "name": "正则 job=\\d+ state=[a-z-]+",
       "states": [
@@ -92,7 +92,7 @@
       "relations": []
     },
     {
-      "path": "0/3",
+      "path": "0/4",
       "role": "label",
       "name": "正则 pages=\\d+",
       "states": [
@@ -108,7 +108,7 @@
       "relations": []
     },
     {
-      "path": "0/4",
+      "path": "0/5",
       "role": "document frame",
       "name": "流文档",
       "states": [
@@ -126,7 +126,7 @@
       "relations": []
     },
     {
-      "path": "0/4/0",
+      "path": "0/5/0",
       "role": "paragraph",
       "name": "正则 第 \\d+ 段",
       "states": [
@@ -142,7 +142,7 @@
       "relations": []
     },
     {
-      "path": "0/5",
+      "path": "0/6",
       "role": "push button",
       "name": "下一页",
       "states": [
@@ -160,7 +160,7 @@
       "relations": []
     },
     {
-      "path": "0/6",
+      "path": "0/7",
       "role": "slider",
       "name": "缩放",
       "states": [
@@ -178,7 +178,7 @@
       "relations": []
     },
     {
-      "path": "0/7",
+      "path": "0/8",
       "role": "entry",
       "name": "查找",
       "states": [
@@ -196,7 +196,7 @@
       "relations": []
     },
     {
-      "path": "0/8",
+      "path": "0/9",
       "role": "label",
       "name": "正则 命中 \\d+ 处",
       "states": [

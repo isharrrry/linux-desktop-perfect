@@ -15,55 +15,55 @@
 <text x="58" y="124" font-size="12" fill="#111">窗口标题文本</text>
 <text x="826" y="124" font-size="10" fill="#666" text-anchor="end">label · 0/0 · 状态 1 / 动作 0 · ACC-009 ACC-027</text>
 </g>
-<g data-path="0/0" data-role="combo box" data-name="打印机">
+<g data-path="0/1" data-role="combo box" data-name="打印机">
 <rect x="50" y="138" width="784" height="24" rx="3" fill="#f7f7f7" stroke="#d0d0d0"/>
 <text x="58" y="154" font-size="12" fill="#111">打印机选择</text>
-<text x="826" y="154" font-size="10" fill="#666" text-anchor="end">combo box · 0/0 · 状态 1 / 动作 1 · ACC-024 ACC-027</text>
+<text x="826" y="154" font-size="10" fill="#666" text-anchor="end">combo box · 0/1 · 状态 1 / 动作 1 · ACC-024 ACC-027</text>
 </g>
-<g data-path="0/1" data-role="push button" data-name="打印">
+<g data-path="0/2" data-role="push button" data-name="打印">
 <rect x="50" y="168" width="784" height="24" rx="3" fill="#eef4ff" stroke="#7aa2e8"/>
 <text x="58" y="184" font-size="12" fill="#111">打印按钮</text>
-<text x="826" y="184" font-size="10" fill="#666" text-anchor="end">push button · 0/1 · 状态 1 / 动作 1 · ACC-024 ACC-027</text>
+<text x="826" y="184" font-size="10" fill="#666" text-anchor="end">push button · 0/2 · 状态 1 / 动作 1 · ACC-024 ACC-027</text>
 </g>
-<g data-path="0/2" data-role="label" data-name="正则 job=\d+ state=[a-z-]+">
+<g data-path="0/3" data-role="label" data-name="正则 job=\d+ state=[a-z-]+">
 <rect x="50" y="198" width="784" height="24" rx="3" fill="#f7f7f7" stroke="#d0d0d0"/>
 <text x="58" y="214" font-size="12" fill="#111">作业状态读数</text>
-<text x="826" y="214" font-size="10" fill="#666" text-anchor="end">label · 0/2 · 状态 1 / 动作 0 · ACC-024 ACC-027</text>
+<text x="826" y="214" font-size="10" fill="#666" text-anchor="end">label · 0/3 · 状态 1 / 动作 0 · ACC-024 ACC-027</text>
 </g>
-<g data-path="0/3" data-role="label" data-name="正则 pages=\d+">
+<g data-path="0/4" data-role="label" data-name="正则 pages=\d+">
 <rect x="50" y="228" width="784" height="24" rx="3" fill="#f7f7f7" stroke="#d0d0d0"/>
 <text x="58" y="244" font-size="12" fill="#111">页数读数</text>
-<text x="826" y="244" font-size="10" fill="#666" text-anchor="end">label · 0/3 · 状态 1 / 动作 0 · ACC-024 ACC-027</text>
+<text x="826" y="244" font-size="10" fill="#666" text-anchor="end">label · 0/4 · 状态 1 / 动作 0 · ACC-024 ACC-027</text>
 </g>
-<g data-path="0/4" data-role="document frame" data-name="流文档">
+<g data-path="0/5" data-role="document frame" data-name="流文档">
 <rect x="50" y="258" width="784" height="24" rx="3" fill="#f7f7f7" stroke="#d0d0d0"/>
 <text x="58" y="274" font-size="12" fill="#111">文档视图</text>
-<text x="826" y="274" font-size="10" fill="#666" text-anchor="end">document frame · 0/4 · 状态 1 / 动作 1 · ACC-025 ACC-027</text>
+<text x="826" y="274" font-size="10" fill="#666" text-anchor="end">document frame · 0/5 · 状态 1 / 动作 1 · ACC-025 ACC-027</text>
 </g>
-<g data-path="0/4/0" data-role="paragraph" data-name="正则 第 \d+ 段">
+<g data-path="0/5/0" data-role="paragraph" data-name="正则 第 \d+ 段">
 <rect x="74" y="288" width="760" height="24" rx="3" fill="#f7f7f7" stroke="#d0d0d0"/>
 <text x="82" y="304" font-size="12" fill="#111">段落（首）</text>
-<text x="826" y="304" font-size="10" fill="#666" text-anchor="end">paragraph · 0/4/0 · 状态 1 / 动作 0 · ACC-025 ACC-027</text>
+<text x="826" y="304" font-size="10" fill="#666" text-anchor="end">paragraph · 0/5/0 · 状态 1 / 动作 0 · ACC-025 ACC-027</text>
 </g>
-<g data-path="0/5" data-role="push button" data-name="下一页">
+<g data-path="0/6" data-role="push button" data-name="下一页">
 <rect x="50" y="318" width="784" height="24" rx="3" fill="#eef4ff" stroke="#7aa2e8"/>
 <text x="58" y="334" font-size="12" fill="#111">翻页按钮</text>
-<text x="826" y="334" font-size="10" fill="#666" text-anchor="end">push button · 0/5 · 状态 1 / 动作 1 · ACC-025 ACC-027</text>
+<text x="826" y="334" font-size="10" fill="#666" text-anchor="end">push button · 0/6 · 状态 1 / 动作 1 · ACC-025 ACC-027</text>
 </g>
-<g data-path="0/6" data-role="slider" data-name="缩放">
+<g data-path="0/7" data-role="slider" data-name="缩放">
 <rect x="50" y="348" width="784" height="24" rx="3" fill="#eef4ff" stroke="#7aa2e8"/>
 <text x="58" y="364" font-size="12" fill="#111">缩放控件</text>
-<text x="826" y="364" font-size="10" fill="#666" text-anchor="end">slider · 0/6 · 状态 1 / 动作 1 · ACC-025 ACC-027</text>
+<text x="826" y="364" font-size="10" fill="#666" text-anchor="end">slider · 0/7 · 状态 1 / 动作 1 · ACC-025 ACC-027</text>
 </g>
-<g data-path="0/7" data-role="entry" data-name="查找">
+<g data-path="0/8" data-role="entry" data-name="查找">
 <rect x="50" y="378" width="784" height="24" rx="3" fill="#eef4ff" stroke="#7aa2e8"/>
 <text x="58" y="394" font-size="12" fill="#111">查找框</text>
-<text x="826" y="394" font-size="10" fill="#666" text-anchor="end">entry · 0/7 · 状态 1 / 动作 1 · ACC-025 ACC-027</text>
+<text x="826" y="394" font-size="10" fill="#666" text-anchor="end">entry · 0/8 · 状态 1 / 动作 1 · ACC-025 ACC-027</text>
 </g>
-<g data-path="0/8" data-role="label" data-name="正则 命中 \d+ 处">
+<g data-path="0/9" data-role="label" data-name="正则 命中 \d+ 处">
 <rect x="50" y="408" width="784" height="24" rx="3" fill="#f7f7f7" stroke="#d0d0d0"/>
 <text x="58" y="424" font-size="12" fill="#111">查找结果读数</text>
-<text x="826" y="424" font-size="10" fill="#666" text-anchor="end">label · 0/8 · 状态 1 / 动作 0 · ACC-025 ACC-027</text>
+<text x="826" y="424" font-size="10" fill="#666" text-anchor="end">label · 0/9 · 状态 1 / 动作 0 · ACC-025 ACC-027</text>
 </g>
 <text x="26" y="474" font-size="10" fill="#8a8a8a">蓝框＝可交互节点（Button/Entry/Check/Radio/Slider 类）；全部节点须能在 AT-SPI 树快照中按 path 命中（TG-012 / ACC-027）</text>
 </svg>

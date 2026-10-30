@@ -40,7 +40,7 @@
       "relations": []
     },
     {
-      "path": "0/0",
+      "path": "0/1",
       "role": "combo box",
       "name": "主题",
       "states": [
@@ -60,7 +60,7 @@
       "relations": []
     },
     {
-      "path": "0/1/0",
+      "path": "0/2/0",
       "role": "push button",
       "name": "按钮",
       "states": [
@@ -78,7 +78,7 @@
       "relations": []
     },
     {
-      "path": "0/1/1",
+      "path": "0/2/1",
       "role": "entry",
       "name": "文本",
       "states": [
@@ -97,7 +97,7 @@
       "relations": []
     },
     {
-      "path": "0/1/2",
+      "path": "0/2/2",
       "role": "check box",
       "name": "复选",
       "states": [
@@ -116,7 +116,7 @@
       "relations": []
     },
     {
-      "path": "0/1/3",
+      "path": "0/2/3",
       "role": "radio button",
       "name": "单选",
       "states": [
@@ -135,7 +135,7 @@
       "relations": []
     },
     {
-      "path": "0/1/4",
+      "path": "0/2/4",
       "role": "slider",
       "name": "滑杆",
       "states": [
@@ -154,7 +154,7 @@
       "relations": []
     },
     {
-      "path": "0/2/0",
+      "path": "0/3/0",
       "role": "list",
       "name": "列表",
       "states": [
@@ -172,7 +172,7 @@
       "relations": []
     },
     {
-      "path": "0/2/0/0",
+      "path": "0/3/0/0",
       "role": "list item",
       "name": "正则 项 \\d+",
       "states": [
@@ -190,7 +190,7 @@
       "relations": []
     },
     {
-      "path": "0/2/1",
+      "path": "0/3/1",
       "role": "combo box",
       "name": "下拉",
       "states": [
@@ -209,7 +209,7 @@
       "relations": []
     },
     {
-      "path": "0/2/2",
+      "path": "0/3/2",
       "role": "table",
       "name": "表格",
       "states": [
@@ -227,7 +227,7 @@
       "relations": []
     },
     {
-      "path": "0/2/2/0/0",
+      "path": "0/3/2/0/0",
       "role": "table cell",
       "name": "名称",
       "states": [
@@ -243,7 +243,7 @@
       "relations": []
     },
     {
-      "path": "0/3/0",
+      "path": "0/4/0",
       "role": "page tab list",
       "name": "选项卡",
       "states": [
@@ -259,7 +259,7 @@
       "relations": []
     },
     {
-      "path": "0/3/0/0",
+      "path": "0/4/0/0",
       "role": "page tab",
       "name": "第一页",
       "states": [
@@ -277,7 +277,7 @@
       "relations": []
     },
     {
-      "path": "0/3/1",
+      "path": "0/4/1",
       "role": "panel",
       "name": "分组",
       "states": [
@@ -293,7 +293,7 @@
       "relations": []
     },
     {
-      "path": "0/3/2",
+      "path": "0/4/2",
       "role": "panel",
       "name": "折叠",
       "states": [
@@ -312,7 +312,7 @@
       "relations": []
     },
     {
-      "path": "0/4",
+      "path": "0/5",
       "role": "tool bar",
       "name": "Ribbon",
       "states": [
@@ -328,7 +328,7 @@
       "relations": []
     },
     {
-      "path": "0/4/0",
+      "path": "0/5/0",
       "role": "page tab",
       "name": "开始",
       "states": [
@@ -346,7 +346,7 @@
       "relations": []
     },
     {
-      "path": "0/4/1",
+      "path": "0/5/1",
       "role": "panel",
       "name": "剪贴板",
       "states": [
@@ -362,7 +362,7 @@
       "relations": []
     },
     {
-      "path": "0/4/1/0",
+      "path": "0/5/1/0",
       "role": "push button",
       "name": "粘贴",
       "states": [
@@ -380,7 +380,7 @@
       "relations": []
     },
     {
-      "path": "0/5",
+      "path": "0/6",
       "role": "combo box",
       "name": "缩放",
       "states": [
@@ -398,7 +398,7 @@
       "relations": []
     },
     {
-      "path": "0/6",
+      "path": "0/7",
       "role": "label",
       "name": "正则 frames=\\d+",
       "states": [
