@@ -10,7 +10,6 @@ namespace LinuxDesktopPerfect.Samples.WpfMediaInk
             InitializeComponent();
             string scr = ScrArg();
             Title = "WpfMediaInk" + (scr == null ? "" : " [" + scr + "]");
-            TitleText.Text = Title;
         }
 
         // --scr SCR-0x：只影响窗口标题，不做其他事（骨架不实现业务逻辑）

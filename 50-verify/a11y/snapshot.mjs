@@ -281,7 +281,20 @@ if (has('uia')) {
     if (!(await waitDisplay(xvfb.display))) throw new Error(`Xvfb ${xvfb.display} 未就绪`);
     // 钩子靠环境变量挂载：startApp 用的是固定 env，这里直接起进程（复用其路径解析）
     const { spawn } = await import('node:child_process');
-    const dll = path.resolve(ROOT, `samples/WpfFirstWindow/bin/Release/net10.0/WpfFirstWindow.dll`);
+    // ⚠️ `--scr` → 样本的映射：修前这里**硬编码 WpfFirstWindow**，于是
+    //   传 `--scr SCR-06` 拿到的仍是 SCR-01 的树（11 个节点 vs 属性表 8 个），
+    //   判据读数是"FAIL 且差异巨大"，很容易被误读成"样本结构不对"。
+    const SCR_SAMPLE = {
+      'SCR-01': ['WpfFirstWindow', 'WpfFirstWindow'],
+      'SCR-02': ['WpfTextDemo', 'WpfTextDemo'],
+      'SCR-03': ['WpfImageGallery', 'WpfImageGallery'],
+      'SCR-04': ['WpfControlGallery', 'WpfControlGallery'],
+      'SCR-05': ['WpfPrintDoc', 'WpfPrintDoc'],
+      'SCR-06': ['WpfMediaInk', 'WpfMediaInk'],
+      'SCR-07': ['WinFormsBasics', 'WinFormsBasics'],
+    };
+    const [sampleDir, sampleTitle] = SCR_SAMPLE[SCR] || SCR_SAMPLE['SCR-01'];
+    const dll = path.resolve(ROOT, `samples/${sampleDir}/bin/Release/net10.0/${sampleDir}.dll`);
     const out = fs.openSync(path.join(OUT_DIR, 'app-uia.log'), 'w');
     app = spawn(path.join(DOTNET_ROOT, 'dotnet'), [dll, '--scr', SCR], {
       cwd: path.dirname(dll),
@@ -297,7 +310,7 @@ if (has('uia')) {
         LDP_A11Y_SCREEN: SCR,
       },
     });
-    const win = await findWindow(xvfb.display, `WpfFirstWindow [${SCR}]`);
+    const win = await findWindow(xvfb.display, `${sampleTitle} [${SCR}]`);
     if (win) await waitMapped(xvfb.display, win.id);
     // 等钩子写出树（最多 40 s）
     let waited = 0;
