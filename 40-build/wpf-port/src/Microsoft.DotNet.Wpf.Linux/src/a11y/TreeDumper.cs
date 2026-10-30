@@ -186,7 +186,8 @@ namespace Ldp.A11y
             sb.Append("  \"app\": {\"name\": ").Append(J(win.Title)).Append("},\n");
             sb.Append("  \"window\": {\"title\": ").Append(J(win.Title)).Append(", \"scr\": ").Append(J(scr)).Append("},\n");
             sb.Append("  \"env\": {\"runner\": \"uia-startup-hook\", \"dpi\": ").Append(DpiOf(win).ToString(CultureInfo.InvariantCulture))
-              .Append(", \"theme\": \"(unknown)\", \"wm\": ").Append(win.IsActive ? "true" : "false")
+              .Append(", \"theme\": ").Append(J(ThemeInfo(app)))
+              .Append(", \"wm\": ").Append(win.IsActive ? "true" : "false")
               .Append(", \"note\": \"UIA 树（AutomationPeer），非 AT-SPI 总线\"},\n");
             sb.Append("  \"seq\": ").Append(++g_seq).Append(",\n");
             // child_count：按 path 段前缀统计（与 50-verify/a11y/snapshot.mjs 的 childCounts 同口径）
@@ -426,6 +427,30 @@ namespace Ldp.A11y
                 case AutomationControlType.TreeItem: return "tree item";
                 case AutomationControlType.Group: return "panel";
                 default: return "unknown";
+            }
+        }
+
+        // 主题字典的真实状态：加载了哪一本、有多少条目。ACC-020 的结构判据靠这行区分
+        //   「--theme 没生效（字典 0 本）」与「字典加载了但控件模板没换」。
+        private static string ThemeInfo(Application app)
+        {
+            try
+            {
+                var md = app.Resources.MergedDictionaries;   // 类型是 internal 的 ResourceDictionaryCollection：用 var
+                if (md == null || md.Count == 0) return "(none)";
+                var sb = new StringBuilder();
+                for (int i = 0; i < md.Count; i++)
+                {
+                    ResourceDictionary d = md[i];
+                    if (i > 0) sb.Append("; ");
+                    sb.Append(d.Source == null ? "(inline)" : d.Source.OriginalString);
+                    sb.Append("#").Append(d.Count.ToString(CultureInfo.InvariantCulture));
+                }
+                return sb.ToString();
+            }
+            catch (Exception e)
+            {
+                return "(error: " + e.GetType().Name + ")";
             }
         }
 

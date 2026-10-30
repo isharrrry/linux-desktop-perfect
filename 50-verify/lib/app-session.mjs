@@ -71,7 +71,7 @@ export async function waitDisplay(display, timeoutMs = 15000) {
 }
 
 // 起样本应用（带 install-runtime 生成的启动环境：D-005 的 R2R 关闭 + shim 路径）
-export async function startApp({ sample = 'WpfFirstWindow', scr = 'SCR-01', display, treeDump = null, extraEnv = {} } = {}) {
+export async function startApp({ sample = 'WpfFirstWindow', scr = 'SCR-01', display, treeDump = null, extraEnv = {}, extraArgs = [] } = {}) {
   const dll = sampleDll(sample);
   if (!fs.existsSync(dll)) return { ok: false, reason: `样本未构建：${path.relative(ROOT, dll)}`, hint: 'node 50-verify/build/build-sample.mjs' };
   if (!fs.existsSync(path.join(DOTNET_ROOT, 'dotnet'))) return { ok: false, reason: `运行时未安装：${path.relative(ROOT, DOTNET_ROOT)}`, hint: 'node 40-build/pack/install-runtime.mjs' };
@@ -79,7 +79,7 @@ export async function startApp({ sample = 'WpfFirstWindow', scr = 'SCR-01', disp
 
   const logFile = path.join(os.tmpdir(), `ldp-app-${sample}-${scr}-${Date.now()}.log`);
   const out = fs.openSync(logFile, 'w');
-  const proc = spawn(path.join(DOTNET_ROOT, 'dotnet'), [dll, '--scr', scr], {
+  const proc = spawn(path.join(DOTNET_ROOT, 'dotnet'), [dll, '--scr', scr, ...extraArgs], {
     cwd: sampleDir(sample),
     stdio: ['ignore', out, out],
     env: {

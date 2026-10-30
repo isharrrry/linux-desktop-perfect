@@ -68,13 +68,51 @@ const appXaml = (ns, startUri) => L(
   '</Application>',
 );
 
-const appCs = (ns) => L(
+// `--theme <Aero|Aero2|AeroLite|Luna|Royale|Classic>`：换主题字典（ACC-020 的六主题切换）。
+// 主题 BAML 由自产主题程序集提供（pack URI 指向 PresentationFramework.<T>）。
+const appCs = (ns, withTheme = false) => L(
+  'using System;',
   'using System.Windows;',
   '',
   'namespace ' + ns,
   '{',
   '    public partial class App : Application',
   '    {',
+  ...(withTheme
+    ? [
+        '        protected override void OnStartup(StartupEventArgs e)',
+        '        {',
+        '            base.OnStartup(e);',
+        '            string theme = Arg("--theme");',
+        '            if (theme == null) return;',
+        '            Uri uri = ThemeUri(theme);',
+        '            if (uri == null) return;',
+        '            Resources.MergedDictionaries.Clear();',
+        '            Resources.MergedDictionaries.Add(new ResourceDictionary { Source = uri });',
+        '        }',
+        '',
+        '        private static Uri ThemeUri(string theme)',
+        '        {',
+        '            switch (theme)',
+        '            {',
+        '                case "Classic":   return new Uri("pack://application:,,,/PresentationFramework.Classic;component/themes/Classic.xaml");',
+        '                case "Aero":      return new Uri("pack://application:,,,/PresentationFramework.Aero;component/themes/Aero.NormalColor.xaml");',
+        '                case "Aero2":     return new Uri("pack://application:,,,/PresentationFramework.Aero2;component/Themes/Aero2.NormalColor.xaml");',
+        '                case "AeroLite":  return new Uri("pack://application:,,,/PresentationFramework.AeroLite;component/Themes/AeroLite.NormalColor.xaml");',
+        '                case "Luna":      return new Uri("pack://application:,,,/PresentationFramework.Luna;component/Themes/Luna.NormalColor.xaml");',
+        '                case "Royale":    return new Uri("pack://application:,,,/PresentationFramework.Royale;component/Themes/Royale.NormalColor.xaml");',
+        '                default:          return null;',
+        '            }',
+        '        }',
+        '',
+        '        private static string Arg(string name)',
+        '        {',
+        '            string[] a = Environment.GetCommandLineArgs();',
+        '            for (int i = 0; i < a.Length - 1; i++) if (a[i] == name) return a[i + 1];',
+        '            return null;',
+        '        }',
+      ]
+    : []),
   '    }',
   '}',
 );
@@ -146,7 +184,7 @@ const scr01 = {
   files: (dir, ns) => ({
     'WpfFirstWindow.csproj': csprojWpf(dir),
     'App.xaml': appXaml(ns, 'MainWindow.xaml'),
-    'App.xaml.cs': appCs(ns),
+    'App.xaml.cs': appCs(ns, true),
     'MainWindow.xaml.cs': windowCs(ns, 'MainWindow', 'WpfFirstWindow', true, true),
     'MainWindow.xaml': wpfXaml(ns, 'MainWindow', '960', '640', 'WpfFirstWindow', L(
       '    <!-- 对应 SCR-01 元素属性表：路径 0/0 ~ 0/6；读数文本是结构判据的数据源，格式别改 -->',
