@@ -72,3 +72,6 @@ node_modules/
 # --- WIC shim 构建产物（由 40-build/wic-dwrite 的 make 重建） ---
 40-build/wic-dwrite/obj/
 40-build/wic-dwrite/bin/
+
+# --- media-bridge 构建产物 ---
+40-build/media-bridge/bin/
