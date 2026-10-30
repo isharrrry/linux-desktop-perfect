@@ -4,11 +4,11 @@
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <AssemblyName>ReachFramework</AssemblyName>
-    <RootNamespace>MS.Internal</RootNamespace>
+    <RootNamespace>System.Windows.Xps</RootNamespace>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
     <EnableDefaultEmbeddedResourceItems>false</EnableDefaultEmbeddedResourceItems>
-    <NoWarn>$(NoWarn);0618;CS3016;CS0067;CS0169;CS0414;CS0649;CS1591;CS8632;CS0219;CS8981;CA1416;CA1420;WPF0001</NoWarn>
+    <NoWarn>$(NoWarn);0618;CS3016;CS0067;CS0169;CS0414;CS0649;CS1591;CS8632;CS0219;CS8981;CA1416;CA1420;WPF0001;CS8002</NoWarn>
     <DefineConstants>REACHFRAMEWORK;WINDOWS_BASE_OR_PC</DefineConstants>
     <LangVersion>latest</LangVersion>
     <Nullable>disable</Nullable>
@@ -24,20 +24,16 @@
     <AssemblyOriginatorKeyFile>$(WpfLinuxRoot)src/Linux/build/keys/WcpPublicKey.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="System.IO.Packaging" Version="9.0.0" />
-    <PackageReference Include="System.Security.Cryptography.Xml" Version="9.0.0" />
+    <Reference Include="System.Xaml"><HintPath>$(WpfLinuxRoot)src/Microsoft.DotNet.Wpf.Linux/src/System.Xaml/bin/$(WpfLinuxSelfBuiltConfiguration)/System.Xaml.dll</HintPath><Private>true</Private></Reference>
+    <Reference Include="WindowsBase"><HintPath>$(WpfLinuxRoot)src/Microsoft.DotNet.Wpf.Linux/src/WindowsBase/bin/$(WpfLinuxSelfBuiltConfiguration)/WindowsBase.dll</HintPath><Private>true</Private></Reference>
+    <Reference Include="PresentationCore"><HintPath>$(WpfLinuxRoot)src/Microsoft.DotNet.Wpf.Linux/src/PresentationCore/bin/$(WpfLinuxSelfBuiltConfiguration)/PresentationCore.dll</HintPath><Private>true</Private></Reference>
+    <Reference Include="DirectWriteForwarder"><HintPath>$(WpfLinuxRoot)src/Microsoft.DotNet.Wpf.Linux/src/DirectWriteForwarder/bin/$(WpfLinuxSelfBuiltConfiguration)/DirectWriteForwarder.dll</HintPath><Private>true</Private></Reference>
+    <Reference Include="System.Printing"><HintPath>$(WpfLinuxRoot)src/Microsoft.DotNet.Wpf.Linux/src/System.Printing/bin/$(WpfLinuxSelfBuiltConfiguration)/System.Printing.dll</HintPath><Private>false</Private></Reference>
   </ItemGroup>
   <ItemGroup>
-    <Reference Include="PresentationCore"><HintPath>$(WpfLinuxRoot)src/Microsoft.DotNet.Wpf.Linux/src/PresentationCore/bin/$(Configuration)/PresentationCore.dll</HintPath><Private>true</Private></Reference>
-    <Reference Include="System.Xaml"><HintPath>$(WpfLinuxRoot)src/Microsoft.DotNet.Wpf.Linux/src/System.Xaml/bin/$(Configuration)/System.Xaml.dll</HintPath><Private>true</Private></Reference>
-    <Reference Include="WindowsBase"><HintPath>$(WpfLinuxRoot)src/Microsoft.DotNet.Wpf.Linux/src/WindowsBase/bin/$(Configuration)/WindowsBase.dll</HintPath><Private>true</Private></Reference>
-  </ItemGroup>
-  <ItemGroup>
-    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/Common/src/System/SR.cs" />
     <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/Shared/RefAssemblyAttrs.cs" />
     <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/Shared/MS/Internal/SafeSecurityHelper.cs" />
     <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/Shared/MS/Internal/SecurityHelper.cs" />
-    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/Shared/MS/Internal/UriComparer.cs" />
     <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/Shared/MS/Utility/BindUriHelper.cs" />
     <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/ReachFramework/GlobalUsings.cs" />
     <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/ReachFramework/Serialization/RCW/XPS_COLOR_TYPE_UNION.cs" />
@@ -213,12 +209,10 @@
     <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/ReachFramework/PrintConfig/PrtCap_Public.cs" />
     <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/ReachFramework/PrintConfig/PrtCap_Public_Simple.cs" />
     <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/ReachFramework/PrintConfig/PrtCap_Reader.cs" />
-    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/ReachFramework/PrintConfig/PrtTicket_Base.cs" />
     <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/ReachFramework/PrintConfig/PrtTicket_Editor.cs" />
     <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/ReachFramework/PrintConfig/PrtTicket_Public.cs" />
     <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/ReachFramework/PrintConfig/PrtTicket_Public_Simple.cs" />
     <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/ReachFramework/PrintConfig/PTConverter.cs" />
-    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/ReachFramework/PrintConfig/PTManager.cs" />
     <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/ReachFramework/PrintConfig/PTProvider.cs" />
     <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/ReachFramework/PrintConfig/PTUtility.cs" />
     <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/ReachFramework/PrintConfig/PTProviderBase.cs" />
@@ -254,160 +248,16 @@
     <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/ReachFramework/MS/Internal/Printing/Configuration/SafeModuleHandle.cs" />
     <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/ReachFramework/MS/Internal/Printing/Configuration/WinSpoolPrinterCapabilities.cs" />
     <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/ReachFramework/MS/Internal/Printing/TestHook.cs" />
-    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/ReachFramework/Serialization/manager/IXpsSerializationManager.cs" />
-    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/ReachFramework/Serialization/manager/IXpsSerializationManagerAsync.cs" />
-    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/ReachFramework/Serialization/manager/XpsOMHierarchySimulator.cs" />
-    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/ReachFramework/Serialization/manager/XpsOMSerializationManager.cs" />
-    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/ReachFramework/Serialization/manager/XpsOMSerializationManagerAsync.cs" />
-    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/ReachFramework/Serialization/manager/XpsOMDocumentSequenceSerializer.cs" />
-    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/ReachFramework/Serialization/manager/XpsOMDocumentSequenceSerializerAsync.cs" />
-    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/ReachFramework/Serialization/manager/XpsOMFixedDocumentSerializer.cs" />
-    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/ReachFramework/Serialization/manager/XpsOMFixedDocumentSerializerAsync.cs" />
-    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/ReachFramework/Serialization/manager/XpsOMFixedPageSerializer.cs" />
-    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/ReachFramework/Serialization/manager/XpsOMFixedPageSerializerAsync.cs" />
-    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/ReachFramework/Serialization/manager/XpsOMDocumentPaginatorSerializer.cs" />
-    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/ReachFramework/Serialization/manager/XpsOMDocumentPaginatorSerializerAsync.cs" />
-    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/ReachFramework/Serialization/manager/XpsOMDocumentPageSerializer.cs" />
-    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/ReachFramework/Serialization/manager/XpsOMDocumentPageSerializerAsync.cs" />
-    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/ReachFramework/Serialization/manager/XpsOMPackagingPolicy.cs" />
-    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/ReachFramework/Serialization/manager/XpsSerializationManager.cs" />
-    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/ReachFramework/Serialization/manager/XpsSerializationManagerAsync.cs" />
-    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/ReachFramework/Serialization/manager/XpsDocumentEvent.cs" />
-    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/ReachFramework/Serialization/manager/ReachFixedDocumentSerializer.cs" />
-    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/ReachFramework/Serialization/manager/ReachFixedDocumentSerializerAsync.cs" />
-    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/ReachFramework/Serialization/manager/XpsTokenContext.cs" />
-    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/ReachFramework/Serialization/manager/ReachSerializer.cs" />
-    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/ReachFramework/Serialization/manager/ReachSerializerAsync.cs" />
-    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/ReachFramework/Serialization/manager/ReachFixedPageSerializer.cs" />
-    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/ReachFramework/Serialization/manager/ReachFixedPageSerializerAsync.cs" />
-    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/ReachFramework/Serialization/manager/ReachDocumentPageSerializer.cs" />
-    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/ReachFramework/Serialization/manager/ReachDocumentPageSerializerAsync.cs" />
-    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/ReachFramework/Serialization/manager/ReachDocumentReferenceSerializer.cs" />
-    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/ReachFramework/Serialization/manager/ReachDocumentReferenceSerializerAsync.cs" />
-    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/ReachFramework/Serialization/manager/ReachDocumentReferenceCollectionSerializer.cs" />
-    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/ReachFramework/Serialization/manager/ReachDocumentReferenceCollectionSerializerAsync.cs" />
-    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/ReachFramework/Serialization/manager/ReachDocumentSequenceSerializer.cs" />
-    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/ReachFramework/Serialization/manager/ReachDocumentSequenceSerializerAsync.cs" />
-    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/ReachFramework/Serialization/manager/ReachIDocumentPaginatorSerializer.cs" />
-    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/ReachFramework/Serialization/manager/ReachIDocumentPaginatorSerializerAsync.cs" />
-    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/ReachFramework/Serialization/manager/ReachPageContentCollectionSerializer.cs" />
-    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/ReachFramework/Serialization/manager/ReachPageContentCollectionSerializerAsync.cs" />
-    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/ReachFramework/Serialization/manager/ReachUIElementCollectionSerializer.cs" />
-    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/ReachFramework/Serialization/manager/ReachUIElementCollectionSerializerAsync.cs" />
-    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/ReachFramework/Serialization/manager/ReachPageContentSerializer.cs" />
-    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/ReachFramework/Serialization/manager/ReachPageContentSerializerAsync.cs" />
-    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/ReachFramework/Serialization/manager/XpsPackagingPolicy.cs" />
-    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/ReachFramework/Serialization/manager/NullPackagingPolicy.cs" />
-    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/ReachFramework/Serialization/manager/ReachVisualSerializer.cs" />
-    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/ReachFramework/Serialization/manager/ReachVisualSerializerAsync.cs" />
-    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/ReachFramework/Serialization/manager/MetroSerializationManager.cs" />
-    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/ReachFramework/Serialization/manager/NGCSerializationManager.cs" />
-    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/ReachFramework/Serialization/manager/NGCSerializationManagerAsync.cs" />
-    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/ReachFramework/Serialization/manager/NGCSerializer.cs" />
-    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/ReachFramework/Serialization/manager/NGCSerializerAsync.cs" />
-    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/ReachFramework/Serialization/manager/NGCPageContentCollectionSerializerAsync.cs" />
-    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/ReachFramework/Serialization/manager/NGCPageContentSerializerAsync.cs" />
-    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/ReachFramework/Serialization/manager/NGCUIElementCollectionSerializerAsync.cs" />
-    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/ReachFramework/Serialization/manager/ReachBasicContext.cs" />
-    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/ReachFramework/Serialization/manager/ReachObjectContext.cs" />
-    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/ReachFramework/Serialization/manager/ReachSerializationCacheItems.cs" />
-    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/ReachFramework/Serialization/manager/ReachSerializationUtils.cs" />
-    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/ReachFramework/Serialization/manager/ReachNamespaceInfo.cs" />
-    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/ReachFramework/Serialization/manager/ReachSerializableProperties.cs" />
-    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/ReachFramework/Serialization/manager/ReachPrintTicketSerializer.cs" />
-    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/ReachFramework/Serialization/manager/ReachPrintTicketSerializerAsync.cs" />
-    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/ReachFramework/Serialization/manager/XpsLiterals.cs" />
-    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/ReachFramework/Packaging/XpsDigitalSignature.cs" />
-    <Compile Include="$(WpfLinuxRoot)src/Microsoft.DotNet.Wpf.Linux/src/ReachFramework/SR.g.cs" />
   </ItemGroup>
-  <!-- 自产程序集身份：AssemblyVersion 4.0.0.1，必须 > 框架门面的 4.0.0.0 -->
+  <ItemGroup>
+    <EmbeddedResource Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/ReachFramework/Resources/Strings.resx"><Link>Resources\Strings.resx</Link></EmbeddedResource>
+    <EmbeddedResource Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Printing/Resources/System.Printing.resx"><Link>Resources\System.Printing.resx</Link></EmbeddedResource>
+  </ItemGroup>
   <ItemGroup>
     <Compile Include="$(WpfLinuxRoot)src/Microsoft.DotNet.Wpf.Linux/src/shims/LinuxAssemblyIdentity.cs" />
   </ItemGroup>
-  <!-- 程序集清单资源：ManifestResourceName 必须显式（RootNamespace 被本脚本统一为
-       MS.Internal，靠 SDK 推导会与 gen-sr.py 的 SR 基名不一致 → 资源表静默失效） -->
   <ItemGroup>
-    <EmbeddedResource Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/ReachFramework/Resources/Strings.resx">
-      <ManifestResourceName>ReachFramework.Resources.Strings</ManifestResourceName>
-    </EmbeddedResource>
-    <EmbeddedResource Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Printing/Resources/System.Printing.resx">
-      <ManifestResourceName>System.Printing.resources</ManifestResourceName>
-      <GenerateSource>false</GenerateSource>
-      <LogicalName>System.Printing.resources</LogicalName>
-    </EmbeddedResource>
-    <EmbeddedResource Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/ReachFramework/ILLinkTrim.xml">
-      <ManifestResourceName>ReachFramework.ILLinkTrim</ManifestResourceName>
-      <XlfInput>false</XlfInput>
-      <LogicalName>$(AssemblyName).xml</LogicalName>
-    </EmbeddedResource>
+    <PackageReference Include="System.IO.Packaging" Version="9.0.0" />
   </ItemGroup>
-  <!-- ==== WPF-on-Linux 补丁开关：以下内容由 reapply-patches.py 追加 ==== -->
-  <!-- ============================================================================
-       WPF-on-Linux 补丁 A：公开签名（PublicSign），通过 WindowsBase/PresentationCore/
-       System.Printing 的 IVT 检查
-       ============================================================================
-       根因同 PresentationFramework：三家都用 BuildInfo.ReachFramework
-       （Shared/RefAssemblyAttrs.cs：`$"ReachFramework, PublicKey={WCP_PUBLIC_KEY_STRING}"`）
-       授予友元；不签名实测 CS0281 并连带 CS0122/CS0538。
-       ============================================================================ -->
-  <PropertyGroup>
-    <SignAssembly>true</SignAssembly>
-    <PublicSign>true</PublicSign>
-    <AssemblyOriginatorKeyFile>$(WpfLinuxRoot)src/Linux/build/keys/WcpPublicKey.snk</AssemblyOriginatorKeyFile>
-    <!-- CS8002：本工程公开签名（身份口径）而 WindowsBase 在本移植工程中未签名；
-         上游是「全签名」，故看不到这条警告。压制以保证 0 警门禁口径一致。 -->
-    <NoWarn>$(NoWarn);CS8002</NoWarn>
-    <!-- 上游 ReachFramework.csproj:9 就有这一条，port-lib 未搬运。
-         pass 2（引用真 PF）时 deps.json 生成会抛
-           MSB4018 System.ArgumentException: An item with the same key has already been added. Key: ReachFramework
-         （同一个程序集同时出现在项目输出与 reference copy-local 列表里）→ 按上游关闭 deps 生成。 -->
-    <GenerateDependencyFile>false</GenerateDependencyFile>
-  </PropertyGroup>
-
-  <!-- ============================================================================
-       WPF-on-Linux 补丁 B：程序集级 [assembly: CLSCompliant(false)]
-       ============================================================================
-       上游由 Arcade 生成 AssemblyInfo 时补上；本移植工程切断 Arcade 继承后缺失 →
-       成员级 [CLSCompliant(false)] 报 CS3021。取值 false 经实测二选一确定
-       （true 会新增数百条 CS3001/CS3003，见 docs/U2-PresentationFramework-prep.md §4.2）。
-       ============================================================================ -->
-  <ItemGroup>
-    <Compile Include="$(WpfLinuxRoot)src/Microsoft.DotNet.Wpf.Linux/src/shims/ReachFramework.AssemblyAttrs.Shim.cs" />
-  </ItemGroup>
-
-  <!-- ============================================================================
-       WPF-on-Linux 补丁 C：接回 port-lib 丢弃的两个本地引用
-       ============================================================================
-       ① PresentationFramework-ReachFramework-impl-cycle：上游 CycleBreakers 目录在
-          本快照中**不存在**（`find upstream/wpf -iname "*impl-cycle*"` 为空）→ 按最小 stub
-          口径自建（保留 API 形态，见 src/Microsoft.DotNet.Wpf.Linux/src/CycleStub.PresentationFramework/）。
-       ② System.Printing-ref：port-lib 的 `-ref` 规则跳过，但它是 System.Printing 的
-          **唯一托管面**（实现是 C++）→ 由 src/Microsoft.DotNet.Wpf.Linux/src/System.Printing 产出 System.Printing.dll。
-       Exists() 条件保证缺产物时不静默掩盖，而是留下真实编译错误。
-       ============================================================================ -->
-  <!-- ① PresentationFramework：**自举（bootstrap）两步**
-       pass 1：真 PF 尚不存在 → 用 CycleStub.PresentationFramework（编译期替身，<Private>false</Private>）。
-       pass 2：真 PF 产出后，本条件自动改指真 PF → 再编一遍 RF，由编译器逐条复核
-               「RF 对替身的全部使用在真 PF 上依然成立」（这是替身保真度的硬验证：
-                任何成员签名/继承链差异都会变成编译错误，不会留到运行期）。
-       两步都是同一条命令：python3 src/Microsoft.DotNet.Wpf.Linux/src/ReachFramework/reapply-patches.py && dotnet build … -->
-  <ItemGroup Condition="Exists('$(WpfLinuxRoot)src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework/bin/$(WpfLinuxSelfBuiltConfiguration)/PresentationFramework.dll')">
-    <Reference Include="PresentationFramework"><HintPath>$(WpfLinuxRoot)src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework/bin/$(WpfLinuxSelfBuiltConfiguration)/PresentationFramework.dll</HintPath><Private>true</Private></Reference>
-  </ItemGroup>
-  <ItemGroup Condition="!Exists('$(WpfLinuxRoot)src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework/bin/$(WpfLinuxSelfBuiltConfiguration)/PresentationFramework.dll') and Exists('$(WpfLinuxRoot)src/Microsoft.DotNet.Wpf.Linux/src/CycleStub.PresentationFramework/bin/$(WpfLinuxSelfBuiltConfiguration)/PresentationFramework.dll')">
-    <Reference Include="PresentationFramework"><HintPath>$(WpfLinuxRoot)src/Microsoft.DotNet.Wpf.Linux/src/CycleStub.PresentationFramework/bin/$(WpfLinuxSelfBuiltConfiguration)/PresentationFramework.dll</HintPath><Private>false</Private></Reference>
-  </ItemGroup>
-  <ItemGroup Condition="Exists('$(WpfLinuxRoot)src/Microsoft.DotNet.Wpf.Linux/src/System.Printing/bin/$(WpfLinuxSelfBuiltConfiguration)/System.Printing.dll')">
-    <Reference Include="System.Printing"><HintPath>$(WpfLinuxRoot)src/Microsoft.DotNet.Wpf.Linux/src/System.Printing/bin/$(WpfLinuxSelfBuiltConfiguration)/System.Printing.dll</HintPath><Private>true</Private></Reference>
-  </ItemGroup>
-  <!-- ③ DirectWriteForwarder：上游 RF 引用 DirectWriteForwarder.vcxproj（port-lib 丢弃 vcxproj）。
-       实测 RF 经 PresentationCore 的公开 API 拿到 DWrite 类型 →
-       报 CS0012 "类型 Font 在未引用的程序集 DirectWriteForwarder 中定义"。
-       PC 轮产出的托管等价程序集已在，直接接回。 -->
-  <ItemGroup Condition="Exists('$(WpfLinuxRoot)src/Microsoft.DotNet.Wpf.Linux/src/PresentationCore/bin/$(WpfLinuxSelfBuiltConfiguration)/DirectWriteForwarder.dll')">
-    <Reference Include="DirectWriteForwarder"><HintPath>$(WpfLinuxRoot)src/Microsoft.DotNet.Wpf.Linux/src/PresentationCore/bin/$(WpfLinuxSelfBuiltConfiguration)/DirectWriteForwarder.dll</HintPath><Private>true</Private></Reference>
-  </ItemGroup>
-
-  <!-- ==== WPF-on-Linux 补丁结束 ==== -->
   <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
 </Project>
