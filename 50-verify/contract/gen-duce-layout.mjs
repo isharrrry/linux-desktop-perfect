@@ -145,8 +145,13 @@ for (const c of commands) {
     source.push('0x00 哨兵');
   } else if (isGap) {
     status = 'gap';
-    degrade = '待登记（缺陷册未分配 D- 编号）';
-    source.push('s_notImpl（E_NOTIMPL）');
+    // 降级编号按命令族分配（定义方：70-operate/已知坑清单.md）：
+    //   D-006 = GPU 图像命令族（D3DImage*）：ADR-004 明确 CPU 是 V1 唯一后端
+    //   D-007 = 媒体与双缓冲命令族：媒体在 S4、双缓冲在 CPU 后端合并
+    if (c.name.startsWith('MilCmdD3DImage')) degrade = 'D-006';
+    else if (c.name === 'MilCmdMediaPlayer' || c.name.startsWith('MilCmdDoubleBuffered')) degrade = 'D-007';
+    else degrade = '待登记（缺陷册未分配 D- 编号）';
+    source.push(`s_notImpl（E_NOTIMPL；${degrade}）`);
   }
   if (!struct && !sentinel) source.push('参数结构体待对拍确认');
   if (len === undefined && !sentinel) source.push('字节长度待对拍确认');

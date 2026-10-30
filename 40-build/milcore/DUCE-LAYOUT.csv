@@ -14,8 +14,8 @@ id,名称,参数结构体,字节长度,实现状态,降级编号,来源
 0x07,MilCmdChannelCreateResource,,8,impl,—,无参数结构体；MilCommandLayout.cs:FixedSize；参数结构体待对拍确认
 0x08,MilCmdChannelDeleteResource,,8,impl,—,无参数结构体；MilCommandLayout.cs:FixedSize；参数结构体待对拍确认
 0x09,MilCmdChannelDuplicateHandle,,8,impl,—,无参数结构体；MilCommandLayout.cs:FixedSize；参数结构体待对拍确认
-0x0a,MilCmdD3DImage,,,gap,待登记（缺陷册未分配 D- 编号）,无参数结构体；长度待对拍确认；s_notImpl（E_NOTIMPL）；参数结构体待对拍确认；字节长度待对拍确认
-0x0b,MilCmdD3DImagePresent,,,gap,待登记（缺陷册未分配 D- 编号）,无参数结构体；长度待对拍确认；s_notImpl（E_NOTIMPL）；参数结构体待对拍确认；字节长度待对拍确认
+0x0a,MilCmdD3DImage,,,gap,D-006,无参数结构体；长度待对拍确认；s_notImpl（E_NOTIMPL；D-006）；参数结构体待对拍确认；字节长度待对拍确认
+0x0b,MilCmdD3DImagePresent,,,gap,D-006,无参数结构体；长度待对拍确认；s_notImpl（E_NOTIMPL；D-006）；参数结构体待对拍确认；字节长度待对拍确认
 0x0c,MilCmdBitmapSource,MILCMD_BITMAP_SOURCE,16,impl,—,MilCommandStructs.cs:MILCMD_BITMAP_SOURCE(3 字段)；MilCommandLayout.cs:FixedSize
 0x0d,MilCmdBitmapInvalidate,MILCMD_BITMAP_INVALIDATE,28,impl,—,MilCommandStructs.cs:MILCMD_BITMAP_INVALIDATE(4 字段)；MilCommandLayout.cs:FixedSize
 0x0e,MilCmdDoubleResource,MILCMD_DOUBLERESOURCE,16,impl,—,MilCommandStructs.cs:MILCMD_DOUBLERESOURCE(3 字段)；MilCommandLayout.cs:FixedSize
@@ -27,7 +27,7 @@ id,名称,参数结构体,字节长度,实现状态,降级编号,来源
 0x14,MilCmdPoint3DResource,MILCMD_POINT3DRESOURCE,20,impl,—,MilCommandStructs.cs:MILCMD_POINT3DRESOURCE(3 字段)；MilCommandLayout.cs:FixedSize
 0x15,MilCmdVector3DResource,MILCMD_VECTOR3DRESOURCE,20,impl,—,MilCommandStructs.cs:MILCMD_VECTOR3DRESOURCE(3 字段)；MilCommandLayout.cs:FixedSize
 0x16,MilCmdQuaternionResource,MILCMD_QUATERNIONRESOURCE,24,impl,—,MilCommandStructs.cs:MILCMD_QUATERNIONRESOURCE(3 字段)；MilCommandLayout.cs:FixedSize
-0x17,MilCmdMediaPlayer,,,gap,待登记（缺陷册未分配 D- 编号）,无参数结构体；长度待对拍确认；s_notImpl（E_NOTIMPL）；参数结构体待对拍确认；字节长度待对拍确认
+0x17,MilCmdMediaPlayer,,,gap,D-007,无参数结构体；长度待对拍确认；s_notImpl（E_NOTIMPL；D-007）；参数结构体待对拍确认；字节长度待对拍确认
 0x18,MilCmdRenderData,MILCMD_RENDERDATA,12,impl,—,MilCommandStructs.cs:MILCMD_RENDERDATA(3 字段)；MilCommandLayout.cs:FixedSize；HasVariablePayload=变长（长度为固定头）
 0x19,MilCmdEtwEventResource,MILCMD_ETWEVENTRESOURCE,12,impl,—,MilCommandStructs.cs:MILCMD_ETWEVENTRESOURCE(3 字段)；MilCommandLayout.cs:FixedSize
 0x1a,MilCmdVisualCreate,,8,impl,—,无参数结构体；MilCommandLayout.cs:FixedSize；参数结构体待对拍确认
@@ -63,8 +63,8 @@ id,名称,参数结构体,字节长度,实现状态,降级编号,来源
 0x38,MilCmdTargetSetFlags,MILCMD_TARGET_SETFLAGS,12,impl,—,MilCommandStructs.cs:MILCMD_TARGET_SETFLAGS(3 字段)；MilCommandLayout.cs:FixedSize
 0x39,MilCmdHwndTargetDpiChanged,MILCMD_HWNDTARGET_DPICHANGED,28,impl,—,MilCommandStructs.cs:MILCMD_HWNDTARGET_DPICHANGED(5 字段)；MilCommandLayout.cs:FixedSize
 0x3a,MilCmdGlyphRunCreate,MILCMD_GLYPHRUN_CREATE,76,impl,—,MilCommandStructs.cs:MILCMD_GLYPHRUN_CREATE(11 字段)；MilCommandLayout.cs:FixedSize；HasVariablePayload=变长（长度为固定头）
-0x3b,MilCmdDoubleBufferedBitmap,,,gap,待登记（缺陷册未分配 D- 编号）,无参数结构体；长度待对拍确认；s_notImpl（E_NOTIMPL）；参数结构体待对拍确认；字节长度待对拍确认
-0x3c,MilCmdDoubleBufferedBitmapCopyForward,,,gap,待登记（缺陷册未分配 D- 编号）,无参数结构体；长度待对拍确认；s_notImpl（E_NOTIMPL）；参数结构体待对拍确认；字节长度待对拍确认
+0x3b,MilCmdDoubleBufferedBitmap,,,gap,D-007,无参数结构体；长度待对拍确认；s_notImpl（E_NOTIMPL；D-007）；参数结构体待对拍确认；字节长度待对拍确认
+0x3c,MilCmdDoubleBufferedBitmapCopyForward,,,gap,D-007,无参数结构体；长度待对拍确认；s_notImpl（E_NOTIMPL；D-007）；参数结构体待对拍确认；字节长度待对拍确认
 0x3d,MilCmdPartitionNotifyPolicyChangeForNonInteractiveMode,MILCMD_PARTITION_NOTIFYPOLICYCHANGEFORNONINTERACTIVEMODE,8,impl,—,MilCommandStructs.cs:MILCMD_PARTITION_NOTIFYPOLICYCHANGEFORNONINTERACTIVEMODE(2 字段)；MilCommandLayout.cs:FixedSize
 0x57,MilCmdAxisAngleRotation3D,MILCMD_AXISANGLEROTATION3D,36,impl,—,MilCommandStructs.cs:MILCMD_AXISANGLEROTATION3D(6 字段)；MilCommandLayout.cs:FixedSize
 0x58,MilCmdQuaternionRotation3D,MILCMD_QUATERNIONROTATION3D,28,impl,—,MilCommandStructs.cs:MILCMD_QUATERNIONROTATION3D(4 字段)；MilCommandLayout.cs:FixedSize
