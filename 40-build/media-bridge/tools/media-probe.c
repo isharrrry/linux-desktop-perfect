@@ -10,8 +10,9 @@ int main(int argc, char **argv)
     memset(&info, 0, sizeof(info));
     int32_t hr = ldp_media_probe(argv[1], &info);
     if (hr != 0) { printf("{\"ok\":false,\"hr\":%d,\"error\":\"%s\"}\n", hr, info.error); return 2; }
-    printf("{\"ok\":true,\"bytes\":%u,\"px0\":[%u,%u,%u,%u]}\n",
-           info.bytes, info.data[0], info.data[1], info.data[2], info.data[3]);
+    printf("{\"ok\":true,\"bytes\":%u,\"w\":%u,\"h\":%u,\"dur_ms\":%u,\"px0\":[%u,%u,%u,%u]}\n",
+           info.bytes, info.width, info.height, info.duration_ms,
+           info.data[0], info.data[1], info.data[2], info.data[3]);
     ldp_media_free(&info);
     return 0;
 }

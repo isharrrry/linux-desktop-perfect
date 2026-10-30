@@ -3,8 +3,11 @@
 #include <stdint.h>
 
 typedef struct {
-    uint8_t *data;      // 原始 BGRA 帧序列（尺寸由调用方按视频宽高解释）
+    uint8_t *data;       // 原始 BGRA 帧序列（按 width/height 解释）
     uint32_t bytes;
+    uint32_t width;      // 视频自然尺寸（来自 gst-discoverer）
+    uint32_t height;
+    uint32_t duration_ms;// 时长（毫秒）
     char     error[256];
 } ldp_media_info;
 

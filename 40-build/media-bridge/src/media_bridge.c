@@ -29,6 +29,27 @@ static int run_gst_first_frame(const char *path, const char *out_raw)
     return system(cmd) == 0 ? 0 : -1;
 }
 
+// 用 gst-discoverer-1.0 取时长与视频尺寸（它输出人类可读的树，这里按关键字解析）。
+//   【为什么用 discoverer 而不是自己在 pipeline 里取 caps】
+//   pipeline 那一路只能拿到裸字节；尺寸/时长需要 caps 或已经建好的时钟，
+//   而 discoverer 一条命令就把这两样都给全了。
+static void probe_meta(const char *path, ldp_media_info *out)
+{
+    char cmd[4096];
+    snprintf(cmd, sizeof(cmd), "gst-discoverer-1.0 '%s' 2>/dev/null", path);
+    FILE *p = popen(cmd, "r");
+    if (!p) return;
+    char line[512];
+    while (fgets(line, sizeof(line), p)) {
+        int h = 0, m = 0, s2 = 0;
+        if (strstr(line, "Duration:") && sscanf(strstr(line, "Duration:"), "Duration: %d:%d:%d", &h, &m, &s2) == 3)
+            out->duration_ms = (uint32_t)(((h * 60 + m) * 60 + s2) * 1000);
+        if (strstr(line, "Width:")) sscanf(strstr(line, "Width:"), "Width: %u", &out->width);
+        if (strstr(line, "Height:")) sscanf(strstr(line, "Height:"), "Height: %u", &out->height);
+    }
+    pclose(p);
+}
+
 int32_t ldp_media_probe(const char *path, ldp_media_info *out)
 {
     if (!path || !out) return E_INVALIDARG_;
@@ -53,6 +74,7 @@ int32_t ldp_media_probe(const char *path, ldp_media_info *out)
     fclose(f);
     unlink(raw);
     if (n == 0) { snprintf(out->error, sizeof(out->error), "解码结果为空（0 字节）"); return E_NOTIMPL_; }
+    probe_meta(path, out);   // 尺寸/时长（拿不到就是 0，不假装知道）
     out->bytes = (uint32_t)n;
     out->data = (uint8_t *)malloc(n);
     if (!out->data) return E_NOTIMPL_;
