@@ -14,14 +14,43 @@ const env = {
     probes: Object.fromEntries(PROBES.map((p) => [p.path, p.exists ? 'present' : 'missing'])),
 };
 
-if (missing.length) {
+const missingNotes = missing.map((m) => `缺被测对象：${m.path}（${m.why}）`);
+
+// 真跑：起样本（SCR-01 有 `TextBox`），把「有没有 IME 桥」这件事落成读数：
+//   · shim 里没有任何 XIM/ibus 入口（`grep -c "XOpenIM\|XCreateIC\|ibus"` = 0）；
+//   · WPF 侧的 `Ime`/`TextComposition` 路径要求 `WM_IME_*` 消息，而 shim 从不产生；
+//   ⇒ 预编辑/提交/取消/候选窗四条路径都没有承载面。这里如实判红并写明缺口。
+const { startXvfb, waitDisplay, startApp, findWindow, waitMapped, sleep, DOTNET_ROOT } = await import('../lib/app-session.mjs');
+{
+  const { spawnSync } = await import('node:child_process');
+  const ximInShim = Number(spawnSync('sh', ['-c', 'grep -c "XOpenIM\|XCreateIC\|XIM_" 40-build/native-shim/src/*.c | awk -F: "{s+=\$2} END {print s+0}"'], { encoding: 'utf8' }).stdout.trim() || 0);
+  const xvfb = startXvfb();
+  let app = null;
+  const steps = [];
+  try {
+    if (await waitDisplay(xvfb.display)) {
+      app = await startApp({ sample: 'WpfFirstWindow', scr: 'SCR-01', display: xvfb.display });
+      if (app.ok) {
+        const win = await findWindow(xvfb.display, 'WpfFirstWindow [SCR-01]', 25000);
+        if (win) await waitMapped(xvfb.display, win.id);
+        steps.push({ step: 'window', ok: !!win, got: win ? win.title : null });
+      } else {
+        steps.push({ step: 'startup', ok: false, reason: app.reason });
+      }
+    }
+  } finally {
+    if (app && app.ok) app.kill();
+    xvfb.kill();
+  }
+  const bad = steps.filter((s) => !s.ok);
   finish({
-    acc: 'ACC-017', started, env, verdict: 'FAIL',
+    acc: 'ACC-017', started, env: { ...env, dotnet_root: DOTNET_ROOT, xim_symbols_in_shim: ximInShim, case: opts.case || 'preedit', steps },
     expectRef: 'ACC-017：预编辑/提交/取消/候选窗定位四路径',
+    verdict: 'FAIL',
     diff: [
-      ...missing.map((m) => `缺被测对象：${m.path}（${m.why}）`),
-      '依赖切片：S2 IME（TG-006）',
-      '说明：本条为能力探测式红读数，不伪造通过（ADR-014）',
+      ...missingNotes,
+      ...bad.map((s) => `${s.step} 失败：${JSON.stringify(s).slice(0, 240)}`),
+      `缺口：shim 无 XIM 入口（XOpenIM/XCreateIC 计数 = ${ximInShim}），也不产生 WM_IME_* ⇒ 预编辑/提交/取消/候选窗四条路径都没有承载面；方向是 XIM 协议（X 自带，不依赖 ibus daemon）或 ibus 的 D-Bus 桥`,
     ],
   });
 }
