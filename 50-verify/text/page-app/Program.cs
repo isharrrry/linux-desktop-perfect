@@ -13,6 +13,8 @@ namespace LdpVerify.Page
     public sealed class PageCheckApp : Application
     {
         private readonly string _out;
+        // 当前阶段（看门狗会把它写进读数）
+        private volatile string _stage = "startup";
 
         public PageCheckApp(string @out) { _out = @out; }
 
@@ -27,8 +29,10 @@ namespace LdpVerify.Page
                 Thread.Sleep(20000);
                 try
                 {
+                    // 把**卡在哪个阶段**也写出来：比单说"卡住"更能指路（D-019）
                     File.WriteAllText(_out,
-                        "{\"ok\":false,\"type\":\"WatchdogTimeout\",\"error\":\"分页测量 20 s 未返回（D-019）\"}\n");
+                        "{\"ok\":false,\"type\":\"WatchdogTimeout\",\"stage\":\"" + _stage +
+                        "\",\"error\":\"分页测量 20 s 未返回（D-019，阶段=" + _stage + "）\"}\n");
                 }
                 catch { }
                 // 用 WPF 的正常退出通道（Environment.Exit 会绕过 WPF 清理，实测 SIGABRT）
@@ -40,6 +44,7 @@ namespace LdpVerify.Page
             try
             {
                 // 一段足够长的文本 + 固定页尺寸，确保会分成多页
+                _stage = "build-document";
                 var doc = new FlowDocument();
                 doc.PageWidth = 400;
                 doc.PageHeight = 300;
@@ -54,9 +59,12 @@ namespace LdpVerify.Page
                 for (int i = 0; i < 120; ++i) sb.Append("第 ").Append(i + 1).Append(" 行：LinuxDesktopPerfect 的 FlowDocument 分页验证文本。\n");
                 doc.Blocks.Add(new Paragraph(new Run(sb.ToString())));
 
+                _stage = "get-paginator";
                 DocumentPaginator pag = ((IDocumentPaginatorSource)doc).DocumentPaginator;
                 pag.PageSize = new Size(400, 300);
+                _stage = "compute-page-count";
                 pag.ComputePageCount();
+                _stage = "get-first-page";
                 int pages = pag.PageCount;
 
                 // 再取第一页的可视内容（验证分页不是"只报数字"）
