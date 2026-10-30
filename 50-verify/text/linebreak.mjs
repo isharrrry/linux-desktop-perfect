@@ -96,7 +96,9 @@ let pagination = null;
         spawnSync('sh', ['-c',
           `DISPLAY=${xv.display} DOTNET_ROOT=${DOTNET_ROOT} DOTNET_ReadyToRun=0 ` +
           `WPF_LINUX_WIN32_SHIM=${FRAMEWORK_DIR}/libwpfwin32.so ` +
-          `timeout 30 ${DOTNET_ROOT}/dotnet ${appDll} ${out} > /tmp/ldp-page-app.log 2>&1`],
+          `${DOTNET_ROOT}/dotnet ${appDll} ${out} > /tmp/ldp-page-app.log 2>&1`],
+          // ⚠️ 不起 shell 的 `timeout`：page-app 自带 20 s 看门狗，外层再套 timeout 会和它抢
+          //   退出权（实测：外层先杀 ⇒ 看门狗的回写被抢掉 ⇒ 判据读到 null）。
           { encoding: 'utf8', timeout: 45000 });
       }
     } finally {
@@ -106,12 +108,13 @@ let pagination = null;
   }
 }
 
-const degradeReason = '换行与双向已双路径验；FlowDocument/RichTextBox 分页与 PTS 缺口转接（MOD-33/34 宿主集成）未实现，DEGRADED ≠ PASS';
+const degradeReason = '换行与双向已双路径验；**分页面**已接入 `page-app` 的读数，但分页测量在字体回退缺口下**卡住**'
+    + `（${pagination ? (pagination.type || 'unknown') + '：' + (pagination.error || '') : '无读数'}）⇒ D-019 未解；DEGRADED ≠ PASS`;
 finish({
   acc: 'ACC-015',
   started,
   expectRef: 'ACC-015：换行机会点与双向级别与基准一致（分页由宿主集成，未覆盖）',
-  env: { ...env, cases: rows },
+  env: { ...env, cases: rows, pagination },
   verdict: diff.length ? 'FAIL' : 'DEGRADED',
   degrade: diff.length ? 'none' : degradeReason,
   diff: diff.length ? diff.slice(0, 8) : [`未覆盖项：${degradeReason}`],
