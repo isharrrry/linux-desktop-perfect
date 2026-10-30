@@ -6,7 +6,6 @@
     <!-- 对应 SCR-01 元素属性表：路径 0/0 ~ 0/6；读数文本是结构判据的数据源，格式别改 -->
     <StackPanel Margin="12" AllowDrop="True" Drop="OnFileDrop" DragOver="OnFileDragOver">
         <TextBlock x:Name="TitleText" Text="WpfFirstWindow" AutomationProperties.Name="WpfFirstWindow" FontSize="20" />
-        <TextBlock x:Name="DropText" Text="drop=none" AutomationProperties.Name="drop=none" Margin="0,8,0,0" />
         <TextBox AutomationProperties.Name="输入样本" Margin="0,8,0,0" />
         <Button Content="提交" AutomationProperties.Name="提交" Margin="0,8,0,0" />
         <Button Content="不可用示例" AutomationProperties.Name="不可用示例" IsEnabled="False" Margin="0,8,0,0" />

@@ -39,8 +39,10 @@ namespace LinuxDesktopPerfect.Samples.WpfFirstWindow
                 string[] files = e.Data.GetData(DataFormats.FileDrop) as string[];
                 if (files != null && files.Length > 0) text = "drop=" + files[0];
             }
-            DropText.Text = text;
-            AutomationProperties.SetName(DropText, text);
+            // ⚠️ 不新增 XAML 元素：SCR-01 的元素属性表把路径 0/0~0/6 定死（ACC-027 的结构契约），
+            //   多一个 TextBlock 会让整棵树路径错位。拖放结果复用已有的 TitleText。
+            TitleText.Text = text;
+            AutomationProperties.SetName(TitleText, text);
             e.Handled = true;
         }
 
