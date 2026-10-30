@@ -13,6 +13,8 @@
 //
 // 【诚实纪律】任何未实现的入口都返回 `E_NOTIMPL(0x80004001)` 并 `SetLastError`，绝不返回"看起来有效的假句柄"。
 
+#define _GNU_SOURCE
+#include <dlfcn.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -138,13 +140,74 @@ int32_t IWICBitmapSource_CopyPixels_Proxy(void *source, const void *rect, uint32
     return S_OK_;
 }
 
+// ── 流入口（D-018 第三步）─────────────────────────────────────────────────────
+// WPF 主路径：`CreateDecoderFromStream(factory, IStream*, …)`，而那个 `IStream*` 在本工程里
+// 是 milcore 的 `MilStreamObject` 句柄 —— 读字节要通过 bridge 的扁平导出 `LdpMilStreamRead`。
+// 这里用 dlopen/dlsym 在运行时拿到它（libwpfwic 不静态依赖 wpfgfx_cor3）。
+typedef int32_t (*ldp_read_fn)(void *handle, uint8_t *buffer, uint32_t cb, uint32_t *cbRead);
+
+static ldp_read_fn wic_stream_read_fn(void)
+{
+    static ldp_read_fn cached = (ldp_read_fn)-1;
+    if (cached != (ldp_read_fn)-1) return cached;
+    cached = NULL;
+    // ①先查进程全局符号（探针用 -rdynamic 把 LdpMilStreamRead 导出在可执行文件里；真跑时
+    //   bridge 的 so 可能以 RTLD_GLOBAL 加载，也能命中）
+    cached = (ldp_read_fn)dlsym(RTLD_DEFAULT, "LdpMilStreamRead");
+    if (cached) return cached;
+    // ②再查已加载的 wpfgfx_cor3（.NET 通常用 RTLD_LOCAL 加载）
+    void *h = dlopen("wpfgfx_cor3.so", RTLD_NOW | RTLD_NOLOAD);
+    if (!h) h = dlopen("wpfgfx_cor3.dll", RTLD_NOW | RTLD_NOLOAD);
+    if (!h) return NULL;
+    cached = (ldp_read_fn)dlsym(h, "LdpMilStreamRead");
+    return cached;
+}
+
+int32_t IWICImagingFactory_CreateDecoderFromStream_Proxy(void *factory, void *stream,
+                                                          void *guidVendor, uint32_t metadataOptions,
+                                                          void **out)
+{
+    (void)guidVendor; (void)metadataOptions;
+    if (!out) return E_NOTIMPL_;
+    *out = NULL;
+    if (!wpf_wic_factory_valid(factory) || !stream) return 0x80070057;
+    ldp_read_fn read_fn = wic_stream_read_fn();
+    if (!read_fn) return E_NOTIMPL_;   // bridge 不在（没有 LdpMilStreamRead）⇒ 诚实失败
+    // 把流整段读出来（上限 64 MB，防止坏 handled 撑爆内存）
+    size_t cap = 1 << 20, len = 0;
+    uint8_t *buf = (uint8_t *)malloc(cap);
+    if (!buf) return E_NOTIMPL_;
+    for (;;) {
+        if (len + 65536 > cap) {
+            if (cap >= (64u << 20)) { free(buf); return E_NOTIMPL_; }
+            cap *= 2;
+            uint8_t *p = (uint8_t *)realloc(buf, cap);
+            if (!p) { free(buf); return E_NOTIMPL_; }
+            buf = p;
+        }
+        uint32_t got = 0;
+        int32_t hr = read_fn(stream, buf + len, (uint32_t)(cap - len), &got);
+        if (hr != 0) { free(buf); return hr; }
+        if (got == 0) break;     // EOF
+        len += got;
+    }
+    wic_decoder *d = (wic_decoder *)calloc(1, sizeof(wic_decoder));
+    if (!d) { free(buf); return E_NOTIMPL_; }
+    char err[256] = { 0 };
+    int32_t hr = ldp_png_decode(buf, len, &d->img, err, sizeof(err));
+    free(buf);
+    if (hr != 0) { free(d); return hr; }
+    d->magic = WIC_DECODER_MAGIC;
+    *out = d;
+    return S_OK_;
+}
+
 // ── 未实现的 WIC 入口：明确失败（数量与 WPF 的 P/Invoke 面一一对应，后续逐个填实）──
 #define WIC_STUB(name) \
     int32_t name(void) { return E_NOTIMPL_; }
 
 WIC_STUB(WICSetEncoderFormat_Proxy)
 WIC_STUB(IWICImagingFactory_CreateDecoderFromFileHandle_Proxy)
-WIC_STUB(IWICImagingFactory_CreateDecoderFromStream_Proxy)
 WIC_STUB(IWICImagingFactory_CreateEncoder_Proxy)
 WIC_STUB(IWICImagingFactory_CreateComponentInfo_Proxy)
 WIC_STUB(IWICImagingFactory_CreateBitmap_Proxy)

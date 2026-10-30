@@ -1,0 +1,73 @@
+// 流桥：把 milcore 的 `MilStreamObject`（`MILCreateStreamFromStreamDescriptor` 造出来的
+// 那个句柄）暴露成"能读字节"的扁平导出，供 `libwpfwic.so` 的 `CreateDecoderFromStream` 使用。
+//
+// 【为什么需要这一层】WPF 的 `BitmapDecoder` 把图片数据包成 `IStream*` 传给 WIC，而那个
+// `IStream*` 在本工程的实现里其实是 **Mil 设备对象表的句柄**（不是 COM vtable）——
+// 见 `MilNative.MILCreateStreamFromStreamDescriptor` 的注释。libwpfwic 是 C 代码、拿不到托管对象，
+// 于是这里提供 `LdpMilStreamRead/Seek/Size` 三个扁平函数当作两侧之间的约定。
+//
+// 【槽位约定】**不手抄**：`StreamAsIStream.StreamDescriptor` 的字段顺序是
+//   pfnDispose(0) pfnRead(1) pfnSeek(2) pfnStat(3) pfnWrite(4) …（见上游 StreamAsIStream.cs:33-39），
+//   与 `MilNative.StreamWriteCallbackOffset = 32`（= slot 4）互相印证。
+
+using System;
+using System.Runtime.InteropServices;
+using WpfGfx.Linux.Interop;
+
+namespace MilBridge
+{
+    public static unsafe class LdpStreamBridge
+    {
+        private const int SLOT_READ = 1;
+        private const int SLOT_SEEK = 2;
+
+        [UnmanagedFunctionPointer(CallingConvention.Winapi)]
+        private delegate int ReadDelegate(IntPtr pSD, byte* buffer, uint cb, out uint cbRead);
+
+        [UnmanagedFunctionPointer(CallingConvention.Winapi)]
+        private delegate int SeekDelegate(IntPtr pSD, long offset, uint origin, out long newPos);
+
+        private static MilStreamObject StreamOf(void* handle)
+        {
+            if (handle == null) return null;
+            MilDeviceObject obj = MilDeviceObjectTable.Resolve((IntPtr)handle);
+            if (obj == null) return null;
+            MilStreamObject ms = obj.Payload as MilStreamObject;
+            if (ms == null || ms.Descriptor == IntPtr.Zero) return null;
+            return ms;
+        }
+
+        /// <summary>从流里读最多 cb 字节；返回 HRESULT，读到的字节数写进 cbRead。</summary>
+        [UnmanagedCallersOnly(EntryPoint = "LdpMilStreamRead")]
+        public static int LdpMilStreamRead(void* handle, byte* buffer, uint cb, uint* cbRead)
+        {
+            if (cbRead != null) *cbRead = 0;
+            if (buffer == null) return unchecked((int)0x80070057);   // E_INVALIDARG
+            MilStreamObject ms = StreamOf(handle);
+            if (ms == null) return unchecked((int)0x80070057);
+            IntPtr pfn = Marshal.ReadIntPtr(ms.Descriptor, SLOT_READ * IntPtr.Size);
+            if (pfn == IntPtr.Zero) return unchecked((int)0x80004001); // E_NOTIMPL
+            var del = Marshal.GetDelegateForFunctionPointer<ReadDelegate>(pfn);
+            uint read = 0;
+            int hr = del(ms.Descriptor, buffer, cb, out read);
+            if (cbRead != null) *cbRead = read;
+            return hr;
+        }
+
+        /// <summary>在流里定位；origin 用 COM 的 STREAM_SEEK_* 语义（0=SET 1=CUR 2=END）。</summary>
+        [UnmanagedCallersOnly(EntryPoint = "LdpMilStreamSeek")]
+        public static int LdpMilStreamSeek(void* handle, long offset, uint origin, long* newPos)
+        {
+            if (newPos != null) *newPos = 0;
+            MilStreamObject ms = StreamOf(handle);
+            if (ms == null) return unchecked((int)0x80070057);
+            IntPtr pfn = Marshal.ReadIntPtr(ms.Descriptor, SLOT_SEEK * IntPtr.Size);
+            if (pfn == IntPtr.Zero) return unchecked((int)0x80004001);
+            var del = Marshal.GetDelegateForFunctionPointer<SeekDelegate>(pfn);
+            long pos = 0;
+            int hr = del(ms.Descriptor, offset, origin, out pos);
+            if (newPos != null) *newPos = pos;
+            return hr;
+        }
+    }
+}

@@ -26,6 +26,7 @@ $(OBJDIR)/%.o: $(SRCDIR)/%.c
 probes: $(TARGET)
 	@mkdir -p $(BINDIR)
 	$(CC) $(CSTD) $(OPT) $(WARN) -Isrc -o $(BINDIR)/wic-dec-probe tools/wic-dec-probe.c -ldl
+	$(CC) $(CSTD) $(OPT) $(WARN) -rdynamic -Isrc -o $(BINDIR)/wic-stream-probe tools/wic-stream-probe.c -ldl
 	$(CC) $(CSTD) $(OPT) $(WARN) -Isrc -o $(BINDIR)/ldp-png-probe tools/../src/png_probe.c $(OBJDIR)/png_decode.o -lz 2>/dev/null || true
 	@echo "== WIC 探针就绪：$(BINDIR)/wic-dec-probe"
 
