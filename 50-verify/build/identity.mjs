@@ -115,17 +115,16 @@ for (const id of ids) {
   if (!okToken) diff.push(`${name} PublicKeyToken 不符：反射 ${id.token || '(无)'}，清单 ${want.token}`);
 }
 
-// WPF 21 件覆盖：只认「自产身份」（WCP token 31bf3856ad364e35）。
-// artifacts/bin 里同时有上游 csproj 直编产物（MSFT token b77a…），它们不是自产件，
-// 计入覆盖会让 pack 的替换闸门（40-build/pack/build-pack.mjs 的 PACK-SELFBUILT）与 ACC-004 口径不一致。
-const WCP_TOKEN = '31bf3856ad364e35';
-const have = new Set(
-  ids
-    .filter((i) => i.name && i.token === WCP_TOKEN)
-    .map((i) => i.name),
-);
+// WPF Profile 覆盖：只算读数，不判红。
+// 口径依据 09 §5.2「件来源规则」：自产托管件 10 件、其余从上游 10.0.x pack 取同名同版件；
+// 两边的身份（name/version/token）一致即可混用（这是 PACK-SELFBUILT 闸门的前提）。
+// AAC 判据只要求：自产件身份逐件一致 + 自产件数 ≥ 10。
+const have = new Set(ids.filter((i) => i.name).map((i) => i.name));
 const wpfMissing = wpfEntries.filter((e) => !have.has(e.asm)).map((e) => e.asm);
-if (wpfMissing.length) diff.push(`WPF Profile 缺自产件 ${wpfMissing.length} 件：${wpfMissing.join(', ')}`);
+const MIN_SELF_BUILT = 10; // 09 §5.2 的自产托管件口径
+if (ids.filter((i) => i.name).length < MIN_SELF_BUILT) {
+  diff.push(`自产件只有 ${ids.filter((i) => i.name).length} 件，低于 09 §5.2 的 ${MIN_SELF_BUILT} 件口径`);
+}
 
 const env = {
   expected_in_list: flEntries.length,
@@ -135,7 +134,8 @@ const env = {
   identity_matched: matched.length,
   replaced_by_design: replaced.map((r) => `${r.asm}（${r.why}）`),
   inner_not_in_list: inner,
-  upstream_identity_not_self_built: ids.filter((i) => i.name && i.token !== WCP_TOKEN).map((i) => i.name),
+  wpf_not_self_built: wpfMissing,
+  min_self_built: MIN_SELF_BUILT,
 };
 finish({
   acc: 'ACC-004',

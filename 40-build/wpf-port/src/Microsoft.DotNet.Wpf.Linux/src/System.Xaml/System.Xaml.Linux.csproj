@@ -20,7 +20,7 @@
     <ProduceReferenceAssembly>false</ProduceReferenceAssembly>
     <SignAssembly>true</SignAssembly>
     <PublicSign>true</PublicSign>
-    <AssemblyOriginatorKeyFile>$(WpfLinuxRoot)src/Linux/build/keys/WcpPublicKey.snk</AssemblyOriginatorKeyFile>
+    <AssemblyOriginatorKeyFile>$(WpfLinuxRoot)src/Linux/build/keys/EcmaPublicKey.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="System.Security.Permissions" Version="9.0.0" />

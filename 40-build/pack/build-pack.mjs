@@ -93,7 +93,14 @@ const attr = (tag, name) => {
   return m ? m[1] : null;
 };
 const flEntries = [...flXml.matchAll(/<File\b[^>]*\/>/g)]
-  .map((m) => ({ asm: attr(m[0], 'AssemblyName'), rel: attr(m[0], 'Path'), type: attr(m[0], 'Type'), profile: attr(m[0], 'Profile') }))
+  .map((m) => ({
+    asm: attr(m[0], 'AssemblyName'),
+    rel: attr(m[0], 'Path'),
+    type: attr(m[0], 'Type'),
+    profile: attr(m[0], 'Profile'),
+    version: attr(m[0], 'AssemblyVersion'),
+    token: attr(m[0], 'PublicKeyToken'),
+  }))
   .filter((e) => e.asm && e.rel);
 if (!flEntries.length) fail('LDP-E-PACK-205', `FrameworkList 解析出 0 条清单：${rel(FL)}`);
 
@@ -116,15 +123,38 @@ for (const e of flEntries) {
   if (impl) selfAsms.set(e.asm, { impl, ref: null });
 }
 
-// 替换闸门（PACK-SELFBUILT）：只有 WPF Profile 的 21 件**全部**有自产产物时才启用替换。
-// 理由（实测 MC1000，2026-10-30）：自产件按 WCP 公钥签名（token 31bf3856ad364e35），而上游 ref 件是 MSFT token
-// （b77a5c561934e089）。若只替换一部分，XAML 编译期的 MetadataLoadContext 会同时遇到两组身份 ——
-// 自产 PresentationFramework 引用 System.Xaml@31bf，而残留的上游件（如 Ribbon/UIAutomationClient）引用 @b77a
-// ⇒ 报「Could not find assembly 'System.Xaml, Version=10.0.0.0, PublicKeyToken=…'」。
-// 所以替换必须整体生效；未齐时保持上游件（ACC-001/002 可绿），齐了以后一次切换（ACC-004 也才可能全绿）。
-const wpfEntries = flEntries.filter((e) => e.profile === 'WPF');
-const wpfMissing = wpfEntries.filter((e) => !selfAsms.has(e.asm)).map((e) => e.asm);
-const USE_SELF_BUILT = argv.includes('--self-built') || wpfMissing.length === 0;
+// 替换闸门（PACK-SELFBUILT）：替换的前提不是「21 件齐」，而是**每个自产件的身份与清单一致**
+// （name / AssemblyVersion / PublicKeyToken）。理由（实测 MC1000，2026-10-30）：
+// 上游件与自产件的 token 必须逐件相同，否则 XAML 编译期的 MetadataLoadContext 会同时遇到两组身份
+// （自产 PresentationFramework 引用 System.Xaml@某 token，残留的上游件引用另一个）→ 报
+// 「Could not find assembly 'System.Xaml, … PublicKeyToken=…'」。身份一致时，混用自产/上游件是安全的。
+// 身份口径由 20-spec ACC-004 与 50-verify/build/identity.mjs 校验（同一把尺子）。
+const ASM_ID = path.join(ROOT, '50-verify/build/asm-id/bin/Release/net10.0/asm-id.dll');
+// 已登记的替换件（D-004 必抛桩件自产替身）不参与身份比对：它们的身份是按设计不同的。
+const MUST_STUB = path.join(ROOT, '40-build/pack/must-stub.json');
+const stubAsms = new Set(
+  fs.existsSync(MUST_STUB) ? (JSON.parse(fs.readFileSync(MUST_STUB, 'utf8')).entries || []).map((e) => e.assembly) : [],
+);
+function verifyIdentity() {
+  if (!selfAsms.size) return { ok: false, reason: '没有自产件（先跑 node 40-build/wpf-port/build-port.mjs --map）' };
+  if (!fs.existsSync(ASM_ID)) return { ok: false, reason: `判据侧反射工具未构建：${rel(ASM_ID)}（dotnet build 50-verify/build/asm-id）` };
+  const list = [...selfAsms.keys()].map((asm) => selfAsms.get(asm).impl);
+  const r = run('dotnet', [ASM_ID, ...list]);
+  const ids = JSON.parse(r.toString('utf8'));
+  const bad = [];
+  for (const id of ids) {
+    const want = flEntries.find((e) => e.asm === id.name);
+    if (!want) continue; // 清单外内部件（PBT/DWF/Provider），不参与 pack 替换
+    if (stubAsms.has(id.name)) continue; // D-004：已登记的必抛桩件替身，身份按设计不同
+    if (id.version !== want.version) bad.push(`${id.name} 版本 ${id.version}≠${want.version}`);
+    if (id.token !== want.token) bad.push(`${id.name} token ${id.token || '(无)'}≠${want.token}`);
+  }
+  return bad.length
+    ? { ok: false, reason: `自产件身份与清单不符：${bad.slice(0, 4).join('；')}` }
+    : { ok: true, reason: `自产件身份与清单一致（${ids.length} 件）` };
+}
+const identityCheck = verifyIdentity();
+const USE_SELF_BUILT = argv.includes('--self-built') || identityCheck.ok;
 
 // ---------------------------------------------------------------- 上游取件（缺失时从 NuGet 缓存打包）
 
@@ -300,8 +330,8 @@ const report = {
   },
   self_built_enabled: USE_SELF_BUILT,
   self_built_gate: USE_SELF_BUILT
-    ? 'WPF 21 件齐全，替换整体生效'
-    : `WPF 21 件缺 ${wpfMissing.length} 件（${wpfMissing.join(', ')}），替换整体暂不启用：部分替换会让引用闭包 token 断裂（MC1000）`,
+    ? `自产件身份校验通过：${identityCheck.reason}`
+    : `替换暂不启用：${identityCheck.reason}`,
   notes: [
     'Ref pack 的 data/FrameworkList.xml 与 40-build/pack/FrameworkList.xml 逐字节一致（契约文件为唯一事实源）',
     'Runtime pack 原生件落 runtimes/linux-x64/native/；libSkiaSharp.so 不随包（概设 §2.4）',

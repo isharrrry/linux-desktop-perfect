@@ -53,6 +53,8 @@ const ORDER = [
   { id: 'System.Windows.Input.Manipulations', proj: 'System.Windows.Input.Manipulations/System.Windows.Input.Manipulations.Linux.csproj', asm: 'System.Windows.Input.Manipulations' },
   { id: 'UIAutomationProvider', proj: 'UIAutomationProvider/UIAutomationProvider.Linux.csproj', asm: 'UIAutomationProvider' },
   { id: 'PresentationCore', proj: 'PresentationCore/PresentationCore.Linux.csproj', asm: 'PresentationCore' },
+  { id: 'System.Windows.Primitives', proj: 'System.Windows.Primitives/System.Windows.Primitives.Linux.csproj', asm: 'System.Windows.Primitives' },
+  { id: 'System.Windows.Presentation', proj: 'System.Windows.Presentation/System.Windows.Presentation.Linux.csproj', asm: 'System.Windows.Presentation' },
   { id: 'CycleStub.PresentationFramework', proj: 'CycleStub.PresentationFramework/CycleStub.PresentationFramework.Linux.csproj', asm: 'PresentationFramework' },
   { id: 'CycleStub.ReachFramework', proj: 'CycleStub.ReachFramework/CycleStub.ReachFramework.Linux.csproj', asm: 'ReachFramework' },
   { id: 'PresentationBuildTasks', proj: 'PresentationBuildTasks/PresentationBuildTasks.Linux.csproj', asm: 'PresentationBuildTasks' },

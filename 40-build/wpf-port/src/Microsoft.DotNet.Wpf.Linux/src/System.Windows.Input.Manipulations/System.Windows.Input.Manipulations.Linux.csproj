@@ -20,7 +20,7 @@
     <ProduceReferenceAssembly>false</ProduceReferenceAssembly>
     <SignAssembly>true</SignAssembly>
     <PublicSign>true</PublicSign>
-    <AssemblyOriginatorKeyFile>$(WpfLinuxRoot)src/Linux/build/keys/WcpPublicKey.snk</AssemblyOriginatorKeyFile>
+    <AssemblyOriginatorKeyFile>$(WpfLinuxRoot)src/Linux/build/keys/EcmaPublicKey.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/Common/src/System/SR.cs" />
