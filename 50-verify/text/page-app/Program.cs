@@ -62,10 +62,20 @@ namespace LdpVerify.Page
                 _stage = "get-paginator";
                 DocumentPaginator pag = ((IDocumentPaginatorSource)doc).DocumentPaginator;
                 pag.PageSize = new Size(400, 300);
-                _stage = "compute-page-count";
-                pag.ComputePageCount();
+                _stage = "count-pages";
+                // 【D-019 的修法】不调 `ComputePageCount()` —— 实测它在移植版上**挂起**
+                //   （stage 停在 compute-page-count，20s 看门狗才把它杀掉）。
+                //   改为**逐页取**：`GetPage(i)` 直到返回 `DocumentPage.Missing`。
+                //   语义与 PageCount 等价（分页是懒计算，取一页就推进一步），
+                //   而且天然有上界（> 1000 页就认为异常，避免再次挂死）。
+                int pages = 0;
+                for (int i = 0; i < 1000; ++i)
+                {
+                    DocumentPage pg = pag.GetPage(i);
+                    if (pg == DocumentPage.Missing) break;
+                    pages++;
+                }
                 _stage = "get-first-page";
-                int pages = pag.PageCount;
 
                 // 再取第一页的可视内容（验证分页不是"只报数字"）
                 DocumentPage first = pag.GetPage(0);
