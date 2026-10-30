@@ -67,24 +67,51 @@ if (has('check')) {
 
 if (has('smoke')) {
   // 冒烟：用安装好的根跑一个样本，抓「启动到哪一步」的可复算读数。
-  // 判据口径：不判 PASS/FAIL，只如实记录首个异常类型与消息（阶段推进的证据）。
+  // 会自起 Xvfb（无头会话基线：08 §3.1），并按 install-runtime 生成的启动环境注入
+  // DOTNET_ReadyToRun=0（D-005）与 WPF_LINUX_WIN32_SHIM。
   const sample = path.join(ROOT, 'samples/WpfFirstWindow/bin/Release/net10.0/WpfFirstWindow.dll');
   if (!fs.existsSync(sample)) fail('LDP-E-PACK-205', `样本未构建：${path.relative(ROOT, sample)}（先跑 node 50-verify/build/build-sample.mjs）`);
-  const r = spawnSync(path.join(DEST, 'dotnet'), [sample, '--scr', 'SCR-01'], {
-    encoding: 'utf8',
-    timeout: 60000,
-    env: { ...process.env, DOTNET_ROOT: DEST },
-  });
-  const out = `${r.stdout || ''}${r.stderr || ''}`;
+  const shim = path.join(FX, 'libwpfwin32.so');
+  const display = `:${90 + Math.floor(Math.random() * 9)}`;
+  const xvfb = spawnSync('sh', ['-c', `Xvfb ${display} -screen 0 1280x1024x24 >/dev/null 2>&1 & echo $!`], { encoding: 'utf8' });
+  const xvfbPid = Number((xvfb.stdout || '').trim()) || 0;
+  let result;
+  try {
+    await new Promise((r) => setTimeout(r, 1500));
+    result = spawnSync(path.join(DEST, 'dotnet'), [sample, '--scr', 'SCR-01'], {
+      encoding: 'utf8',
+      timeout: 45000,
+      env: {
+        ...process.env,
+        DOTNET_ROOT: DEST,
+        DOTNET_ReadyToRun: '0',
+        DISPLAY: display,
+        WPF_LINUX_WIN32_SHIM: fs.existsSync(shim) ? shim : '',
+        LD_LIBRARY_PATH: `${FX}/native:${process.env.LD_LIBRARY_PATH || ''}`,
+      },
+    });
+  } finally {
+    if (xvfbPid) try { process.kill(xvfbPid, 'SIGTERM'); } catch {}
+  }
+  const out = `${result.stdout || ''}${result.stderr || ''}`;
+  const stages = [
+    { key: 'host/framework 解析阶段', re: /deps\.json|host|framework/i },
+    { key: 'Application 初始化阶段', re: /ApplicationInit|System\.Windows\.Application/ },
+    { key: '窗口创建阶段', re: /CreateWindowEx|HwndWrapper|HwndSource/ },
+    { key: '渲染提交阶段（DUCE Commit）', re: /DUCE|Commit\(\)|MediaContext/ },
+  ];
+  let stage = '未知阶段';
+  for (const st of stages) if (st.re.test(out)) stage = st.key;
   const first = out.split('\n').find((l) => /Exception|error|Error/.test(l)) || '(无异常行)';
-  const stage = /Application/.test(out) ? 'Application 初始化阶段' : /Presentation/.test(out) ? 'Presentation 加载阶段' : 'host/framework 解析阶段';
   const report = {
     generated_by: '40-build/pack/install-runtime.mjs --smoke',
     dotnet_root: DEST,
     framework: VER,
+    display,
+    env: { DOTNET_ReadyToRun: '0', WPF_LINUX_WIN32_SHIM: shim, DISPLAY: display },
     sample: path.relative(ROOT, sample),
-    exit_code: r.status,
-    timed_out: r.status === null,
+    exit_code: result.status,
+    timed_out: result.status === null,
     stage,
     first_line: first.slice(0, 240),
   };
@@ -92,7 +119,7 @@ if (has('smoke')) {
   fs.mkdirSync(dir, { recursive: true });
   const f = path.join(dir, `startup-${new Date().toISOString().replace(/[:.]/g, '-')}.json`);
   fs.writeFileSync(f, JSON.stringify(report, null, 2) + '\n', 'utf8');
-  console.log(`install-runtime --smoke: 阶段=${stage}；首行=${first.slice(0, 160)}`);
+  console.log(`install-runtime --smoke: 阶段=${stage}；首行=${first.slice(0, 180)}`);
   console.log(`  读数：${path.relative(ROOT, f)}`);
   process.exit(0);
 }
@@ -151,9 +178,25 @@ if (fs.existsSync(nativeSrc)) {
 }
 fs.rmSync(nativeStage, { recursive: true, force: true });
 
+// shim 库同时放到框架根：DllImportResolver（wpf-port 的 Win32ShimResolver）先在本程序集目录找，
+// 再在框架目录找；放根目录最省事，env 里的 WPF_LINUX_WIN32_SHIM 是第二条保险。
+const shimSrc = path.join(FX, 'native/libwpfwin32.so');
+if (fs.existsSync(shimSrc)) fs.copyFileSync(shimSrc, path.join(FX, 'libwpfwin32.so'));
+
 fs.writeFileSync(
   path.join(DEST, 'env.sh'),
-  `# 由 40-build/pack/install-runtime.mjs 生成（SAFE-017：用户目录安装，不提权）\nexport DOTNET_ROOT=${DEST}\nexport PATH=${DEST}:$PATH\nexport LD_LIBRARY_PATH=${FX}/native:\${LD_LIBRARY_PATH:-}\n`,
+  [
+    '# 由 40-build/pack/install-runtime.mjs 生成（SAFE-017：用户目录安装，不提权）',
+    `export DOTNET_ROOT=${DEST}`,
+    `export PATH=${DEST}:$PATH`,
+    `export LD_LIBRARY_PATH=${FX}/native:\${LD_LIBRARY_PATH:-}`,
+    '# 上游 Runtime pack 的程序集是 ReadyToRun（win-x64 原生代码），Linux 上必须关闭 R2R 才能加载（D-005）',
+    'export DOTNET_ReadyToRun=0',
+    '# P/Invoke 的 Win32 面映射到自产 shim（MOD-02/03）',
+    `export WPF_LINUX_WIN32_SHIM=${FX}/libwpfwin32.so`,
+    'unset DISPLAY 2>/dev/null || true',
+    '',
+  ].join('\n'),
   'utf8',
 );
 

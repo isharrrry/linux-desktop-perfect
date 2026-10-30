@@ -306,6 +306,14 @@ function buildRuntimePack() {
     replaced.push({ asm, from: rel(self.impl) });
   }
 
+  // 剔除 Windows 原生件（*_cor3.dll / vcruntime 等）：上游 Runtime pack 的 native 目录随 `runtimes/win-x64/**`
+  // 一起被搬过来，它们在 Linux 上不可加载；若留在框架 native/ 里，DllImport 会「找到但格式不对」→
+  // BadImageFormatException（实测：System.IO.Packaging 的 PackUriHelper 初始化即命中）。
+  const nativeWinDlls = fs
+    .readdirSync(path.join(dir, 'runtimes/linux-x64/native'))
+    .filter((f) => f.endsWith('.dll'));
+  for (const f of nativeWinDlls) fs.rmSync(path.join(dir, 'runtimes/linux-x64/native', f), { force: true });
+
   // 自产原生件：4 个 .so（MOD-52 的 NativeAssetMap，IF-023 布局）
   const nativeDir = path.join(dir, 'runtimes/linux-x64/native');
   fs.mkdirSync(nativeDir, { recursive: true });
@@ -381,6 +389,7 @@ const report = {
     natives: rtPack.natives,
     deps_inner_assets: rtPack.depsAdded,
     native_missing: rtPack.nativeMissing,
+    windows_native_excluded: nativeWinDlls,
     dlls: listPack(rtPack.path).filter((p) => p.endsWith('.dll')),
   },
   self_built_enabled: USE_SELF_BUILT,
