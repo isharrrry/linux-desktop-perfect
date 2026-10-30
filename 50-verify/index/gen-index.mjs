@@ -40,7 +40,9 @@ const COMMANDS = {
   'ACC-024': 'node 50-verify/print/cups-submit.mjs',
   'ACC-025': 'node 50-verify/doc/flowreader.mjs',
   'ACC-026': 'node 50-verify/compose/dwm-detect.mjs --session composite',
-  'ACC-027': 'node 50-verify/a11y/assert-tree.mjs --scr SCR-01',
+  // ACC-027 是**按界面**生效的结构判据：跑一个界面只代表那个界面。
+  //   这里给一条"跑全部 7 个界面"的循环命令，避免把单屏结果误读成全量结论。
+  'ACC-027': 'for s in SCR-01 SCR-02 SCR-03 SCR-04 SCR-05 SCR-06 SCR-07; do node 50-verify/a11y/assert-tree.mjs --scr $s; done',
   'ACC-028': 'node 50-verify/winforms/six-controls.mjs',
   'ACC-029': 'node 50-verify/index/run-all.mjs --dry',
   'ACC-030': 'node 50-verify/degrade/audit.mjs',
