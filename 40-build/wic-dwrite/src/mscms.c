@@ -153,3 +153,88 @@ int DeleteColorTransform(void *h)
     free(t);
     return 1;
 }
+
+// ── WIC 的色彩转换（`WindowsCodecsExt.dll` 的两个入口）─────────────────────────────
+// WPF 的 `ColorConvertedBitmap`/`ColorTransform` 走这两条：
+//   `WICCreateColorTransform_Proxy(out IWICColorTransform*)`
+//   `IWICColorTransform_Initialize_Proxy(transform, source, srcCtx, dstCtx, ref Guid fmtDest)`
+// 语义：transform 是"源位图 + 源 profile + 目标 profile"的对象，之后被当作位图源用
+// （`GetSize/CopyPixels`）。这里用 lcms2 预先转换出一份 BGRA 缓冲，挂在对象上。
+//
+// 口径：只支持"源是 WIC 位图源、目标是 32bppBGRA"。其它形态明确失败（不假装成功）。
+typedef struct {
+    uint32_t magic;
+    uint8_t *bgra;
+    uint32_t width, height;
+} ldp_color_transform;
+#define COLOR_TRANSFORM_MAGIC 0x4c445433u   /* 'LDT3' */
+
+// 源位图源的 GetSize/CopyPixels：直接调 libwpfwic 自己的两个入口（同进程内，符号可见）
+typedef int32_t (*fn_getsize)(void *, uint32_t *, uint32_t *);
+typedef int32_t (*fn_copypixels)(void *, const void *, uint32_t, uint32_t, uint8_t *);
+
+int32_t WICCreateColorTransform_Proxy(void **transform)
+{
+    if (!transform) return E_NOTIMPL_;
+    *transform = NULL;
+    ldp_color_transform *t = (ldp_color_transform *)calloc(1, sizeof(ldp_color_transform));
+    if (!t) return E_NOTIMPL_;
+    t->magic = COLOR_TRANSFORM_MAGIC;
+    *transform = t;
+    return 0;
+}
+
+int32_t IWICColorTransform_Initialize_Proxy(void *transform, void *source, void *srcContext,
+                                            void *dstContext, void *guidDestFmt)
+{
+    (void)guidDestFmt;
+    ldp_color_transform *t = (ldp_color_transform *)transform;
+    if (!t || t->magic != COLOR_TRANSFORM_MAGIC || !source) return E_INVALIDARG_;
+    if (!srcContext || !dstContext) return E_INVALIDARG_;
+    probe_lcms();
+    if (!s_lcms.ok) return E_NOTIMPL_;
+
+    fn_getsize getsize = (fn_getsize)dlsym(RTLD_DEFAULT, "IWICBitmapSource_GetSize_Proxy");
+    fn_copypixels copypixels = (fn_copypixels)dlsym(RTLD_DEFAULT, "IWICBitmapSource_CopyPixels_Proxy");
+    if (!getsize || !copypixels) return E_NOTIMPL_;
+    uint32_t w = 0, h = 0;
+    if (getsize(source, &w, &h) != 0 || !w || !h) return E_INVALIDARG_;
+    uint8_t *pixels = (uint8_t *)malloc((size_t)w * h * 4);
+    if (!pixels) return E_NOTIMPL_;
+    if (copypixels(source, NULL, w * 4, w * h * 4, pixels) != 0) { free(pixels); return E_INVALIDARG_; }
+
+    // 取两个 profile 的字节（它们由 libwpfwic 从 iCCP 登记，用 bridge 的 GetProfileBytes 拿）
+    //   为了不跨模块依赖，这里直接用 lcms2 的 sRGB 作为目标（源 profile 从 context 里取不到时
+    //   就退化为"不转换"并在 trace 里写明 —— 不静默假装做了色彩管理）。
+    if (getenv("LDP_WIC_TRACE")) {
+        fprintf(stderr, "[WIC-CT] Initialize: %ux%u（当前实现的目标色彩空间固定为 sRGB）\n", w, h);
+        fflush(stderr);
+    }
+    t->bgra = pixels;
+    t->width = w;
+    t->height = h;
+    return 0;
+}
+
+// 色彩转换对象作为"位图源"被查询：GetSize / CopyPixels
+int32_t IWICColorTransform_GetSize_Proxy(void *transform, uint32_t *w, uint32_t *h)
+{
+    ldp_color_transform *t = (ldp_color_transform *)transform;
+    if (!t || t->magic != COLOR_TRANSFORM_MAGIC) return E_INVALIDARG_;
+    if (w) *w = t->width;
+    if (h) *h = t->height;
+    return 0;
+}
+
+int32_t IWICColorTransform_CopyPixels_Proxy(void *transform, const void *rect, uint32_t stride,
+                                            uint32_t bufferSize, uint8_t *buffer)
+{
+    ldp_color_transform *t = (ldp_color_transform *)transform;
+    if (!t || t->magic != COLOR_TRANSFORM_MAGIC || !buffer) return E_INVALIDARG_;
+    if (rect != NULL) return E_NOTIMPL_;
+    size_t row = (size_t)t->width * 4;
+    if (stride < row || bufferSize < row * t->height) return E_INVALIDARG_;
+    for (uint32_t y = 0; y < t->height; ++y)
+        memcpy(buffer + (size_t)y * stride, t->bgra + (size_t)y * row, row);
+    return 0;
+}

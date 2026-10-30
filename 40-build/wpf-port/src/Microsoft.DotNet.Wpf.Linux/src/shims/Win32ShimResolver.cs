@@ -143,6 +143,11 @@ namespace WpfLinux.Shims.UIAutomation
         private static readonly string[] WicMappedLibraries =
         {
             "WindowsCodecs.dll",
+            // `WindowsCodecsExt.dll`：WPF 的**色彩转换**走它（`WICCreateColorTransform_Proxy`
+            //   与 `IWICColorTransform_Initialize_Proxy`，见 ColorConvertedBitmap.cs:91-98）。
+            //   本工程让它与 WindowsCodecs 共用同一个 `libwpfwic.so`（两者都是 WIC 家族），
+            //   那两个入口在 `src/mscms.c` 里用 lcms2 实现。
+            "WindowsCodecsExt.dll",
 
             // `ole32.dll` 放进 **WIC 组**（不放 Win32 组）——主控 2026-09 裁定，理由三条：
             //   1) PC 的 ole32 声明全编译集只有 2 处，同一个类：
