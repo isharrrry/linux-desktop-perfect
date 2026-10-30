@@ -255,6 +255,10 @@ namespace Ldp.A11y
             if (el is Canvas) return true;
             if (el is StatusBar) return true;
             if (el is Panel) return true;
+            // Ribbon 的容器族（Ribbon/RibbonTab/RibbonGroup/…）内部是可访问对象，必须递归；
+            // 直接用类型名判断，避免 LdpA11y 反向依赖 System.Windows.Controls.Ribbon。
+            string tn = el.GetType().FullName;
+            if (tn != null && tn.StartsWith("System.Windows.Controls.Ribbon.", StringComparison.Ordinal)) return true;
             return false;
         }
 
