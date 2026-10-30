@@ -605,6 +605,50 @@ int32_t IWICImagingFactory_CreateBitmapFromMemory_Proxy(void *factory, uint32_t 
     return S_OK_;
 }
 
+// ── context → profile 字节 的自管表 ─────────────────────────────────────────────
+// 【为什么自管】色彩转换要从两个 color context 取 profile 字节；bridge 的
+//   `IWICColorContext_GetProfileBytes_Proxy` 在实测里返回 E_INVALIDARG（长度却回填正确），
+//   与其依赖那条跨模块路径，不如在**本 shim 内部**留一份映射：登记 context 时把字节存下来。
+typedef struct { void *ctx; uint8_t *data; uint32_t len; } wic_ctx_profile;
+static wic_ctx_profile s_ctx_profiles[64];
+static int s_ctx_profile_count;
+static pthread_mutex_t s_ctx_lock = PTHREAD_MUTEX_INITIALIZER;
+
+void wic_ctx_profile_set(void *ctx, const uint8_t *data, uint32_t len)
+{
+    if (!ctx || !data || len == 0) return;
+    pthread_mutex_lock(&s_ctx_lock);
+    for (int i = 0; i < s_ctx_profile_count; ++i) {
+        if (s_ctx_profiles[i].ctx == ctx) {
+            free(s_ctx_profiles[i].data);
+            s_ctx_profiles[i].data = (uint8_t *)malloc(len);
+            if (s_ctx_profiles[i].data) { memcpy(s_ctx_profiles[i].data, data, len); s_ctx_profiles[i].len = len; }
+            else { s_ctx_profiles[i].len = 0; }
+            pthread_mutex_unlock(&s_ctx_lock);
+            return;
+        }
+    }
+    if (s_ctx_profile_count < 64) {
+        wic_ctx_profile *e = &s_ctx_profiles[s_ctx_profile_count++];
+        e->ctx = ctx;
+        e->data = (uint8_t *)malloc(len);
+        if (e->data) { memcpy(e->data, data, len); e->len = len; }
+    }
+    pthread_mutex_unlock(&s_ctx_lock);
+}
+
+// 供 mscms.c 取（返回内部缓冲的地址与长度；调用方只读）
+const uint8_t *wic_ctx_profile_get(void *ctx, uint32_t *len)
+{
+    const uint8_t *p = NULL;
+    pthread_mutex_lock(&s_ctx_lock);
+    for (int i = 0; i < s_ctx_profile_count; ++i) {
+        if (s_ctx_profiles[i].ctx == ctx) { p = s_ctx_profiles[i].data; if (len) *len = s_ctx_profiles[i].len; break; }
+    }
+    pthread_mutex_unlock(&s_ctx_lock);
+    return p;
+}
+
 // ── 颜色上下文（ICC）────────────────────────────────────────────────────────────
 // 两个入口是一对：`WICCreateColorContext` 造**空**上下文，`InitializeFromMemory` 再填 profile。
 // WIC 的语义就是"填充已有对象"（不是创建），所以句柄统一登记在 bridge 的 MilColorContextTable，
@@ -678,6 +722,10 @@ int32_t IWICColorContext_InitializeFromMemory_Proxy(void *context, uint8_t *prof
     return (int32_t)hr;
 }
 
+// ── context → profile 字节 的自管表 ─────────────────────────────────────────────
+// 【为什么自管】色彩转换要从两个 color context 取 profile 字节；bridge 的
+//   `IWICColorContext_GetProfileBytes_Proxy` 在实测里返回 E_INVALIDARG（长度却回填正确），
+//   与其依赖那条跨模块路径，不如在**本 shim 内部**留一份映射：登记 context 时把字节存下来。
 // ── 颜色上下文（ICC）：PNG 无内嵌 profile ⇒ 实际数量 0（不是"忘了实现"）─────────────
 // WPF 用它判断"要不要做色彩管理"。返回 0 个上下文是**真值**：本解码器只解像素，
 // 不做 ICC 解析（D-018 的 ICC 分支仍缺，见已知坑清单）。
@@ -716,6 +764,7 @@ int32_t IWICBitmapFrameDecode_GetColorContexts_Proxy(void *decoder, uint32_t cou
         return S_OK_;
     }
     int32_t hr = set(contexts[0], d->img.icc, d->img.icc_len, 2 /* WICColorContextProfile */);
+    if (hr == 0) wic_ctx_profile_set(contexts[0], d->img.icc, d->img.icc_len);   // 自管一份供色彩转换
     if (getenv("LDP_WIC_TRACE")) {
         fprintf(stderr, "[WIC-ICC]   SetProfile(ctx=%p) => 0x%08x\n", contexts[0], (unsigned)hr);
         fflush(stderr);

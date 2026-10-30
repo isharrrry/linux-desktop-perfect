@@ -100,6 +100,9 @@ void *OpenColorProfileW(void *pProfile, const uint16_t *name, uint32_t access, u
     h->profile = prof;
     h->raw = (uint8_t *)malloc(blob->len);
     if (h->raw) { memcpy(h->raw, blob->bytes, blob->len); h->raw_len = blob->len; }
+    // 也登记进 libwpfwic 的 context→profile 表：色彩转换按句柄查表取字节（不跨模块、不解引用未知句柄）
+    { extern void wic_ctx_profile_set(void *ctx, const uint8_t *data, uint32_t len);
+      if (h->raw) wic_ctx_profile_set(h, h->raw, h->raw_len); }
     return h;
 }
 
@@ -133,6 +136,8 @@ void *OpenColorProfile(void *pProfile, uint32_t access, uint32_t share, uint32_t
     h->profile = prof;
     h->raw = (uint8_t *)malloc(p->cbDataSize);
     if (h->raw) { memcpy(h->raw, p->pProfileData, p->cbDataSize); h->raw_len = p->cbDataSize; }
+    { extern void wic_ctx_profile_set(void *ctx, const uint8_t *data, uint32_t len);
+      if (h->raw) wic_ctx_profile_set(h, h->raw, h->raw_len); }
     return h;
 }
 
@@ -240,15 +245,19 @@ int32_t WICCreateColorTransform_Proxy(void **transform)
     return 0;
 }
 
+#define CT_TRACE(...) do { if (getenv("LDP_WIC_TRACE")) { fprintf(stderr, "[WIC-CT] " __VA_ARGS__); fprintf(stderr, "\n"); fflush(stderr); } } while (0)
+
 int32_t IWICColorTransform_Initialize_Proxy(void *transform, void *source, void *srcContext,
                                             void *dstContext, void *guidDestFmt)
 {
     (void)guidDestFmt;
     ldp_color_transform *t = (ldp_color_transform *)transform;
-    if (!t || t->hdr.magic != COLOR_TRANSFORM_MAGIC || !source) return E_INVALIDARG_;
-    if (!srcContext || !dstContext) return E_INVALIDARG_;
+    CT_TRACE("Initialize(transform=%p magic_ok=%d source=%p srcCtx=%p dstCtx=%p)",
+             transform, (t && t->hdr.magic == COLOR_TRANSFORM_MAGIC) ? 1 : 0, source, srcContext, dstContext);
+    if (!t || t->hdr.magic != COLOR_TRANSFORM_MAGIC || !source) { CT_TRACE("  早退：transform/source 无效"); return E_INVALIDARG_; }
+    if (!srcContext || !dstContext) { CT_TRACE("  早退：context 为空"); return E_INVALIDARG_; }
     probe_lcms();
-    if (!s_lcms.ok) return E_NOTIMPL_;
+    if (!s_lcms.ok) { CT_TRACE("  早退：lcms2 不可用"); return E_NOTIMPL_; }
 
     fn_getsize getsize = (fn_getsize)dlsym(RTLD_DEFAULT, "IWICBitmapSource_GetSize_Proxy");
     fn_copypixels copypixels = (fn_copypixels)dlsym(RTLD_DEFAULT, "IWICBitmapSource_CopyPixels_Proxy");
@@ -259,25 +268,17 @@ int32_t IWICColorTransform_Initialize_Proxy(void *transform, void *source, void 
     if (!pixels) return E_NOTIMPL_;
     if (copypixels(source, NULL, w * 4, w * h * 4, pixels) != 0) { free(pixels); return E_INVALIDARG_; }
 
-    // 取两个 context 的 profile 字节（它们由我们登记进 bridge 的 MilColorContextTable），
-    //   然后**真的做一次 lcms2 转换**——修前这里只是"拷贝像素"，那不是色彩转换。
-    typedef int32_t (*fn_getprofile)(void *, uint32_t, uint8_t *, uint32_t *);
-    // 这个导出在 **bridge**（wpfgfx_cor3.so）里，不在本 so：必须走 /proc/self/maps 找到它。
-    extern void *wic_bridge_lookup(const char *name);   // 定义在 wic_proxy.c
-    fn_getprofile getprofile = (fn_getprofile)wic_bridge_lookup("IWICColorContext_GetProfileBytes_Proxy");
-    if (!getprofile) return E_NOTIMPL_;
-    uint8_t *src_icc = NULL, *dst_icc = NULL;
+    // 从**本 shim 自管的表**取两个 context 的 profile 字节（不依赖 bridge 的 GetProfileBytes；
+    //   实测那条路返回 E_INVALIDARG，长度却回填正确 —— 见 wic_proxy.c 的 s_ctx_profiles 注释）。
+    extern const uint8_t *wic_ctx_profile_get(void *ctx, uint32_t *len);
     uint32_t src_len = 0, dst_len = 0;
-    if (getprofile(srcContext, 0, NULL, &src_len) != 0 || src_len == 0) { free(pixels); return E_INVALIDARG_; }
-    if (getprofile(dstContext, 0, NULL, &dst_len) != 0 || dst_len == 0) { free(pixels); return E_INVALIDARG_; }
-    src_icc = (uint8_t *)malloc(src_len);
-    dst_icc = (uint8_t *)malloc(dst_len);
-    if (!src_icc || !dst_icc) { free(pixels); free(src_icc); free(dst_icc); return E_NOTIMPL_; }
-    if (getprofile(srcContext, src_len, src_icc, &src_len) != 0 ||
-        getprofile(dstContext, dst_len, dst_icc, &dst_len) != 0) {
-        free(pixels); free(src_icc); free(dst_icc);
-        return E_INVALIDARG_;
-    }
+    const uint8_t *src_icc = wic_ctx_profile_get(srcContext, &src_len);
+    const uint8_t *dst_icc = wic_ctx_profile_get(dstContext, &dst_len);
+    // dst 若来自 mscms 的 OpenColorProfile，也在同一张表里（那两个入口登记时写进去的）——
+    //   这里**不做盲解引用**：句柄类型未知时解引用会段错误（实测踩过）。
+    CT_TRACE("  自管表：src=%p/%u dst=%p/%u", (const void *)src_icc, src_len, (const void *)dst_icc, dst_len);
+    if (!src_icc || !src_len || !dst_icc || !dst_len) { free(pixels); return E_INVALIDARG_; }
+    (void)0;
     cmsHPROFILE ps = s_lcms.open_mem(src_icc, src_len);
     cmsHPROFILE pd = s_lcms.open_mem(dst_icc, dst_len);
     cmsHTRANSFORM tr = (ps && pd) ? s_lcms.create_transform(ps, LDP_TYPE_RGB_8, pd, LDP_TYPE_RGB_8, 0, 0) : NULL;
@@ -305,6 +306,7 @@ int32_t IWICColorTransform_Initialize_Proxy(void *transform, void *source, void 
     if (pd) s_lcms.close_profile(pd);
     free(src_icc);
     free(dst_icc);
+    CT_TRACE("  转换：ps=%p pd=%p transform=%p", (void *)ps, (void *)pd, (void *)tr);
     if (!tr) { free(pixels); return E_NOTIMPL_; }
     if (getenv("LDP_WIC_TRACE")) {
         fprintf(stderr, "[WIC-CT] Initialize: %ux%u，src_icc=%u dst_icc=%u（已用 lcms2 做真实转换）\n", w, h, src_len, dst_len);
