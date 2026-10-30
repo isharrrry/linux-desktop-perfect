@@ -7,7 +7,9 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '../..');
-const EXCLUDE = new Set(['.git', 'node_modules', '90-archive']);
+// upstream = 只读上游快照（40-build/upstream/wpf），不参与本仓文档与编号校验
+// 40-build = 实现树（含只读上游快照与派生树，自带上游文档），不参与本仓文档与编号校验
+const EXCLUDE = new Set(['.git', 'node_modules', '90-archive', 'upstream', '40-build']);
 
 const errors = [];
 const warnings = [];

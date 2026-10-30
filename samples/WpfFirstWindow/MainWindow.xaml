@@ -1,0 +1,23 @@
+<Window x:Class="LinuxDesktopPerfect.Samples.WpfFirstWindow.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="WpfFirstWindow" Height="640" Width="960"
+        AutomationProperties.Name="WpfFirstWindow">
+    <!-- 对应 SCR-01 元素属性表：路径 0/0 ~ 0/6；读数文本是结构判据的数据源，格式别改 -->
+    <StackPanel Margin="12">
+        <TextBlock x:Name="TitleText" Text="WpfFirstWindow" AutomationProperties.Name="WpfFirstWindow" FontSize="20" />
+        <TextBox AutomationProperties.Name="输入样本" Margin="0,8,0,0" />
+        <Button Content="提交" AutomationProperties.Name="提交" Margin="0,8,0,0" />
+        <Button Content="不可用示例" AutomationProperties.Name="不可用示例" IsEnabled="False" Margin="0,8,0,0" />
+        <StatusBar AutomationProperties.Name="状态" Margin="0,8,0,0">
+            <TextBlock Text="DPI 096 (100%)" AutomationProperties.Name="DPI 096 (100%)" />
+            <Separator />
+            <TextBlock Text="composite=false" AutomationProperties.Name="composite=false" />
+            <Separator />
+            <TextBlock Text="hwnd=0x0" AutomationProperties.Name="hwnd=0x0" />
+        </StatusBar>
+        <Canvas AutomationProperties.Name="几何画布" Height="120" Background="#FFF2F2F2" Margin="0,8,0,0" />
+        <Button Content="放大 150%" AutomationProperties.Name="放大 150%" Margin="0,8,0,0" />
+    </StackPanel>
+
+</Window>

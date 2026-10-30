@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="860" height="378" viewBox="0 0 860 378" font-family="Noto Sans CJK SC, Source Han Sans SC, sans-serif">
+<rect width="860" height="378" fill="#ffffff"/>
+<text x="26" y="34" font-size="20" font-weight="700" fill="#111">SCR-06 媒体与 Ink 样本</text>
+<text x="26" y="58" font-size="12" fill="#555">由《界面设计说明》§7 元素属性表生成：8 个可检测节点，2 层；左侧缩进表示 path 层级，右侧为 role · path · 状态/动作数</text>
+<text x="26" y="74" font-size="11" fill="#8a8a8a">路径即结构判据的 join 键；图与表不一致时以表为准并重跑本脚本（--check 会红）</text>
+<line x1="36" y1="74" x2="36" y2="312" stroke="#e2e2e2" stroke-width="1" stroke-dasharray="3 4"/>
+<g data-path="0/0" data-role="push button" data-name="播放">
+<rect x="50" y="78" width="784" height="24" rx="3" fill="#eef4ff" stroke="#7aa2e8"/>
+<text x="58" y="94" font-size="12" fill="#111">播放按钮</text>
+<text x="826" y="94" font-size="10" fill="#666" text-anchor="end">push button · 0/0 · 状态 1 / 动作 1 · ACC-022 ACC-027</text>
+</g>
+<g data-path="0/1" data-role="push button" data-name="暂停">
+<rect x="50" y="108" width="784" height="24" rx="3" fill="#eef4ff" stroke="#7aa2e8"/>
+<text x="58" y="124" font-size="12" fill="#111">暂停按钮</text>
+<text x="826" y="124" font-size="10" fill="#666" text-anchor="end">push button · 0/1 · 状态 1 / 动作 1 · ACC-022 ACC-027</text>
+</g>
+<g data-path="0/2" data-role="slider" data-name="进度">
+<rect x="50" y="138" width="784" height="24" rx="3" fill="#eef4ff" stroke="#7aa2e8"/>
+<text x="58" y="154" font-size="12" fill="#111">进度滑杆</text>
+<text x="826" y="154" font-size="10" fill="#666" text-anchor="end">slider · 0/2 · 状态 1 / 动作 1 · ACC-022 ACC-027</text>
+</g>
+<g data-path="0/3" data-role="label" data-name="正则 state=(PLAYING|PAUSED|READY|ERROR)">
+<rect x="50" y="168" width="784" height="24" rx="3" fill="#f7f7f7" stroke="#d0d0d0"/>
+<text x="58" y="184" font-size="12" fill="#111">媒体状态读数</text>
+<text x="826" y="184" font-size="10" fill="#666" text-anchor="end">label · 0/3 · 状态 1 / 动作 0 · ACC-022 ACC-027</text>
+</g>
+<g data-path="0/4" data-role="label" data-name="正则 不支持.*D-\d{3}">
+<rect x="50" y="198" width="784" height="24" rx="3" fill="#f7f7f7" stroke="#d0d0d0"/>
+<text x="58" y="214" font-size="12" fill="#111">不支持格式提示</text>
+<text x="826" y="214" font-size="10" fill="#666" text-anchor="end">label · 0/4 · 状态 1 / 动作 0 · ACC-022 ACC-027</text>
+</g>
+<g data-path="0/5" data-role="drawing area" data-name="墨迹">
+<rect x="50" y="228" width="784" height="24" rx="3" fill="#f7f7f7" stroke="#d0d0d0"/>
+<text x="58" y="244" font-size="12" fill="#111">墨迹画布</text>
+<text x="826" y="244" font-size="10" fill="#666" text-anchor="end">drawing area · 0/5 · 状态 1 / 动作 0 · ACC-023</text>
+</g>
+<g data-path="0/6" data-role="label" data-name="正则 points=\d+">
+<rect x="50" y="258" width="784" height="24" rx="3" fill="#f7f7f7" stroke="#d0d0d0"/>
+<text x="58" y="274" font-size="12" fill="#111">轨迹点数读数</text>
+<text x="826" y="274" font-size="10" fill="#666" text-anchor="end">label · 0/6 · 状态 1 / 动作 0 · ACC-023 ACC-027</text>
+</g>
+<g data-path="0/7" data-role="label" data-name="正则 pen=(on|off)">
+<rect x="50" y="288" width="784" height="24" rx="3" fill="#f7f7f7" stroke="#d0d0d0"/>
+<text x="58" y="304" font-size="12" fill="#111">笔设备读数</text>
+<text x="826" y="304" font-size="10" fill="#666" text-anchor="end">label · 0/7 · 状态 1 / 动作 0 · ACC-023 ACC-027</text>
+</g>
+<text x="26" y="354" font-size="10" fill="#8a8a8a">蓝框＝可交互节点（Button/Entry/Check/Radio/Slider 类）；全部节点须能在 AT-SPI 树快照中按 path 命中（TG-012 / ACC-027）</text>
+</svg>

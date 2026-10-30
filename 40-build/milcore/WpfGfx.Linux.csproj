@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('BuildHygiene.props'))" />
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <!--
+      annotations 而不是 disable：Contracts/ 里的可空注解（MilVisual?、IMilRenderData?
+      等 4 处）在 disable 上下文里会报 CS8632。改成 annotations 后注解语法合法、
+      警告照旧关闭，对既有代码的语义零影响。
+    -->
+    <Nullable>annotations</Nullable>
+    <AssemblyName>WpfGfx.Linux</AssemblyName>
+    <RootNamespace>WpfGfx.Linux</RootNamespace>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);CS0649;CS0169</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- 版本由 T0 锁定：SkiaSharp 4.x 有破坏性 API 变更，禁止升级 -->
+    <PackageReference Include="SkiaSharp" Version="2.88.9" />
+    <PackageReference Include="SkiaSharp.NativeAssets.Linux" Version="2.88.9" />
+  </ItemGroup>
+
+</Project>

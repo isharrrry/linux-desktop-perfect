@@ -1,0 +1,44 @@
+<Project>
+  <!-- ==========================================================================
+       让本车道（src/Microsoft.DotNet.Wpf.Linux/src/DirectWrite/**）每个**启动宿主**工程在构建后把权威 Provider 拷进
+       自己的输出目录（债务 #20 / 主控 2026-09-14 派单："同类假绿的机制级修法"）。
+
+       【为什么需要】本车道 5 个探针的 csproj 都是 `HintPath + Private=true` 引 Provider
+       （`WiringSmoke.csproj:6-11` 记着主控 2026-09-10 的裁定：ProjectReference 不传递私有依赖）。
+       这个形态的语义是「**消费者构建时拷一次**」—— 权威件之后变了，没重建过的探针就停在旧代。
+       实测（2026-09-14 校验器）：权威 `71ba86c6`(110,080 B) 时，
+       WicClosedLoop `0aa503df`、WicWriteClosedLoop `0939c055`、WiringSmoke/FontEntryClosedLoop
+       `870c9504`、SystemFontsProbe `ef6cc9d3` 全是 09-10/09-11 的旧代（体积 68,608~100,352 B）
+       ⇒ 跑这些探针会测到旧 Provider ⇒ **假红/假绿**。
+
+       【为什么是 AfterTargets="Build" 且 SkipUnchangedFiles="false"】
+         不依赖增量判断：即使副本 mtime **不比权威旧**（例如时钟/并发构建导致的乱序），
+         只要 sha 不同也照样刷成权威 —— 判据是"是不是权威件"，不是"看起来新不新"。
+       【为什么限定"启动宿主"】与校验器的 `LIB-COPY` 口径同一把尺子：
+         只有**输出目录里会有 runtimeconfig.json** 的工程（Exe / 测试工程）才是加载源；
+         库输出目录里的私有依赖副本没人加载 ⇒ 不去动它（不去制造"看起来同步了"的假象）。
+       【为什么不会自拷】Provider 工程自己是**权威的生产者**（库，且 TargetPath 就是权威路径）
+         ⇒ 两个条件都不成立 ⇒ 不会自己拷自己。
+       【可证伪】把权威件换一个 sha（临时文件）⇒ 校验器报红；还原 ⇒ 回绿：
+         跑该脚本的自检模式（selftest；自检 E 就是这条两极化）。
+         权威路径可用 /p:ProviderAuthorityPath=… 覆盖（便于做上面那条两极化实验）。
+       【口径与校验（只报不改）】src/Microsoft.DotNet.Wpf.Linux/src/DirectWrite/wic-shim/check-applocal-sync.sh
+       【与 MilBridge 那份的关系】src/Linux/build/MilBridge/tests/Directory.Build.targets 是同一思路的
+         另一份（T1b 车道用），本文件是**本车道**的；两者都指向同一个权威路径。
+       ========================================================================== -->
+  <PropertyGroup>
+    <ProviderAuthorityPath Condition="'$(ProviderAuthorityPath)' == ''">$(MSBuildThisFileDirectory)Provider/bin/$(WpfLinuxSelfBuiltConfiguration)/DirectWrite.Linux.Provider.dll</ProviderAuthorityPath>
+  </PropertyGroup>
+
+  <Target Name="SyncProviderAuthority"
+          AfterTargets="Build"
+          Condition="Exists('$(ProviderAuthorityPath)')
+                     And ('$(OutputType)' == 'Exe' Or Exists('$(OutDir)$(AssemblyName).runtimeconfig.json'))
+                     And !$([System.String]::Equals($([System.IO.Path]::GetFullPath('$(TargetPath)')), $([System.IO.Path]::GetFullPath('$(ProviderAuthorityPath)')), System.StringComparison.OrdinalIgnoreCase))">
+    <Copy SourceFiles="$(ProviderAuthorityPath)"
+          DestinationFolder="$(OutDir)"
+          SkipUnchangedFiles="false" />
+    <Message Importance="high"
+             Text="[SyncProviderAuthority] 权威 Provider → $(OutDir)（源 $(ProviderAuthorityPath)；SkipUnchangedFiles=false，不依赖增量）" />
+  </Target>
+</Project>

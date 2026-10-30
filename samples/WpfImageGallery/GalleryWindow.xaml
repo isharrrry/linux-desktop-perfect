@@ -1,0 +1,22 @@
+<Window x:Class="LinuxDesktopPerfect.Samples.WpfImageGallery.GalleryWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="WpfImageGallery" Height="700" Width="900"
+        AutomationProperties.Name="WpfImageGallery">
+    <!-- 对应 SCR-03 元素属性表：五格式项 0/0/0 ~ 0/0/4；读数文案按表 -->
+    <StackPanel Margin="12">
+        <TextBlock x:Name="TitleText" Text="WpfImageGallery" AutomationProperties.Name="WpfImageGallery" FontSize="20" />
+        <ListBox AutomationProperties.Name="格式" Height="150" Margin="0,8,0,0">
+            <ListBoxItem Content="png" AutomationProperties.Name="png" IsSelected="True" />
+            <ListBoxItem Content="jpeg" AutomationProperties.Name="jpeg" />
+            <ListBoxItem Content="gif" AutomationProperties.Name="gif" />
+            <ListBoxItem Content="bmp" AutomationProperties.Name="bmp" />
+            <ListBoxItem Content="tiff" AutomationProperties.Name="tiff" />
+        </ListBox>
+        <Image AutomationProperties.Name="当前文件名" Height="160" Margin="0,8,0,0" />
+        <TextBlock AutomationProperties.Name="32×32 png" Text="32×32 png" Margin="0,8,0,0" />
+        <CheckBox Content="应用 ICC" AutomationProperties.Name="应用 ICC" IsChecked="True" Margin="0,8,0,0" />
+        <TextBlock AutomationProperties.Name="ΔE00=0.0" Text="ΔE00=0.0" Margin="0,8,0,0" />
+    </StackPanel>
+
+</Window>

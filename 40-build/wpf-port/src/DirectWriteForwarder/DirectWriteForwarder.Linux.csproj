@@ -1,0 +1,92 @@
+<Project>
+  <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk" />
+  <Import Project="$(MSBuildThisFileDirectory)../../../Linux/build/Directory.Upstream.props" />
+  <!--
+    DirectWriteForwarder · Linux 托管等价骨架（M4）
+    ==========================================================================
+    上游 DirectWriteForwarder 是C++/CLI 工程（DirectWriteForwarder.vcxproj），
+    port-lib 对 .vcxproj 一律丢弃，于是它的**托管面**在 Linux 上整体缺失 ——
+    实测这是 PresentationCore 走到 0 错的唯一成规模阻塞（102 条错误）。
+
+    本工程按上游树内 `CPP/DWriteWrapper/*.h`（3.5k 行，形态可查）逐个落地那 41 个
+    托管类型，语义一律取「Linux 上尚不可用」的诚实实现：
+      * 纯托管算术（FontMetrics.Baseline/LineSpacing、枚举互转）→ **真实现**（公式取自头文件）；
+      * 需要 DWrite 原生对象的成员 → `PlatformNotSupportedException`，
+        消息里写明替代路线（M1 Skia 文本栈），**不伪造可用行为**。
+
+    与上游的差异（有意，且已留档）：
+      * 上游类型是 `private`（程序集内），经 IVT 暴露给 PresentationCore；本工程照做
+        （见 AssemblyAttrs.cs 的 InternalsVisibleTo，公钥与上游 OtherAssemblyAttrs.cpp 相同）。
+      * 上游 C++/CLI 里 `IDWriteXxx*` 是**原生** dwrite.h 接口指针；C# 侧无法表达，
+        故在 `MS.Internal.Text.TextInterface.Native` 下声明同名的托管镜像（仅 lpVtbl 字段），
+        保证 PresentationCore 的 `(Native.IDWriteFontFace*)` 这类显式指针转换与
+        `Native.DWRITE_FONT_FACE_TYPE` 枚举引用能编译。布局与 win32 指针一致（8 字节）。
+      * 上游 `TrueTypeSubsetter`（C++ 子集化器）不移植：PresentationCore 不直接调用它。
+
+    构建：dotnet build src/Microsoft.DotNet.Wpf.Linux/src/DirectWriteForwarder/DirectWriteForwarder.Linux.csproj
+  -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <AssemblyName>DirectWriteForwarder</AssemblyName>
+    <RootNamespace>MS.Internal.Text.TextInterface</RootNamespace>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <EnableDefaultEmbeddedResourceItems>false</EnableDefaultEmbeddedResourceItems>
+    <!-- CS8002：本工程按上游 IVT 要求公开签名，而被引用的 WindowsBase（其它里程碑产出）
+         仍是未签名程序集 → 1 条 CS8002。.NET Core 不校验强名称，不影响加载。
+         根治：全部 *.Linux 工程统一公开签名后即可删除本条抑制。 -->
+    <NoWarn>$(NoWarn);0618;CS3016;CS0067;CS0169;CS0414;CS0649;CS1591;CS8632;CS0219;CS8981;CA1416;CS8500;CS8002</NoWarn>
+    <LangVersion>latest</LangVersion>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <EnablePInvokeAnalyzer>false</EnablePInvokeAnalyzer>
+    <ProduceReferenceAssembly>false</ProduceReferenceAssembly>
+    <!-- 与 PresentationCore 同源：消费方（PresentationCore）必须能看见 internal 类型，
+         而 IVT 要求双方公钥一致 —— 上游用 WCP 公钥，这里公开签名对齐。 -->
+    <SignAssembly>true</SignAssembly>
+    <PublicSign>true</PublicSign>
+    <AssemblyOriginatorKeyFile>$(WpfLinuxRoot)src/Linux/build/keys/WcpPublicKey.snk</AssemblyOriginatorKeyFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- 程序集身份版本（4.0.0.1）：全工程统一，由主控的 LinuxAssemblyIdentity shim 提供 -->
+    <Compile Include="$(WpfLinuxRoot)src/Microsoft.DotNet.Wpf.Linux/src/shims/LinuxAssemblyIdentity.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)AssemblyAttrs.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)NativeMirrors.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)ManagedSurface.cs" />
+    <!-- T2 · Phase 2：provider ↔ 骨架的适配层（数据映射 / 枚举映射 / 句柄反查） -->
+    <Compile Include="$(MSBuildThisFileDirectory)ProviderAdapters.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <!--
+      T2 · Phase 2：接入 src/Microsoft.DotNet.Wpf.Linux/src/DirectWrite/Provider 的字体实现（Skia/FreeType 承载）。
+      方向是 DWF → Provider（单向）：Provider 只依赖 SkiaSharp 2.88.9，
+      不引用 WpfGfx.Linux / PresentationCore / DWF，因此不会成环。
+      注意：**不要**引用 Probe 或 Tests —— 那两个是取证工程，不是产品依赖。
+    -->
+    <ProjectReference Include="$(WpfLinuxRoot)src/Microsoft.DotNet.Wpf.Linux/src/DirectWrite/Provider/DirectWrite.Linux.Provider.csproj">
+      <Private>true</Private>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <!-- DWriteTypeConverter.Convert(TextFormattingMode) 需要 System.Windows.Media.TextFormattingMode
+         → 引用本工程的 WindowsBase 产物（与 PresentationCore 同一份）。 -->
+    <Reference Include="WindowsBase">
+      <HintPath>$(WpfLinuxRoot)src/Microsoft.DotNet.Wpf.Linux/src/WindowsBase/bin/$(WpfLinuxSelfBuiltConfiguration)/WindowsBase.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+  </ItemGroup>
+  <!-- 与 PresentationCore 同源：摘掉目标包注入的 WindowsBase 门面引用（身份版本已是 4.0.0.1，
+       这里是冗余保险，保证在 WindowsBase 尚未重建时也能编译）。 -->
+  <Target Name="WpfLinux_DropFrameworkWindowsBase"
+          BeforeTargets="_HandlePackageFileConflicts"
+          Condition="Exists('$(WpfLinuxRoot)src/Microsoft.DotNet.Wpf.Linux/src/WindowsBase/bin/$(WpfLinuxSelfBuiltConfiguration)/WindowsBase.dll')">
+    <ItemGroup>
+      <Reference Remove="@(Reference)"
+                 Condition="'%(Reference.Filename)' == 'WindowsBase' and '%(Reference.HintPath)' == ''" />
+    </ItemGroup>
+  </Target>
+  <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
+</Project>

@@ -1,0 +1,179 @@
+{
+  "scr": "SCR-05",
+  "source": "界面设计说明 §6",
+  "generated_from": "界面图/build-wireframe.mjs --emit-expect（与结构图读同一张表）",
+  "nodes": [
+    {
+      "path": "0/0",
+      "role": "combo box",
+      "name": "打印机",
+      "states": [
+        "expandable"
+      ],
+      "actions": [
+        "select"
+      ],
+      "acc": [
+        "ACC-024",
+        "ACC-027"
+      ],
+      "bounds": null,
+      "value": null,
+      "relations": []
+    },
+    {
+      "path": "0/1",
+      "role": "push button",
+      "name": "打印",
+      "states": [
+        "enabled"
+      ],
+      "actions": [
+        "click"
+      ],
+      "acc": [
+        "ACC-024",
+        "ACC-027"
+      ],
+      "bounds": null,
+      "value": null,
+      "relations": []
+    },
+    {
+      "path": "0/2",
+      "role": "label",
+      "name": "正则 job=\\d+ state=[a-z-]+",
+      "states": [
+        "visible"
+      ],
+      "actions": [],
+      "acc": [
+        "ACC-024",
+        "ACC-027"
+      ],
+      "bounds": null,
+      "value": null,
+      "relations": []
+    },
+    {
+      "path": "0/3",
+      "role": "label",
+      "name": "正则 pages=\\d+",
+      "states": [
+        "visible"
+      ],
+      "actions": [],
+      "acc": [
+        "ACC-024",
+        "ACC-027"
+      ],
+      "bounds": null,
+      "value": null,
+      "relations": []
+    },
+    {
+      "path": "0/4",
+      "role": "document frame",
+      "name": "流文档",
+      "states": [
+        "visible"
+      ],
+      "actions": [
+        "scroll"
+      ],
+      "acc": [
+        "ACC-025",
+        "ACC-027"
+      ],
+      "bounds": null,
+      "value": null,
+      "relations": []
+    },
+    {
+      "path": "0/4/0",
+      "role": "paragraph",
+      "name": "正则 第 \\d+ 段",
+      "states": [
+        "visible"
+      ],
+      "actions": [],
+      "acc": [
+        "ACC-025",
+        "ACC-027"
+      ],
+      "bounds": null,
+      "value": null,
+      "relations": []
+    },
+    {
+      "path": "0/5",
+      "role": "push button",
+      "name": "下一页",
+      "states": [
+        "enabled"
+      ],
+      "actions": [
+        "click"
+      ],
+      "acc": [
+        "ACC-025",
+        "ACC-027"
+      ],
+      "bounds": null,
+      "value": null,
+      "relations": []
+    },
+    {
+      "path": "0/6",
+      "role": "slider",
+      "name": "缩放",
+      "states": [
+        "enabled"
+      ],
+      "actions": [
+        "focus"
+      ],
+      "acc": [
+        "ACC-025",
+        "ACC-027"
+      ],
+      "bounds": null,
+      "value": null,
+      "relations": []
+    },
+    {
+      "path": "0/7",
+      "role": "entry",
+      "name": "查找",
+      "states": [
+        "editable"
+      ],
+      "actions": [
+        "set-text"
+      ],
+      "acc": [
+        "ACC-025",
+        "ACC-027"
+      ],
+      "bounds": null,
+      "value": null,
+      "relations": []
+    },
+    {
+      "path": "0/8",
+      "role": "label",
+      "name": "正则 命中 \\d+ 处",
+      "states": [
+        "visible"
+      ],
+      "actions": [],
+      "acc": [
+        "ACC-025",
+        "ACC-027"
+      ],
+      "bounds": null,
+      "value": null,
+      "relations": []
+    }
+  ]
+}

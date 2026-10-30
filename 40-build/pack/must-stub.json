@@ -1,0 +1,373 @@
+{
+  "generated_by": "50-verify/contract/scan-must-stub.mjs",
+  "scope": "必抛 / 官宣 Windows-only 的程序集与类型（B9）",
+  "inputs": {
+    "framework_list": "~/.nuget/packages/microsoft.windowsdesktop.app.ref/10.0.11/data/FrameworkList.xml",
+    "ref_assemblies": "~/.nuget/packages/microsoft.windowsdesktop.app.ref/10.0.11/ref/net10.0/*.dll",
+    "upstream_source": "40-build/upstream/wpf/src/**/*.cs",
+    "design": "30-design/设计文档包/09-开工前置与切片计划.md §2.1 B9、03 §2.1 R-003"
+  },
+  "summary": {
+    "entries": 32,
+    "by_evidence_kind": {
+      "design_known": 3,
+      "framework_profile": 25,
+      "source_throw": 4
+    },
+    "by_assembly": {
+      "Microsoft.DotNet.Wpf": 4,
+      "Accessibility": 1,
+      "Microsoft.VisualBasic": 1,
+      "Microsoft.VisualBasic.Forms": 1,
+      "Microsoft.Win32.Registry.AccessControl": 1,
+      "Microsoft.Win32.SystemEvents": 1,
+      "System.CodeDom": 1,
+      "System.Configuration.ConfigurationManager": 1,
+      "System.Design": 1,
+      "System.Diagnostics.EventLog": 1,
+      "System.Diagnostics.PerformanceCounter": 1,
+      "System.DirectoryServices": 1,
+      "System.Drawing": 1,
+      "System.Drawing.Common": 1,
+      "System.Drawing.Design": 1,
+      "System.Formats.Nrbf": 1,
+      "System.IO.Packaging": 1,
+      "System.Private.Windows.Core": 1,
+      "System.Private.Windows.GdiPlus": 1,
+      "System.Resources.Extensions": 1,
+      "System.Security.Cryptography.Pkcs": 1,
+      "System.Security.Cryptography.ProtectedData": 1,
+      "System.Security.Cryptography.Xml": 1,
+      "System.Security.Permissions": 1,
+      "System.Windows.Extensions": 1,
+      "System.Windows.Forms": 1,
+      "System.Windows.Forms.Design": 1,
+      "System.Windows.Forms.Design.Editors": 1,
+      "System.Windows.Forms.Primitives": 1
+    },
+    "source_throws": 4,
+    "source_pnse_mentions": 5,
+    "source_unsupported_os_windows": 0,
+    "source_supported_os_windows": 0,
+    "ref_dlls": 50
+  },
+  "entries": [
+    {
+      "assembly": "Accessibility",
+      "type": "",
+      "evidence_kind": "framework_profile",
+      "evidence": "FrameworkList.xml Profile=\"WindowsForms;WPF\"",
+      "handling": "明确降级（ADR-011：兼容层只做核心六控件 + 常用控件；未实现控件报错 + 空白占位）",
+      "status": "待裁决"
+    },
+    {
+      "assembly": "Microsoft.DotNet.Wpf",
+      "type": "InputPane",
+      "evidence_kind": "source_throw",
+      "evidence": "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/PresentationCore/MS/internal/WindowsRuntime/Windows/UI/ViewManagement/InputPane.cs:118",
+      "handling": "明确降级 + D-（待缺陷册分配）",
+      "status": "待裁决"
+    },
+    {
+      "assembly": "Microsoft.DotNet.Wpf",
+      "type": "InputPane",
+      "evidence_kind": "source_throw",
+      "evidence": "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/PresentationCore/MS/internal/WindowsRuntime/Windows/UI/ViewManagement/InputPane.cs:78",
+      "handling": "明确降级 + D-（待缺陷册分配）",
+      "status": "待裁决"
+    },
+    {
+      "assembly": "Microsoft.DotNet.Wpf",
+      "type": "WinRTSpellerInterop",
+      "evidence_kind": "source_throw",
+      "evidence": "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/PresentationFramework/System/Windows/Documents/WinRTSpellerInterop.cs:48",
+      "handling": "明确降级 + D-（待缺陷册分配）",
+      "status": "待裁决"
+    },
+    {
+      "assembly": "Microsoft.DotNet.Wpf",
+      "type": "WordsSegmenter",
+      "evidence_kind": "source_throw",
+      "evidence": "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/PresentationFramework/MS/Internal/WindowsRuntime/Windows/Data/Text/WordsSegmenter.cs:41",
+      "handling": "明确降级 + D-（待缺陷册分配）",
+      "status": "待裁决"
+    },
+    {
+      "assembly": "Microsoft.VisualBasic",
+      "type": "",
+      "evidence_kind": "framework_profile",
+      "evidence": "FrameworkList.xml Profile=\"WindowsForms\"",
+      "handling": "明确降级（ADR-011：兼容层只做核心六控件 + 常用控件；未实现控件报错 + 空白占位）",
+      "status": "待裁决"
+    },
+    {
+      "assembly": "Microsoft.VisualBasic.Forms",
+      "type": "",
+      "evidence_kind": "framework_profile",
+      "evidence": "FrameworkList.xml Profile=\"WindowsForms\"",
+      "handling": "明确降级（ADR-011：兼容层只做核心六控件 + 常用控件；未实现控件报错 + 空白占位）",
+      "status": "待裁决"
+    },
+    {
+      "assembly": "Microsoft.Win32.Registry.AccessControl",
+      "type": "",
+      "evidence_kind": "framework_profile",
+      "evidence": "FrameworkList.xml Profile=\"WindowsForms;WPF\"",
+      "handling": "明确降级（ADR-011：兼容层只做核心六控件 + 常用控件；未实现控件报错 + 空白占位）",
+      "status": "待裁决"
+    },
+    {
+      "assembly": "Microsoft.Win32.SystemEvents",
+      "type": "",
+      "evidence_kind": "framework_profile",
+      "evidence": "FrameworkList.xml Profile=\"WindowsForms;WPF\"",
+      "handling": "明确降级（ADR-011：兼容层只做核心六控件 + 常用控件；未实现控件报错 + 空白占位）",
+      "status": "待裁决"
+    },
+    {
+      "assembly": "System.CodeDom",
+      "type": "",
+      "evidence_kind": "framework_profile",
+      "evidence": "FrameworkList.xml Profile=\"WindowsForms;WPF\"",
+      "handling": "明确降级（ADR-011：兼容层只做核心六控件 + 常用控件；未实现控件报错 + 空白占位）",
+      "status": "待裁决"
+    },
+    {
+      "assembly": "System.Configuration.ConfigurationManager",
+      "type": "",
+      "evidence_kind": "framework_profile",
+      "evidence": "FrameworkList.xml Profile=\"WindowsForms;WPF\"",
+      "handling": "明确降级（ADR-011：兼容层只做核心六控件 + 常用控件；未实现控件报错 + 空白占位）",
+      "status": "待裁决"
+    },
+    {
+      "assembly": "System.Design",
+      "type": "",
+      "evidence_kind": "framework_profile",
+      "evidence": "FrameworkList.xml Profile=\"WindowsForms\"",
+      "handling": "明确降级（ADR-011：兼容层只做核心六控件 + 常用控件；未实现控件报错 + 空白占位）",
+      "status": "待裁决"
+    },
+    {
+      "assembly": "System.Diagnostics.EventLog",
+      "type": "",
+      "evidence_kind": "framework_profile",
+      "evidence": "FrameworkList.xml Profile=\"WindowsForms;WPF\"",
+      "handling": "明确降级（ADR-011：兼容层只做核心六控件 + 常用控件；未实现控件报错 + 空白占位）",
+      "status": "待裁决"
+    },
+    {
+      "assembly": "System.Diagnostics.PerformanceCounter",
+      "type": "",
+      "evidence_kind": "framework_profile",
+      "evidence": "FrameworkList.xml Profile=\"WindowsForms;WPF\"",
+      "handling": "明确降级（ADR-011：兼容层只做核心六控件 + 常用控件；未实现控件报错 + 空白占位）",
+      "status": "待裁决"
+    },
+    {
+      "assembly": "System.DirectoryServices",
+      "type": "",
+      "evidence_kind": "framework_profile",
+      "evidence": "FrameworkList.xml Profile=\"WindowsForms;WPF\"",
+      "handling": "明确降级（ADR-011：兼容层只做核心六控件 + 常用控件；未实现控件报错 + 空白占位）",
+      "status": "待裁决"
+    },
+    {
+      "assembly": "System.Drawing",
+      "type": "",
+      "evidence_kind": "framework_profile",
+      "evidence": "FrameworkList.xml Profile=\"WindowsForms\"",
+      "handling": "明确降级（ADR-011：兼容层只做核心六控件 + 常用控件；未实现控件报错 + 空白占位）",
+      "status": "待裁决"
+    },
+    {
+      "assembly": "System.Drawing.Common",
+      "type": "",
+      "evidence_kind": "design_known",
+      "evidence": "09 §2.1 B9 + ref/net10.0/System.Drawing.Common.dll 存在",
+      "handling": "自产替换或包内替换（R-003：非 Windows 默认抛）",
+      "status": "待裁决"
+    },
+    {
+      "assembly": "System.Drawing.Design",
+      "type": "",
+      "evidence_kind": "framework_profile",
+      "evidence": "FrameworkList.xml Profile=\"WindowsForms\"",
+      "handling": "明确降级（ADR-011：兼容层只做核心六控件 + 常用控件；未实现控件报错 + 空白占位）",
+      "status": "待裁决"
+    },
+    {
+      "assembly": "System.Formats.Nrbf",
+      "type": "",
+      "evidence_kind": "framework_profile",
+      "evidence": "FrameworkList.xml Profile=\"WindowsForms;WPF\"",
+      "handling": "明确降级（ADR-011：兼容层只做核心六控件 + 常用控件；未实现控件报错 + 空白占位）",
+      "status": "待裁决"
+    },
+    {
+      "assembly": "System.IO.Packaging",
+      "type": "",
+      "evidence_kind": "framework_profile",
+      "evidence": "FrameworkList.xml Profile=\"WindowsForms;WPF\"",
+      "handling": "明确降级（ADR-011：兼容层只做核心六控件 + 常用控件；未实现控件报错 + 空白占位）",
+      "status": "待裁决"
+    },
+    {
+      "assembly": "System.Private.Windows.Core",
+      "type": "",
+      "evidence_kind": "framework_profile",
+      "evidence": "FrameworkList.xml Profile=\"WindowsForms;WPF\"",
+      "handling": "明确降级（ADR-011：兼容层只做核心六控件 + 常用控件；未实现控件报错 + 空白占位）",
+      "status": "待裁决"
+    },
+    {
+      "assembly": "System.Private.Windows.GdiPlus",
+      "type": "",
+      "evidence_kind": "design_known",
+      "evidence": "09 §2.1 B9 + ref/net10.0/System.Private.Windows.GdiPlus.dll 存在",
+      "handling": "自产替换（R-003 的优先路径）",
+      "status": "待裁决"
+    },
+    {
+      "assembly": "System.Resources.Extensions",
+      "type": "",
+      "evidence_kind": "framework_profile",
+      "evidence": "FrameworkList.xml Profile=\"WindowsForms;WPF\"",
+      "handling": "明确降级（ADR-011：兼容层只做核心六控件 + 常用控件；未实现控件报错 + 空白占位）",
+      "status": "待裁决"
+    },
+    {
+      "assembly": "System.Security.Cryptography.Pkcs",
+      "type": "",
+      "evidence_kind": "framework_profile",
+      "evidence": "FrameworkList.xml Profile=\"WindowsForms;WPF\"",
+      "handling": "明确降级（ADR-011：兼容层只做核心六控件 + 常用控件；未实现控件报错 + 空白占位）",
+      "status": "待裁决"
+    },
+    {
+      "assembly": "System.Security.Cryptography.ProtectedData",
+      "type": "",
+      "evidence_kind": "framework_profile",
+      "evidence": "FrameworkList.xml Profile=\"WindowsForms;WPF\"",
+      "handling": "明确降级（ADR-011：兼容层只做核心六控件 + 常用控件；未实现控件报错 + 空白占位）",
+      "status": "待裁决"
+    },
+    {
+      "assembly": "System.Security.Cryptography.Xml",
+      "type": "",
+      "evidence_kind": "framework_profile",
+      "evidence": "FrameworkList.xml Profile=\"WindowsForms;WPF\"",
+      "handling": "明确降级（ADR-011：兼容层只做核心六控件 + 常用控件；未实现控件报错 + 空白占位）",
+      "status": "待裁决"
+    },
+    {
+      "assembly": "System.Security.Permissions",
+      "type": "",
+      "evidence_kind": "framework_profile",
+      "evidence": "FrameworkList.xml Profile=\"WindowsForms;WPF\"",
+      "handling": "明确降级（ADR-011：兼容层只做核心六控件 + 常用控件；未实现控件报错 + 空白占位）",
+      "status": "待裁决"
+    },
+    {
+      "assembly": "System.Windows.Extensions",
+      "type": "",
+      "evidence_kind": "design_known",
+      "evidence": "09 §2.1 B9 + ref/net10.0/System.Windows.Extensions.dll 存在",
+      "handling": "自产替换（原始桩件在非 Windows 上抛 PlatformNotSupportedException）",
+      "status": "待裁决"
+    },
+    {
+      "assembly": "System.Windows.Forms",
+      "type": "",
+      "evidence_kind": "framework_profile",
+      "evidence": "FrameworkList.xml Profile=\"WindowsForms\"",
+      "handling": "明确降级（ADR-011：兼容层只做核心六控件 + 常用控件；未实现控件报错 + 空白占位）",
+      "status": "待裁决"
+    },
+    {
+      "assembly": "System.Windows.Forms.Design",
+      "type": "",
+      "evidence_kind": "framework_profile",
+      "evidence": "FrameworkList.xml Profile=\"WindowsForms\"",
+      "handling": "明确降级（ADR-011：兼容层只做核心六控件 + 常用控件；未实现控件报错 + 空白占位）",
+      "status": "待裁决"
+    },
+    {
+      "assembly": "System.Windows.Forms.Design.Editors",
+      "type": "",
+      "evidence_kind": "framework_profile",
+      "evidence": "FrameworkList.xml Profile=\"WindowsForms\"",
+      "handling": "明确降级（ADR-011：兼容层只做核心六控件 + 常用控件；未实现控件报错 + 空白占位）",
+      "status": "待裁决"
+    },
+    {
+      "assembly": "System.Windows.Forms.Primitives",
+      "type": "",
+      "evidence_kind": "framework_profile",
+      "evidence": "FrameworkList.xml Profile=\"WindowsForms\"",
+      "handling": "明确降级（ADR-011：兼容层只做核心六控件 + 常用控件；未实现控件报错 + 空白占位）",
+      "status": "待裁决"
+    }
+  ],
+  "source_scan": {
+    "throws": [
+      {
+        "assembly": "Microsoft.DotNet.Wpf",
+        "type": "InputPane",
+        "file": "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/PresentationCore/MS/internal/WindowsRuntime/Windows/UI/ViewManagement/InputPane.cs",
+        "line": 78,
+        "snippet": "throw new PlatformNotSupportedException();"
+      },
+      {
+        "assembly": "Microsoft.DotNet.Wpf",
+        "type": "InputPane",
+        "file": "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/PresentationCore/MS/internal/WindowsRuntime/Windows/UI/ViewManagement/InputPane.cs",
+        "line": 118,
+        "snippet": "throw new PlatformNotSupportedException();"
+      },
+      {
+        "assembly": "Microsoft.DotNet.Wpf",
+        "type": "WordsSegmenter",
+        "file": "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/PresentationFramework/MS/Internal/WindowsRuntime/Windows/Data/Text/WordsSegmenter.cs",
+        "line": 41,
+        "snippet": "throw new PlatformNotSupportedException();"
+      },
+      {
+        "assembly": "Microsoft.DotNet.Wpf",
+        "type": "WinRTSpellerInterop",
+        "file": "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/PresentationFramework/System/Windows/Documents/WinRTSpellerInterop.cs",
+        "line": 48,
+        "snippet": "throw new PlatformNotSupportedException(string.Empty, ex);"
+      }
+    ],
+    "mentions_sample": [
+      {
+        "file": "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/PresentationCore/MS/internal/Interop/TipTsfHelper.cs",
+        "line": 117
+      },
+      {
+        "file": "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/PresentationCore/MS/internal/Interop/TipTsfHelper.cs",
+        "line": 146
+      },
+      {
+        "file": "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/PresentationFramework/System/Windows/Documents/SpellerInteropBase.cs",
+        "line": 117
+      },
+      {
+        "file": "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/PresentationFramework/System/Windows/Documents/WinRTSpellerInterop.cs",
+        "line": 61
+      },
+      {
+        "file": "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/PresentationFramework/System/Windows/Documents/WinRTSpellerInterop.cs",
+        "line": 66
+      }
+    ],
+    "unsupported_os_platform": [],
+    "supported_os_platform": []
+  },
+  "open_questions": [
+    "逐类型的 [SupportedOSPlatform(\"windows\")] 元数据核对需要 MetadataLoadContext / System.Reflection.Metadata 读 ref 包；本仓尚未验证该工具链可离线构建，故按程序集级给出，类型级留空",
+    "System.Drawing.Common / System.Private.Windows.GdiPlus 的「必抛」来自设计文档（R-003），不是本次从元数据读出的；升级为「已核对」需实现阶段跑一次最小复现",
+    "WinForms 兼容层之外的 Profile=WindowsForms 程序集共 7 个：是否需要「加载即占位」的粒度清单，待 DQ-003 边界细化"
+  ]
+}

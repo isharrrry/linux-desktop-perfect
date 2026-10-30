@@ -1,0 +1,30 @@
+# PresentationCore 专用 shim（每行一个相对仓库根的路径）
+#
+# 注意：**不**列 src/Microsoft.DotNet.Wpf.Linux/src/shims/WindowsWin32.Shim.cs —— 实测 WindowsBase.dll 已把
+#   Windows.Win32.* 类型作为 public 导出，PresentationCore 通过引用即可传递解析
+#   （唯一消费者 MS/internal/SystemDrawingHelper.cs 实测 0 错）；再编一份会在两个
+#   程序集里各留一份同名 public 类型，下游引用两者时得到 CS0433/CS0436。
+#   长期方案见 docs/U2-PresentationCore-prep.md §3.3（提升为独立 Windows.Win32 程序集）。
+#
+# OLE 公开 API 占位（M4 主控裁决：最小诚实 stub，运行期一律 PlatformNotSupportedException）
+src/Microsoft.DotNet.Wpf.Linux/src/shims/PresentationCore.OleApi.Stubs.cs
+# 程序集级特性补丁：补 [assembly: CLSCompliant(false)]（上游由 Arcade 生成，不在树内）
+# → 修掉实测 37 条 CS3021。AssemblyVersion 等由 LinuxAssemblyIdentity.cs 提供，此处不重复。
+src/Microsoft.DotNet.Wpf.Linux/src/shims/PresentationCore.AssemblyAttrs.cs
+# M7b：**同一个源文件**再编一份进 PresentationCore —— resolver 的作用域是
+#   传入的那个 Assembly，两个程序集各需要一次注册。策略只有一份源码，
+#   两个程序集里靠 WINDOWS_BASE / PRESENTATION_CORE 落到不同命名空间，不撞名。
+src/Microsoft.DotNet.Wpf.Linux/src/shims/Win32ShimResolver.cs
+
+# T1：MilCore 导出桥接 —— 把 108 条 [DllImport("wpfgfx_cor3.dll")] 解析到 NativeAOT 实现
+#   （src/Linux/build/MilBridge/，产物 wpfgfx_cor3.so；补丁见 src/Linux/build/MilBridge/T1-report.md §4）。
+#   注意：**不要**加 MilCoreStandaloneInstaller.cs —— PC 已有上面的 Win32ShimResolver
+#   占着 SetDllImportResolver 槽位，本文件只提供 TryResolve，由它调用。
+src/Linux/build/MilBridge/src/MilBridge.Resolver/MilCoreDllImportResolver.cs
+
+# 轨道A/B1：基于 HarfBuzz 的 TextLine 实现（**脚手架**，编译进 PC 才能访问 internal 类型）。
+#   为什么必须编进 PC：`TextBounds`/`TextRunBounds` 的构造是 internal（public ctor=0），
+#   外部程序集只能用反射 —— 落地形态要的是直接构造。见文件头与 T1 报告「轨道A」节。
+#   ⚠️ 本轮**只做文件就位**：开关 `WPF_LINUX_TEXTLINE` 默认关，且**没有**改 PC 的选路逻辑
+#      （`TextFormatterImp` 挑 SimpleTextLine/FullTextLine 那段），所以编译进来也是惰性的。
+src/Microsoft.DotNet.Wpf.Linux/src/shims/PresentationCore.HbTextLine.cs

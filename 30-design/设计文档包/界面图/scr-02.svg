@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="860" height="438" viewBox="0 0 860 438" font-family="Noto Sans CJK SC, Source Han Sans SC, sans-serif">
+<rect width="860" height="438" fill="#ffffff"/>
+<text x="26" y="34" font-size="20" font-weight="700" fill="#111">SCR-02 文本与字体样本</text>
+<text x="26" y="58" font-size="12" fill="#555">由《界面设计说明》§3 元素属性表生成：10 个可检测节点，3 层；左侧缩进表示 path 层级，右侧为 role · path · 状态/动作数</text>
+<text x="26" y="74" font-size="11" fill="#8a8a8a">路径即结构判据的 join 键；图与表不一致时以表为准并重跑本脚本（--check 会红）</text>
+<line x1="36" y1="74" x2="36" y2="372" stroke="#e2e2e2" stroke-width="1" stroke-dasharray="3 4"/>
+<line x1="60" y1="74" x2="60" y2="372" stroke="#e2e2e2" stroke-width="1" stroke-dasharray="3 4"/>
+<g data-path="0/1" data-role="list" data-name="字体族">
+<rect x="50" y="78" width="784" height="24" rx="3" fill="#f7f7f7" stroke="#d0d0d0"/>
+<text x="58" y="94" font-size="12" fill="#111">字体族列表</text>
+<text x="826" y="94" font-size="10" fill="#666" text-anchor="end">list · 0/1 · 状态 2 / 动作 1 · ACC-013 ACC-027</text>
+</g>
+<g data-path="0/1/0" data-role="list item" data-name="正则 ^[\w\s.-]+$">
+<rect x="74" y="108" width="760" height="24" rx="3" fill="#f7f7f7" stroke="#d0d0d0"/>
+<text x="82" y="124" font-size="12" fill="#111">选中字体项</text>
+<text x="826" y="124" font-size="10" fill="#666" text-anchor="end">list item · 0/1/0 · 状态 1 / 动作 1 · ACC-013 ACC-027</text>
+</g>
+<g data-path="0/2/0" data-role="paragraph" data-name="正则 汉\p{Han}">
+<rect x="74" y="138" width="760" height="24" rx="3" fill="#f7f7f7" stroke="#d0d0d0"/>
+<text x="82" y="154" font-size="12" fill="#111">CJK 段落</text>
+<text x="826" y="154" font-size="10" fill="#666" text-anchor="end">paragraph · 0/2/0 · 状态 1 / 动作 0 · ACC-013 ACC-027</text>
+</g>
+<g data-path="0/2/1" data-role="paragraph" data-name="正则 [A-Za-z]">
+<rect x="74" y="168" width="760" height="24" rx="3" fill="#f7f7f7" stroke="#d0d0d0"/>
+<text x="82" y="184" font-size="12" fill="#111">拉丁段落</text>
+<text x="826" y="184" font-size="10" fill="#666" text-anchor="end">paragraph · 0/2/1 · 状态 1 / 动作 0 · ACC-013 ACC-027</text>
+</g>
+<g data-path="0/2/2" data-role="paragraph" data-name="正则 [→∑≈]">
+<rect x="74" y="198" width="760" height="24" rx="3" fill="#f7f7f7" stroke="#d0d0d0"/>
+<text x="82" y="214" font-size="12" fill="#111">符号段落</text>
+<text x="826" y="214" font-size="10" fill="#666" text-anchor="end">paragraph · 0/2/2 · 状态 1 / 动作 0 · ACC-013 ACC-027</text>
+</g>
+<g data-path="0/3" data-role="paragraph" data-name="含 RTL 字符（正则 \p{Arabic}）">
+<rect x="50" y="228" width="784" height="24" rx="3" fill="#f7f7f7" stroke="#d0d0d0"/>
+<text x="58" y="244" font-size="12" fill="#111">复杂脚本段落</text>
+<text x="826" y="244" font-size="10" fill="#666" text-anchor="end">paragraph · 0/3 · 状态 1 / 动作 0 · ACC-014 ACC-027</text>
+</g>
+<g data-path="0/4" data-role="paragraph" data-name="正则 行布局">
+<rect x="50" y="258" width="784" height="24" rx="3" fill="#f7f7f7" stroke="#d0d0d0"/>
+<text x="58" y="274" font-size="12" fill="#111">行布局段落</text>
+<text x="826" y="274" font-size="10" fill="#666" text-anchor="end">paragraph · 0/4 · 状态 1 / 动作 1 · ACC-015 ACC-027</text>
+</g>
+<g data-path="0/5" data-role="paragraph" data-name="正则 CFF">
+<rect x="50" y="288" width="784" height="24" rx="3" fill="#f7f7f7" stroke="#d0d0d0"/>
+<text x="58" y="304" font-size="12" fill="#111">CFF 大字号文本</text>
+<text x="826" y="304" font-size="10" fill="#666" text-anchor="end">paragraph · 0/5 · 状态 1 / 动作 0 · ACC-016 ACC-027</text>
+</g>
+<g data-path="0/6" data-role="entry" data-name="输入法样本">
+<rect x="50" y="318" width="784" height="24" rx="3" fill="#eef4ff" stroke="#7aa2e8"/>
+<text x="58" y="334" font-size="12" fill="#111">IME 输入框</text>
+<text x="826" y="334" font-size="10" fill="#666" text-anchor="end">entry · 0/6 · 状态 3 / 动作 2 · ACC-017 ACC-027</text>
+</g>
+<g data-path="0/7" data-role="label" data-name="正则 ^预编辑：.*$">
+<rect x="50" y="348" width="784" height="24" rx="3" fill="#f7f7f7" stroke="#d0d0d0"/>
+<text x="58" y="364" font-size="12" fill="#111">预编辑提示</text>
+<text x="826" y="364" font-size="10" fill="#666" text-anchor="end">label · 0/7 · 状态 1 / 动作 0 · ACC-017 ACC-027</text>
+</g>
+<text x="26" y="414" font-size="10" fill="#8a8a8a">蓝框＝可交互节点（Button/Entry/Check/Radio/Slider 类）；全部节点须能在 AT-SPI 树快照中按 path 命中（TG-012 / ACC-027）</text>
+</svg>

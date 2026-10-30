@@ -1,0 +1,39 @@
+# ARTIFACT-SRC-FP.txt 由 src/Linux/build/artifact-src-fp.py **生成**，不要手改。
+# 维度 A（src）：上游被编译的源 + 本工程生成物/垫片 + 决定它们的应用器脚本 + port-lib 输入
+# 维度 B（peer）：本工程 csproj 引用的**本仓内产物**字节（自指已排除）—— 2026-09-14 加
+#   【为什么】PF ⇄ Reach 真互引 ⇒ Roslyn 把被引件字节纳入输入哈希 ⇒ 该对无字节不动点、`pf` 每波必变；
+#   只覆盖 src 时 `state=ok` 是**必要不充分**（源没变、peer 变了 ⇒ 产物照样变）。
+# 排除：src/Linux/build/WindowsBase.Linux/{bin,obj}/**、.artifacts/**、本文件自己
+# 重算比对：python3 src/Linux/build/artifact-src-fp.py --check（缺本文件 / 缺被引产物 / 旧格式 ⇒ noinfo，**不报绿**）
+fp=0401987a815e636d
+n=324
+peer_fp=2e267252c6641259
+peer_n=2
+tool_sha256=e978d6f4a345e4f90432ea63440cf507a11eaffb96c601e0e75dc04c197ee660
+# 被引产物（sha256 前 16 + 仓库相对路径；**产物字节**，不是源）
+peer=c34c8d128c29b75f  src/Microsoft.DotNet.Wpf.Linux/src/System.Windows.Extensions/bin/Release/System.Windows.Extensions.dll
+peer=ad433d7e151fa9a8  src/Microsoft.DotNet.Wpf.Linux/src/System.Xaml/bin/Release/System.Xaml.dll
+# 逐文件（**源侧**）：sha256 前 16 + 仓库相对路径；只列**本仓自有输入**（上游 `src/Microsoft.DotNet.Wpf/**` 不列，用 --list 看全量）
+file=b38e0b9cda89d702  src/Linux/build/port-lib.py
+file=2985c671c57c7775  src/Microsoft.DotNet.Wpf.Linux/src/WindowsBase/DependencyObject.Linux.cs
+file=ec8259ed4c14fd3a  src/Microsoft.DotNet.Wpf.Linux/src/WindowsBase/Dispatcher.Linux.cs
+file=b6161e4a3870079b  src/Microsoft.DotNet.Wpf.Linux/src/WindowsBase/DispatcherSynchronizationContext.Linux.cs
+file=9854366f0ef5d747  src/Microsoft.DotNet.Wpf.Linux/src/WindowsBase/EffectiveValueEntry.Linux.cs
+file=0ab3046ec34ac844  src/Microsoft.DotNet.Wpf.Linux/src/WindowsBase/HwndWrapper.Linux.cs
+file=d0a35feec973655e  src/Microsoft.DotNet.Wpf.Linux/src/WindowsBase/Invariant.Linux.cs
+file=0e8befff1e86ff68  src/Microsoft.DotNet.Wpf.Linux/src/WindowsBase/SR.g.cs
+file=b27e098d00e5b9f3  src/Microsoft.DotNet.Wpf.Linux/src/WindowsBase/SecurityHelper.Linux.cs
+file=92c2ab584b4e48a0  src/Microsoft.DotNet.Wpf.Linux/src/WindowsBase/TextServicesLoader.Linux.cs
+file=28fb0e85318f343e  src/Microsoft.DotNet.Wpf.Linux/src/shims/Accessibility.Shim.cs
+file=1f252d8d7cf9372c  src/Microsoft.DotNet.Wpf.Linux/src/shims/LinuxAssemblyIdentity.cs
+file=3733ba6e63c30b32  src/Microsoft.DotNet.Wpf.Linux/src/shims/Win32ShimResolver.cs
+file=f55bcbe381630bb3  src/Microsoft.DotNet.Wpf.Linux/src/shims/WindowsBase.EventTrace.Shim.cs
+file=0f4d0c130a91360d  src/Microsoft.DotNet.Wpf.Linux/src/shims/WindowsWin32.Shim.cs
+file=4082554800c582a4  src/WpfGfx.Linux.Native/tools/patch-presentationcore-textservices.py
+file=cac7a2e2cc18ed1b  src/WpfGfx.Linux.Native/tools/patch-shared-hwndwrapper-diag.py
+file=8989d04dbe607230  src/WpfGfx.Linux.Native/tools/patch-shared-invariant-failfast.py
+file=cfe58bbf12622ec6  src/WpfGfx.Linux.Native/tools/patch-swe-linux.py
+file=42bedad9344afe79  src/WpfGfx.Linux.Native/tools/patch-windowsbase-dpvalue-trace.py
+file=ef4aa6adcd409895  src/WpfGfx.Linux.Native/tools/patch-windowsbase-entry-flatten-trace.py
+file=741f4c79430c9a10  src/WpfGfx.Linux.Native/tools/patch-windowsbase-focus-wait.py
+file=00ced2130e98a10c  src/WpfGfx.Linux.Native/tools/patch-windowsbase-msgflow.py

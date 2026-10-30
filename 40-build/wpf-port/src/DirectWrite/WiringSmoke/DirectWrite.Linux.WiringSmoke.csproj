@@ -1,0 +1,76 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- ⭐ `D-R8`（工程卫生）：不依赖 `$(BaseIntermediateOutputPath)` 指向哪里的产物目录排除。
+       实现在仓根 `BuildHygiene.props`（全仓唯一一份；理由与两种被否决的落点见 `src/Linux/build/MilBridge/W21B-report.md` §2）。
+       **故意不加 `Exists()` 条件**：文件找不到要大声失败。 -->
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('BuildHygiene.props'))" />
+
+  <!--
+    T2 · Phase 3 端到端冒烟：**通过接线后的骨架 + PC 的 Linux Factory / 排版路径**取真值
+    =====================================================================================
+    【引用形态：必须是 HintPath + Private，不能是 ProjectReference】—— 主控 2026-09-10 的裁定
+      本工程原先用 ProjectReference 引 PC/DWF，结果 app 的 deps.json 里**没有 WindowsBase**：
+      ProjectReference 只传"项目边"，PC 内部那些 `<Reference><HintPath>` 私有依赖**不传递**。
+      于是宿主按框架清单命中 `WindowsBase 4.0.0.0/PKT=31bf…`，而请求的是
+      `4.0.0.1/PKT=31bf…`（本仓公开签名的身份）→ 版本不符 → `FileLoadException 0x80131040`。
+      ⇒ 改成与 src/Linux/samples/HelloWpf/HelloWpf.csproj 里那 9 条**同形**的 HintPath 引用后，
+         RAR 会把引用连同同目录依赖解析进 deps.json，WindowsBase 就有了 app-local 条目。
+      （这正是主控给的反证：HelloWpf 在**签名之后**照样跑得起来。）
+  -->
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <AssemblyName>DirectWrite.Linux.WiringSmoke</AssemblyName>
+    <RootNamespace>MS.Internal.Text.TextInterface.Linux.WiringSmoke</RootNamespace>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <BaseOutputPath>$(MSBuildThisFileDirectory)bin\</BaseOutputPath>
+    <BaseIntermediateOutputPath>$(MSBuildThisFileDirectory)obj\</BaseIntermediateOutputPath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Reference Include="WindowsBase">
+      <HintPath>$(RepoRoot)src/Microsoft.DotNet.Wpf.Linux/src/WindowsBase/bin/$(WpfLinuxSelfBuiltConfiguration)/WindowsBase.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+    <Reference Include="System.Xaml">
+      <HintPath>$(RepoRoot)src/Microsoft.DotNet.Wpf.Linux/src/System.Xaml/bin/$(WpfLinuxSelfBuiltConfiguration)/System.Xaml.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+    <Reference Include="System.Windows.Input.Manipulations">
+      <HintPath>$(RepoRoot)src/Microsoft.DotNet.Wpf.Linux/src/System.Windows.Input.Manipulations/bin/$(WpfLinuxSelfBuiltConfiguration)/System.Windows.Input.Manipulations.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+    <Reference Include="UIAutomationTypes">
+      <HintPath>$(RepoRoot)src/Microsoft.DotNet.Wpf.Linux/src/UIAutomationTypes/bin/$(WpfLinuxSelfBuiltConfiguration)/UIAutomationTypes.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+    <Reference Include="UIAutomationProvider">
+      <HintPath>$(RepoRoot)src/Microsoft.DotNet.Wpf.Linux/src/UIAutomationProvider/bin/$(WpfLinuxSelfBuiltConfiguration)/UIAutomationProvider.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+    <Reference Include="PresentationCore">
+      <HintPath>$(RepoRoot)src/Microsoft.DotNet.Wpf.Linux/src/PresentationCore/bin/$(WpfLinuxSelfBuiltConfiguration)/PresentationCore.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+    <Reference Include="DirectWriteForwarder">
+      <HintPath>$(RepoRoot)src/Microsoft.DotNet.Wpf.Linux/src/DirectWriteForwarder/bin/$(WpfLinuxSelfBuiltConfiguration)/DirectWriteForwarder.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+    <Reference Include="DirectWrite.Linux.Provider">
+      <HintPath>$(RepoRoot)src/Microsoft.DotNet.Wpf.Linux/src/DirectWrite/Provider/bin/$(WpfLinuxSelfBuiltConfiguration)/DirectWrite.Linux.Provider.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- SkiaSharp 是 Provider 的运行期依赖；native 包提供 libSkiaSharp.so -->
+    <PackageReference Include="SkiaSharp" Version="$(SkiaSharpVersion)" />
+    <PackageReference Include="SkiaSharp.NativeAssets.Linux" Version="$(SkiaSharpVersion)" />
+    <!-- PresentationCore 的包依赖（HintPath 引用不传递它们，得自己带） -->
+    <PackageReference Include="System.IO.Packaging" Version="9.0.0" />
+    <PackageReference Include="System.Formats.Nrbf" Version="9.0.0" />
+    <PackageReference Include="System.Configuration.ConfigurationManager" Version="9.0.0" />
+    <PackageReference Include="System.Windows.Extensions" Version="9.0.0" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,43 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- ⭐ `D-R8`（工程卫生）：不依赖 `$(BaseIntermediateOutputPath)` 指向哪里的产物目录排除。
+       实现在仓根 `BuildHygiene.props`（全仓唯一一份；理由与两种被否决的落点见 `src/Linux/build/MilBridge/W21B-report.md` §2）。
+       **故意不加 `Exists()` 条件**：文件找不到要大声失败。 -->
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('BuildHygiene.props'))" />
+
+  <!--
+    T2 · Phase 1：探针工程（**独立进程**运行的确定性证据生成器）
+    =====================================================================================
+    它做一件很具体的事：把 provider 的全部可观察输出（度量 / 表字节 / 字形索引 /
+    advance / 定位 / 字形度量 / name 表信息）规范成一份**确定性文本**，
+    再算 SHA-256 打印出来。
+
+    为什么要独立进程：
+      "同进程跑两次一致"只能证明没有进程内状态污染；
+      "两个进程各跑一次一致"才能排除
+        · 字典/哈希表的枚举顺序（.NET 的 string hash 每进程随机化）
+        · 静态缓存与惰性初始化的顺序依赖
+        · DateTime / Guid / 环境相关值混进输出
+      这一类**跨进程才暴露**的不确定性。所以 Tests 里会真的把本程序当子进程跑两次。
+
+    输出约定：
+      · stdout 最后一行固定是 `DIGEST &lt;64位小写hex&gt;`（Tests 用正则抓它）
+      · 加 `-json` 参数额外打印人类可读的事实（进报告，不参与哈希）
+      · 加 `-out &lt;path&gt;` 参数把摘要文本与 digest 一起落盘（留证）
+  -->
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <AssemblyName>DirectWrite.Linux.Probe</AssemblyName>
+    <RootNamespace>MS.Internal.Text.TextInterface.Linux.Probe</RootNamespace>
+    <!-- 明确固定输出目录：Tests 要按固定相对路径把它当子进程拉起来 -->
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <BaseOutputPath>$(MSBuildThisFileDirectory)bin\</BaseOutputPath>
+    <BaseIntermediateOutputPath>$(MSBuildThisFileDirectory)obj\</BaseIntermediateOutputPath>
+    <InvariantGlobalization>false</InvariantGlobalization>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../Provider/DirectWrite.Linux.Provider.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,140 @@
+{
+  "scr": "SCR-06",
+  "source": "界面设计说明 §7",
+  "generated_from": "界面图/build-wireframe.mjs --emit-expect（与结构图读同一张表）",
+  "nodes": [
+    {
+      "path": "0/0",
+      "role": "push button",
+      "name": "播放",
+      "states": [
+        "enabled"
+      ],
+      "actions": [
+        "click"
+      ],
+      "acc": [
+        "ACC-022",
+        "ACC-027"
+      ],
+      "bounds": null,
+      "value": null,
+      "relations": []
+    },
+    {
+      "path": "0/1",
+      "role": "push button",
+      "name": "暂停",
+      "states": [
+        "enabled"
+      ],
+      "actions": [
+        "click"
+      ],
+      "acc": [
+        "ACC-022",
+        "ACC-027"
+      ],
+      "bounds": null,
+      "value": null,
+      "relations": []
+    },
+    {
+      "path": "0/2",
+      "role": "slider",
+      "name": "进度",
+      "states": [
+        "enabled"
+      ],
+      "actions": [
+        "focus"
+      ],
+      "acc": [
+        "ACC-022",
+        "ACC-027"
+      ],
+      "bounds": null,
+      "value": null,
+      "relations": []
+    },
+    {
+      "path": "0/3",
+      "role": "label",
+      "name": "正则 state=(PLAYING|PAUSED|READY|ERROR)",
+      "states": [
+        "visible"
+      ],
+      "actions": [],
+      "acc": [
+        "ACC-022",
+        "ACC-027"
+      ],
+      "bounds": null,
+      "value": null,
+      "relations": []
+    },
+    {
+      "path": "0/4",
+      "role": "label",
+      "name": "正则 不支持.*D-\\d{3}",
+      "states": [
+        "!visible（默认）"
+      ],
+      "actions": [],
+      "acc": [
+        "ACC-022",
+        "ACC-027"
+      ],
+      "bounds": null,
+      "value": null,
+      "relations": []
+    },
+    {
+      "path": "0/5",
+      "role": "drawing area",
+      "name": "墨迹",
+      "states": [
+        "visible"
+      ],
+      "actions": [],
+      "acc": [
+        "ACC-023"
+      ],
+      "bounds": null,
+      "value": null,
+      "relations": []
+    },
+    {
+      "path": "0/6",
+      "role": "label",
+      "name": "正则 points=\\d+",
+      "states": [
+        "visible"
+      ],
+      "actions": [],
+      "acc": [
+        "ACC-023",
+        "ACC-027"
+      ],
+      "bounds": null,
+      "value": null,
+      "relations": []
+    },
+    {
+      "path": "0/7",
+      "role": "label",
+      "name": "正则 pen=(on|off)",
+      "states": [
+        "visible"
+      ],
+      "actions": [],
+      "acc": [
+        "ACC-023",
+        "ACC-027"
+      ],
+      "bounds": null,
+      "value": null,
+      "relations": []
+    }
+  ]
+}

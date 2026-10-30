@@ -1,0 +1,43 @@
+# ============================================================================
+# LinuxDesktopPerfect 版本控制边界（规则来源见 30-design/设计文档包/01 §7.3）
+# 原则：可复算的产物一律不入库；入不入库取决于「能否用仓内命令重建」
+# ============================================================================
+
+# --- 上游快照（只读，可由 SNAPSHOT.json 的 extract_command 重建） ---
+40-build/upstream/wpf/*
+!40-build/upstream/wpf/SNAPSHOT.json
+!40-build/upstream/wpf/.gitkeep
+
+# --- 派生树与构建产物（ADR-002：applier 可再生） ---
+40-build/build/
+40-build/**/artifacts/
+40-build/**/obj/
+40-build/**/bin/
+40-build/pack/out/
+40-build/pack/*.nupkg
+*.binlog
+artifacts/
+.dotnet/
+.tools/
+
+# --- 离线桩包（D-002；由 40-build/lock/make-stub-feed.mjs 重建） ---
+40-build/lock/offline-feed/*.nupkg
+
+# --- 判据读数与运行时缓存（08 §3.6：读数只追加、不入版本控制） ---
+50-verify/读数/*
+!50-verify/读数/.gitkeep
+__pycache__/
+*.pyc
+
+# --- 自检临时件、日志、编辑器 ---
+_selftest_*.md
+*.log
+*.tmp
+*.swp
+.vs/
+.vscode/
+.idea/
+*.user
+
+# --- 依赖目录 ---
+node_modules/

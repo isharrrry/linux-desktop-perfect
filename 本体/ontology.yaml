@@ -1,0 +1,630 @@
+# LinuxDesktopPerfect 运行时本体（业务本体）
+# 唯一的「类/关系/规则/动作/术语/裁决/排除」事实源；不新增语义，类的 source 逐条指向设计文档。
+# 校验：python3 本体/本体校验.py；说明：本体/本体说明.md
+ontology:
+  name: LinuxDesktopPerfect 运行时本体
+  domain: WindowsDesktop（WPF 全量 + WinForms 兼容层）在 Linux 上的源码级替代运行时
+  version: "0.1"
+  built_at: "2026-10-30"
+  inputs:
+    - "20-spec/需求与验收判据文档.md"
+    - "30-design/概要设计.md"
+    - "30-design/设计文档包/00~08 + 界面设计说明.md"
+    - "70-operate/已知坑清单.md"
+  degraded_note: >-
+    本项目尚无任何实测判据读数（实现未开始），本体里的规则全部由设计文档推导，
+    没有一条被运行验证过；因此 rules.confidence 不得为 high，最多 medium。
+  regenerate_when: >-
+    概设的 ADR/MOD/SYS/R 增删、04 的 IF 增删、05 的 TBL 增删、界面 SCR/GAP 增删、
+    08 的 TG 增删、或 70-operate 缺陷册编号变化时重跑；纯文字修订、改链接、改名不触发。
+
+classes:
+  - id: C001
+    id_en: Session
+    name_zh: 应用会话
+    source: "03 §4.3.1（SM-001）、02 §12"
+    description: 一次应用进程从宿主加载 pack 到退出的生命周期载体，承载窗口与框架包。
+    properties:
+      - { key: session_id, type: string, description: 会话标识，进程内唯一 }
+      - { key: pack_version, type: string, description: 解析到的 Microsoft.WindowsDesktop.App 版本，须为 10.0.x }
+      - { key: state, type: enum, enum_values: [Loading, Starting, Running, ShuttingDown, Terminated], description: 会话状态，转移见 SM-001 }
+      - { key: exit_code, type: integer, description: 退出码，0 正常 / 1 判据红 / 2 契约不符 / 3 环境缺失 / 4 降级完成 }
+
+  - id: C002
+    id_en: Window
+    name_zh: 窗口
+    source: "03 §3.2.1（MOD-11）、03 §4.3.2（SM-002）、04 §2.2（IF-002）"
+    description: X11 上的一次窗口生命周期；Windows 句柄与 X11 Window 一一映射。
+    properties:
+      - { key: window_id, type: string, description: 自产句柄表的窗口标识 }
+      - { key: title, type: string, description: 标题文本，投影到可访问名称 }
+      - { key: bounds, type: object, description: 屏幕绝对像素矩形（多屏与负坐标按 X11 原值，见 GAP-011） }
+      - { key: dpi_scale, type: float, description: per-monitor 缩放比，1.0/1.25/1.5/2.0 }
+      - { key: composited, type: boolean, description: 合成器可用性，false 时走 DwmIsCompositionEnabled=false 路径 }
+
+  - id: C003
+    id_en: Message
+    name_zh: 消息
+    source: "03 §3.2.2（MOD-12）、04 §2.2（IF-002）"
+    description: 消息泵里的一条 Windows 语义消息，由 XEvent 翻译而来。
+    properties:
+      - { key: msg_id, type: string, description: 消息标识 }
+      - { key: type, type: enum, enum_values: [paint, resize, key, pointer, wheel, focus, close, timer], description: 消息类 }
+      - { key: hwnd, type: string, description: 目标窗口标识 }
+      - { key: wparam, type: integer, description: 消息参数一 }
+      - { key: lparam, type: integer, description: 消息参数二 }
+
+  - id: C004
+    id_en: DeviceContext
+    name_zh: 设备上下文
+    source: "03 §3.2.3（MOD-13）、04 §2.3（IF-003）"
+    description: GDI/GDI+ 的绘制目标与度量上下文，Linux 侧映射到 X11 Drawable 或内存位图。
+    properties:
+      - { key: dc_id, type: string, description: 上下文标识 }
+      - { key: target, type: enum, enum_values: [window, bitmap], description: 绘制目标类型 }
+      - { key: clip, type: object, description: 裁剪矩形 }
+      - { key: dpi, type: integer, description: 上下文 DPI，用于字体度量 }
+
+  - id: C005
+    id_en: PixelSurface
+    name_zh: 像素缓冲
+    source: "03 §3.3.4（MOD-24）、04 §3.4（IF-014）"
+    description: 一帧的像素结果，最终经 XPutImage/XCB 呈现到窗口。
+    properties:
+      - { key: surface_id, type: string, description: 缓冲标识 }
+      - { key: width, type: integer, description: 宽度（像素） }
+      - { key: height, type: integer, description: 高度（像素） }
+      - { key: format, type: enum, enum_values: [bgra8888, rgba8888, a8], description: 像素格式 }
+      - { key: stride, type: integer, description: 行跨距（字节） }
+
+  - id: C006
+    id_en: VisualTree
+    name_zh: 视觉树
+    source: "03 §3.3.2（MOD-22）、03 §3.8.1（MOD-81）"
+    description: 托管侧视觉对象的投影，是无障碍节点与 DUCE 命令的共同来源。
+    properties:
+      - { key: tree_id, type: string, description: 树标识 }
+      - { key: node_count, type: integer, description: 节点数 }
+      - { key: dirty_region, type: object, description: 待重绘区域 }
+
+  - id: C007
+    id_en: CommandStream
+    name_zh: DUCE 命令流
+    source: "03 §3.3.1（MOD-21）、04 §3.1（IF-011）"
+    description: 托管层与 milcore 之间唯一的绘制契约：118 条命令的字节流。
+    properties:
+      - { key: batch_id, type: string, description: 批次标识 }
+      - { key: command_count, type: integer, description: 本批命令条数 }
+      - { key: byte_length, type: integer, description: 字节长度 }
+      - { key: fence, type: integer, description: 帧序号，用于呈现同步 }
+
+  - id: C008
+    id_en: ResourceHandle
+    name_zh: 资源句柄
+    source: "03 §3.3.2（MOD-22）、04 §3.2（IF-012）"
+    description: milcore 内资源表的一条引用计数条目，命令通过它引用画刷/几何/位图/字形。
+    properties:
+      - { key: handle_id, type: string, description: 句柄标识 }
+      - { key: type, type: enum, enum_values: [brush, geometry, bitmap, font, glyphrun, effect], description: 资源类 }
+      - { key: refcount, type: integer, description: 引用计数，归零释放 }
+      - { key: owner_window, type: string, description: 归属窗口，窗口销毁时整组回收 }
+
+  - id: C009
+    id_en: GlyphRun
+    name_zh: 字形运行
+    source: "03 §3.4.2（MOD-32）、03 §3.4.5（MOD-35）"
+    description: 一段已 shaped 的字形与步进序列，跨到 milcore 时只带字形 id 与位置。
+    properties:
+      - { key: run_id, type: string, description: 运行标识 }
+      - { key: font_face, type: string, description: 字形来源字体面 }
+      - { key: glyph_ids, type: array, description: 字形 id 序列 }
+      - { key: advances, type: array, description: 每字形步进 }
+      - { key: bidi_level, type: integer, description: 双向文本层级 }
+
+  - id: C010
+    id_en: FontFamily
+    name_zh: 字体族
+    source: "03 §3.4.1（MOD-31）、05 §3.5（TBL-005）"
+    description: fontconfig 枚举出的字体族与它的回退链。
+    properties:
+      - { key: family, type: string, description: 族名 }
+      - { key: fallback_chain, type: array, description: 回退链，按命中顺序 }
+      - { key: source, type: string, description: 来源（fontconfig 版本与配置文件） }
+
+  - id: C011
+    id_en: BitmapSource
+    name_zh: 图像源
+    source: "03 §3.5.1（MOD-41）、03 §3.5.2（MOD-42）"
+    description: 经 WIC 解码与 ICC 转换后的图像，交由 Skia 绘制。
+    properties:
+      - { key: image_id, type: string, description: 图像标识 }
+      - { key: mime, type: enum, enum_values: [png, jpeg, gif, bmp, tiff], description: 源格式 }
+      - { key: width, type: integer, description: 像素宽 }
+      - { key: height, type: integer, description: 像素高 }
+      - { key: icc_profile, type: string, description: 嵌入的 ICC 描述或 none }
+
+  - id: C012
+    id_en: FrameworkPack
+    name_zh: 框架包
+    source: "03 §3.6.1（MOD-51）、03 §3.6.2（MOD-52）、04 §4（IF-021~024）"
+    description: 自产的 Microsoft.WindowsDesktop.App Ref / Runtime 包，是应用工程接入的唯一途径。
+    properties:
+      - { key: pack_id, type: string, description: 包标识 }
+      - { key: kind, type: enum, enum_values: [ref, runtime], description: Ref 还是 Runtime }
+      - { key: version, type: string, description: 版本，须对齐 10.0.x }
+      - { key: rid, type: string, description: Runtime 的 RID，V1 只允许 linux-x64 }
+
+  - id: C013
+    id_en: Assembly
+    name_zh: 程序集
+    source: "03 §3.1.4（MOD-04）、03 §3.1.2（MOD-02）"
+    description: pack 内的一个托管程序集；自产件与上游件同名同身份。
+    properties:
+      - { key: assembly_name, type: string, description: 程序集简单名 }
+      - { key: tfm, type: string, description: 目标框架，net10.0 }
+      - { key: public_key_token, type: string, description: 公钥标记，与上游一致 }
+      - { key: source, type: enum, enum_values: [self_built, upstream], description: 自产件还是直接取上游件 }
+
+  - id: C014
+    id_en: ContractFile
+    name_zh: 契约文件
+    source: "05 §0.3、05 §3.1~§3.3、05 §3.7"
+    description: 四个仓内一等资产：出口清单、ABI 布局、DUCE 布局表、FrameworkList。
+    properties:
+      - { key: file_name, type: string, description: 文件名 }
+      - { key: kind, type: enum, enum_values: [exports, abi, duce_layout, framework_list], description: 契约种类 }
+      - { key: version, type: string, description: 契约版本，独立于 pack 版本 }
+
+  - id: C015
+    id_en: AccessibleNode
+    name_zh: 无障碍节点
+    source: "04 §7.1（IF-051）、04 §9.1（IF-071）、界面 §0.3"
+    description: AT-SPI 树上的一个可检测节点；界面判据的第一手数据。
+    properties:
+      - { key: path, type: string, description: 树内稳定路径（数字段 /），结构 diff 的 join 键 }
+      - { key: role, type: enum, enum_values: [frame, panel, filler, push_button, entry, check_box, radio_button, combo_box, list, list_item, menu, menu_bar, menu_item, table, table_cell, page_tab, page_tab_list, slider, text, label, paragraph, status_bar, tool_bar, document_frame, drawing_area, image, application], description: AT-SPI 角色 }
+      - { key: name, type: string, description: 可访问名称，空名视为缺陷 }
+      - { key: states, type: array, description: 状态位集合 }
+      - { key: actions, type: array, description: 可调用动作集合 }
+      - { key: bounds, type: object, description: 屏幕绝对像素矩形（不参与结构 diff） }
+
+  - id: C016
+    id_en: InputEvent
+    name_zh: 输入事件
+    source: "03 §3.2.2（MOD-12）、03 §3.4.6（MOD-36）"
+    description: 键盘/指针/滚轮/触摸的一次输入，可能来自 X11，也可能来自输入法。
+    properties:
+      - { key: event_id, type: string, description: 事件标识 }
+      - { key: kind, type: enum, enum_values: [key, pointer, wheel, touch, ime], description: 事件类 }
+      - { key: target_hwnd, type: string, description: 目标窗口 }
+      - { key: modifiers, type: array, description: 修饰键状态 }
+
+  - id: C017
+    id_en: ImeComposition
+    name_zh: 输入法会话
+    source: "03 §3.4.6（MOD-36）、03 §4.3.4（SM-004）、04 §5.1（IF-031）"
+    description: 一次预编辑到提交的输入法组合过程；经 D-Bus 与 ibus/fcitx5 交互。
+    properties:
+      - { key: composition_id, type: string, description: 组合标识 }
+      - { key: preedit, type: string, description: 预编辑串 }
+      - { key: candidates, type: array, description: 候选列表 }
+      - { key: committed_text, type: string, description: 已提交文本 }
+
+  - id: C018
+    id_en: PrintJob
+    name_zh: 打印作业
+    source: "03 §3.8.2（MOD-82）、03 §4.3.5（SM-005）、04 §6.1（IF-041）"
+    description: 一次 XPS 渲染到 CUPS 队列的作业；作业属性由 CIP 侧记录判定。
+    properties:
+      - { key: job_id, type: string, description: 作业标识 }
+      - { key: queue, type: string, description: 目标队列 }
+      - { key: pages, type: integer, description: 页数 }
+      - { key: media, type: string, description: 介质，如 iso_a4_210x297mm }
+      - { key: dpi, type: integer, description: 分辨率 }
+      - { key: state, type: enum, enum_values: [pending, processing, completed, aborted], description: 作业状态 }
+
+  - id: C019
+    id_en: MediaSource
+    name_zh: 媒体源
+    source: "03 §3.8.3（MOD-83）、03 §4.3.6（SM-006）、04 §8.1（IF-061）"
+    description: GStreamer playbin 的一个媒体源与它的状态机。
+    properties:
+      - { key: media_id, type: string, description: 媒体标识 }
+      - { key: uri, type: string, description: 源地址 }
+      - { key: container, type: string, description: 容器类型 }
+      - { key: codec, type: string, description: 编解码器 }
+      - { key: state, type: enum, enum_values: [null_state, ready, paused, playing, error], description: 播放状态 }
+
+  - id: C020
+    id_en: InkStroke
+    name_zh: 笔迹笔画
+    source: "03 §3.8.4（MOD-84）"
+    description: 一次采集到的笔/触摸轨迹；无设备时降级不阻塞。
+    properties:
+      - { key: stroke_id, type: string, description: 笔画标识 }
+      - { key: points, type: array, description: 轨迹点序列 }
+      - { key: pressure_curve, type: array, description: 压感序列，可为空 }
+      - { key: device, type: string, description: 设备名或 none }
+
+  - id: C021
+    id_en: Readout
+    name_zh: 判据读数
+    source: "08 §1.5、04 §9.3（IF-073）、05 §3.9（TBL-009）"
+    description: 一条判据执行的结果文件；四值判定，SKIP 不等于 PASS。
+    properties:
+      - { key: readout_id, type: string, description: 读数标识（时间戳 + 序号） }
+      - { key: acc, type: string, description: 对应验收判据编号 }
+      - { key: tg, type: string, description: 对应测试门编号 }
+      - { key: verdict, type: enum, enum_values: [PASS, FAIL, SKIP, DEGRADED], description: 判定值 }
+      - { key: expect_ref, type: string, description: 期望文件定位（表 + 行键） }
+      - { key: diff, type: array, description: 差异条目，FAIL 时必须非空 }
+
+  - id: C022
+    id_en: Defect
+    name_zh: 缺陷项
+    source: "70-operate/已知坑清单、05 §3.8（TBL-008）、04 §9.2（IF-072）"
+    description: 一条降级或已知坑；四要素齐全才算降级。
+    properties:
+      - { key: defect_id, type: string, description: 编号（D-/K-/X-） }
+      - { key: kind, type: enum, enum_values: [degrade, known_issue, undecided], description: 类别 }
+      - { key: trigger, type: string, description: 触发条件 }
+      - { key: return_code, type: string, description: 返回码或行为 }
+      - { key: visible_behavior, type: string, description: 用户可见行为 }
+      - { key: status, type: enum, enum_values: [open, closed], description: 状态 }
+
+  - id: C023
+    id_en: DerivedTree
+    name_zh: 派生树
+    source: "03 §1.3、03 §4.3.8（SM-008）、05 §7"
+    description: applier 从上游快照生成的构建树；产物可再生，不入版本控制。
+    properties:
+      - { key: tree_sha, type: string, description: 派生树内容摘要 }
+      - { key: upstream_sha, type: string, description: 上游快照提交 }
+      - { key: applier_version, type: string, description: applier 版本 }
+      - { key: generated_at, type: datetime, description: 生成时间（UTC） }
+
+  - id: C024
+    id_en: TestGate
+    name_zh: 测试门
+    source: "08 §2、08 §4、01 §4.6"
+    description: 一组判据的集合；门的绿是交付前置条件，横切门不占 ACC。
+    properties:
+      - { key: gate_id, type: string, description: 门编号（TG-xxx） }
+      - { key: scope, type: string, description: 覆盖范围（ACC 区间 / 非功能） }
+      - { key: entry_command, type: string, description: 入口命令 }
+      - { key: readout_dir, type: string, description: 读数目录 }
+
+relations:
+  - { id: RL001, from: C001, to: C002, predicate: 持有, description: 一个会话持有它创建的窗口 }
+  - { id: RL002, from: C001, to: C012, predicate: 加载, description: 会话启动时解析并加载框架包 }
+  - { id: RL003, from: C012, to: C013, predicate: 包含, description: 框架包包含若干程序集 }
+  - { id: RL004, from: C014, to: C013, predicate: 约束, description: 契约文件约束程序集的入口与身份 }
+  - { id: RL005, from: C002, to: C003, predicate: 接收, description: 窗口接收消息 }
+  - { id: RL006, from: C002, to: C004, predicate: 拥有, description: 窗口拥有绘制上下文 }
+  - { id: RL007, from: C004, to: C005, predicate: 绘制到, description: 上下文把内容绘制到像素缓冲 }
+  - { id: RL008, from: C002, to: C007, predicate: 提交, description: 窗口按帧提交 DUCE 批次 }
+  - { id: RL009, from: C007, to: C008, predicate: 引用, description: 命令流通过句柄引用资源 }
+  - { id: RL010, from: C008, to: C002, predicate: 归属, description: 句柄归属窗口，窗口销毁整组回收 }
+  - { id: RL011, from: C007, to: C005, predicate: 产出, description: 命令流渲染产生像素缓冲 }
+  - { id: RL012, from: C006, to: C007, predicate: 投影为, description: 视觉树投影成命令流 }
+  - { id: RL013, from: C009, to: C006, predicate: 属于, description: 字形运行是视觉树的一部分 }
+  - { id: RL014, from: C010, to: C009, predicate: 提供, description: 字体族按回退链提供字形 }
+  - { id: RL015, from: C011, to: C005, predicate: 解码为, description: 图像源解码后进入像素缓冲 }
+  - { id: RL016, from: C015, to: C006, predicate: 映射, description: 无障碍节点由视觉树投影而来 }
+  - { id: RL017, from: C016, to: C003, predicate: 转为, description: 输入事件翻译成消息 }
+  - { id: RL018, from: C017, to: C016, predicate: 产生, description: 输入法会话产生输入事件 }
+  - { id: RL019, from: C018, to: C007, predicate: 渲染, description: 打印作业渲染命令流到 XPS }
+  - { id: RL020, from: C019, to: C005, predicate: 驱动, description: 媒体源驱动帧输出 }
+  - { id: RL021, from: C020, to: C006, predicate: 进入, description: 笔迹进入视觉树 }
+  - { id: RL022, from: C024, to: C021, predicate: 覆盖, description: 测试门覆盖若干读数 }
+  - { id: RL023, from: C022, to: C021, predicate: 被引用, description: 读数与错误行引用缺陷编号 }
+  - { id: RL024, from: C023, to: C013, predicate: 生成, description: 派生树生成自产程序集 }
+  - { id: RL025, from: C002, to: C015, predicate: 暴露, description: 窗口暴露无障碍节点子树 }
+  - { id: RL026, from: C016, to: C002, predicate: 投递到, description: 输入事件投递到目标窗口 }
+
+rules:
+  - id: R001
+    condition: PTS（Lo*/Fs*/Nl*）入口缺失
+    then: 返回 E_NOTIMPL 并记入口名，同时文本路径分流到托管行布局
+    source: "03 §3.2.6（MOD-16）、ADR-007、R-002"
+    confidence: medium
+  - id: R002
+    condition: 触达 DRM 受保护内容
+    then: 返回 E_NOTIMPL，错误行带 D-001，不静默
+    source: "DQ-001、ADR-012、MOD-85"
+    confidence: medium
+  - id: R003
+    condition: pack 版本不等于 10.0.x，或清单缺件
+    then: 启动失败，退出码 2，错误行给出缺的文件名
+    source: "03 §4.3.1（SM-001）、REQ-FN-003、SAFE-018"
+    confidence: medium
+  - id: R004
+    condition: 出口清单与实现不一致
+    then: 契约对拍 TG-001 判红，停止合入
+    source: "04 §2.6（IF-006）、TG-001"
+    confidence: medium
+  - id: R005
+    condition: 跨边界结构体布局断言失败
+    then: 编译失败，不允许带断言失败的实现出产物
+    source: "SAFE-012、04 §1.2"
+    confidence: medium
+  - id: R006
+    condition: 调用未实现的原生入口
+    then: 返回 E_NOTIMPL 并记入口名与缺陷编号，不返回 S_OK 空结果
+    source: "SAFE-011、ADR-012、04 §2.5"
+    confidence: medium
+  - id: R007
+    condition: X11 无合成器
+    then: DwmIsCompositionEnabled 读为 false，走无合成呈现路径并在状态条暴露
+    source: "R-008、MOD-11/24、ACC-026"
+    confidence: medium
+  - id: R008
+    condition: X11 连接失败
+    then: 启动失败，退出码 3，错误行给 DISPLAY 与原因
+    source: "03 §4.3.1（SM-001）、SAFE-018"
+    confidence: medium
+  - id: R009
+    condition: 无 AT-SPI 总线
+    then: 无障碍桥禁用并留错误行，读数标 SKIP，不得标 PASS
+    source: "08 §1.5、SAFE-018"
+    confidence: medium
+  - id: R010
+    condition: 无障碍节点的可访问名称为空
+    then: 结构判据判 FAIL，登记为缺陷或缺口
+    source: "界面 §3.3、R-004"
+    confidence: medium
+  - id: R011
+    condition: 元素属性表里的 path 在快照中缺失
+    then: 结构判据判 FAIL，差异记入 diff 并定位到 SCR 行
+    source: "界面 §0.3、08 §3.3"
+    confidence: medium
+  - id: R012
+    condition: 结构判据绿而帧判据红
+    then: 先查字体回退与 DPI 换算，再比帧定位；登记 K- 或 D-
+    source: "08 §3.5、R-012"
+    confidence: medium
+  - id: R013
+    condition: 结构判据红而帧判据绿
+    then: 判定为桥漏节点或角色映射错，修桥与 TBL-012，缺角色登记 GAP
+    source: "08 §3.5、R-004"
+    confidence: medium
+  - id: R014
+    condition: 300 帧统计帧率低于 60 fps
+    then: 读数长期红并登记已知坑，不得下调阈值
+    source: "NF-003、TG-015、08 §5"
+    confidence: medium
+    conflict_group: CG-01
+    conflict_reason: 与 R031（放宽判据需变更单）表面冲突，裁决见 D10
+  - id: R015
+    condition: 8 h 长跑句柄计数单调增长
+    then: 长跑判据判红，登记已知坑并定位句柄表
+    source: "NF-004、SAFE-010、TG-015"
+    confidence: medium
+  - id: R016
+    condition: 系统无 CUPS
+    then: PrintQueue 明确报错，不假成功
+    source: "REQ-FN-024、03 §3.8.2（MOD-82）"
+    confidence: medium
+  - id: R017
+    condition: 系统无输入法（ibus/fcitx5 均不可用）
+    then: 降级为直接键输入，留错误行，IME 判据标 DEGRADED
+    source: "ADR-008、ACC-017"
+    confidence: medium
+  - id: R018
+    condition: GStreamer 版本低于 1.20
+    then: 媒体路径明确报错，不尝试协商
+    source: "R-006、04 §8.1（IF-061）"
+    confidence: medium
+  - id: R019
+    condition: 媒体格式不受支持
+    then: 界面提示可见且含缺陷编号，状态机进入 error
+    source: "ADR-009、ACC-022、SM-006"
+    confidence: medium
+  - id: R020
+    condition: 无笔/触摸设备
+    then: pen=off，笔迹判据标 DEGRADED，不阻塞其他判据
+    source: "ACC-023、GAP-005"
+    confidence: medium
+  - id: R021
+    condition: WinForms 控件未实现
+    then: 控制台报错 + 渲染空白占位 + 进程不退出，错误行带控件名与 D- 编号
+    source: "DQ-003、ADR-011、GAP-009"
+    confidence: medium
+  - id: R022
+    condition: 图像尺寸超过解码上限
+    then: 返回 E_OUTOFMEMORY，禁止部分绘制后假成功
+    source: "SAFE-008、03 §3.5.1（MOD-41）"
+    confidence: medium
+  - id: R023
+    condition: 字体文件损坏或解析失败
+    then: 返回错误码，进程不退出；缺字走回退链或可见缺字
+    source: "SAFE-009、ACC-013"
+    confidence: medium
+  - id: R024
+    condition: DUCE 命令流出现未识别命令
+    then: 未识别计数非 0，命令覆盖表判红（117/118 也算红）
+    source: "ACC-006、TBL-003"
+    confidence: medium
+  - id: R025
+    condition: 上游 10.0.x patch 改变 P/Invoke 面
+    then: 停止合入，先改 applier 与契约文件，再跑 TG-001 对拍
+    source: "R-007、DQ-004、ADR-002"
+    confidence: medium
+  - id: R026
+    condition: 手工修改派生树
+    then: 下次 applier 运行时被覆盖；评审只看 applier
+    source: "ADR-002、REQ-FN-005"
+    confidence: medium
+  - id: R027
+    condition: 两次再生产物 sha 不同
+    then: 判据红，定位 applier 的非确定性来源
+    source: "NF-005、ACC-005"
+    confidence: medium
+  - id: R028
+    condition: 应用输出目录与 pack 内都找不到自产 .so
+    then: 启动自检给缺失文件名并非 0 退出，不回落到系统同名库
+    source: "SAFE-018、02 §11.2"
+    confidence: medium
+  - id: R029
+    condition: 快照器遇到密码框等敏感输入
+    then: 默认脱敏不导出内容，打开显式开关才导出
+    source: "SAFE-014、04 §9.1（IF-071）"
+    confidence: medium
+  - id: R030
+    condition: 调用未登记的无障碍动作
+    then: 拒绝执行并留日志，不执行任意动作
+    source: "SAFE-015、04 §7.3（IF-053）"
+    confidence: medium
+  - id: R031
+    condition: 需要放宽判据（阈值变松、断言变少、SKIP 变多）
+    then: 需变更单 + 降级或缺口登记 + 放宽前后各一份读数
+    source: "08 §5、ADR-012"
+    confidence: medium
+    conflict_group: CG-01
+    conflict_reason: 与 R014（长期红不许下调阈值）表面冲突，裁决见 D10
+  - id: R032
+    condition: 诊断开关处于默认状态
+    then: 关闭，且日志不记录用户输入内容
+    source: "SAFE-020"
+    confidence: medium
+  - id: R033
+    condition: 某条 ACC 没有读数目录
+    then: 视为待实现，不得计入通过；统计时与 PASS 分开
+    source: "08 §1.5、REQ-FN-029"
+    confidence: medium
+  - id: R034
+    condition: 缺陷册条目缺四要素（触发/返回码/可见行为/判据）
+    then: ACC-030 判红
+    source: "REQ-FN-030、ADR-012"
+    confidence: medium
+  - id: R035
+    condition: 切换 125%/150%/200% DPI
+    then: 无障碍树结构不变，只有 bounds 按换算变化
+    source: "ACC-011、08 §3.2"
+    confidence: medium
+  - id: R036
+    condition: 输入法处于预编辑状态
+    then: 预编辑串以 label 暴露在树上；候选窗不在树内，按坐标 + 帧判定
+    source: "ACC-017、GAP-003"
+    confidence: low
+  - id: R037
+    condition: 切换 Aero/Aero2/AeroLite/Luna/Royale/Classic 主题
+    then: 树结构不变，帧 AE 在登记阈值内
+    source: "ACC-020、TBL-011"
+    confidence: medium
+  - id: R038
+    condition: PresentationNative 缺口计数口径不一致（100 vs 分项 99）
+    then: 不补齐、不猜，进 TG-001 差异登记
+    source: "04 §2.5、D06"
+    confidence: low
+  - id: R039
+    condition: FrameworkList 的 WPF 件数口径与主题资源件归属不明
+    then: 在 TG-001 对拍时按清单实读确认，不按推断建造
+    source: "05 §3.7、20-spec §6、D07"
+    confidence: low
+  - id: R040
+    condition: 上游同步到新的 10.0.x patch
+    then: 重跑契约对拍与派生树再生，记一行变更
+    source: "DQ-004、04 §1.4"
+    confidence: medium
+
+actions:
+  - { id: A001, name: 启动会话, trigger: "宿主解析 runtimeconfig 并加载自产 pack", target: C001, api_hint: "IF-021~IF-024" }
+  - { id: A002, name: 创建窗口, trigger: "Application.Run 或 Window.Show", target: C002, api_hint: "IF-002" }
+  - { id: A003, name: 派发消息, trigger: "XEvent 到达事件线程", target: C003, api_hint: "IF-002" }
+  - { id: A004, name: 提交绘制批次, trigger: "布局完成且存在脏区", target: C007, api_hint: "IF-011/IF-013/IF-014" }
+  - { id: A005, name: 加载框架包, trigger: "构建或启动解析 FrameworkReference", target: C012, api_hint: "IF-021/IF-023" }
+  - { id: A006, name: 投影无障碍树, trigger: "窗口首帧完成或结构变化", target: C015, api_hint: "IF-051/IF-071" }
+  - { id: A007, name: 组合输入, trigger: "焦点在可编辑节点且输入法激活", target: C017, api_hint: "IF-031" }
+  - { id: A008, name: 提交打印作业, trigger: "用户触发打印且队列可用", target: C018, api_hint: "IF-041" }
+  - { id: A009, name: 播放媒体, trigger: "MediaElement 进入播放指令", target: C019, api_hint: "IF-061" }
+  - { id: A010, name: 采集笔迹, trigger: "笔/触摸设备产生轨迹", target: C020, api_hint: "" }
+  - { id: A011, name: 导出判据读数, trigger: "判据执行结束", target: C021, api_hint: "IF-073" }
+
+terms:
+  - { canonical: DUCE, variants: [MIL 命令流, 命令流], sources: ["术语表 §3", "03 §3.3.1"] }
+  - { canonical: PTS, variants: [段落文本系统], sources: ["术语表 §3", "03 §3.2.6"] }
+  - { canonical: 自产件, variants: [自建件, 本地件], sources: ["术语表 §1.1", "03 §3.1.4"] }
+  - { canonical: 派生树, variants: [build 树, 生成树], sources: ["术语表 §1.1", "03 §4.3.8"] }
+  - { canonical: 上游快照, variants: [upstream, 只读源], sources: ["术语表 §1.1", "ADR-002"] }
+  - { canonical: applier, variants: [补丁器, 生成器], sources: ["术语表 §1.1", "ADR-002"] }
+  - { canonical: 诚实降级, variants: [降级, 明确降级], sources: ["术语表 §1.1", "ADR-012"] }
+  - { canonical: 验收判据, variants: [ACC, 判据], sources: ["术语表 §1.1", "20-spec §9"] }
+  - { canonical: 判据先行, variants: [TDD, 测试先行, 先红后绿], sources: ["术语表 §1.1", "ADR-014"] }
+  - { canonical: 结构判据, variants: [无障碍树判据, AT-SPI 判据], sources: ["术语表 §1.1", "ADR-015"] }
+  - { canonical: 帧判据, variants: [像素判据, 视觉判据], sources: ["术语表 §1.1", "ADR-015"] }
+  - { canonical: 检测探针, variants: [快照器, snapshot probe], sources: ["术语表 §1.1", "IF-071"] }
+  - { canonical: 框架包, variants: [pack, WindowsDesktop pack], sources: ["术语表 §1.1", "IF-021"] }
+  - { canonical: 缺陷册, variants: [已知坑清单, 降级清单], sources: ["术语表 §1.1", "70-operate"] }
+  - { canonical: 测试门, variants: [TG, 判据门], sources: ["08 §2", "01 §4.6"] }
+  - { canonical: 可检测界面, variants: [SCR, 样本界面], sources: ["界面 §1"] }
+  - { canonical: 元素属性表, variants: [属性表, 期望表], sources: ["界面 §0.3", "TBL-010"] }
+  - { canonical: 项目定位, variants: [WindowsDesktop 在 Linux 上源码级完整运行], sources: ["README", "术语表 §2"] }
+
+modules:
+  - { mod: MOD-01, name: 派生生成, classes: [C023, C013] }
+  - { mod: MOD-02, name: P/Invoke 适配, classes: [C013, C014] }
+  - { mod: MOD-03, name: PBT, classes: [C013] }
+  - { mod: MOD-04, name: 打包契约, classes: [C013, C014] }
+  - { mod: MOD-05, name: 补丁测试, classes: [C021, C023] }
+  - { mod: MOD-06, name: 判据先行脚手架, classes: [C021, C024, C022] }
+  - { mod: MOD-11, name: 窗口与类, classes: [C002, C003] }
+  - { mod: MOD-12, name: 消息泵, classes: [C003, C016] }
+  - { mod: MOD-13, name: GDI, classes: [C004, C005] }
+  - { mod: MOD-14, name: GDI+, classes: [C004, C005] }
+  - { mod: MOD-15, name: kernel32 子集, classes: [C004] }
+  - { mod: MOD-16, name: PTS 桩, classes: [C009] }
+  - { mod: MOD-17, name: ABI 契约, classes: [C014, C013] }
+  - { mod: MOD-21, name: DUCE 解码, classes: [C007] }
+  - { mod: MOD-22, name: 资源表, classes: [C008, C006] }
+  - { mod: MOD-23, name: Skia 后端, classes: [C005] }
+  - { mod: MOD-24, name: 窗口呈现, classes: [C005, C002] }
+  - { mod: MOD-25, name: 导出层, classes: [C007, C014] }
+  - { mod: MOD-31, name: 字体枚举, classes: [C010] }
+  - { mod: MOD-32, name: shaping, classes: [C009, C010] }
+  - { mod: MOD-33, name: 行布局, classes: [C009] }
+  - { mod: MOD-34, name: 段落/PTS, classes: [C009, C010] }
+  - { mod: MOD-35, name: CFF, classes: [C009] }
+  - { mod: MOD-36, name: IME, classes: [C017, C016] }
+  - { mod: MOD-41, name: WIC 解码, classes: [C011] }
+  - { mod: MOD-42, name: ICC, classes: [C011] }
+  - { mod: MOD-51, name: Ref pack, classes: [C012, C013] }
+  - { mod: MOD-52, name: Runtime pack, classes: [C012] }
+  - { mod: MOD-53, name: targets, classes: [C012] }
+  - { mod: MOD-61, name: 兼容层加载, classes: [C013, C002] }
+  - { mod: MOD-62, name: 六控件, classes: [C015, C002] }
+  - { mod: MOD-63, name: MSAA 桥, classes: [C015] }
+  - { mod: MOD-81, name: UIA 桥, classes: [C015, C006] }
+  - { mod: MOD-82, name: 打印, classes: [C018] }
+  - { mod: MOD-83, name: 媒体, classes: [C019] }
+  - { mod: MOD-84, name: Ink, classes: [C020] }
+  - { mod: MOD-85, name: DRM 桩, classes: [C022] }
+  - { mod: MOD-86, name: 界面可检测契约, classes: [C015, C021] }
+
+decisions:
+  - { id: D01, topic: "06 章节号空档", status: 已修, detail: "补「安全性验证与判据汇总」为 §7，SAFE→TG 映射成表；§8~§11 编号不变。" }
+  - { id: D02, topic: "MOD-86 与 MOD-36 一码两义", status: 已修, detail: "概设 §5 第 7 行（输入法）改指 MOD-36；MOD-86 定为「界面可检测契约」，不再与 IME 混用。" }
+  - { id: D03, topic: "契约文件落点冲突", status: 已修, detail: "02 的 40-build/contracts/ 取消；exports.txt 与 win32_abi.h 在 native-shim，DUCE 布局表在 milcore，FrameworkList 在 pack。" }
+  - { id: D04, topic: "构建侧目录名与子系统首选名不一致", status: 已修, detail: "40-build/text|wic|winforms 统一改为 text-stack|wic-dwrite|winforms-compat。" }
+  - { id: D05, topic: "04 中「其余已实现」属未验证结论", status: 已修, detail: "改为「其余有源码，exports.txt 逐条登记，状态一律待对拍确认」。" }
+  - { id: D06, topic: "PresentationNative 缺口计数口径", status: 已裁决, detail: "2026-10-30 按 10.0 快照实读：165 条声明（DllImport.PresentationNative 126 + PresentationNativeDll 39）、145 个唯一入口；126 条分类为 66 Fs* + 23 Lo* + 6 Nl* + 31 其他。旧「147 声明 / 100 缺失」作废，04 §2.5 与概设 ADR-007 已更正，差异进 TG-001。" }
+  - { id: D07, topic: "FrameworkList 件数归属", status: 已裁决, detail: "2026-10-30 按 ref 包 10.0.11 的 FrameworkList.xml 实读：50 个运行时条目 + 5 个 Analyzer；Profile=WPF 21 件（15 程序集 + 6 主题）、WindowsForms;WPF 19 件、WindowsForms 9 件、无 Profile 1 件。20-spec §6「共享 16 件」更正为 19 件（补 System.Drawing.Common、System.Private.Windows.Core、System.Private.Windows.GdiPlus）。" }
+  - { id: D08, topic: "01 §4.1 需求索引与 03 章节号错位", status: 已修, detail: "03 的 §3.x 按 SYS-1→SYS-8 顺序重排，01 索引随之对齐（MOD-21 归 §3.3、MOD-11 归 §3.2）。" }
+  - { id: D09, topic: "无障碍桥排期与里程碑冲突", status: 已修, detail: "ADR-015 要求与首帧同期；M1 出口追加 ACC-027 结构部分，M5 改为「无障碍全量与合成」。" }
+  - { id: D10, topic: "判据放宽与性能长期红的口径", status: 已裁决, detail: "放宽＝阈值变松/断言变少/SKIP 变多，须变更单+登记+前后读数；长期红＝断言不变但读数不达标，须登记 K-，两者不互相豁免（冲突组 CG-01）。" }
+  - { id: D11, topic: "输入法候选窗不在 AT-SPI 树内", status: 已登记, detail: "登记 GAP-003，只用坐标换算 + 帧判据，不伪造树节点。" }
+  - { id: D12, topic: "项目定位被写窄为「WPF 在 Linux」", status: 已修, detail: "2026-10-30 用户裁决：定位改为「WindowsDesktop 在 Linux 上源码级完整运行」，范围＝WPF 全量 + WinForms 兼容层；README/CONTRIBUTING/20-spec/概设/术语表同步。" }
+
+excluded:
+  - { concept: 二进制兼容（PE 加载/程序集身份仿真）, reason: "ADR-001 明确非目标；BAML 版本头与 4.0.0.0→4.0.0.1 绑定无法用补丁解决。" }
+  - { concept: WinForms 设计器, reason: "UD-004 裁决不做；没有可验收的 Linux 落点。" }
+  - { concept: ActiveX/DCOM 宿主, reason: "只做进程内 COM 桩，跨进程 DCOM 不在范围。" }
+  - { concept: DRM 内容播放, reason: "DQ-001：返回 E_NOTIMPL，登记 D-001，不自研不绕过。" }
+  - { concept: Wayland 后端, reason: "V2 平台扩展，V1 判据不含；窗口与输入只做 X11。" }
+  - { concept: arm64, reason: "V2 平台扩展，V1 判据只覆盖 x64。" }
+  - { concept: GPU 渲染后端, reason: "ADR-004：先有落点再谈性能，CPU/Skia 优先，GPU 后置。" }
+  - { concept: GTK/Qt 系统主题映射, reason: "ADR-010：只做 WPF 原主题视觉复刻。" }
+  - { concept: Windows IME 协议（IMM32/Tsf）仿真, reason: "ADR-008：接 ibus/fcitx5，不仿真 Windows 输入法协议。" }
+  - { concept: WMP/Media Foundation 全格式, reason: "ADR-009：GStreamer 支持的格式为准，不支持必须报错。" }
+  - { concept: 用户权限与访问控制模型, reason: "单用户桌面会话；SAFE-017 只约束不提权。" }
+  - { concept: 数据库/持久化存储, reason: "本项目无数据库；契约文件与读数 JSON 即数据面（05 §0.1）。" }

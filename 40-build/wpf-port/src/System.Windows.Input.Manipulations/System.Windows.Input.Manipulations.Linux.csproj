@@ -1,0 +1,64 @@
+<Project>
+  <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk" />
+  <Import Project="$(MSBuildThisFileDirectory)../../../Linux/build/Directory.Upstream.props" />
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <AssemblyName>System.Windows.Input.Manipulations</AssemblyName>
+    <RootNamespace>MS.Internal</RootNamespace>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <EnableDefaultEmbeddedResourceItems>false</EnableDefaultEmbeddedResourceItems>
+    <NoWarn>$(NoWarn);0618;CS3016;CS0067;CS0169;CS0414;CS0649;CS1591;CS8632;CS0219;CS8981;CA1416;CA1420;WPF0001</NoWarn>
+    <DefineConstants>WINDOWS_BASE_OR_PC</DefineConstants>
+    <LangVersion>latest</LangVersion>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <EnablePInvokeAnalyzer>false</EnablePInvokeAnalyzer>
+    <ProduceReferenceAssembly>false</ProduceReferenceAssembly>
+    <SignAssembly>true</SignAssembly>
+    <PublicSign>true</PublicSign>
+    <AssemblyOriginatorKeyFile>$(WpfLinuxRoot)src/Linux/build/keys/WcpPublicKey.snk</AssemblyOriginatorKeyFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/Common/src/System/SR.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Windows.Input.Manipulations/System/Windows/Input/Manipulations/DoubleUtil.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Windows.Input.Manipulations/System/Windows/Input/Manipulations/Exceptions.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Windows.Input.Manipulations/System/Windows/Input/Manipulations/InertiaExpansionBehavior2D.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Windows.Input.Manipulations/System/Windows/Input/Manipulations/InertiaParameters2D.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Windows.Input.Manipulations/System/Windows/Input/Manipulations/InertiaProcessor2D.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Windows.Input.Manipulations/System/Windows/Input/Manipulations/InertiaRotationBehavior2D.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Windows.Input.Manipulations/System/Windows/Input/Manipulations/InertiaTranslationBehavior2D.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Windows.Input.Manipulations/System/Windows/Input/Manipulations/Lazy.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Windows.Input.Manipulations/System/Windows/Input/Manipulations/Manipulation2DCompletedEventArgs.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Windows.Input.Manipulations/System/Windows/Input/Manipulations/Manipulation2DDeltaEventArgs.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Windows.Input.Manipulations/System/Windows/Input/Manipulations/Manipulation2DStartedEventArgs.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Windows.Input.Manipulations/System/Windows/Input/Manipulations/ManipulationDelta2D.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Windows.Input.Manipulations/System/Windows/Input/Manipulations/ManipulationParameters2D.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Windows.Input.Manipulations/System/Windows/Input/Manipulations/ManipulationPivot2D.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Windows.Input.Manipulations/System/Windows/Input/Manipulations/ManipulationProcessor2D.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Windows.Input.Manipulations/System/Windows/Input/Manipulations/Manipulations2D.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Windows.Input.Manipulations/System/Windows/Input/Manipulations/ManipulationSequence.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Windows.Input.Manipulations/System/Windows/Input/Manipulations/ManipulationVelocities2D.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Windows.Input.Manipulations/System/Windows/Input/Manipulations/Manipulator2D.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Windows.Input.Manipulations/System/Windows/Input/Manipulations/PointF.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Windows.Input.Manipulations/System/Windows/Input/Manipulations/Validations.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Windows.Input.Manipulations/System/Windows/Input/Manipulations/VectorD.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Windows.Input.Manipulations/System/Windows/Input/Manipulations/VectorF.cs" />
+    <Compile Include="$(WpfLinuxRoot)src/Microsoft.DotNet.Wpf.Linux/src/System.Windows.Input.Manipulations/SR.g.cs" />
+  </ItemGroup>
+  <!-- 自产程序集身份：AssemblyVersion 4.0.0.1，必须 > 框架门面的 4.0.0.0 -->
+  <ItemGroup>
+    <Compile Include="$(WpfLinuxRoot)src/Microsoft.DotNet.Wpf.Linux/src/shims/LinuxAssemblyIdentity.cs" />
+  </ItemGroup>
+  <!-- 程序集清单资源：ManifestResourceName 必须显式（RootNamespace 被本脚本统一为
+       MS.Internal，靠 SDK 推导会与 gen-sr.py 的 SR 基名不一致 → 资源表静默失效） -->
+  <ItemGroup>
+    <EmbeddedResource Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Windows.Input.Manipulations/Resources/Strings.resx">
+      <ManifestResourceName>System.Windows.Input.Manipulations.Resources.Strings</ManifestResourceName>
+    </EmbeddedResource>
+  </ItemGroup>
+  <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
+</Project>

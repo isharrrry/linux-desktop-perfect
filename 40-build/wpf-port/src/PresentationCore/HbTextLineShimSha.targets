@@ -1,0 +1,81 @@
+<Project>
+  <!-- ============================================================================
+       ⚠️ 本文件由 src/WpfGfx.Linux.Native/tools/patch-presentationcore-hbtextline-shimsha.py
+          **生成**，不要手改（单一写者纪律）。来源 = WAVE17 车道 W17C 的 §1 P1。
+       ============================================================================
+
+       WAVE17 · 车道 W17C · P1：把「本产物编译进去的那一份 shim 源」的内容 sha256
+       写进程序集级元数据，使产物侧证据从**下界**（T17A 的 shim-in-artifact.sh：
+       靠"只有最新修订才有的标识符"判红）升级成**等号**（内容哈希逐字相等）。
+
+       为什么必须是内容而不是 mtime：纪律 24 记录过 mtime 双向都骗过人 ——
+       `cp -p` 还原源码会让判据假绿（mtime 未变），而"同内容重写"会让它假报警。
+       本件判据与 mtime 无关：产物里存的 sha 是"编译那一刻的源内容"的函数。
+
+       形态：构建时生成一个只含**一行** assembly attribute 的 .cs，放进
+       $(IntermediateOutputPath)（仓内 obj/，被 src/Linux/build/artifact-src-fp.py 显式排除：
+       它第 34 行把 bin/obj/.artifacts 排除，故本件**不动** ARTIFACT-SRC-FP）。
+       不新增仓内被跟踪的源文件、不要求任何应用器改 csproj 的 Compile 列表。
+
+       确定性（三条，逐条可复算）：
+         ① 生成文件的内容**只是** sha256 的十六进制串 ⇒ 不含时间戳、不含路径、
+            不含主机名（同一份 shim 源 ⇒ 逐字节同一个生成文件）；
+         ② `WriteOnlyWhenDifferent="true"` ⇒ 内容未变时**不重写**（mtime 也不动），
+            因此不会把"没变化的构建"变成"每次都变"；
+         ③ hash 由 MSBuild 内建任务 `GetFileHash` 现算（**实测存在**：SDK
+            10.0.111 的 Microsoft.Build.Tasks.Core.dll 里有该任务，见 W17C 报告
+            §2；`GetFileHash` 返回**大写**十六进制 ⇒ 这里显式 ToLowerInvariant()）。
+
+       读取侧：src/Linux/build/MilBridge/tests/ShimShaReader/
+       （PEReader + MetadataReader，**不加载程序集**；三态 no / yes / NOINFO）。
+       ============================================================================ -->
+  <PropertyGroup>
+    <!-- 被嵌 sha 的那个源文件；可用 -p: 覆盖（便于做"属性缺省是否生效"的对照） -->
+    <HbTextLineShimSrcFile Condition="'$(HbTextLineShimSrcFile)' == ''">$(WpfLinuxRoot)src/Microsoft.DotNet.Wpf.Linux/src/shims/PresentationCore.HbTextLine.cs</HbTextLineShimSrcFile>
+    <!-- 生成物文件名（固定，不含时间戳） -->
+    <HbTextLineShimShaGeneratedFileName>HbTextLineShimSha.g.cs</HbTextLineShimShaGeneratedFileName>
+  </PropertyGroup>
+
+  <Target Name="WpfLinux_GenerateHbTextLineShimSha"
+          BeforeTargets="CoreCompile"
+          Condition="Exists('$(HbTextLineShimSrcFile)')">
+    <PropertyGroup>
+      <!-- IntermediateOutputPath 由 Sdk.props/Sdk.targets 定义，只能在 Target 内取 -->
+      <HbTextLineShimShaGeneratedFile>$(IntermediateOutputPath)$(HbTextLineShimShaGeneratedFileName)</HbTextLineShimShaGeneratedFile>
+    </PropertyGroup>
+
+    <GetFileHash Files="$(HbTextLineShimSrcFile)" Algorithm="SHA256">
+      <Output TaskParameter="Items" ItemName="_HbTextLineShimHashed" />
+    </GetFileHash>
+    <PropertyGroup>
+      <HbTextLineShimSha256>$([System.String]::Copy('%(_HbTextLineShimHashed.FileHash)').ToLowerInvariant())</HbTextLineShimSha256>
+    </PropertyGroup>
+
+    <!-- 生成文件的内容 = 固定头部两行 + 一行 attribute。没有时间戳/路径/版本号。 -->
+    <ItemGroup>
+      <_HbTextLineShimShaLine Include="#nullable enable" />
+      <_HbTextLineShimShaLine Include="// 由 src/Microsoft.DotNet.Wpf.Linux/src/PresentationCore/HbTextLineShimSha.targets 生成；请勿手改。" />
+      <_HbTextLineShimShaLine Include="[assembly: System.Reflection.AssemblyMetadata(&quot;HbTextLineShimSha&quot;, &quot;$(HbTextLineShimSha256)&quot;)]" />
+    </ItemGroup>
+    <WriteLinesToFile File="$(HbTextLineShimShaGeneratedFile)"
+                      Lines="@(_HbTextLineShimShaLine)"
+                      Overwrite="true"
+                      WriteOnlyWhenDifferent="true" />
+
+    <ItemGroup>
+      <Compile Include="$(HbTextLineShimShaGeneratedFile)" />
+      <FileWrites Include="$(HbTextLineShimShaGeneratedFile)" />
+    </ItemGroup>
+
+    <Message Importance="high"
+             Text="WPF-on-Linux: HbTextLineShimSha=$(HbTextLineShimSha256) （源 %(_HbTextLineShimHashed.Identity)）→ $(HbTextLineShimShaGeneratedFile)" />
+  </Target>
+
+  <!-- 源文件缺失时**不许静默跳过**：印一行高优先级告警（构建不会因此成功"装作有值"，
+       读取侧会读到"属性缺失" ⇒ NOINFO）。 -->
+  <Target Name="WpfLinux_WarnHbTextLineShimShaMissing"
+          BeforeTargets="CoreCompile"
+          Condition="!Exists('$(HbTextLineShimSrcFile)')">
+    <Warning Text="WPF-on-Linux: HbTextLineShimSha 未生成 —— shim 源不存在：$(HbTextLineShimSrcFile) ⇒ 产物里不会有 HbTextLineShimSha 元数据（读取侧会给 NOINFO）" />
+  </Target>
+</Project>

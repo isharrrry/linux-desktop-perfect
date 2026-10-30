@@ -1,0 +1,165 @@
+<Project>
+  <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk" />
+  <Import Project="$(MSBuildThisFileDirectory)../../../Linux/build/Directory.Upstream.props" />
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <AssemblyName>PresentationFramework.Classic</AssemblyName>
+    <RootNamespace>MS.Internal</RootNamespace>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <EnableDefaultEmbeddedResourceItems>false</EnableDefaultEmbeddedResourceItems>
+    <NoWarn>$(NoWarn);0618;CS3016;CS0067;CS0169;CS0414;CS0649;CS1591;CS8632;CS0219;CS8981;CA1416;CA1420;WPF0001</NoWarn>
+    <DefineConstants>THEME_CLASSIC;WINDOWS_BASE_OR_PC</DefineConstants>
+    <LangVersion>latest</LangVersion>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <EnablePInvokeAnalyzer>false</EnablePInvokeAnalyzer>
+    <ProduceReferenceAssembly>false</ProduceReferenceAssembly>
+    <GenerateDependencyFile>false</GenerateDependencyFile>
+    <SignAssembly>true</SignAssembly>
+    <PublicSign>true</PublicSign>
+    <AssemblyOriginatorKeyFile>$(WpfLinuxRoot)src/Linux/build/keys/WcpPublicKey.snk</AssemblyOriginatorKeyFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System.Xaml"><HintPath>$(WpfLinuxRoot)src/Microsoft.DotNet.Wpf.Linux/src/System.Xaml/bin/$(WpfLinuxSelfBuiltConfiguration)/System.Xaml.dll</HintPath><Private>true</Private></Reference>
+    <Reference Include="WindowsBase"><HintPath>$(WpfLinuxRoot)src/Microsoft.DotNet.Wpf.Linux/src/WindowsBase/bin/$(WpfLinuxSelfBuiltConfiguration)/WindowsBase.dll</HintPath><Private>true</Private></Reference>
+    <Reference Include="PresentationCore"><HintPath>$(WpfLinuxRoot)src/Microsoft.DotNet.Wpf.Linux/src/PresentationCore/bin/$(WpfLinuxSelfBuiltConfiguration)/PresentationCore.dll</HintPath><Private>true</Private></Reference>
+    <Reference Include="PresentationFramework"><HintPath>$(WpfLinuxRoot)src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework/bin/$(WpfLinuxSelfBuiltConfiguration)/PresentationFramework.dll</HintPath><Private>true</Private></Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/Shared/RefAssemblyAttrs.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/Themes/Shared/Microsoft/Windows/Themes/DataGridHeaderBorder.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/Themes/Shared/Microsoft/Windows/Themes/KnownTypeHelper.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/Themes/Shared/Microsoft/Windows/Themes/PlatformCulture.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/Themes/Shared/Microsoft/Windows/Themes/SystemDropShadowChrome.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/Themes/Shared/Microsoft/Windows/Themes/ProgressBarBrushConverter.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/Themes/PresentationFramework.Classic/Microsoft/Windows/Themes/ClassicBorderDecorator.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/Themes/PresentationFramework.Classic/Microsoft/Windows/Themes/DataGridHeaderBorder.cs" />
+  </ItemGroup>
+  <!-- 自产程序集身份：AssemblyVersion 4.0.0.1，必须 > 框架门面的 4.0.0.0 -->
+  <ItemGroup>
+    <Compile Include="$(WpfLinuxRoot)src/Microsoft.DotNet.Wpf.Linux/src/shims/LinuxAssemblyIdentity.cs" />
+  </ItemGroup>
+  <!-- ==== WPF-on-Linux 补丁块 A（Sdk.targets 之前）：reapply-patches.py 追加 ==== -->
+  <!-- ============================================================================
+       WPF-on-Linux 补丁 A：XAML 输入项 + 标记编译链接线（照 T3/HelloWpf 已验证做法）
+       ============================================================================
+       port-lib 不处理 <Page>（只收集 Compile/EmbeddedResource），而主题程序集的全部价值
+       就在 Themes/Classic.xaml 编出来的 BAML ⇒ 这里显式声明 Page 项并接上 Linux 标记编译器。
+       ============================================================================ -->
+  <PropertyGroup>
+    <!-- ① 必须在 Sdk.targets 之前：WinFX.targets 的定义带 Condition="…==''"（先设值者胜） -->
+    <PbtLinuxDir>$(WpfLinuxRoot)src/Microsoft.DotNet.Wpf.Linux/src/PresentationBuildTasks/</PbtLinuxDir>
+    <PbtLinuxConfiguration Condition="'$(PbtLinuxConfiguration)' == ''">Release</PbtLinuxConfiguration>
+    <_PresentationBuildTasksAssembly>$([System.IO.Path]::GetFullPath('$(PbtLinuxDir)bin/$(PbtLinuxConfiguration)/net10.0/PresentationBuildTasks.dll'))</_PresentationBuildTasksAssembly>
+    <!-- 关掉 UseWPF 后 WindowsDesktop.targets 不再提供这些默认值 -->
+    <DefaultXamlRuntime Condition="'$(DefaultXamlRuntime)' == ''">Wpf</DefaultXamlRuntime>
+    <!-- ④ 本工程公开签名 + WindowsBase 未签名（混合签名）→ CS8002；上游全签名故无此警告 -->
+    <NoWarn>$(NoWarn);CS8002</NoWarn>
+    <!-- 上游 PresentationFramework.Classic.csproj 也设了这一条（port-lib 现已搬运，此处仅作说明） -->
+  </PropertyGroup>
+
+  <!-- ③ PresentationUI：上游引用 PresentationUI.csproj（Classic.xaml 的 ui:PresentationUIStyleResources）；
+       port-lib 找不到 src/Linux/build/PresentationUI.Linux（本移植由 CycleStub.PresentationUI 顶替）→ 显式接回 -->
+  <ItemGroup Condition="Exists('$(WpfLinuxRoot)src/Microsoft.DotNet.Wpf.Linux/src/CycleStub.PresentationUI/bin/$(WpfLinuxSelfBuiltConfiguration)/PresentationUI.dll')">
+    <Reference Include="PresentationUI"><HintPath>$(WpfLinuxRoot)src/Microsoft.DotNet.Wpf.Linux/src/CycleStub.PresentationUI/bin/$(WpfLinuxSelfBuiltConfiguration)/PresentationUI.dll</HintPath><Private>true</Private></Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Page Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/Themes/PresentationFramework.Classic/Themes/Classic.xaml">
+      <Link>Themes\Classic.xaml</Link>
+      <Generator>MSBuild:Compile</Generator>
+      <XamlRuntime>Wpf</XamlRuntime>
+      <SubType>Designer</SubType>
+    </Page>
+  </ItemGroup>
+  <!-- ==== 补丁块 A 结束 ==== -->
+  <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
+  <!-- ==== WPF-on-Linux 补丁块 B（Sdk.targets 之后）：reapply-patches.py 追加 ==== -->
+  <!-- ============================================================================
+       WPF-on-Linux 补丁 B：标记编译链的两处 Import（必须在 Sdk.targets 之后）
+       ============================================================================
+       ② Microsoft.WinFX.targets：net10.0 下 SDK 不自动导入（见文件头注释），
+          不导入 = XAML 不编译且构建"成功"（静默失败）。
+       ③ src/Linux/build/WpfMarkupCompile.Linux.targets：接管校验（PBT 缺失即报错）。
+       ============================================================================ -->
+  <PropertyGroup>
+    <_WpfLinuxWinFXTargets>$(MSBuildSDKsPath)/Microsoft.NET.Sdk.WindowsDesktop/targets/Microsoft.WinFX.targets</_WpfLinuxWinFXTargets>
+  </PropertyGroup>
+  <Import Project="$(_WpfLinuxWinFXTargets)" Condition="Exists('$(_WpfLinuxWinFXTargets)')" />
+  <Import Project="$(WpfLinuxRoot)src/Linux/build/WpfMarkupCompile.Linux.targets" />
+
+  <!-- ============================================================================
+       WPF-on-Linux 补丁 E：构建期自检（BAML 产出 + 身份一致性）
+       ============================================================================ -->
+  <Target Name="WpfLinuxClassicAssertMarkupChain" BeforeTargets="PrepareResources">
+    <Error Condition="!Exists('$(_WpfLinuxWinFXTargets)')"
+           Text="找不到 SDK 的 WPF 标记编译 targets：$(_WpfLinuxWinFXTargets)（UseWPF=false 时 net10.0 不自动导入）" />
+    <Error Condition="!Exists('$(_PresentationBuildTasksAssembly)')"
+           Text="找不到 Linux 版标记编译器：$(_PresentationBuildTasksAssembly)（先 dotnet build src/Microsoft.DotNet.Wpf.Linux/src/PresentationBuildTasks -c Release）" />
+    <Message Importance="high" Text="主题标记编译链：PBT=$(_PresentationBuildTasksAssembly)" />
+    <Message Importance="high" Text="主题标记编译链：WinFX=$(_WpfLinuxWinFXTargets)" />
+  </Target>
+
+  <!-- ============================================================================
+       WPF-on-Linux 补丁 F：摘掉 PBT 生成的 GeneratedInternalTypeHelper.g.cs
+       ============================================================================
+       实测错误（5 条 CS0507）：
+         obj/Debug/GeneratedInternalTypeHelper.g.cs(24,35): error CS0507:
+           "GeneratedInternalTypeHelper.CreateInstance(Type, CultureInfo)":
+           当重写"protected internal"继承成员
+           "InternalTypeHelper.CreateInstance(Type, CultureInfo)"时，无法更改访问修饰符
+       根因（两条实测事实叠加，非猜测）：
+         ① WindowsBase/System/Windows/Markup/InternalTypeHelper.cs:29 的成员是
+            `protected internal abstract`；
+         ② WindowsBase/OtherAssemblyAttrs.cs:24 有
+            `[assembly: InternalsVisibleTo(BuildInfo.PresentationFrameworkClassic)]`
+            —— 主题程序集是 WindowsBase 的**友元**，因此 Roslyn 要求 override 写
+            `protected internal`（internal 部分对它可见），而 PBT 生成的是 `protected`
+            → 必然 CS0507。上游 Windows 构建里 PBT 的 MarkupCompilePass2 会把该文件
+            **清空**（MarkupCompilePass2.cs:663-678：无 internal 需求时重写为空），
+            我们这条链没跑到那一步。
+       为什么可以直接摘掉（本工程实测）：
+         Classic.xaml 引用的本地类型 — ClassicBorderDecorator / DataGridHeaderBorder /
+         PlatformCulture / ProgressBarBrushConverter / SystemDropShadowChrome —
+         **全部是 public**（grep 实测），helper 只在解析「本程序集 internal 类型/成员」时
+         才被 XamlTypeMapper 使用；且 PF 源码自己注明
+         "We don't actually use the GeneratedInternalTypeHelper any more."（XamlReader.cs:1076）。
+       做法：按**文件名**从 @(Compile) 里摘（不写死路径，故对中间目录布局不敏感）。
+       ============================================================================ -->
+  <Target Name="WpfLinuxClassicDropInternalTypeHelper"
+          AfterTargets="MarkupCompilePass1"
+          BeforeTargets="CoreCompile">
+    <!-- 双保险：① 从 @(Compile) 摘掉；② 把文件内容清空。
+         只用 ① 实测无效（item 时序：PBT 通过 <Output ItemName="Compile"> 注入，
+         摘除时机与 csc 取用时机之间存在竞态），故补 ②。
+         ② 与上游行为等价：PBT 的 MarkupCompilePass2.cs:663-678 在「本程序集无 internal 需求」时
+         就是把该文件重写为空并记 InternalTypeHelperNotRequired。 -->
+    <ItemGroup>
+      <_WpfClassicIth Include="@(Compile)" Condition="'%(Filename)' == 'GeneratedInternalTypeHelper'" />
+    </ItemGroup>
+    <ItemGroup>
+      <Compile Remove="@(_WpfClassicIth)" />
+    </ItemGroup>
+    <WriteLinesToFile File="$(IntermediateOutputPath)GeneratedInternalTypeHelper.g.cs"
+                      Lines="// WPF-on-Linux：内容按补丁 F 清空（等价上游 PBT 的 InternalTypeHelperNotRequired 行为）。"
+                      Overwrite="true"
+                      Condition="Exists('$(IntermediateOutputPath)GeneratedInternalTypeHelper.g.cs')" />
+    <Message Importance="high"
+             Text="GeneratedInternalTypeHelper 处置：@(Compile) 中命中 @(_WpfClassicIth->Count()) 条并已摘除/清空（CS0507 根因：WindowsBase 对主题程序集授了 IVT，protected internal 成员的 override 必须同修饰符）" />
+  </Target>
+
+  <Target Name="WpfLinuxClassicAssertBaml" AfterTargets="MainResourcesGeneration">
+    <ItemGroup>
+      <_WpfLinuxClassicBaml Include="@(Page->'$(IntermediateOutputPath)%(Filename).baml')" />
+    </ItemGroup>
+    <Error Condition="'@(_WpfLinuxClassicBaml)' == ''" Text="工程里没有 Page 输入项 —— XAML 编译链没接上。" />
+    <Error Condition="!Exists('%(_WpfLinuxClassicBaml.Identity)')"
+           Text="XAML 未编译成 BAML：%(_WpfLinuxClassicBaml.Identity)（检查 PBT 与 WinFX.targets 是否生效）" />
+    <Message Importance="high" Text="已产出主题 BAML：@(_WpfLinuxClassicBaml)" />
+  </Target>
+  <!-- ==== 补丁块 B 结束 ==== -->
+</Project>

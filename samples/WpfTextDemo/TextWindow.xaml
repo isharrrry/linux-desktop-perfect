@@ -1,0 +1,28 @@
+<Window x:Class="LinuxDesktopPerfect.Samples.WpfTextDemo.TextWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="WpfTextDemo" Height="720" Width="980"
+        AutomationProperties.Name="WpfTextDemo">
+    <!-- 对应 SCR-02 元素属性表：路径 0/1 ~ 0/7；三类样本与读数文案按表 -->
+    <StackPanel Margin="12">
+        <TextBlock x:Name="TitleText" Text="WpfTextDemo" AutomationProperties.Name="WpfTextDemo" FontSize="20" />
+        <ListBox AutomationProperties.Name="字体族" Height="72" Margin="0,8,0,0">
+            <ListBoxItem Content="DejaVu Sans" AutomationProperties.Name="DejaVu Sans" IsSelected="True" />
+            <ListBoxItem Content="Noto Sans CJK SC" AutomationProperties.Name="Noto Sans CJK SC" />
+        </ListBox>
+        <FlowDocumentScrollViewer Height="140" Margin="0,8,0,0">
+            <FlowDocument>
+                <Paragraph AutomationProperties.Name="汉字样本">汉字样本：中文排版与回退链。</Paragraph>
+                <Paragraph AutomationProperties.Name="Latin sample">Latin sample: The quick brown fox jumps over the lazy dog.</Paragraph>
+                <Paragraph AutomationProperties.Name="符号 → ∑ ≈">符号样本：→ ∑ ≈ ± ∞。</Paragraph>
+            </FlowDocument>
+        </FlowDocumentScrollViewer>
+        <TextBlock AutomationProperties.Name="العربية" Text="العربية · देवनागरी · ไทย" FontSize="20" Margin="0,8,0,0" />
+        <TextBlock AutomationProperties.Name="行布局" TextWrapping="Wrap" MaxWidth="720" Margin="0,8,0,0"
+                   Text="行布局：这是一段用于断行与双向混排的长段落，包含超长单词 Supercalifragilisticexpialidocious 与混排 abc 汉字 def。" />
+        <TextBlock AutomationProperties.Name="CFF 大字" Text="CFF" FontSize="42" Margin="0,8,0,0" />
+        <TextBox AutomationProperties.Name="输入法样本" Margin="0,8,0,0" />
+        <TextBlock AutomationProperties.Name="预编辑：" Text="预编辑：" Margin="0,8,0,0" />
+    </StackPanel>
+
+</Window>

@@ -1,0 +1,243 @@
+<Project>
+  <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk" />
+  <Import Project="$(MSBuildThisFileDirectory)../../../Linux/build/Directory.Upstream.props" />
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <AssemblyName>System.Xaml</AssemblyName>
+    <RootNamespace>MS.Internal</RootNamespace>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <EnableDefaultEmbeddedResourceItems>false</EnableDefaultEmbeddedResourceItems>
+    <NoWarn>$(NoWarn);0618;CS3016;CS0067;CS0169;CS0414;CS0649;CS1591;CS8632;CS0219;CS8981;CA1416;NU5125;CA1420;WPF0001</NoWarn>
+    <DefineConstants>OLDRESOURCES;SYSTEM_XAML;WINDOWS_BASE_OR_PC</DefineConstants>
+    <LangVersion>latest</LangVersion>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <EnablePInvokeAnalyzer>false</EnablePInvokeAnalyzer>
+    <ProduceReferenceAssembly>false</ProduceReferenceAssembly>
+    <SignAssembly>true</SignAssembly>
+    <PublicSign>true</PublicSign>
+    <AssemblyOriginatorKeyFile>$(WpfLinuxRoot)src/Linux/build/keys/WcpPublicKey.snk</AssemblyOriginatorKeyFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="System.Security.Permissions" Version="9.0.0" />
+    <!-- ── `#38` 波：官方包换成 Linux 原生替身（**编译期也不许用包**）──────────────
+        官方包在非 Windows 上把 `XamlAccessLevel`/`SoundPlayer` 等实现成**必抛**桩，只有 `runtimes/win` 是真的
+        ⇒ 任何生成 `GeneratedInternalTypeHelper` 的程序集一装 BAML 就崩（实测：第三方应用 HandyControl）。
+    
+        ⚠️ **为什么留着包引用、却把 compile/runtime 资产排除掉**（`#38` 实测的根因）：
+          `System.Security.Permissions 9.0.0` **传递依赖** `System.Windows.Extensions 9.0.0`
+          ⇒ 就算把直接包引用**整条删掉**，restore 仍会把包拉回来（`project.assets.json` 里 SWE 命中 14 处），
+          RAR 于是**按包**解析（包是**签名的**，`PublicKeyToken=cc7b13ffcd2ddd51`），
+          而 `System.Xaml` 的 `TypeForwardedTo(XamlAccessLevel)` 也就带着**包的身份**，
+          最终 `PresentationFramework` 报 `CS0012`（"类型 XamlAccessLevel 在未引用的程序集中定义"）。
+          ⇒ 必须让**包在编译期一个字都不出现**：`ExcludeAssets="compile;runtime"`（只留它作依赖图的占位）。
+          ⚠️ `#36` 只试过 `ExcludeAssets="runtime"` —— **编译资产还在** ⇒ 包照样赢（那条否证不适用于本形态）。
+    
+        实现由下面的 `<Reference>` 提供：同名程序集、`AssemblyVersion=9.0.0.0`（与 deps.json 对齐）、**不抛**。
+        依赖图里 SWE 的**运行期**资产被排除 ⇒ 包那份 dll **不会**被拷进输出，替身会（`<Private>true</Private>`）。 -->
+    <PackageReference Include="System.Windows.Extensions" Version="9.0.0" ExcludeAssets="compile;runtime" />
+    <Reference Include="System.Windows.Extensions">
+      <HintPath>$(WpfLinuxRoot)src/Microsoft.DotNet.Wpf.Linux/src/System.Windows.Extensions/bin/$(Configuration)/System.Windows.Extensions.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/Shared/System/Windows/Markup/TypeConverterHelper.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/Shared/System/Windows/Markup/Replacements/TypeUriConverter.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/Shared/System/Windows/Markup/ReflectionHelper.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/Shared/MS/Internal/Xaml/Parser/SpecialBracketCharacters.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/Shared/MS/Internal/ReflectionUtils.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/Shared/MS/Internal/SafeSecurityHelper.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/Shared/MS/Internal/CriticalExceptions.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/Shared/System/Windows/Markup/RuntimeIdentifierPropertyAttribute.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/Shared/MS/Internal/Xaml/Context/XamlContextStack.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/Shared/MS/Internal/Xaml/Context/XamlFrame.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/Shared/System/Windows/Markup/XmlCompatibilityReader.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/Shared/System/Windows/Markup/XmlWrappingReader.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/Shared/MS/Utility/FrugalList.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/Common/src/System/SR.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/GlobalSuppressions.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/GlobalUsings.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/OtherAssemblyAttrs.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Windows/Markup/AcceptedMarkupExtensionExpressionTypeAttribute.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Windows/Markup/AmbientAttribute.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Windows/Markup/ArrayExtension.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Windows/Markup/ConstructorArgumentAttribute.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Windows/Markup/ContentPropertyAttribute.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Windows/Markup/ContentWrapperAttribute.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Windows/Markup/DateTimeValueSerializer.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Windows/Markup/DependsOnAttribute.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Windows/Markup/DictionaryKeyPropertyAttribute.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Windows/Markup/IComponentConnector.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Windows/Markup/INameScope.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Windows/Markup/INameScopeDictionary.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Windows/Markup/IProvideValueTarget.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Windows/Markup/IQueryAmbient.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Windows/Markup/IUriContext.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Windows/Markup/IValueSerializerContext.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Windows/Markup/IXamlTypeResolver.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Windows/Markup/MarkupExtension.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Windows/Markup/MarkupExtensionBracketCharactersAttribute.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Windows/Markup/MarkupExtensionReturnTypeAttribute.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Windows/Markup/MemberDefinition.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Windows/Markup/NameReferenceConverter.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Windows/Markup/NameScopePropertyAttribute.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Windows/Markup/NullExtension.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Windows/Markup/PropertyDefinition.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Windows/Markup/Reference.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Windows/Markup/RootNamespaceAttribute.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Windows/Markup/StaticExtension.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Windows/Markup/StaticExtensionsToInstanceDescriptorsConverter.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Windows/Markup/TrimSurroundingWhitespaceAttribute.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Windows/Markup/TypeExtension.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Windows/Markup/TypeExtensionConverter.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Windows/Markup/UidPropertyAttribute.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Windows/Markup/UsableDuringInitializationAttribute.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Windows/Markup/ValueSerializer.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Windows/Markup/WhitespaceSignificantCollectionAttribute.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Windows/Markup/XData.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Windows/Markup/XamlDeferLoadAttribute.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Windows/Markup/XamlSetMarkupExtensionAttribute.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Windows/Markup/XamlSetMarkupExtensionEventArgs.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Windows/Markup/XamlSetTypeConverterAttribute.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Windows/Markup/XamlSetTypeConverterEventArgs.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Windows/Markup/XamlSetValueEventArgs.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Windows/Markup/XmlLangPropertyAttribute.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Windows/Markup/XmlnsCompatibleWithAttribute.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Windows/Markup/XmlnsDefinitionAttribute.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Windows/Markup/XmlnsPrefixAttribute.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Xaml/AttachableMemberIdentifier.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Xaml/AttachablePropertyServices.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Xaml/Context/ContextServices.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Xaml/Context/ICheckIfInitialized.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Xaml/Context/NameFixupGraph.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Xaml/Context/NameFixupToken.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Xaml/Context/ObjectWriterContext.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Xaml/Context/ObjectWriterFrame.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Xaml/Context/SavedContext.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Xaml/Context/ServiceProviderContext.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Xaml/Context/XamlCommonFrame.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Xaml/Context/XamlContext.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Xaml/Context/XamlObjectWriterFactory.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Xaml/Context/XamlParserContext.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Xaml/Context/XamlParserFrame.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Xaml/EventConverter.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Xaml/Events/XamlObjectEventArgs.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Xaml/IAmbientProvider.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Xaml/IAttachedPropertyStore.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Xaml/IDestinationTypeProvider.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Xaml/INamespacePrefixLookup.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Xaml/IRootObjectProvider.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Xaml/IXamlLineInfo.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Xaml/IXamlLineInfoConsumer.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Xaml/IXamlNameProvider.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Xaml/IXamlNameResolver.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Xaml/IXamlNamespaceResolver.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Xaml/IXamlObjectWriterFactory.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Xaml/IXamlSchemaContextProvider.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Xaml/InfosetObjects/DeferredWriter.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Xaml/InfosetObjects/XamlNodes.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Xaml/InfosetObjects/XamlObjectWriter.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Xaml/InfosetObjects/XamlObjectWriterSettings.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Xaml/InfosetObjects/XamlReaderSettings.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Xaml/InfosetObjects/XamlXmlReader.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Xaml/InfosetObjects/XamlXmlReaderSettings.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Xaml/LineInfo.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Xaml/MS/Impl/AssemblyNamespacePair.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Xaml/MS/Impl/KnownStrings.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Xaml/MS/Impl/PositionalParameterDescriptor.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Xaml/MS/Impl/XamlAppContextSwitches.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Xaml/MS/Impl/XmlNsInfo.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Xaml/NameScope.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Xaml/NameScopeDictionary.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Xaml/NameValidationHelper.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Xaml/NamespaceDeclaration.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Xaml/Parser/GenericTypeNameParser.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Xaml/Parser/GenericTypeNameScanner.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Xaml/Parser/MePullParser.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Xaml/Parser/MeScanner.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Xaml/Parser/NamespacePrefixLookup.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Xaml/Parser/NodeStreamSorter.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Xaml/Parser/ScannerNodeType.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Xaml/Parser/XamlAttribute.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Xaml/Parser/XamlName.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Xaml/Parser/XamlPropertyName.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Xaml/Parser/XamlPullParser.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Xaml/Parser/XamlQualifiedName.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Xaml/Parser/XamlScanner.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Xaml/Parser/XamlScannerNode.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Xaml/Parser/XamlScannerStack.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Xaml/Parser/XamlText.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Xaml/ReaderBaseDelegate.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Xaml/ReaderDelegate.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Xaml/ReaderMultiIndexDelegate.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Xaml/RefOnly/LooseTypeExtensions.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Xaml/Replacements/DateTimeConverter2.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Xaml/Replacements/DateTimeOffsetConverter2.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Xaml/Replacements/TypeListConverter.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Xaml/Replacements/TypeTypeConverter.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Xaml/Runtime/ClrObjectRuntime.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Xaml/Runtime/DynamicMethodRuntime.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Xaml/Runtime/PartialTrustTolerantRuntime.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Xaml/Runtime/XamlRuntimeSettings.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Xaml/Schema/AllowedMemberLocations.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Xaml/Schema/BuiltInValueConverter.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Xaml/Schema/ClrNamespaceUriParser.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Xaml/Schema/CollectionReflector.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Xaml/Schema/MemberReflector.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Xaml/Schema/ReferenceEqualityComparer.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Xaml/Schema/Reflector.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Xaml/Schema/TypeBits.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Xaml/Schema/TypeReflector.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Xaml/Schema/XamlCollectionKind.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Xaml/Schema/XamlDirective.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Xaml/Schema/XamlMemberInvoker.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Xaml/Schema/XamlNamespace.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Xaml/Schema/XamlTypeInvoker.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Xaml/Schema/XamlTypeTypeConverter.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Xaml/Schema/XamlValueConverter.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Xaml/WriterDelegate.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Xaml/XamlBackgroundReader.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Xaml/XamlDeferringLoader.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Xaml/XamlException.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Xaml/XamlLanguage.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Xaml/XamlMarkupExtensionWriter.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Xaml/XamlMember.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Xaml/XamlNodeList.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Xaml/XamlNodeQueue.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Xaml/XamlObjectReader.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Xaml/XamlObjectReaderSettings.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Xaml/XamlReader.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Xaml/XamlRuntime.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Xaml/XamlSchemaContext.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Xaml/XamlSchemaContextSettings.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Xaml/XamlServices.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Xaml/XamlSubreader.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Xaml/XamlType.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Xaml/XamlTypeName.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Xaml/XamlWriter.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Xaml/XamlWriterSettings.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Xaml/XamlXmlWriter.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/System/Xaml/XamlXmlWriterSettings.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/ms/Internal/Markup/StringValueSerializer.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/ms/Internal/Markup/TypeConverterValueSerializer.cs" />
+    <Compile Include="$(WpfLinuxRoot)src/Microsoft.DotNet.Wpf.Linux/src/System.Xaml/SR.g.cs" />
+  </ItemGroup>
+  <!-- 自产程序集身份：AssemblyVersion 4.0.0.1，必须 > 框架门面的 4.0.0.0 -->
+  <ItemGroup>
+    <Compile Include="$(WpfLinuxRoot)src/Microsoft.DotNet.Wpf.Linux/src/shims/LinuxAssemblyIdentity.cs" />
+  </ItemGroup>
+  <!-- 程序集清单资源：ManifestResourceName 必须显式（RootNamespace 被本脚本统一为
+       MS.Internal，靠 SDK 推导会与 gen-sr.py 的 SR 基名不一致 → 资源表静默失效） -->
+  <ItemGroup>
+    <EmbeddedResource Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Xaml/Resources/Strings.resx">
+      <ManifestResourceName>System.Xaml.Resources.Strings</ManifestResourceName>
+    </EmbeddedResource>
+  </ItemGroup>
+  <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
+</Project>

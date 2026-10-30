@@ -1,0 +1,3278 @@
+{
+  "generated_by": "50-verify/contract/scan-dllimport.mjs",
+  "inputs": {
+    "upstream": "40-build/upstream/wpf/src/**/*.cs",
+    "snapshot": "40-build/upstream/wpf/SNAPSHOT.json（commit 2565b0112 / release 10.0）",
+    "note": "库名来自 DllImport 属性实参，经 ExternDll.* / DllImport.* 常量解析后归一化（去 .dll/_cor3）"
+  },
+  "summary": {
+    "libraries": 40,
+    "declarations": 1534,
+    "unique_lib_symbol_pairs": 1032,
+    "duplicate_declarations": 335,
+    "charset_unspecified": 772,
+    "exact_spelling_unspecified": 1210,
+    "set_last_error_true": 454,
+    "wide_without_charset": 6
+  },
+  "conclusion": {
+    "abi": "x64 上 Windows stdcall 与 SysV cdecl 在寄存器传参下无栈差异；本项目 V1（x64/X11）不逐入口改写调用约定。",
+    "real_risks": [
+      "结构体布局与字段宽度（Pack/FieldOffset；TBL-002 与 win32_abi.h 断言覆盖）",
+      "CharSet 与 A/W 选择（UTF-16 与 UTF-8 的转换方向与长度校验）",
+      "回调函数（托管委托进原生后反向调用；生命周期与线程归属）"
+    ],
+    "confidence": "本机推断（未在 x64 目标上逐入口核对）",
+    "upgrade_when": "win32_abi.h 断言集覆盖 09 §5.1 首批 69 个入口，且首批入口在 X11 会话上跑通 TG-001/TG-004 后，才可改为「已核对」"
+  },
+  "risk_detail": {
+    "wide_without_charset": {
+      "count": 6,
+      "meaning": "入口名以 W/A 结尾但属性里没有 CharSet：A/W 变体靠名字区分，缺 CharSet 不影响选函数，但影响字符串封送方式，需逐条确认（首批入口由 B10 逐入口核对）"
+    }
+  },
+  "libraries": {
+    "advapi32": {
+      "declarations": 9,
+      "unique_symbols": 9,
+      "charset": {
+        "Unicode": 4,
+        "Ansi": 0,
+        "Auto": 1,
+        "unspecified": 4
+      },
+      "exact_spelling": {
+        "true": 3,
+        "false": 0,
+        "unspecified": 6
+      },
+      "set_last_error": 1,
+      "calling_convention": {
+        "unspecified(=>Winapi)": 9
+      },
+      "risk_wide_without_charset": 0,
+      "risk_examples": [],
+      "sample_symbols": [
+        "ConvertStringSecurityDescriptorToSecurityDescriptor",
+        "EventRegister",
+        "EventUnregister",
+        "EventWrite",
+        "GetTraceEnableFlags",
+        "GetTraceEnableLevel",
+        "RegisterTraceGuidsW",
+        "TraceEvent",
+        "UnregisterTraceGuids"
+      ],
+      "declared_in_files": [
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/Shared/MS/Win32/UnsafeNativeMethodsEventTrace.cs",
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/tests/IntegrationTests/Common/DRT/TestServices/MS/Win32/UnsafeNativeMethodsOther.cs"
+      ]
+    },
+    "api-ms-win-core-com": {
+      "declarations": 3,
+      "unique_symbols": 3,
+      "charset": {
+        "Unicode": 0,
+        "Ansi": 0,
+        "Auto": 0,
+        "unspecified": 3
+      },
+      "exact_spelling": {
+        "true": 0,
+        "false": 0,
+        "unspecified": 3
+      },
+      "set_last_error": 0,
+      "calling_convention": {
+        "unspecified(=>Winapi)": 3
+      },
+      "risk_wide_without_charset": 0,
+      "risk_examples": [],
+      "sample_symbols": [
+        "CoDecrementMTAUsage",
+        "CoGetObjectContext",
+        "CoIncrementMTAUsage"
+      ],
+      "declared_in_files": [
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/PresentationFramework/MS/Internal/WindowsRuntime/Generated/WinRT.cs",
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/PresentationFramework/MS/Internal/WindowsRuntime/Generated/WinRT/Context.cs"
+      ]
+    },
+    "api-ms-win-core-winrt": {
+      "declarations": 3,
+      "unique_symbols": 2,
+      "charset": {
+        "Unicode": 0,
+        "Ansi": 0,
+        "Auto": 0,
+        "unspecified": 3
+      },
+      "exact_spelling": {
+        "true": 0,
+        "false": 0,
+        "unspecified": 3
+      },
+      "set_last_error": 0,
+      "calling_convention": {
+        "StdCall": 2,
+        "unspecified(=>Winapi)": 1
+      },
+      "risk_wide_without_charset": 0,
+      "risk_examples": [],
+      "sample_symbols": [
+        "RoActivateInstance",
+        "RoGetActivationFactory"
+      ],
+      "declared_in_files": [
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/PresentationCore/MS/internal/WindowsRuntime/Windows/UI/ViewManagement/NativeMethods.cs",
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/PresentationFramework/MS/Internal/WindowsRuntime/Generated/WinRT.cs"
+      ]
+    },
+    "api-ms-win-core-winrt-string": {
+      "declarations": 7,
+      "unique_symbols": 5,
+      "charset": {
+        "Unicode": 0,
+        "Ansi": 0,
+        "Auto": 0,
+        "unspecified": 7
+      },
+      "exact_spelling": {
+        "true": 0,
+        "false": 0,
+        "unspecified": 7
+      },
+      "set_last_error": 0,
+      "calling_convention": {
+        "StdCall": 7
+      },
+      "risk_wide_without_charset": 0,
+      "risk_examples": [],
+      "sample_symbols": [
+        "WindowsCreateString",
+        "WindowsCreateStringReference",
+        "WindowsDeleteString",
+        "WindowsDuplicateString",
+        "WindowsGetStringRawBuffer"
+      ],
+      "declared_in_files": [
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/PresentationCore/MS/internal/WindowsRuntime/Windows/UI/ViewManagement/NativeMethods.cs",
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/PresentationFramework/MS/Internal/WindowsRuntime/Generated/WinRT.cs"
+      ]
+    },
+    "comdlg32": {
+      "declarations": 4,
+      "unique_symbols": 4,
+      "charset": {
+        "Unicode": 2,
+        "Ansi": 0,
+        "Auto": 2,
+        "unspecified": 0
+      },
+      "exact_spelling": {
+        "true": 1,
+        "false": 0,
+        "unspecified": 3
+      },
+      "set_last_error": 3,
+      "calling_convention": {
+        "unspecified(=>Winapi)": 4
+      },
+      "risk_wide_without_charset": 0,
+      "risk_examples": [],
+      "sample_symbols": [
+        "CommDlgExtendedError",
+        "GetOpenFileName",
+        "GetSaveFileName",
+        "PrintDlgEx"
+      ],
+      "declared_in_files": [
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/PresentationFramework/MS/Internal/Printing/UnsafeNativeMethods.cs",
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/tests/IntegrationTests/Common/DRT/TestServices/MS/Win32/UnsafeNativeMethodsCLR.cs"
+      ]
+    },
+    "dwmapi": {
+      "declarations": 13,
+      "unique_symbols": 11,
+      "charset": {
+        "Unicode": 0,
+        "Ansi": 0,
+        "Auto": 0,
+        "unspecified": 13
+      },
+      "exact_spelling": {
+        "true": 0,
+        "false": 0,
+        "unspecified": 13
+      },
+      "set_last_error": 1,
+      "calling_convention": {
+        "unspecified(=>Winapi)": 13
+      },
+      "risk_wide_without_charset": 0,
+      "risk_examples": [],
+      "sample_symbols": [
+        "DwmDefWindowProc",
+        "DwmGetWindowAttribute",
+        "DwmInvalidateIconicBitmaps",
+        "DwmIsCompositionEnabled",
+        "DwmSetIconicLivePreviewBitmap",
+        "DwmSetIconicThumbnail",
+        "_DwmExtendFrameIntoClientArea",
+        "_DwmGetColorizationColor",
+        "_DwmGetCompositionTimingInfo",
+        "_DwmIsCompositionEnabled",
+        "_DwmSetWindowAttribute"
+      ],
+      "declared_in_files": [
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/PresentationFramework/System/Windows/Standard/NativeMethods.cs",
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/UIAutomation/UIAutomationClient/MS/Win32/SafeNativeMethods.cs",
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/UIAutomation/UIAutomationClientSideProviders/MS/Win32/UnsafeNativeMethods.cs",
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/tests/IntegrationTests/Common/DRT/TestServices/MS/Win32/UnsafeNativeMethodsCLR.cs"
+      ]
+    },
+    "gdi32": {
+      "declarations": 72,
+      "unique_symbols": 42,
+      "charset": {
+        "Unicode": 3,
+        "Ansi": 0,
+        "Auto": 40,
+        "unspecified": 29
+      },
+      "exact_spelling": {
+        "true": 30,
+        "false": 0,
+        "unspecified": 42
+      },
+      "set_last_error": 49,
+      "calling_convention": {
+        "unspecified(=>Winapi)": 72
+      },
+      "risk_wide_without_charset": 1,
+      "risk_examples": [
+        "GetObjectW"
+      ],
+      "sample_symbols": [
+        "BitBlt",
+        "CombineRgn",
+        "CreateCompatibleBitmap",
+        "CreateCompatibleDC",
+        "CreateDC",
+        "CreateICW",
+        "CreateRectRgn",
+        "CreateSolidBrush",
+        "CriticalCreateCompatibleBitmap",
+        "CriticalCreateCompatibleDC",
+        "CriticalGetStockObject",
+        "CriticalSelectObject",
+        "DeleteDC",
+        "DeleteObject",
+        "EndDoc",
+        "EndPage",
+        "ExtEscape",
+        "GetBitmapBits",
+        "GetDeviceCaps",
+        "GetObject"
+      ],
+      "declared_in_files": [
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/PresentationFramework/System/Windows/Standard/NativeMethods.cs",
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/ReachFramework/MS/Internal/Printing/Configuration/UnsafeNativeMethods.cs",
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/Shared/MS/Win32/NativeMethodsOther.cs",
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/Shared/MS/Win32/UnsafeNativeMethodsCLR.cs",
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/System.Windows.Controls.Ribbon/Microsoft/Windows/Controls/Ribbon/NativeMethods.cs",
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/UIAutomation/UIAutomationClient/MS/Win32/SafeNativeMethods.cs",
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/UIAutomation/UIAutomationClient/MS/Win32/UnsafeNativeMethods.cs",
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/UIAutomation/UIAutomationClientSideProviders/MS/Win32/UnsafeNativeMethods.cs",
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/WindowsFormsIntegration/MS/Win32/UnsafeNativeMethods.cs",
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/tests/IntegrationTests/Common/DRT/TestServices/MS/Win32/NativeMethodsOther.cs",
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/tests/IntegrationTests/Common/DRT/TestServices/MS/Win32/UnsafeNativeMethodsCLR.cs"
+      ]
+    },
+    "gdiplus": {
+      "declarations": 7,
+      "unique_symbols": 7,
+      "charset": {
+        "Unicode": 0,
+        "Ansi": 0,
+        "Auto": 0,
+        "unspecified": 7
+      },
+      "exact_spelling": {
+        "true": 0,
+        "false": 0,
+        "unspecified": 7
+      },
+      "set_last_error": 0,
+      "calling_convention": {
+        "unspecified(=>Winapi)": 7
+      },
+      "risk_wide_without_charset": 0,
+      "risk_examples": [],
+      "sample_symbols": [
+        "GdipCreateBitmapFromStream",
+        "GdipCreateHBITMAPFromBitmap",
+        "GdipCreateHICONFromBitmap",
+        "GdipDisposeImage",
+        "GdipImageForceValidation",
+        "GdiplusShutdown",
+        "GdiplusStartup"
+      ],
+      "declared_in_files": [
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/PresentationFramework/System/Windows/Standard/NativeMethods.cs"
+      ]
+    },
+    "imm32": {
+      "declarations": 36,
+      "unique_symbols": 14,
+      "charset": {
+        "Unicode": 0,
+        "Ansi": 0,
+        "Auto": 36,
+        "unspecified": 0
+      },
+      "exact_spelling": {
+        "true": 0,
+        "false": 0,
+        "unspecified": 36
+      },
+      "set_last_error": 0,
+      "calling_convention": {
+        "unspecified(=>Winapi)": 36
+      },
+      "risk_wide_without_charset": 0,
+      "risk_examples": [],
+      "sample_symbols": [
+        "ImmAssociateContext",
+        "ImmConfigureIME",
+        "ImmGetCompositionString",
+        "ImmGetContext",
+        "ImmGetConversionStatus",
+        "ImmGetDefaultIMEWnd",
+        "ImmGetOpenStatus",
+        "ImmGetProperty",
+        "ImmNotifyIME",
+        "ImmReleaseContext",
+        "ImmSetCandidateWindow",
+        "ImmSetCompositionWindow",
+        "ImmSetConversionStatus",
+        "ImmSetOpenStatus"
+      ],
+      "declared_in_files": [
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/Shared/MS/Win32/UnsafeNativeMethodsCLR.cs",
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/tests/IntegrationTests/Common/DRT/TestServices/MS/Win32/UnsafeNativeMethodsCLR.cs"
+      ]
+    },
+    "kernel32": {
+      "declarations": 125,
+      "unique_symbols": 71,
+      "charset": {
+        "Unicode": 26,
+        "Ansi": 4,
+        "Auto": 50,
+        "unspecified": 45
+      },
+      "exact_spelling": {
+        "true": 41,
+        "false": 0,
+        "unspecified": 84
+      },
+      "set_last_error": 85,
+      "calling_convention": {
+        "unspecified(=>Winapi)": 118,
+        "Winapi": 7
+      },
+      "risk_wide_without_charset": 2,
+      "risk_examples": [
+        "FindNextFileW",
+        "LoadLibraryExW"
+      ],
+      "sample_symbols": [
+        "CloseHandle",
+        "CopyMemory",
+        "CopyMemoryW",
+        "CreateFile",
+        "CreateFileMapping",
+        "DeactivateActCtx",
+        "DuplicateHandle",
+        "FindClose",
+        "FindFirstFileW",
+        "FindNLSString",
+        "FindNextFileW",
+        "FreeLibrary",
+        "GetCurrentProcess",
+        "GetCurrentProcessId",
+        "GetCurrentThread",
+        "GetCurrentThreadId",
+        "GetFileSizeEx",
+        "GetLocaleInfoW",
+        "GetModuleHandleEx",
+        "GetOEMCP"
+      ],
+      "declared_in_files": [
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/PresentationCore/MS/Win32/UnsafeNativeMethodsPenimc.cs",
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/PresentationFramework/MS/Internal/Printing/UnsafeNativeMethods.cs",
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/PresentationFramework/MS/Internal/WindowsRuntime/Generated/WinRT.cs",
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/PresentationFramework/System/Windows/Standard/NativeMethods.cs",
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/ReachFramework/MS/Internal/Printing/Configuration/UnsafeNativeMethods.cs",
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/ReachFramework/PrintSystemExceptions/InteropWin32ApiThunk.cs",
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/Shared/MS/Win32/NativeMethodsOther.cs",
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/Shared/MS/Win32/SafeNativeMethodsCLR.cs",
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/Shared/MS/Win32/SafeNativeMethodsOther.cs",
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/Shared/MS/Win32/UnsafeNativeMethodsCLR.cs",
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/Shared/MS/Win32/UnsafeNativeMethodsOther.cs",
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/UIAutomation/UIAutomationClient/MS/Win32/SafeNativeMethods.cs",
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/UIAutomation/UIAutomationClient/MS/Win32/UnsafeNativeMethods.cs",
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/UIAutomation/UIAutomationClientSideProviders/MS/Win32/SafeNativeMethods.cs",
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/UIAutomation/UIAutomationClientSideProviders/MS/Win32/UnsafeNativeMethods.cs",
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/tests/IntegrationTests/Common/DRT/TestServices/DrtBase.cs",
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/tests/IntegrationTests/Common/DRT/TestServices/MS/Win32/NativeMethodsCLR.cs",
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/tests/IntegrationTests/Common/DRT/TestServices/MS/Win32/NativeMethodsOther.cs",
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/tests/IntegrationTests/Common/DRT/TestServices/MS/Win32/SafeNativeMethodsCLR.cs",
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/tests/IntegrationTests/Common/DRT/TestServices/MS/Win32/SafeNativeMethodsOther.cs",
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/tests/IntegrationTests/Common/DRT/TestServices/MS/Win32/UnsafeNativeMethodsCLR.cs",
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/tests/IntegrationTests/Common/DRT/TestServices/MS/Win32/UnsafeNativeMethodsOther.cs"
+      ]
+    },
+    "milctrl": {
+      "declarations": 4,
+      "unique_symbols": 4,
+      "charset": {
+        "Unicode": 0,
+        "Ansi": 0,
+        "Auto": 0,
+        "unspecified": 4
+      },
+      "exact_spelling": {
+        "true": 0,
+        "false": 0,
+        "unspecified": 4
+      },
+      "set_last_error": 0,
+      "calling_convention": {
+        "unspecified(=>Winapi)": 4
+      },
+      "risk_wide_without_charset": 0,
+      "risk_examples": [],
+      "sample_symbols": [
+        "Attach",
+        "CanAttach",
+        "GetDataPtr",
+        "Release"
+      ],
+      "declared_in_files": [
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/WpfGfx/core/control/dll/exports.cs"
+      ]
+    },
+    "mscms": {
+      "declarations": 9,
+      "unique_symbols": 9,
+      "charset": {
+        "Unicode": 0,
+        "Ansi": 0,
+        "Auto": 2,
+        "unspecified": 7
+      },
+      "exact_spelling": {
+        "true": 0,
+        "false": 0,
+        "unspecified": 9
+      },
+      "set_last_error": 4,
+      "calling_convention": {
+        "unspecified(=>Winapi)": 9
+      },
+      "risk_wide_without_charset": 0,
+      "risk_examples": [],
+      "sample_symbols": [
+        "CloseColorProfile",
+        "CreateMultiProfileTransform",
+        "DeleteColorTransform",
+        "GetColorDirectory",
+        "GetColorProfileFromHandle",
+        "GetColorProfileHeader",
+        "GetStandardColorSpaceProfile",
+        "OpenColorProfile",
+        "TranslateColors"
+      ],
+      "declared_in_files": [
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/PresentationCore/System/Windows/Media/UnsafeNativeMethodsMilCoreApi.cs"
+      ]
+    },
+    "msctf": {
+      "declarations": 4,
+      "unique_symbols": 4,
+      "charset": {
+        "Unicode": 0,
+        "Ansi": 0,
+        "Auto": 0,
+        "unspecified": 4
+      },
+      "exact_spelling": {
+        "true": 0,
+        "false": 0,
+        "unspecified": 4
+      },
+      "set_last_error": 0,
+      "calling_convention": {
+        "unspecified(=>Winapi)": 4
+      },
+      "risk_wide_without_charset": 0,
+      "risk_examples": [],
+      "sample_symbols": [
+        "TF_CreateCategoryMgr",
+        "TF_CreateDisplayAttributeMgr",
+        "TF_CreateInputProcessorProfiles",
+        "TF_CreateThreadMgr"
+      ],
+      "declared_in_files": [
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/Shared/MS/Win32/UnsafeNativeMethodsTextServices.cs"
+      ]
+    },
+    "msdrm": {
+      "declarations": 50,
+      "unique_symbols": 50,
+      "charset": {
+        "Unicode": 50,
+        "Ansi": 0,
+        "Auto": 0,
+        "unspecified": 0
+      },
+      "exact_spelling": {
+        "true": 0,
+        "false": 0,
+        "unspecified": 50
+      },
+      "set_last_error": 0,
+      "calling_convention": {
+        "StdCall": 50
+      },
+      "risk_wide_without_charset": 0,
+      "risk_examples": [],
+      "sample_symbols": [
+        "DRMAcquireLicense",
+        "DRMActivate",
+        "DRMAddRightWithUser",
+        "DRMCloseEnvironmentHandle",
+        "DRMCloseHandle",
+        "DRMClosePubHandle",
+        "DRMCloseQueryHandle",
+        "DRMCloseSession",
+        "DRMCreateBoundLicense",
+        "DRMCreateClientSession",
+        "DRMCreateEnablingBitsDecryptor",
+        "DRMCreateEnablingBitsEncryptor",
+        "DRMCreateIssuanceLicense",
+        "DRMCreateLicenseStorageSession",
+        "DRMCreateRight",
+        "DRMCreateUser",
+        "DRMDeconstructCertificateChain",
+        "DRMDecrypt",
+        "DRMDeleteLicense",
+        "DRMEncrypt"
+      ],
+      "declared_in_files": [
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/PresentationUI/MS/Internal/Documents/Application/CommandEnforcer.cs",
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/WindowsBase/MS/Internal/Security/RightsManagement/PrivateUnsafeNativeMethods.cs"
+      ]
+    },
+    "mshwgst": {
+      "declarations": 14,
+      "unique_symbols": 14,
+      "charset": {
+        "Unicode": 1,
+        "Ansi": 0,
+        "Auto": 0,
+        "unspecified": 13
+      },
+      "exact_spelling": {
+        "true": 0,
+        "false": 0,
+        "unspecified": 14
+      },
+      "set_last_error": 0,
+      "calling_convention": {
+        "Winapi": 14
+      },
+      "risk_wide_without_charset": 0,
+      "risk_examples": [],
+      "sample_symbols": [
+        "AddStroke",
+        "CreateContext",
+        "CreateRecognizer",
+        "DestroyAlternate",
+        "DestroyContext",
+        "DestroyRecognizer",
+        "EndInkInput",
+        "GetAlternateList",
+        "GetConfidenceLevel",
+        "GetLatticePtr",
+        "GetString",
+        "Process",
+        "ResetContext",
+        "SetEnabledUnicodeRanges"
+      ],
+      "declared_in_files": [
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/PresentationCore/MS/Win32/UnsafeNativeMethodsTablet.cs"
+      ]
+    },
+    "ninput": {
+      "declarations": 7,
+      "unique_symbols": 7,
+      "charset": {
+        "Unicode": 0,
+        "Ansi": 0,
+        "Auto": 0,
+        "unspecified": 7
+      },
+      "exact_spelling": {
+        "true": 0,
+        "false": 0,
+        "unspecified": 7
+      },
+      "set_last_error": 7,
+      "calling_convention": {
+        "unspecified(=>Winapi)": 7
+      },
+      "risk_wide_without_charset": 0,
+      "risk_examples": [],
+      "sample_symbols": [
+        "BufferPointerPacketsInteractionContext",
+        "CreateInteractionContext",
+        "DestroyInteractionContext",
+        "ProcessBufferedPacketsInteractionContext",
+        "RegisterOutputCallbackInteractionContext",
+        "SetInteractionConfigurationInteractionContext",
+        "SetPropertyInteractionContext"
+      ],
+      "declared_in_files": [
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/PresentationCore/MS/Win32/UnsafeNativeMethodsPointer.cs"
+      ]
+    },
+    "ntdll": {
+      "declarations": 4,
+      "unique_symbols": 4,
+      "charset": {
+        "Unicode": 1,
+        "Ansi": 0,
+        "Auto": 0,
+        "unspecified": 3
+      },
+      "exact_spelling": {
+        "true": 0,
+        "false": 0,
+        "unspecified": 4
+      },
+      "set_last_error": 0,
+      "calling_convention": {
+        "unspecified(=>Winapi)": 4
+      },
+      "risk_wide_without_charset": 0,
+      "risk_examples": [],
+      "sample_symbols": [
+        "DbgPrint",
+        "DbgUserBreakPoint",
+        "NtQueryInformationProcess",
+        "RtlNtStatusToDosError"
+      ],
+      "declared_in_files": [
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/Shared/MS/Win32/ManagedWndProcTracker.cs",
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/UIAutomation/UIAutomationClientSideProviders/MS/Win32/UnsafeNativeMethods.cs",
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/tests/IntegrationTests/Common/DRT/TestServices/MS/Win32/UnsafeNativeMethodsOther.cs"
+      ]
+    },
+    "ole32": {
+      "declarations": 28,
+      "unique_symbols": 20,
+      "charset": {
+        "Unicode": 1,
+        "Ansi": 0,
+        "Auto": 14,
+        "unspecified": 13
+      },
+      "exact_spelling": {
+        "true": 16,
+        "false": 0,
+        "unspecified": 12
+      },
+      "set_last_error": 2,
+      "calling_convention": {
+        "unspecified(=>Winapi)": 28
+      },
+      "risk_wide_without_charset": 0,
+      "risk_examples": [],
+      "sample_symbols": [
+        "CoCreateInstance",
+        "CoInitialize",
+        "CoRegisterPSClsid",
+        "CoUninitialize",
+        "CreateStreamOnHGlobal",
+        "DoDragDrop",
+        "IntOleInitialize",
+        "OleFlushClipboard",
+        "OleGetClipboard",
+        "OleIsCurrentClipboard",
+        "OleSetClipboard",
+        "OleUninitialize",
+        "PropVariantClear",
+        "RegisterDragDrop",
+        "ReleaseStgMedium",
+        "RevokeDragDrop",
+        "StgCreateDocfileOnILockBytes",
+        "StgCreateStorageEx",
+        "StgOpenStorageEx",
+        "StgOpenStorageOnILockBytes"
+      ],
+      "declared_in_files": [
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/PresentationCore/MS/Win32/UnsafeNativeMethodsPenimc.cs",
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/PresentationCore/System/Windows/Media/UnsafeNativeMethodsMilCoreApi.cs",
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/ReachFramework/MS/Internal/Printing/Configuration/UnsafeNativeMethods.cs",
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/Shared/MS/Win32/UnsafeNativeMethodsCLR.cs",
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/UIAutomation/UIAutomationClientSideProviders/MS/Win32/UnsafeNativeMethods.cs",
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/WindowsBase/MS/Internal/IO/Packaging/CompoundFile/PrivateUnsafeNativeCompoundFileMethods.cs",
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/WindowsBase/MS/Internal/Interop/NativeStructs.cs",
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/tests/IntegrationTests/Common/DRT/TestServices/MS/Win32/UnsafeNativeMethodsCLR.cs",
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/tests/IntegrationTests/Common/DRT/TestServices/MS/Win32/UnsafeNativeMethodsOther.cs"
+      ]
+    },
+    "oleacc": {
+      "declarations": 10,
+      "unique_symbols": 6,
+      "charset": {
+        "Unicode": 0,
+        "Ansi": 0,
+        "Auto": 0,
+        "unspecified": 10
+      },
+      "exact_spelling": {
+        "true": 0,
+        "false": 0,
+        "unspecified": 10
+      },
+      "set_last_error": 2,
+      "calling_convention": {
+        "unspecified(=>Winapi)": 10
+      },
+      "risk_wide_without_charset": 0,
+      "risk_examples": [],
+      "sample_symbols": [
+        "AccessibleChildren",
+        "AccessibleObjectFromEvent",
+        "AccessibleObjectFromWindow",
+        "GetProcessHandleFromHwnd",
+        "ObjectFromLresult",
+        "WindowFromAccessibleObject"
+      ],
+      "declared_in_files": [
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/Shared/MS/Win32/UnsafeNativeMethodsCLR.cs",
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/UIAutomation/UIAutomationClient/MS/Win32/UnsafeNativeMethods.cs",
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/UIAutomation/UIAutomationClientSideProviders/MS/Win32/UnsafeNativeMethods.cs",
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/tests/IntegrationTests/Common/DRT/TestServices/MS/Win32/UnsafeNativeMethodsCLR.cs"
+      ]
+    },
+    "oleaut32": {
+      "declarations": 8,
+      "unique_symbols": 4,
+      "charset": {
+        "Unicode": 0,
+        "Ansi": 0,
+        "Auto": 4,
+        "unspecified": 4
+      },
+      "exact_spelling": {
+        "true": 0,
+        "false": 0,
+        "unspecified": 8
+      },
+      "set_last_error": 0,
+      "calling_convention": {
+        "unspecified(=>Winapi)": 8
+      },
+      "risk_wide_without_charset": 0,
+      "risk_examples": [],
+      "sample_symbols": [
+        "SetErrorInfo",
+        "SysAllocString",
+        "SysFreeString",
+        "VariantClear"
+      ],
+      "declared_in_files": [
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/PresentationFramework/MS/Internal/WindowsRuntime/Generated/WinRT/ExceptionHelpers.cs",
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/Shared/MS/Win32/NativeMethodsCLR.cs",
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/Shared/MS/Win32/UnsafeNativeMethodsCLR.cs",
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/UIAutomation/UIAutomationClient/MS/Internal/Automation/UiaCoreApi.cs",
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/tests/IntegrationTests/Common/DRT/TestServices/MS/Win32/NativeMethodsCLR.cs",
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/tests/IntegrationTests/Common/DRT/TestServices/MS/Win32/UnsafeNativeMethodsCLR.cs"
+      ]
+    },
+    "penimc": {
+      "declarations": 16,
+      "unique_symbols": 16,
+      "charset": {
+        "Unicode": 0,
+        "Ansi": 0,
+        "Auto": 16,
+        "unspecified": 0
+      },
+      "exact_spelling": {
+        "true": 0,
+        "false": 0,
+        "unspecified": 16
+      },
+      "set_last_error": 0,
+      "calling_convention": {
+        "unspecified(=>Winapi)": 16
+      },
+      "risk_wide_without_charset": 0,
+      "risk_examples": [],
+      "sample_symbols": [
+        "CreateResetEvent",
+        "DestroyResetEvent",
+        "GetLastSystemEventData",
+        "GetPenEvent",
+        "GetPenEventMultiple",
+        "IsfCompressPacketData",
+        "IsfCompressPropertyData",
+        "IsfDecompressPacketData",
+        "IsfDecompressPropertyData",
+        "IsfLoadCompressor",
+        "IsfReleaseCompressor",
+        "LockWispObjectFromGit",
+        "RaiseResetEvent",
+        "RegisterDllForSxSCOM",
+        "SetDisablePenImcBoundsCheckProtection",
+        "UnlockWispObjectFromGit"
+      ],
+      "declared_in_files": [
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/PresentationCore/MS/Win32/UnsafeNativeMethodsPenimc.cs"
+      ]
+    },
+    "presentationhost": {
+      "declarations": 1,
+      "unique_symbols": 1,
+      "charset": {
+        "Unicode": 0,
+        "Ansi": 0,
+        "Auto": 0,
+        "unspecified": 1
+      },
+      "exact_spelling": {
+        "true": 0,
+        "false": 0,
+        "unspecified": 1
+      },
+      "set_last_error": 0,
+      "calling_convention": {
+        "unspecified(=>Winapi)": 1
+      },
+      "risk_wide_without_charset": 0,
+      "risk_examples": [],
+      "sample_symbols": [
+        "ProcessUnhandledException_DLL"
+      ],
+      "declared_in_files": [
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/tests/IntegrationTests/Common/DRT/TestServices/MS/Win32/UnsafeNativeMethodsOther.cs"
+      ]
+    },
+    "presentationnative": {
+      "declarations": 203,
+      "unique_symbols": 149,
+      "charset": {
+        "Unicode": 2,
+        "Ansi": 0,
+        "Auto": 50,
+        "unspecified": 151
+      },
+      "exact_spelling": {
+        "true": 24,
+        "false": 0,
+        "unspecified": 179
+      },
+      "set_last_error": 64,
+      "calling_convention": {
+        "unspecified(=>Winapi)": 183,
+        "Cdecl": 20
+      },
+      "risk_wide_without_charset": 0,
+      "risk_examples": [],
+      "sample_symbols": [
+        "CreateDocContext",
+        "CreateInstalledObjectsInfo",
+        "CreateTextAnalysisSink",
+        "CreateTextAnalysisSource",
+        "DestroyDocContext",
+        "DestroyInstalledObjectsInfo",
+        "EnableWindow",
+        "FindWindowEx",
+        "FsClearUpdateInfoInPage",
+        "FsClearUpdateInfoInSubpage",
+        "FsClearUpdateInfoInSubtrack",
+        "FsCompareSubpages",
+        "FsCompareSubtrack",
+        "FsCreatePageBottomless",
+        "FsCreatePageFinite",
+        "FsCreateSubpageBottomless",
+        "FsCreateSubpageFinite",
+        "FsDestroyPage",
+        "FsDestroyPageBreakRecord",
+        "FsDestroySubpage"
+      ],
+      "declared_in_files": [
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/PresentationCore/MS/internal/Classification.cs",
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/PresentationCore/MS/internal/TextFormatting/LineServices.cs",
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/PresentationFramework/MS/Internal/PtsHost/Pts.cs",
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/PresentationFramework/System/Windows/Documents/NLGSpellerInterop.cs",
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/PresentationFramework/System/Windows/Documents/NaturalLanguageHyphenator.cs",
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/Shared/MS/Win32/NativeMethodsSetLastError.cs",
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/Shared/System/Windows/Interop/OSVersionHelper.cs",
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/tests/IntegrationTests/Common/DRT/TestServices/MS/Win32/NativeMethodsSetLastError.cs"
+      ]
+    },
+    "prntvpt": {
+      "declarations": 7,
+      "unique_symbols": 7,
+      "charset": {
+        "Unicode": 7,
+        "Ansi": 0,
+        "Auto": 0,
+        "unspecified": 0
+      },
+      "exact_spelling": {
+        "true": 6,
+        "false": 0,
+        "unspecified": 1
+      },
+      "set_last_error": 0,
+      "calling_convention": {
+        "unspecified(=>Winapi)": 7
+      },
+      "risk_wide_without_charset": 0,
+      "risk_examples": [],
+      "sample_symbols": [
+        "PTCloseProviderImpl",
+        "PTConvertDevModeToPrintTicketImpl",
+        "PTConvertPrintTicketToDevModeImpl",
+        "PTGetPrintCapabilitiesImpl",
+        "PTMergeAndValidatePrintTicketImpl",
+        "PTOpenProviderExImpl",
+        "PTReleaseMemoryImpl"
+      ],
+      "declared_in_files": [
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/ReachFramework/MS/Internal/Printing/Configuration/UnsafeNativeMethods.cs"
+      ]
+    },
+    "psapi": {
+      "declarations": 2,
+      "unique_symbols": 2,
+      "charset": {
+        "Unicode": 0,
+        "Ansi": 0,
+        "Auto": 2,
+        "unspecified": 0
+      },
+      "exact_spelling": {
+        "true": 0,
+        "false": 0,
+        "unspecified": 2
+      },
+      "set_last_error": 1,
+      "calling_convention": {
+        "unspecified(=>Winapi)": 2
+      },
+      "risk_wide_without_charset": 0,
+      "risk_examples": [],
+      "sample_symbols": [
+        "GetModuleFileNameEx",
+        "GetProcessImageFileName"
+      ],
+      "declared_in_files": [
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/UIAutomation/UIAutomationClient/MS/Win32/SafeNativeMethods.cs",
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/tests/IntegrationTests/Common/DRT/TestServices/DrtBase.cs"
+      ]
+    },
+    "shcore": {
+      "declarations": 4,
+      "unique_symbols": 2,
+      "charset": {
+        "Unicode": 0,
+        "Ansi": 0,
+        "Auto": 3,
+        "unspecified": 1
+      },
+      "exact_spelling": {
+        "true": 1,
+        "false": 0,
+        "unspecified": 3
+      },
+      "set_last_error": 3,
+      "calling_convention": {
+        "Winapi": 1,
+        "unspecified(=>Winapi)": 3
+      },
+      "risk_wide_without_charset": 0,
+      "risk_examples": [],
+      "sample_symbols": [
+        "GetDpiForMonitor",
+        "GetProcessDpiAwareness"
+      ],
+      "declared_in_files": [
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/Shared/MS/Win32/SafeNativeMethodsCLR.cs",
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/Shared/MS/Win32/UnsafeNativeMethodsCLR.cs",
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/tests/IntegrationTests/Common/DRT/TestServices/MS/Win32/UnsafeNativeMethodsCLR.cs"
+      ]
+    },
+    "shell32": {
+      "declarations": 22,
+      "unique_symbols": 16,
+      "charset": {
+        "Unicode": 3,
+        "Ansi": 0,
+        "Auto": 5,
+        "unspecified": 14
+      },
+      "exact_spelling": {
+        "true": 0,
+        "false": 0,
+        "unspecified": 22
+      },
+      "set_last_error": 2,
+      "calling_convention": {
+        "unspecified(=>Winapi)": 22
+      },
+      "risk_wide_without_charset": 0,
+      "risk_examples": [],
+      "sample_symbols": [
+        "DragQueryFile",
+        "ExtractIconEx",
+        "GetCurrentProcessExplicitAppUserModelID",
+        "SHAddToRecentDocsString",
+        "SHAddToRecentDocs_ShellLink",
+        "SHCreateItemFromParsingName",
+        "SHFileOperation",
+        "SHGetFolderPathEx",
+        "SHGetItemFromDataObject",
+        "SetCurrentProcessExplicitAppUserModelID",
+        "ShellExecute",
+        "ShellExecuteEx",
+        "Shell_NotifyIcon",
+        "_CommandLineToArgvW",
+        "_SHAddToRecentDocs_ShellLink",
+        "_SHAddToRecentDocs_String"
+      ],
+      "declared_in_files": [
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/PresentationFramework/MS/Internal/AppModel/ShellProvider.cs",
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/PresentationFramework/System/Windows/Standard/NativeMethods.cs",
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/Shared/MS/Win32/UnsafeNativeMethodsCLR.cs",
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/Shared/MS/Win32/UnsafeNativeMethodsOther.cs",
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/tests/IntegrationTests/Common/DRT/TestServices/MS/Win32/UnsafeNativeMethodsCLR.cs",
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/tests/IntegrationTests/Common/DRT/TestServices/MS/Win32/UnsafeNativeMethodsOther.cs"
+      ]
+    },
+    "shfolder": {
+      "declarations": 1,
+      "unique_symbols": 1,
+      "charset": {
+        "Unicode": 0,
+        "Ansi": 0,
+        "Auto": 1,
+        "unspecified": 0
+      },
+      "exact_spelling": {
+        "true": 0,
+        "false": 0,
+        "unspecified": 1
+      },
+      "set_last_error": 0,
+      "calling_convention": {
+        "unspecified(=>Winapi)": 1
+      },
+      "risk_wide_without_charset": 0,
+      "risk_examples": [],
+      "sample_symbols": [
+        "SHGetFolderPath"
+      ],
+      "declared_in_files": [
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/Shared/MS/Win32/UnsafeNativeMethodsCompiler.cs"
+      ]
+    },
+    "system.io.compression.native": {
+      "declarations": 7,
+      "unique_symbols": 7,
+      "charset": {
+        "Unicode": 0,
+        "Ansi": 0,
+        "Auto": 0,
+        "unspecified": 7
+      },
+      "exact_spelling": {
+        "true": 0,
+        "false": 0,
+        "unspecified": 7
+      },
+      "set_last_error": 0,
+      "calling_convention": {
+        "unspecified(=>Winapi)": 7
+      },
+      "risk_wide_without_charset": 0,
+      "risk_examples": [],
+      "sample_symbols": [
+        "Deflate",
+        "DeflateEnd",
+        "DeflateInit2_",
+        "Inflate",
+        "InflateEnd",
+        "InflateInit2_",
+        "crc32"
+      ],
+      "declared_in_files": [
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/Common/src/Interop/Windows/zlib/zlib.cs"
+      ]
+    },
+    "uiautomationcore": {
+      "declarations": 87,
+      "unique_symbols": 87,
+      "charset": {
+        "Unicode": 87,
+        "Ansi": 0,
+        "Auto": 0,
+        "unspecified": 0
+      },
+      "exact_spelling": {
+        "true": 0,
+        "false": 0,
+        "unspecified": 87
+      },
+      "set_last_error": 0,
+      "calling_convention": {
+        "unspecified(=>Winapi)": 87
+      },
+      "risk_wide_without_charset": 0,
+      "risk_examples": [],
+      "sample_symbols": [
+        "RawDockPattern_SetDockPosition",
+        "RawExpandCollapsePattern_Collapse",
+        "RawExpandCollapsePattern_Expand",
+        "RawGridPattern_GetItem",
+        "RawInvokePattern_Invoke",
+        "RawItemContainerPattern_FindItemByProperty",
+        "RawMultipleViewPattern_GetViewName",
+        "RawMultipleViewPattern_SetCurrentView",
+        "RawRangeValuePattern_SetValue",
+        "RawScrollItemPattern_ScrollIntoView",
+        "RawScrollPattern_Scroll",
+        "RawScrollPattern_SetScrollPercent",
+        "RawSelectionItemPattern_AddToSelection",
+        "RawSelectionItemPattern_RemoveFromSelection",
+        "RawSelectionItemPattern_Select",
+        "RawSynchronizedInputPattern_Cancel",
+        "RawSynchronizedInputPattern_StartListening",
+        "RawTextPattern_GetSelection",
+        "RawTextPattern_GetVisibleRanges",
+        "RawTextPattern_RangeFromChild"
+      ],
+      "declared_in_files": [
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/UIAutomation/UIAutomationClient/MS/Internal/Automation/UiaCoreApi.cs",
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/UIAutomation/UIAutomationProvider/MS/Internal/Automation/UiaCoreProviderApi.cs",
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/UIAutomation/UIAutomationTypes/MS/Internal/Automation/UiaCoreTypesApi.cs"
+      ]
+    },
+    "urlmon": {
+      "declarations": 9,
+      "unique_symbols": 6,
+      "charset": {
+        "Unicode": 1,
+        "Ansi": 2,
+        "Auto": 0,
+        "unspecified": 6
+      },
+      "exact_spelling": {
+        "true": 8,
+        "false": 0,
+        "unspecified": 1
+      },
+      "set_last_error": 0,
+      "calling_convention": {
+        "unspecified(=>Winapi)": 9
+      },
+      "risk_wide_without_charset": 0,
+      "risk_examples": [],
+      "sample_symbols": [
+        "CoInternetCreateSecurityManager",
+        "CoInternetIsFeatureEnabled",
+        "CoInternetIsFeatureZoneElevationEnabled",
+        "CoInternetSetFeatureEnabled",
+        "FindMimeFromData",
+        "ObtainUserAgentString"
+      ],
+      "declared_in_files": [
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/Shared/MS/Win32/UnsafeNativeMethodsCompiler.cs",
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/Shared/MS/Win32/UnsafeNativeMethodsOther.cs",
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/tests/IntegrationTests/Common/DRT/TestServices/MS/Win32/UnsafeNativeMethodsOther.cs"
+      ]
+    },
+    "user32": {
+      "declarations": 452,
+      "unique_symbols": 226,
+      "charset": {
+        "Unicode": 37,
+        "Ansi": 0,
+        "Auto": 273,
+        "unspecified": 142
+      },
+      "exact_spelling": {
+        "true": 178,
+        "false": 0,
+        "unspecified": 274
+      },
+      "set_last_error": 217,
+      "calling_convention": {
+        "unspecified(=>Winapi)": 445,
+        "Winapi": 7
+      },
+      "risk_wide_without_charset": 0,
+      "risk_examples": [],
+      "sample_symbols": [
+        "ActivateKeyboardLayout",
+        "AreDpiAwarenessContextsEqual",
+        "CallNextHookEx",
+        "CallWindowProc",
+        "CreateCaret",
+        "CreateIcon",
+        "CriticalFillRect",
+        "CriticalPrintWindow",
+        "CriticalRedrawWindow",
+        "DefWindowProc",
+        "DestroyCaret",
+        "DestroyIcon",
+        "DestroyWindow",
+        "DisableProcessWindowsGhosting",
+        "DispatchMessage",
+        "EnableNonClientDpiScaling",
+        "EnumChildWindows",
+        "EnumDisplayMonitors",
+        "EnumThreadWindows",
+        "GetActiveWindow"
+      ],
+      "declared_in_files": [
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/Common/src/Interop/Windows/user32/Interop.MessageBeep.cs",
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/PresentationCore/MS/Win32/UnsafeNativeMethodsPointer.cs",
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/PresentationCore/ModuleInitializer.cs",
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/PresentationFramework/System/Windows/Standard/NativeMethods.cs",
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/ReachFramework/MS/Internal/Printing/Configuration/UnsafeNativeMethods.cs",
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/Shared/MS/Win32/SafeNativeMethodsCLR.cs",
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/Shared/MS/Win32/SafeNativeMethodsOther.cs",
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/Shared/MS/Win32/UnsafeNativeMethodsCLR.cs",
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/Shared/MS/Win32/UnsafeNativeMethodsOther.cs",
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/System.Windows.Controls.Ribbon/Microsoft/Windows/Controls/Ribbon/NativeMethods.cs",
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/UIAutomation/UIAutomationClient/MS/Win32/SafeNativeMethods.cs",
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/UIAutomation/UIAutomationClient/MS/Win32/UnsafeNativeMethods.cs",
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/UIAutomation/UIAutomationClientSideProviders/MS/Win32/SafeNativeMethods.cs",
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/UIAutomation/UIAutomationClientSideProviders/MS/Win32/UnsafeNativeMethods.cs",
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/WindowsFormsIntegration/MS/Win32/SafeNativeMethods.cs",
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/WindowsFormsIntegration/MS/Win32/UnsafeNativeMethods.cs",
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/tests/IntegrationTests/Common/DRT/TestServices/DrtBase.cs",
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/tests/IntegrationTests/Common/DRT/TestServices/DrtBaseInput.cs",
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/tests/IntegrationTests/Common/DRT/TestServices/MS/Win32/SafeNativeMethodsCLR.cs",
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/tests/IntegrationTests/Common/DRT/TestServices/MS/Win32/SafeNativeMethodsOther.cs",
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/tests/IntegrationTests/Common/DRT/TestServices/MS/Win32/UnsafeNativeMethodsCLR.cs",
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/tests/IntegrationTests/Common/DRT/TestServices/MS/Win32/UnsafeNativeMethodsOther.cs"
+      ]
+    },
+    "uxtheme": {
+      "declarations": 18,
+      "unique_symbols": 9,
+      "charset": {
+        "Unicode": 11,
+        "Ansi": 0,
+        "Auto": 5,
+        "unspecified": 2
+      },
+      "exact_spelling": {
+        "true": 0,
+        "false": 0,
+        "unspecified": 18
+      },
+      "set_last_error": 0,
+      "calling_convention": {
+        "unspecified(=>Winapi)": 18
+      },
+      "risk_wide_without_charset": 0,
+      "risk_examples": [],
+      "sample_symbols": [
+        "BeginPanningFeedback",
+        "CloseThemeData",
+        "CriticalSetWindowTheme",
+        "EndPanningFeedback",
+        "GetCurrentThemeName",
+        "IsThemeActive",
+        "SetWindowThemeAttribute",
+        "UpdatePanningFeedback",
+        "_GetCurrentThemeName"
+      ],
+      "declared_in_files": [
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/PresentationFramework/System/Windows/Standard/NativeMethods.cs",
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/Shared/MS/Win32/SafeNativeMethodsOther.cs",
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/Shared/MS/Win32/UnsafeNativeMethodsCLR.cs",
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/Shared/MS/Win32/UnsafeNativeMethodsOther.cs",
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/UIAutomation/UIAutomationClientSideProviders/MS/Internal/AutomationProxies/SafeThemeHandle.cs",
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/tests/IntegrationTests/Common/DRT/TestServices/MS/Win32/SafeNativeMethodsOther.cs",
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/tests/IntegrationTests/Common/DRT/TestServices/MS/Win32/UnsafeNativeMethodsCLR.cs",
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/tests/IntegrationTests/Common/DRT/TestServices/MS/Win32/UnsafeNativeMethodsOther.cs"
+      ]
+    },
+    "windowscodecs": {
+      "declarations": 109,
+      "unique_symbols": 91,
+      "charset": {
+        "Unicode": 0,
+        "Ansi": 0,
+        "Auto": 0,
+        "unspecified": 109
+      },
+      "exact_spelling": {
+        "true": 0,
+        "false": 0,
+        "unspecified": 109
+      },
+      "set_last_error": 0,
+      "calling_convention": {
+        "unspecified(=>Winapi)": 109
+      },
+      "risk_wide_without_charset": 0,
+      "risk_examples": [],
+      "sample_symbols": [
+        "Commit",
+        "ContainsMetadataByName",
+        "CopyPalette",
+        "CopyPixels",
+        "CreateBitmap",
+        "CreateBitmapClipper",
+        "CreateBitmapFlipRotator",
+        "CreateBitmapFromHBITMAP",
+        "CreateBitmapFromHICON",
+        "CreateBitmapFromMemory",
+        "CreateBitmapFromSection",
+        "CreateBitmapFromSource",
+        "CreateBitmapScaler",
+        "CreateColorContext",
+        "CreateComponentInfo",
+        "CreateDecoderFromFileHandle",
+        "CreateDecoderFromStream",
+        "CreateEncoder",
+        "CreateFastMetadataEncoderFromDecoder",
+        "CreateFastMetadataEncoderFromFrameDecode"
+      ],
+      "declared_in_files": [
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/PresentationCore/System/Windows/Media/UnsafeNativeMethodsMilCoreApi.cs"
+      ]
+    },
+    "windowscodecsext": {
+      "declarations": 2,
+      "unique_symbols": 2,
+      "charset": {
+        "Unicode": 0,
+        "Ansi": 0,
+        "Auto": 0,
+        "unspecified": 2
+      },
+      "exact_spelling": {
+        "true": 0,
+        "false": 0,
+        "unspecified": 2
+      },
+      "set_last_error": 0,
+      "calling_convention": {
+        "unspecified(=>Winapi)": 2
+      },
+      "risk_wide_without_charset": 0,
+      "risk_examples": [],
+      "sample_symbols": [
+        "CreateColorTransform",
+        "Initialize"
+      ],
+      "declared_in_files": [
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/PresentationCore/System/Windows/Media/UnsafeNativeMethodsMilCoreApi.cs"
+      ]
+    },
+    "wininet": {
+      "declarations": 6,
+      "unique_symbols": 3,
+      "charset": {
+        "Unicode": 4,
+        "Ansi": 0,
+        "Auto": 0,
+        "unspecified": 2
+      },
+      "exact_spelling": {
+        "true": 4,
+        "false": 0,
+        "unspecified": 2
+      },
+      "set_last_error": 6,
+      "calling_convention": {
+        "unspecified(=>Winapi)": 6
+      },
+      "risk_wide_without_charset": 0,
+      "risk_examples": [],
+      "sample_symbols": [
+        "GetUrlCacheConfigInfo",
+        "InternetGetCookieEx",
+        "InternetSetCookieEx"
+      ],
+      "declared_in_files": [
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/Shared/MS/Win32/UnsafeNativeMethodsOther.cs",
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/tests/IntegrationTests/Common/DRT/TestServices/MS/Win32/UnsafeNativeMethodsOther.cs"
+      ]
+    },
+    "winmm": {
+      "declarations": 9,
+      "unique_symbols": 7,
+      "charset": {
+        "Unicode": 4,
+        "Ansi": 0,
+        "Auto": 0,
+        "unspecified": 5
+      },
+      "exact_spelling": {
+        "true": 7,
+        "false": 0,
+        "unspecified": 2
+      },
+      "set_last_error": 0,
+      "calling_convention": {
+        "unspecified(=>Winapi)": 9
+      },
+      "risk_wide_without_charset": 1,
+      "risk_examples": [
+        "PlaySoundW"
+      ],
+      "sample_symbols": [
+        "PlaySound",
+        "PlaySoundW",
+        "mmioAscend",
+        "mmioClose",
+        "mmioDescend",
+        "mmioOpenW",
+        "mmioRead"
+      ],
+      "declared_in_files": [
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/Common/src/Interop/Windows/winmm/Interop.PlaySoundW.cs",
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/Common/src/Interop/Windows/winmm/Interop.mmioAscend.cs",
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/Common/src/Interop/Windows/winmm/Interop.mmioClose.cs",
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/Common/src/Interop/Windows/winmm/Interop.mmioDescend.cs",
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/Common/src/Interop/Windows/winmm/Interop.mmioOpenW.cs",
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/Common/src/Interop/Windows/winmm/Interop.mmioRead.cs",
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/Shared/MS/Win32/UnsafeNativeMethodsOther.cs",
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/tests/IntegrationTests/Common/DRT/TestServices/MS/Win32/UnsafeNativeMethodsOther.cs"
+      ]
+    },
+    "winspool": {
+      "declarations": 9,
+      "unique_symbols": 6,
+      "charset": {
+        "Unicode": 4,
+        "Ansi": 0,
+        "Auto": 0,
+        "unspecified": 5
+      },
+      "exact_spelling": {
+        "true": 5,
+        "false": 0,
+        "unspecified": 4
+      },
+      "set_last_error": 5,
+      "calling_convention": {
+        "unspecified(=>Winapi)": 9
+      },
+      "risk_wide_without_charset": 2,
+      "risk_examples": [
+        "OpenPrinterA"
+      ],
+      "sample_symbols": [
+        "ClosePrinter",
+        "DeviceCapabilitiesW",
+        "DocumentPropertiesW",
+        "GetPrinterW",
+        "OpenPrinterA",
+        "OpenPrinterW"
+      ],
+      "declared_in_files": [
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/ReachFramework/MS/Internal/Printing/Configuration/UnsafeNativeMethods.cs",
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/Shared/MS/Win32/NativeMethodsOther.cs",
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/tests/IntegrationTests/Common/DRT/TestServices/MS/Win32/NativeMethodsOther.cs"
+      ]
+    },
+    "wpfgfx_v0400": {
+      "declarations": 145,
+      "unique_symbols": 100,
+      "charset": {
+        "Unicode": 0,
+        "Ansi": 0,
+        "Auto": 0,
+        "unspecified": 145
+      },
+      "exact_spelling": {
+        "true": 0,
+        "false": 0,
+        "unspecified": 145
+      },
+      "set_last_error": 0,
+      "calling_convention": {
+        "unspecified(=>Winapi)": 145
+      },
+      "risk_wide_without_charset": 0,
+      "risk_examples": [],
+      "sample_symbols": [
+        "AddDirtyRect",
+        "AddRef",
+        "CanPause",
+        "Clear",
+        "Close",
+        "Create",
+        "CreateBitmapRenderTarget",
+        "CreateBitmapRenderTargetForBitmap",
+        "CreateCWICWrapperBitmap",
+        "CreateFactory",
+        "CreateMediaPlayer",
+        "Detach",
+        "EnterCompositionEngineLock",
+        "EnterMediaSystemLock",
+        "ExitCompositionEngineLock",
+        "ExitMediaSystemLock",
+        "GetAsSoftwareBitmap",
+        "GetBackBuffer",
+        "GetBitmap",
+        "GetBufferingProgress"
+      ],
+      "declared_in_files": [
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/Common/Graphics/exports.cs",
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/Common/Graphics/wgx_exports.cs",
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/PresentationCore/System/Windows/InterOp/HwndTarget.cs",
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/PresentationCore/System/Windows/Media/Composition.cs",
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/PresentationCore/System/Windows/Media/EventProxy.cs",
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/PresentationCore/System/Windows/Media/MILUtilities.cs",
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/PresentationCore/System/Windows/Media/MediaContextNotificationWindow.cs",
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/PresentationCore/System/Windows/Media/SafeNativeMethodsMilCoreApi.cs",
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/PresentationCore/System/Windows/Media/StreamAsIStream.cs",
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/PresentationCore/System/Windows/Media/UnsafeNativeMethodsMilCoreApi.cs",
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/WpfGfx/include/exports.cs",
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/WpfGfx/include/wgx_exports.cs"
+      ]
+    },
+    "wtsapi32": {
+      "declarations": 8,
+      "unique_symbols": 4,
+      "charset": {
+        "Unicode": 0,
+        "Ansi": 0,
+        "Auto": 4,
+        "unspecified": 4
+      },
+      "exact_spelling": {
+        "true": 0,
+        "false": 0,
+        "unspecified": 8
+      },
+      "set_last_error": 2,
+      "calling_convention": {
+        "unspecified(=>Winapi)": 8
+      },
+      "risk_wide_without_charset": 0,
+      "risk_examples": [],
+      "sample_symbols": [
+        "WTSFreeMemory",
+        "WTSQuerySessionInformation",
+        "WTSRegisterSessionNotification",
+        "WTSUnRegisterSessionNotification"
+      ],
+      "declared_in_files": [
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/Shared/MS/Win32/SafeNativeMethodsCLR.cs",
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/src/Shared/MS/Win32/UnsafeNativeMethodsOther.cs",
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/tests/IntegrationTests/Common/DRT/TestServices/MS/Win32/SafeNativeMethodsCLR.cs",
+        "40-build/upstream/wpf/src/Microsoft.DotNet.Wpf/tests/IntegrationTests/Common/DRT/TestServices/MS/Win32/UnsafeNativeMethodsOther.cs"
+      ]
+    }
+  },
+  "duplicates": [
+    {
+      "lib": "api-ms-win-core-winrt",
+      "symbol": "RoGetActivationFactory",
+      "declarations": 2
+    },
+    {
+      "lib": "api-ms-win-core-winrt-string",
+      "symbol": "WindowsCreateString",
+      "declarations": 2
+    },
+    {
+      "lib": "api-ms-win-core-winrt-string",
+      "symbol": "WindowsDeleteString",
+      "declarations": 2
+    },
+    {
+      "lib": "dwmapi",
+      "symbol": "DwmGetWindowAttribute",
+      "declarations": 2
+    },
+    {
+      "lib": "dwmapi",
+      "symbol": "DwmIsCompositionEnabled",
+      "declarations": 2
+    },
+    {
+      "lib": "gdi32",
+      "symbol": "CreateRectRgn",
+      "declarations": 2
+    },
+    {
+      "lib": "gdi32",
+      "symbol": "CriticalCreateCompatibleBitmap",
+      "declarations": 2
+    },
+    {
+      "lib": "gdi32",
+      "symbol": "CriticalCreateCompatibleDC",
+      "declarations": 2
+    },
+    {
+      "lib": "gdi32",
+      "symbol": "CriticalGetStockObject",
+      "declarations": 2
+    },
+    {
+      "lib": "gdi32",
+      "symbol": "CriticalSelectObject",
+      "declarations": 2
+    },
+    {
+      "lib": "gdi32",
+      "symbol": "DeleteDC",
+      "declarations": 3
+    },
+    {
+      "lib": "gdi32",
+      "symbol": "DeleteObject",
+      "declarations": 2
+    },
+    {
+      "lib": "gdi32",
+      "symbol": "EndDoc",
+      "declarations": 2
+    },
+    {
+      "lib": "gdi32",
+      "symbol": "EndPage",
+      "declarations": 2
+    },
+    {
+      "lib": "gdi32",
+      "symbol": "ExtEscape",
+      "declarations": 2
+    },
+    {
+      "lib": "gdi32",
+      "symbol": "GetBitmapBits",
+      "declarations": 2
+    },
+    {
+      "lib": "gdi32",
+      "symbol": "GetDeviceCaps",
+      "declarations": 7
+    },
+    {
+      "lib": "gdi32",
+      "symbol": "GetObject",
+      "declarations": 2
+    },
+    {
+      "lib": "gdi32",
+      "symbol": "IntCriticalDeleteDC",
+      "declarations": 2
+    },
+    {
+      "lib": "gdi32",
+      "symbol": "IntDeleteObject",
+      "declarations": 4
+    },
+    {
+      "lib": "gdi32",
+      "symbol": "PrivateCreateBitmap",
+      "declarations": 2
+    },
+    {
+      "lib": "gdi32",
+      "symbol": "PrivateCreateDIBSection",
+      "declarations": 2
+    },
+    {
+      "lib": "gdi32",
+      "symbol": "SelectObject",
+      "declarations": 3
+    },
+    {
+      "lib": "gdi32",
+      "symbol": "SetEnhMetaFileBits",
+      "declarations": 2
+    },
+    {
+      "lib": "gdi32",
+      "symbol": "StartDoc",
+      "declarations": 2
+    },
+    {
+      "lib": "gdi32",
+      "symbol": "StartPage",
+      "declarations": 2
+    },
+    {
+      "lib": "imm32",
+      "symbol": "ImmAssociateContext",
+      "declarations": 2
+    },
+    {
+      "lib": "imm32",
+      "symbol": "ImmConfigureIME",
+      "declarations": 4
+    },
+    {
+      "lib": "imm32",
+      "symbol": "ImmGetCompositionString",
+      "declarations": 8
+    },
+    {
+      "lib": "imm32",
+      "symbol": "ImmGetContext",
+      "declarations": 2
+    },
+    {
+      "lib": "imm32",
+      "symbol": "ImmGetConversionStatus",
+      "declarations": 2
+    },
+    {
+      "lib": "imm32",
+      "symbol": "ImmGetDefaultIMEWnd",
+      "declarations": 2
+    },
+    {
+      "lib": "imm32",
+      "symbol": "ImmGetOpenStatus",
+      "declarations": 2
+    },
+    {
+      "lib": "imm32",
+      "symbol": "ImmGetProperty",
+      "declarations": 2
+    },
+    {
+      "lib": "imm32",
+      "symbol": "ImmNotifyIME",
+      "declarations": 2
+    },
+    {
+      "lib": "imm32",
+      "symbol": "ImmReleaseContext",
+      "declarations": 2
+    },
+    {
+      "lib": "imm32",
+      "symbol": "ImmSetCandidateWindow",
+      "declarations": 2
+    },
+    {
+      "lib": "imm32",
+      "symbol": "ImmSetCompositionWindow",
+      "declarations": 2
+    },
+    {
+      "lib": "imm32",
+      "symbol": "ImmSetConversionStatus",
+      "declarations": 2
+    },
+    {
+      "lib": "imm32",
+      "symbol": "ImmSetOpenStatus",
+      "declarations": 2
+    },
+    {
+      "lib": "kernel32",
+      "symbol": "_GetTempFileName",
+      "declarations": 2
+    },
+    {
+      "lib": "kernel32",
+      "symbol": "CloseHandle",
+      "declarations": 3
+    },
+    {
+      "lib": "kernel32",
+      "symbol": "CopyMemoryW",
+      "declarations": 2
+    },
+    {
+      "lib": "kernel32",
+      "symbol": "CreateFile",
+      "declarations": 2
+    },
+    {
+      "lib": "kernel32",
+      "symbol": "CreateFileMapping",
+      "declarations": 2
+    },
+    {
+      "lib": "kernel32",
+      "symbol": "DuplicateHandle",
+      "declarations": 2
+    },
+    {
+      "lib": "kernel32",
+      "symbol": "FindNLSString",
+      "declarations": 2
+    },
+    {
+      "lib": "kernel32",
+      "symbol": "FreeLibrary",
+      "declarations": 4
+    },
+    {
+      "lib": "kernel32",
+      "symbol": "GetCurrentProcess",
+      "declarations": 2
+    },
+    {
+      "lib": "kernel32",
+      "symbol": "GetCurrentThreadId",
+      "declarations": 2
+    },
+    {
+      "lib": "kernel32",
+      "symbol": "GetFileSizeEx",
+      "declarations": 2
+    },
+    {
+      "lib": "kernel32",
+      "symbol": "GetLocaleInfoW",
+      "declarations": 2
+    },
+    {
+      "lib": "kernel32",
+      "symbol": "GetModuleHandleEx",
+      "declarations": 2
+    },
+    {
+      "lib": "kernel32",
+      "symbol": "GetOEMCP",
+      "declarations": 2
+    },
+    {
+      "lib": "kernel32",
+      "symbol": "GetProcAddressNoThrow",
+      "declarations": 2
+    },
+    {
+      "lib": "kernel32",
+      "symbol": "GetStringTypeEx",
+      "declarations": 2
+    },
+    {
+      "lib": "kernel32",
+      "symbol": "GetSystemPowerStatus",
+      "declarations": 2
+    },
+    {
+      "lib": "kernel32",
+      "symbol": "GetTickCount",
+      "declarations": 5
+    },
+    {
+      "lib": "kernel32",
+      "symbol": "GlobalAddAtom",
+      "declarations": 2
+    },
+    {
+      "lib": "kernel32",
+      "symbol": "GlobalFree",
+      "declarations": 2
+    },
+    {
+      "lib": "kernel32",
+      "symbol": "GlobalLock",
+      "declarations": 3
+    },
+    {
+      "lib": "kernel32",
+      "symbol": "GlobalUnlock",
+      "declarations": 3
+    },
+    {
+      "lib": "kernel32",
+      "symbol": "IntCloseHandle",
+      "declarations": 2
+    },
+    {
+      "lib": "kernel32",
+      "symbol": "IntGetModuleFileName",
+      "declarations": 2
+    },
+    {
+      "lib": "kernel32",
+      "symbol": "IntGetModuleHandle",
+      "declarations": 2
+    },
+    {
+      "lib": "kernel32",
+      "symbol": "IntGetProcAddress",
+      "declarations": 2
+    },
+    {
+      "lib": "kernel32",
+      "symbol": "IntUnmapViewOfFile",
+      "declarations": 2
+    },
+    {
+      "lib": "kernel32",
+      "symbol": "IntWaitForMultipleObjectsEx",
+      "declarations": 2
+    },
+    {
+      "lib": "kernel32",
+      "symbol": "IsDebuggerPresent",
+      "declarations": 2
+    },
+    {
+      "lib": "kernel32",
+      "symbol": "LoadLibrary",
+      "declarations": 2
+    },
+    {
+      "lib": "kernel32",
+      "symbol": "LoadLibraryEx",
+      "declarations": 2
+    },
+    {
+      "lib": "kernel32",
+      "symbol": "LoadLibraryExW",
+      "declarations": 2
+    },
+    {
+      "lib": "kernel32",
+      "symbol": "LocalFree",
+      "declarations": 2
+    },
+    {
+      "lib": "kernel32",
+      "symbol": "MapViewOfFileEx",
+      "declarations": 2
+    },
+    {
+      "lib": "kernel32",
+      "symbol": "MultiByteToWideChar",
+      "declarations": 2
+    },
+    {
+      "lib": "kernel32",
+      "symbol": "OpenProcess",
+      "declarations": 5
+    },
+    {
+      "lib": "kernel32",
+      "symbol": "ProcessIdToSessionId",
+      "declarations": 2
+    },
+    {
+      "lib": "kernel32",
+      "symbol": "QueryPerformanceCounter",
+      "declarations": 2
+    },
+    {
+      "lib": "kernel32",
+      "symbol": "QueryPerformanceFrequency",
+      "declarations": 2
+    },
+    {
+      "lib": "kernel32",
+      "symbol": "ReadProcessMemory",
+      "declarations": 2
+    },
+    {
+      "lib": "kernel32",
+      "symbol": "SetEvent",
+      "declarations": 3
+    },
+    {
+      "lib": "kernel32",
+      "symbol": "VirtualAlloc",
+      "declarations": 2
+    },
+    {
+      "lib": "ole32",
+      "symbol": "CreateStreamOnHGlobal",
+      "declarations": 2
+    },
+    {
+      "lib": "ole32",
+      "symbol": "DoDragDrop",
+      "declarations": 2
+    },
+    {
+      "lib": "ole32",
+      "symbol": "IntOleInitialize",
+      "declarations": 2
+    },
+    {
+      "lib": "ole32",
+      "symbol": "OleUninitialize",
+      "declarations": 2
+    },
+    {
+      "lib": "ole32",
+      "symbol": "PropVariantClear",
+      "declarations": 2
+    },
+    {
+      "lib": "ole32",
+      "symbol": "RegisterDragDrop",
+      "declarations": 2
+    },
+    {
+      "lib": "ole32",
+      "symbol": "ReleaseStgMedium",
+      "declarations": 2
+    },
+    {
+      "lib": "ole32",
+      "symbol": "RevokeDragDrop",
+      "declarations": 2
+    },
+    {
+      "lib": "oleacc",
+      "symbol": "GetProcessHandleFromHwnd",
+      "declarations": 2
+    },
+    {
+      "lib": "oleacc",
+      "symbol": "ObjectFromLresult",
+      "declarations": 3
+    },
+    {
+      "lib": "oleacc",
+      "symbol": "WindowFromAccessibleObject",
+      "declarations": 2
+    },
+    {
+      "lib": "oleaut32",
+      "symbol": "SetErrorInfo",
+      "declarations": 2
+    },
+    {
+      "lib": "oleaut32",
+      "symbol": "SysAllocString",
+      "declarations": 2
+    },
+    {
+      "lib": "oleaut32",
+      "symbol": "SysFreeString",
+      "declarations": 2
+    },
+    {
+      "lib": "oleaut32",
+      "symbol": "VariantClear",
+      "declarations": 2
+    },
+    {
+      "lib": "presentationnative",
+      "symbol": "EnableWindow",
+      "declarations": 4
+    },
+    {
+      "lib": "presentationnative",
+      "symbol": "FindWindowEx",
+      "declarations": 2
+    },
+    {
+      "lib": "presentationnative",
+      "symbol": "GetAncestor",
+      "declarations": 4
+    },
+    {
+      "lib": "presentationnative",
+      "symbol": "GetKeyboardLayoutList",
+      "declarations": 2
+    },
+    {
+      "lib": "presentationnative",
+      "symbol": "GetMenuBarInfo",
+      "declarations": 4
+    },
+    {
+      "lib": "presentationnative",
+      "symbol": "GetParent",
+      "declarations": 2
+    },
+    {
+      "lib": "presentationnative",
+      "symbol": "GetTextExtentPoint32",
+      "declarations": 2
+    },
+    {
+      "lib": "presentationnative",
+      "symbol": "GetWindow",
+      "declarations": 6
+    },
+    {
+      "lib": "presentationnative",
+      "symbol": "GetWindowLong",
+      "declarations": 6
+    },
+    {
+      "lib": "presentationnative",
+      "symbol": "GetWindowLongPtr",
+      "declarations": 6
+    },
+    {
+      "lib": "presentationnative",
+      "symbol": "GetWindowLongPtrWndProc",
+      "declarations": 2
+    },
+    {
+      "lib": "presentationnative",
+      "symbol": "GetWindowLongWndProc",
+      "declarations": 2
+    },
+    {
+      "lib": "presentationnative",
+      "symbol": "GetWindowText",
+      "declarations": 4
+    },
+    {
+      "lib": "presentationnative",
+      "symbol": "GetWindowTextLength",
+      "declarations": 2
+    },
+    {
+      "lib": "presentationnative",
+      "symbol": "GlobalDeleteAtom",
+      "declarations": 2
+    },
+    {
+      "lib": "presentationnative",
+      "symbol": "MapWindowPoints",
+      "declarations": 10
+    },
+    {
+      "lib": "presentationnative",
+      "symbol": "SetFocus",
+      "declarations": 2
+    },
+    {
+      "lib": "presentationnative",
+      "symbol": "SetScrollPos",
+      "declarations": 2
+    },
+    {
+      "lib": "presentationnative",
+      "symbol": "SetWindowLong",
+      "declarations": 4
+    },
+    {
+      "lib": "presentationnative",
+      "symbol": "SetWindowLongPtr",
+      "declarations": 4
+    },
+    {
+      "lib": "presentationnative",
+      "symbol": "SetWindowLongPtrWndProc",
+      "declarations": 2
+    },
+    {
+      "lib": "presentationnative",
+      "symbol": "SetWindowLongWndProc",
+      "declarations": 2
+    },
+    {
+      "lib": "shcore",
+      "symbol": "GetDpiForMonitor",
+      "declarations": 2
+    },
+    {
+      "lib": "shcore",
+      "symbol": "GetProcessDpiAwareness",
+      "declarations": 2
+    },
+    {
+      "lib": "shell32",
+      "symbol": "ExtractIconEx",
+      "declarations": 2
+    },
+    {
+      "lib": "shell32",
+      "symbol": "GetCurrentProcessExplicitAppUserModelID",
+      "declarations": 2
+    },
+    {
+      "lib": "shell32",
+      "symbol": "SetCurrentProcessExplicitAppUserModelID",
+      "declarations": 2
+    },
+    {
+      "lib": "shell32",
+      "symbol": "SHCreateItemFromParsingName",
+      "declarations": 2
+    },
+    {
+      "lib": "shell32",
+      "symbol": "ShellExecute",
+      "declarations": 2
+    },
+    {
+      "lib": "shell32",
+      "symbol": "ShellExecuteEx",
+      "declarations": 2
+    },
+    {
+      "lib": "urlmon",
+      "symbol": "CoInternetCreateSecurityManager",
+      "declarations": 2
+    },
+    {
+      "lib": "urlmon",
+      "symbol": "CoInternetSetFeatureEnabled",
+      "declarations": 2
+    },
+    {
+      "lib": "urlmon",
+      "symbol": "ObtainUserAgentString",
+      "declarations": 2
+    },
+    {
+      "lib": "user32",
+      "symbol": "ActivateKeyboardLayout",
+      "declarations": 2
+    },
+    {
+      "lib": "user32",
+      "symbol": "CallWindowProc",
+      "declarations": 2
+    },
+    {
+      "lib": "user32",
+      "symbol": "CreateCaret",
+      "declarations": 2
+    },
+    {
+      "lib": "user32",
+      "symbol": "CriticalFillRect",
+      "declarations": 2
+    },
+    {
+      "lib": "user32",
+      "symbol": "CriticalPrintWindow",
+      "declarations": 2
+    },
+    {
+      "lib": "user32",
+      "symbol": "CriticalRedrawWindow",
+      "declarations": 2
+    },
+    {
+      "lib": "user32",
+      "symbol": "DefWindowProc",
+      "declarations": 2
+    },
+    {
+      "lib": "user32",
+      "symbol": "DestroyCaret",
+      "declarations": 2
+    },
+    {
+      "lib": "user32",
+      "symbol": "DispatchMessage",
+      "declarations": 5
+    },
+    {
+      "lib": "user32",
+      "symbol": "EnableNonClientDpiScaling",
+      "declarations": 2
+    },
+    {
+      "lib": "user32",
+      "symbol": "EnumThreadWindows",
+      "declarations": 4
+    },
+    {
+      "lib": "user32",
+      "symbol": "GetActiveWindow",
+      "declarations": 2
+    },
+    {
+      "lib": "user32",
+      "symbol": "GetAncestor",
+      "declarations": 3
+    },
+    {
+      "lib": "user32",
+      "symbol": "GetAsyncKeyState",
+      "declarations": 2
+    },
+    {
+      "lib": "user32",
+      "symbol": "GetCapture",
+      "declarations": 3
+    },
+    {
+      "lib": "user32",
+      "symbol": "GetCaretBlinkTime",
+      "declarations": 2
+    },
+    {
+      "lib": "user32",
+      "symbol": "GetClassName",
+      "declarations": 5
+    },
+    {
+      "lib": "user32",
+      "symbol": "GetClientRect",
+      "declarations": 2
+    },
+    {
+      "lib": "user32",
+      "symbol": "GetCursor",
+      "declarations": 2
+    },
+    {
+      "lib": "user32",
+      "symbol": "GetDC",
+      "declarations": 2
+    },
+    {
+      "lib": "user32",
+      "symbol": "GetDesktopWindow",
+      "declarations": 4
+    },
+    {
+      "lib": "user32",
+      "symbol": "GetDoubleClickTime",
+      "declarations": 3
+    },
+    {
+      "lib": "user32",
+      "symbol": "GetFocus",
+      "declarations": 3
+    },
+    {
+      "lib": "user32",
+      "symbol": "GetForegroundWindow",
+      "declarations": 3
+    },
+    {
+      "lib": "user32",
+      "symbol": "GetGUIThreadInfo",
+      "declarations": 2
+    },
+    {
+      "lib": "user32",
+      "symbol": "GetIconInfoImpl",
+      "declarations": 2
+    },
+    {
+      "lib": "user32",
+      "symbol": "GetKeyboardLayout",
+      "declarations": 2
+    },
+    {
+      "lib": "user32",
+      "symbol": "GetKeyState",
+      "declarations": 2
+    },
+    {
+      "lib": "user32",
+      "symbol": "GetLayeredWindowAttributes",
+      "declarations": 2
+    },
+    {
+      "lib": "user32",
+      "symbol": "GetMenuState",
+      "declarations": 2
+    },
+    {
+      "lib": "user32",
+      "symbol": "GetMessage",
+      "declarations": 2
+    },
+    {
+      "lib": "user32",
+      "symbol": "GetMessageExtraInfo",
+      "declarations": 2
+    },
+    {
+      "lib": "user32",
+      "symbol": "GetMessagePos",
+      "declarations": 2
+    },
+    {
+      "lib": "user32",
+      "symbol": "GetMessageTime",
+      "declarations": 3
+    },
+    {
+      "lib": "user32",
+      "symbol": "GetMouseMovePointsEx",
+      "declarations": 2
+    },
+    {
+      "lib": "user32",
+      "symbol": "GetProp",
+      "declarations": 2
+    },
+    {
+      "lib": "user32",
+      "symbol": "GetRawInputDeviceInfo",
+      "declarations": 2
+    },
+    {
+      "lib": "user32",
+      "symbol": "GetRawInputDeviceList",
+      "declarations": 2
+    },
+    {
+      "lib": "user32",
+      "symbol": "GetSysColor",
+      "declarations": 3
+    },
+    {
+      "lib": "user32",
+      "symbol": "GetSystemMetrics",
+      "declarations": 6
+    },
+    {
+      "lib": "user32",
+      "symbol": "GetWindow",
+      "declarations": 2
+    },
+    {
+      "lib": "user32",
+      "symbol": "GetWindowPlacement",
+      "declarations": 2
+    },
+    {
+      "lib": "user32",
+      "symbol": "GetWindowRect",
+      "declarations": 2
+    },
+    {
+      "lib": "user32",
+      "symbol": "GetWindowRgn",
+      "declarations": 2
+    },
+    {
+      "lib": "user32",
+      "symbol": "GetWindowThreadProcessId",
+      "declarations": 5
+    },
+    {
+      "lib": "user32",
+      "symbol": "HideCaret",
+      "declarations": 2
+    },
+    {
+      "lib": "user32",
+      "symbol": "IntAdjustWindowRectEx",
+      "declarations": 2
+    },
+    {
+      "lib": "user32",
+      "symbol": "IntBeginPaint",
+      "declarations": 2
+    },
+    {
+      "lib": "user32",
+      "symbol": "IntChangeWindowMessageFilter",
+      "declarations": 2
+    },
+    {
+      "lib": "user32",
+      "symbol": "IntChangeWindowMessageFilterEx",
+      "declarations": 2
+    },
+    {
+      "lib": "user32",
+      "symbol": "IntClientToScreen",
+      "declarations": 2
+    },
+    {
+      "lib": "user32",
+      "symbol": "IntCreateWindowEx",
+      "declarations": 2
+    },
+    {
+      "lib": "user32",
+      "symbol": "IntDestroyCursor",
+      "declarations": 2
+    },
+    {
+      "lib": "user32",
+      "symbol": "IntDestroyIcon",
+      "declarations": 3
+    },
+    {
+      "lib": "user32",
+      "symbol": "IntDestroyWindow",
+      "declarations": 2
+    },
+    {
+      "lib": "user32",
+      "symbol": "IntEndPaint",
+      "declarations": 2
+    },
+    {
+      "lib": "user32",
+      "symbol": "IntGetClientRect",
+      "declarations": 2
+    },
+    {
+      "lib": "user32",
+      "symbol": "IntGetCursorPos",
+      "declarations": 2
+    },
+    {
+      "lib": "user32",
+      "symbol": "IntGetDC",
+      "declarations": 3
+    },
+    {
+      "lib": "user32",
+      "symbol": "IntGetMessageW",
+      "declarations": 2
+    },
+    {
+      "lib": "user32",
+      "symbol": "IntGetMonitorInfo",
+      "declarations": 2
+    },
+    {
+      "lib": "user32",
+      "symbol": "IntGetWindowPlacement",
+      "declarations": 2
+    },
+    {
+      "lib": "user32",
+      "symbol": "IntGetWindowRect",
+      "declarations": 2
+    },
+    {
+      "lib": "user32",
+      "symbol": "IntMsgWaitForMultipleObjectsEx",
+      "declarations": 2
+    },
+    {
+      "lib": "user32",
+      "symbol": "IntPostMessage",
+      "declarations": 2
+    },
+    {
+      "lib": "user32",
+      "symbol": "IntRegisterClassEx",
+      "declarations": 2
+    },
+    {
+      "lib": "user32",
+      "symbol": "IntReleaseCapture",
+      "declarations": 2
+    },
+    {
+      "lib": "user32",
+      "symbol": "IntReleaseDC",
+      "declarations": 3
+    },
+    {
+      "lib": "user32",
+      "symbol": "IntScreenToClient",
+      "declarations": 2
+    },
+    {
+      "lib": "user32",
+      "symbol": "IntSetWindowPlacement",
+      "declarations": 2
+    },
+    {
+      "lib": "user32",
+      "symbol": "IntSetWindowText",
+      "declarations": 2
+    },
+    {
+      "lib": "user32",
+      "symbol": "IntTryGetCursorPos",
+      "declarations": 2
+    },
+    {
+      "lib": "user32",
+      "symbol": "IntUnregisterClass",
+      "declarations": 2
+    },
+    {
+      "lib": "user32",
+      "symbol": "IntWindowFromPhysicalPoint",
+      "declarations": 2
+    },
+    {
+      "lib": "user32",
+      "symbol": "IntWindowFromPoint",
+      "declarations": 4
+    },
+    {
+      "lib": "user32",
+      "symbol": "InvalidateRect",
+      "declarations": 2
+    },
+    {
+      "lib": "user32",
+      "symbol": "IsChild",
+      "declarations": 4
+    },
+    {
+      "lib": "user32",
+      "symbol": "IsIconic",
+      "declarations": 3
+    },
+    {
+      "lib": "user32",
+      "symbol": "IsProcessDPIAware",
+      "declarations": 2
+    },
+    {
+      "lib": "user32",
+      "symbol": "IsWindow",
+      "declarations": 5
+    },
+    {
+      "lib": "user32",
+      "symbol": "IsWindowEnabled",
+      "declarations": 4
+    },
+    {
+      "lib": "user32",
+      "symbol": "IsWindowUnicode",
+      "declarations": 2
+    },
+    {
+      "lib": "user32",
+      "symbol": "IsWindowVisible",
+      "declarations": 5
+    },
+    {
+      "lib": "user32",
+      "symbol": "IsWinEventHookInstalled",
+      "declarations": 2
+    },
+    {
+      "lib": "user32",
+      "symbol": "Keybd_event",
+      "declarations": 2
+    },
+    {
+      "lib": "user32",
+      "symbol": "KillTimer",
+      "declarations": 2
+    },
+    {
+      "lib": "user32",
+      "symbol": "LoadCursor",
+      "declarations": 2
+    },
+    {
+      "lib": "user32",
+      "symbol": "LoadImageCursor",
+      "declarations": 2
+    },
+    {
+      "lib": "user32",
+      "symbol": "MapVirtualKey",
+      "declarations": 5
+    },
+    {
+      "lib": "user32",
+      "symbol": "MessageBeep",
+      "declarations": 4
+    },
+    {
+      "lib": "user32",
+      "symbol": "MessageBox",
+      "declarations": 2
+    },
+    {
+      "lib": "user32",
+      "symbol": "MonitorFromPoint",
+      "declarations": 2
+    },
+    {
+      "lib": "user32",
+      "symbol": "MonitorFromRect",
+      "declarations": 5
+    },
+    {
+      "lib": "user32",
+      "symbol": "MonitorFromWindow",
+      "declarations": 3
+    },
+    {
+      "lib": "user32",
+      "symbol": "Mouse_event",
+      "declarations": 2
+    },
+    {
+      "lib": "user32",
+      "symbol": "MsgWaitForMultipleObjects",
+      "declarations": 2
+    },
+    {
+      "lib": "user32",
+      "symbol": "NotifyWinEvent",
+      "declarations": 2
+    },
+    {
+      "lib": "user32",
+      "symbol": "PeekMessage",
+      "declarations": 4
+    },
+    {
+      "lib": "user32",
+      "symbol": "PostMessage",
+      "declarations": 2
+    },
+    {
+      "lib": "user32",
+      "symbol": "PrivateCreateIconIndirect",
+      "declarations": 2
+    },
+    {
+      "lib": "user32",
+      "symbol": "RealGetWindowClass",
+      "declarations": 2
+    },
+    {
+      "lib": "user32",
+      "symbol": "RegisterHotKey",
+      "declarations": 2
+    },
+    {
+      "lib": "user32",
+      "symbol": "RegisterPowerSettingNotification",
+      "declarations": 2
+    },
+    {
+      "lib": "user32",
+      "symbol": "RegisterWindowMessage",
+      "declarations": 3
+    },
+    {
+      "lib": "user32",
+      "symbol": "ReleaseDC",
+      "declarations": 2
+    },
+    {
+      "lib": "user32",
+      "symbol": "SendInput",
+      "declarations": 4
+    },
+    {
+      "lib": "user32",
+      "symbol": "SendMessage",
+      "declarations": 6
+    },
+    {
+      "lib": "user32",
+      "symbol": "SendMessageTimeout",
+      "declarations": 8
+    },
+    {
+      "lib": "user32",
+      "symbol": "SetActiveWindow",
+      "declarations": 2
+    },
+    {
+      "lib": "user32",
+      "symbol": "SetCapture",
+      "declarations": 2
+    },
+    {
+      "lib": "user32",
+      "symbol": "SetCaretPos",
+      "declarations": 2
+    },
+    {
+      "lib": "user32",
+      "symbol": "SetCursor",
+      "declarations": 5
+    },
+    {
+      "lib": "user32",
+      "symbol": "SetForegroundWindow",
+      "declarations": 3
+    },
+    {
+      "lib": "user32",
+      "symbol": "SetParent",
+      "declarations": 3
+    },
+    {
+      "lib": "user32",
+      "symbol": "SetProp",
+      "declarations": 2
+    },
+    {
+      "lib": "user32",
+      "symbol": "SetTimer",
+      "declarations": 2
+    },
+    {
+      "lib": "user32",
+      "symbol": "SetWindowPos",
+      "declarations": 5
+    },
+    {
+      "lib": "user32",
+      "symbol": "SetWinEventHook",
+      "declarations": 4
+    },
+    {
+      "lib": "user32",
+      "symbol": "ShowCaret",
+      "declarations": 2
+    },
+    {
+      "lib": "user32",
+      "symbol": "ShowCursor",
+      "declarations": 2
+    },
+    {
+      "lib": "user32",
+      "symbol": "ShowWindow",
+      "declarations": 3
+    },
+    {
+      "lib": "user32",
+      "symbol": "ShowWindowAsync",
+      "declarations": 2
+    },
+    {
+      "lib": "user32",
+      "symbol": "SystemParametersInfo",
+      "declarations": 16
+    },
+    {
+      "lib": "user32",
+      "symbol": "TrackMouseEvent",
+      "declarations": 2
+    },
+    {
+      "lib": "user32",
+      "symbol": "TranslateMessage",
+      "declarations": 5
+    },
+    {
+      "lib": "user32",
+      "symbol": "TryPostMessage",
+      "declarations": 2
+    },
+    {
+      "lib": "user32",
+      "symbol": "TrySetTimer",
+      "declarations": 2
+    },
+    {
+      "lib": "user32",
+      "symbol": "UnhookWinEvent",
+      "declarations": 4
+    },
+    {
+      "lib": "user32",
+      "symbol": "UnregisterHotKey",
+      "declarations": 2
+    },
+    {
+      "lib": "user32",
+      "symbol": "UnregisterPowerSettingNotification",
+      "declarations": 2
+    },
+    {
+      "lib": "user32",
+      "symbol": "UnsafeSendMessage",
+      "declarations": 2
+    },
+    {
+      "lib": "user32",
+      "symbol": "UpdateLayeredWindow",
+      "declarations": 2
+    },
+    {
+      "lib": "uxtheme",
+      "symbol": "BeginPanningFeedback",
+      "declarations": 2
+    },
+    {
+      "lib": "uxtheme",
+      "symbol": "CriticalSetWindowTheme",
+      "declarations": 2
+    },
+    {
+      "lib": "uxtheme",
+      "symbol": "EndPanningFeedback",
+      "declarations": 2
+    },
+    {
+      "lib": "uxtheme",
+      "symbol": "GetCurrentThemeName",
+      "declarations": 2
+    },
+    {
+      "lib": "uxtheme",
+      "symbol": "IsThemeActive",
+      "declarations": 3
+    },
+    {
+      "lib": "uxtheme",
+      "symbol": "SetWindowThemeAttribute",
+      "declarations": 3
+    },
+    {
+      "lib": "uxtheme",
+      "symbol": "UpdatePanningFeedback",
+      "declarations": 2
+    },
+    {
+      "lib": "windowscodecs",
+      "symbol": "Commit",
+      "declarations": 3
+    },
+    {
+      "lib": "windowscodecs",
+      "symbol": "CopyPalette",
+      "declarations": 2
+    },
+    {
+      "lib": "windowscodecs",
+      "symbol": "GetColorContexts",
+      "declarations": 2
+    },
+    {
+      "lib": "windowscodecs",
+      "symbol": "GetContainerFormat",
+      "declarations": 2
+    },
+    {
+      "lib": "windowscodecs",
+      "symbol": "GetMetadataQueryReader",
+      "declarations": 2
+    },
+    {
+      "lib": "windowscodecs",
+      "symbol": "GetMetadataQueryWriter",
+      "declarations": 3
+    },
+    {
+      "lib": "windowscodecs",
+      "symbol": "GetThumbnail",
+      "declarations": 2
+    },
+    {
+      "lib": "windowscodecs",
+      "symbol": "Initialize",
+      "declarations": 6
+    },
+    {
+      "lib": "windowscodecs",
+      "symbol": "InitializeFromMemory",
+      "declarations": 2
+    },
+    {
+      "lib": "windowscodecs",
+      "symbol": "SetPalette",
+      "declarations": 2
+    },
+    {
+      "lib": "windowscodecs",
+      "symbol": "SetResolution",
+      "declarations": 2
+    },
+    {
+      "lib": "windowscodecs",
+      "symbol": "SetThumbnail",
+      "declarations": 2
+    },
+    {
+      "lib": "wininet",
+      "symbol": "GetUrlCacheConfigInfo",
+      "declarations": 2
+    },
+    {
+      "lib": "wininet",
+      "symbol": "InternetGetCookieEx",
+      "declarations": 2
+    },
+    {
+      "lib": "wininet",
+      "symbol": "InternetSetCookieEx",
+      "declarations": 2
+    },
+    {
+      "lib": "winmm",
+      "symbol": "PlaySound",
+      "declarations": 2
+    },
+    {
+      "lib": "winmm",
+      "symbol": "PlaySoundW",
+      "declarations": 2
+    },
+    {
+      "lib": "winspool",
+      "symbol": "ClosePrinter",
+      "declarations": 3
+    },
+    {
+      "lib": "winspool",
+      "symbol": "OpenPrinterA",
+      "declarations": 2
+    },
+    {
+      "lib": "wpfgfx_v0400",
+      "symbol": "AddDirtyRect",
+      "declarations": 3
+    },
+    {
+      "lib": "wpfgfx_v0400",
+      "symbol": "AddRef",
+      "declarations": 2
+    },
+    {
+      "lib": "wpfgfx_v0400",
+      "symbol": "CanPause",
+      "declarations": 2
+    },
+    {
+      "lib": "wpfgfx_v0400",
+      "symbol": "Clear",
+      "declarations": 2
+    },
+    {
+      "lib": "wpfgfx_v0400",
+      "symbol": "Close",
+      "declarations": 2
+    },
+    {
+      "lib": "wpfgfx_v0400",
+      "symbol": "Create",
+      "declarations": 3
+    },
+    {
+      "lib": "wpfgfx_v0400",
+      "symbol": "GetBackBuffer",
+      "declarations": 2
+    },
+    {
+      "lib": "wpfgfx_v0400",
+      "symbol": "GetBitmap",
+      "declarations": 2
+    },
+    {
+      "lib": "wpfgfx_v0400",
+      "symbol": "GetBufferingProgress",
+      "declarations": 2
+    },
+    {
+      "lib": "wpfgfx_v0400",
+      "symbol": "GetDownloadProgress",
+      "declarations": 2
+    },
+    {
+      "lib": "wpfgfx_v0400",
+      "symbol": "GetMediaLength",
+      "declarations": 2
+    },
+    {
+      "lib": "wpfgfx_v0400",
+      "symbol": "GetNaturalHeight",
+      "declarations": 2
+    },
+    {
+      "lib": "wpfgfx_v0400",
+      "symbol": "GetNaturalWidth",
+      "declarations": 2
+    },
+    {
+      "lib": "wpfgfx_v0400",
+      "symbol": "GetPosition",
+      "declarations": 2
+    },
+    {
+      "lib": "wpfgfx_v0400",
+      "symbol": "HasAudio",
+      "declarations": 2
+    },
+    {
+      "lib": "wpfgfx_v0400",
+      "symbol": "HasVideo",
+      "declarations": 2
+    },
+    {
+      "lib": "wpfgfx_v0400",
+      "symbol": "IsBuffering",
+      "declarations": 2
+    },
+    {
+      "lib": "wpfgfx_v0400",
+      "symbol": "MilChannel_GetMarshalType",
+      "declarations": 2
+    },
+    {
+      "lib": "wpfgfx_v0400",
+      "symbol": "MilChannel_SetNotificationWindow",
+      "declarations": 2
+    },
+    {
+      "lib": "wpfgfx_v0400",
+      "symbol": "MilComposition_PeekNextMessage",
+      "declarations": 2
+    },
+    {
+      "lib": "wpfgfx_v0400",
+      "symbol": "MilComposition_WaitForNextMessage",
+      "declarations": 2
+    },
+    {
+      "lib": "wpfgfx_v0400",
+      "symbol": "MilConnection_CloseBatch",
+      "declarations": 2
+    },
+    {
+      "lib": "wpfgfx_v0400",
+      "symbol": "MilConnection_CommitChannel",
+      "declarations": 2
+    },
+    {
+      "lib": "wpfgfx_v0400",
+      "symbol": "MilConnection_CreateChannel",
+      "declarations": 2
+    },
+    {
+      "lib": "wpfgfx_v0400",
+      "symbol": "MilConnection_DestroyChannel",
+      "declarations": 2
+    },
+    {
+      "lib": "wpfgfx_v0400",
+      "symbol": "MilResource_CreateOrAddRefOnChannel",
+      "declarations": 2
+    },
+    {
+      "lib": "wpfgfx_v0400",
+      "symbol": "MilResource_DuplicateHandle",
+      "declarations": 2
+    },
+    {
+      "lib": "wpfgfx_v0400",
+      "symbol": "MilResource_GetRefCountOnChannel",
+      "declarations": 2
+    },
+    {
+      "lib": "wpfgfx_v0400",
+      "symbol": "MilResource_ReleaseOnChannel",
+      "declarations": 2
+    },
+    {
+      "lib": "wpfgfx_v0400",
+      "symbol": "NeedUIFrameUpdate",
+      "declarations": 2
+    },
+    {
+      "lib": "wpfgfx_v0400",
+      "symbol": "Open",
+      "declarations": 2
+    },
+    {
+      "lib": "wpfgfx_v0400",
+      "symbol": "ProcessExitHandler",
+      "declarations": 2
+    },
+    {
+      "lib": "wpfgfx_v0400",
+      "symbol": "ProtectBackBuffer",
+      "declarations": 2
+    },
+    {
+      "lib": "wpfgfx_v0400",
+      "symbol": "QueryInterface",
+      "declarations": 2
+    },
+    {
+      "lib": "wpfgfx_v0400",
+      "symbol": "SetBalance",
+      "declarations": 2
+    },
+    {
+      "lib": "wpfgfx_v0400",
+      "symbol": "SetIsScrubbingEnabled",
+      "declarations": 2
+    },
+    {
+      "lib": "wpfgfx_v0400",
+      "symbol": "SetPosition",
+      "declarations": 2
+    },
+    {
+      "lib": "wpfgfx_v0400",
+      "symbol": "SetRate",
+      "declarations": 2
+    },
+    {
+      "lib": "wpfgfx_v0400",
+      "symbol": "SetVolume",
+      "declarations": 2
+    },
+    {
+      "lib": "wpfgfx_v0400",
+      "symbol": "Shutdown",
+      "declarations": 2
+    },
+    {
+      "lib": "wpfgfx_v0400",
+      "symbol": "Stop",
+      "declarations": 2
+    },
+    {
+      "lib": "wpfgfx_v0400",
+      "symbol": "Update",
+      "declarations": 2
+    },
+    {
+      "lib": "wpfgfx_v0400",
+      "symbol": "WgxConnection_SameThreadPresent",
+      "declarations": 2
+    },
+    {
+      "lib": "wtsapi32",
+      "symbol": "WTSFreeMemory",
+      "declarations": 2
+    },
+    {
+      "lib": "wtsapi32",
+      "symbol": "WTSQuerySessionInformation",
+      "declarations": 2
+    },
+    {
+      "lib": "wtsapi32",
+      "symbol": "WTSRegisterSessionNotification",
+      "declarations": 2
+    },
+    {
+      "lib": "wtsapi32",
+      "symbol": "WTSUnRegisterSessionNotification",
+      "declarations": 2
+    }
+  ],
+  "open_questions": [
+    "unresolved_libs: 无（全部常量解析成功或为字面量）",
+    "CallingConvention 未写 = Winapi，在 x64 上等同默认；无 `CallingConvention.Cdecl` 声明",
+    "PresentationNative/MilCore/WindowsCodecs 三库的 string 参数封装方式（StringBuilder / char* / 长度）需在 TBL-001 逐入口登记"
+  ]
+}

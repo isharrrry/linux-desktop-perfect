@@ -1,0 +1,15 @@
+{
+  "source": "WPFOnLinux/src/WpfGfx.Linux（milcore 源码，DQ-002 关闭依据）",
+  "commit": "335a83687cf4d4772baa4be86066a8a51d91d0ad",
+  "commit_short": "335a83687",
+  "commit_date": "2026-10-03",
+  "deleted_in": "ab0f56aad（2026-10-04「结构上游化」删除该目录；工作树只剩 obj/bin 20 个文件）",
+  "extract_command": "git -C <WPFOnLinux> archive 335a83687 src/WpfGfx.Linux | tar -x -C 40-build/milcore --strip-components=2",
+  "files": 74,
+  "cs_files": 71,
+  "cs_lines": 25742,
+  "bytes": 1260869,
+  "duce_commands": "DUCE-COMMANDS.txt = git show 335a83687:docs/duce-commands.txt（118 行，命令 id + 名）",
+  "status": "源码已找回并入库；能否编译与跑通属 S1 判据（TG-003），当前待实现",
+  "related": "DQ-002（关闭）、K-001（源码缺失已消除，编译验证仍属 M0 出口）"
+}

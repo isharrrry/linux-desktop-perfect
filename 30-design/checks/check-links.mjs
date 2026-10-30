@@ -7,7 +7,9 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '../..');
-const EXCLUDE = new Set(['.git', 'node_modules', '90-archive']);
+// upstream = 只读上游快照（40-build/upstream/wpf），不参与本仓文档与编号校验
+// 40-build = 实现树（含只读上游快照与派生树，自带上游文档），不参与本仓文档与编号校验
+const EXCLUDE = new Set(['.git', 'node_modules', '90-archive', 'upstream', '40-build']);
 
 const errors = [];
 const warnings = [];
@@ -31,6 +33,13 @@ function stripCode(text) {
 
 function lineOf(text, index) {
   return text.slice(0, index).split('\n').length;
+}
+
+// 文档名 ↔ 路径登记表：可阅读文档的《》名称必须与 #名称清单 一致
+const names = JSON.parse(fs.readFileSync(path.join(ROOT, '30-design/model/names.json'), 'utf8'));
+const docNameToPath = new Map();
+for (const [name, rel] of Object.entries(names.documents)) {
+  docNameToPath.set(name, path.resolve(ROOT, rel));
 }
 
 const files = walk(ROOT);
@@ -79,7 +88,25 @@ for (const file of files) {
     errors.push(`${rel}:${line}: 裸行号 ${m[0]}（改用章节/编号/简述）`);
   }
 
-  // 4. 名称提示（仅警告）：首选名缺失
+  // 4. 《》文档名必须与 #名称清单 登记一致
+  const labeledRe = /\[(《[^》]+》)\]\(([^)]*)\)/g;
+  while ((m = labeledRe.exec(stripped))) {
+    const name = m[1].slice(1, -1);
+    const target = m[2];
+    if (/^(https?:|mailto:|#)/.test(target)) continue;
+    const line = lineOf(stripped, m.index);
+    const registered = docNameToPath.get(name);
+    if (!registered) {
+      errors.push(`${rel}:${line}: 未登记文档名：${m[1]} 不在 #名称清单 documents 里（改名字或先登记）`);
+      continue;
+    }
+    const resolved = path.resolve(path.dirname(file), target.split('#')[0]);
+    if (resolved !== registered) {
+      errors.push(`${rel}:${line}: 文档名与链接不符：${m[1]} 应链 ${path.relative(ROOT, registered)}，实际链 ${target}`);
+    }
+  }
+
+  // 5. 名称提示（仅警告）：首选名缺失
   if (rel === 'README.md' && !raw.includes('LinuxDesktopPerfect')) {
     warnings.push(`${rel}: 入口未出现首选名 LinuxDesktopPerfect`);
   }

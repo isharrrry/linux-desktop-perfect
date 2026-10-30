@@ -1,0 +1,203 @@
+{
+  "generated_by": "S1 首错台账",
+  "generated_at": "2026-10-30T14:05:28Z",
+  "snapshot": "40-build/upstream/wpf/SNAPSHOT.json（release/10.0@2565b0112）",
+  "entry": "40-build/build.sh <项目相对路径>",
+  "flags": [
+    "-p:UsingToolXliff=false",
+    "-p:RunApiCompat=false",
+    "-p:RunRefApiCompat=false",
+    "-p:RunNetFrameworkApiCompat=false",
+    "-p:PerlCommand=/usr/bin/perl"
+  ],
+  "baseline": {
+    "WindowsBase": {
+      "project": "src/Microsoft.DotNet.Wpf/src/WindowsBase/WindowsBase.csproj",
+      "rc": 0,
+      "duration_ms": 22127,
+      "first_error": "（无 error 行）",
+      "error_kind": "none",
+      "artifact": {
+        "path": "40-build/build/wpf/artifacts/bin/WindowsBase/Release/net10.0/WindowsBase.dll",
+        "bytes": 1023488
+      },
+      "artifact_kind": "runtime"
+    }
+  },
+  "assemblies": [
+    {
+      "assembly": "System.Xaml",
+      "project": "src/Microsoft.DotNet.Wpf/src/System.Xaml/System.Xaml.csproj",
+      "rc": 0,
+      "duration_ms": 11298,
+      "first_error": "（无 error 行）",
+      "error_kind": "none",
+      "artifact": {
+        "path": "40-build/build/wpf/artifacts/bin/System.Xaml/Release/net10.0/System.Xaml.dll",
+        "bytes": 562176
+      },
+      "artifact_kind": "runtime"
+    },
+    {
+      "assembly": "System.Windows.Primitives",
+      "project": "src/Microsoft.DotNet.Wpf/src/System.Windows.Primitives/System.Windows.Primitives.csproj",
+      "rc": 0,
+      "duration_ms": 9924,
+      "first_error": "（无 error 行）",
+      "error_kind": "none",
+      "artifact": {
+        "path": "40-build/build/wpf/artifacts/bin/System.Windows.Primitives/Release/net10.0/System.Windows.Primitives.dll",
+        "bytes": 154624
+      },
+      "artifact_kind": "runtime"
+    },
+    {
+      "assembly": "PresentationCore",
+      "project": "src/Microsoft.DotNet.Wpf/src/PresentationCore/PresentationCore.csproj",
+      "rc": 1,
+      "duration_ms": 19917,
+      "first_error": "/usr/share/dotnet/sdk/10.0.401/Sdks/Microsoft.NET.Sdk/targets/Microsoft.PackageDependencyResolution.targets(266,5): error NETSDK1004: 找不到资产文件“artifacts/obj/PresentationBuildTasks/project.assets.json”。运行 NuGet 包还原以生成此文件。 [src/Microsoft.DotNet.Wpf/src/PresentationBuildTasks/PresentationBuildTasks.csproj::TargetFramework=net6.0]",
+      "error_kind": "dependency",
+      "artifact": null,
+      "artifact_kind": null
+    },
+    {
+      "assembly": "PresentationFramework",
+      "project": "src/Microsoft.DotNet.Wpf/src/PresentationFramework/PresentationFramework.csproj",
+      "rc": 1,
+      "duration_ms": 48730,
+      "first_error": "src/Microsoft.DotNet.Wpf/src/DirectWriteForwarder/DirectWriteForwarder.vcxproj(39,3): error MSB4278: 导入的文件“$(VCTargetsPath)/Microsoft.Cpp.Default.props”不存在，并且似乎是 Visual Studio 组件的一部分。此文件可能需要 MSBuild.exe 才能成功导入，因此可能无法在 dotnet CLI 中生成。",
+      "error_kind": "toolchain",
+      "artifact": null,
+      "artifact_kind": null
+    },
+    {
+      "assembly": "PresentationUI",
+      "project": "src/Microsoft.DotNet.Wpf/src/PresentationUI/PresentationUI.csproj",
+      "rc": 1,
+      "duration_ms": 24579,
+      "first_error": "/usr/share/dotnet/sdk/10.0.401/Sdks/Microsoft.NET.Sdk/targets/Microsoft.PackageDependencyResolution.targets(266,5): error NETSDK1004: 找不到资产文件“artifacts/obj/PresentationBuildTasks/project.assets.json”。运行 NuGet 包还原以生成此文件。 [src/Microsoft.DotNet.Wpf/src/PresentationBuildTasks/PresentationBuildTasks.csproj::TargetFramework=net6.0]",
+      "error_kind": "dependency",
+      "artifact": null,
+      "artifact_kind": null
+    },
+    {
+      "assembly": "ReachFramework",
+      "project": "src/Microsoft.DotNet.Wpf/src/ReachFramework/ReachFramework.csproj",
+      "rc": 1,
+      "duration_ms": 36858,
+      "first_error": "src/Microsoft.DotNet.Wpf/src/DirectWriteForwarder/DirectWriteForwarder.vcxproj(39,3): error MSB4278: 导入的文件“$(VCTargetsPath)/Microsoft.Cpp.Default.props”不存在，并且似乎是 Visual Studio 组件的一部分。此文件可能需要 MSBuild.exe 才能成功导入，因此可能无法在 dotnet CLI 中生成。",
+      "error_kind": "toolchain",
+      "artifact": null,
+      "artifact_kind": null
+    },
+    {
+      "assembly": "System.Printing",
+      "project": "src/Microsoft.DotNet.Wpf/src/System.Printing/ref/System.Printing-ref.csproj",
+      "rc": 0,
+      "duration_ms": 21898,
+      "first_error": "（无 error 行）",
+      "error_kind": "none",
+      "artifact": {
+        "path": "40-build/build/wpf/artifacts/bin/System.Printing-ref/Release/net10.0/System.Printing.dll",
+        "bytes": 49664
+      },
+      "artifact_kind": "ref"
+    },
+    {
+      "assembly": "System.Windows.Controls.Ribbon",
+      "project": "src/Microsoft.DotNet.Wpf/src/System.Windows.Controls.Ribbon/System.Windows.Controls.Ribbon.csproj",
+      "rc": 1,
+      "duration_ms": 1237,
+      "first_error": "src/Microsoft.DotNet.Wpf/src/System.Windows.Controls.Ribbon/System.Windows.Controls.Ribbon.csproj : error : 无法解析 SDK“Microsoft.Net.Sdk”。下面的探测消息中正好有一条指示我们无法解析 SDK 的原因。调查并解决该消息以正确指定 SDK。",
+      "error_kind": "toolchain",
+      "artifact": null,
+      "artifact_kind": null
+    },
+    {
+      "assembly": "System.Windows.Input.Manipulations",
+      "project": "src/Microsoft.DotNet.Wpf/src/System.Windows.Input.Manipulations/System.Windows.Input.Manipulations.csproj",
+      "rc": 0,
+      "duration_ms": 9323,
+      "first_error": "（无 error 行）",
+      "error_kind": "none",
+      "artifact": {
+        "path": "40-build/build/wpf/artifacts/bin/System.Windows.Input.Manipulations/Release/net10.0/System.Windows.Input.Manipulations.dll",
+        "bytes": 52736
+      },
+      "artifact_kind": "runtime"
+    },
+    {
+      "assembly": "UIAutomationProvider",
+      "project": "src/Microsoft.DotNet.Wpf/src/UIAutomation/UIAutomationProvider/UIAutomationProvider.csproj",
+      "rc": 0,
+      "duration_ms": 34578,
+      "first_error": "（无 error 行）",
+      "error_kind": "none",
+      "artifact": {
+        "path": "40-build/build/wpf/artifacts/bin/UIAutomationProvider/Release/net10.0/UIAutomationProvider.dll",
+        "bytes": 33792
+      },
+      "artifact_kind": "runtime"
+    },
+    {
+      "assembly": "UIAutomationTypes",
+      "project": "src/Microsoft.DotNet.Wpf/src/UIAutomation/UIAutomationTypes/UIAutomationTypes.csproj",
+      "rc": 0,
+      "duration_ms": 28406,
+      "first_error": "（无 error 行）",
+      "error_kind": "none",
+      "artifact": {
+        "path": "40-build/build/wpf/artifacts/bin/UIAutomationTypes/Release/net10.0/UIAutomationTypes.dll",
+        "bytes": 201216
+      },
+      "artifact_kind": "runtime"
+    },
+    {
+      "assembly": "UIAutomationClient",
+      "project": "src/Microsoft.DotNet.Wpf/src/UIAutomation/UIAutomationClient/UIAutomationClient.csproj",
+      "rc": 1,
+      "duration_ms": 39238,
+      "first_error": "/usr/share/dotnet/sdk/10.0.401/Sdks/Microsoft.NET.Sdk/targets/Microsoft.PackageDependencyResolution.targets(266,5): error NETSDK1004: 找不到资产文件“artifacts/obj/PresentationBuildTasks/project.assets.json”。运行 NuGet 包还原以生成此文件。 [src/Microsoft.DotNet.Wpf/src/PresentationBuildTasks/PresentationBuildTasks.csproj::TargetFramework=net6.0]",
+      "error_kind": "dependency",
+      "artifact": null,
+      "artifact_kind": null
+    },
+    {
+      "assembly": "UIAutomationClientSideProviders",
+      "project": "src/Microsoft.DotNet.Wpf/src/UIAutomation/UIAutomationClientSideProviders/UIAutomationClientSideProviders.csproj",
+      "rc": 1,
+      "duration_ms": 29812,
+      "first_error": "/usr/share/dotnet/sdk/10.0.401/Sdks/Microsoft.NET.Sdk/targets/Microsoft.PackageDependencyResolution.targets(266,5): error NETSDK1004: 找不到资产文件“artifacts/obj/PresentationBuildTasks/project.assets.json”。运行 NuGet 包还原以生成此文件。 [src/Microsoft.DotNet.Wpf/src/PresentationBuildTasks/PresentationBuildTasks.csproj::TargetFramework=net6.0]",
+      "error_kind": "dependency",
+      "artifact": null,
+      "artifact_kind": null
+    },
+    {
+      "assembly": "WindowsFormsIntegration",
+      "project": "src/Microsoft.DotNet.Wpf/src/WindowsFormsIntegration/WindowsFormsIntegration.csproj",
+      "rc": 1,
+      "duration_ms": 48956,
+      "first_error": "src/Microsoft.DotNet.Wpf/src/DirectWriteForwarder/DirectWriteForwarder.vcxproj(39,3): error MSB4278: 导入的文件“$(VCTargetsPath)/Microsoft.Cpp.Default.props”不存在，并且似乎是 Visual Studio 组件的一部分。此文件可能需要 MSBuild.exe 才能成功导入，因此可能无法在 dotnet CLI 中生成。",
+      "error_kind": "toolchain",
+      "artifact": null,
+      "artifact_kind": null
+    }
+  ],
+  "summary": {
+    "pass": 7,
+    "fail": 8,
+    "total": 15,
+    "baseline_included": true,
+    "note": "pass/fail 含 baseline WindowsBase；assemblies[] 只列其余 14 件"
+  },
+  "notes": [
+    "System.Printing 本台账构建的是 ref 工程，产物 artifact_kind=ref；其运行时实现由 ReachFramework 产出。",
+    "rc=0 的条目 error_kind 记为 none（无错误）；失败条目按首错原文归类。",
+    "Ribbon 的失败根因是 csproj 里写 `<Project Sdk=\"Microsoft.Net.Sdk\">`（大小写与标准 `Microsoft.NET.Sdk` 不一致），Windows 上解析器容忍、Linux 上 NuGetSdkResolver 返回 null → MSB4236。",
+    "PresentationCore/PresentationUI/UIAutomationClient/UIAutomationClientSideProviders 的首错都指向 PresentationBuildTasks（net6.0）缺 assets，属依赖链未还原。",
+    "System.Printing 的托管实现由 ReachFramework 工程产出（ReachFramework.csproj:40 'ReachFramework -> System.Printing'），本台账跑的是它的 ref 工程 System.Printing-ref。",
+    "error_kind=dependency 表示首错来自被引用的 PresentationBuildTasks（TargetFramework=net6.0）未生成 assets，不是本件源码错误。",
+    "全部失败均原样记录、未修代码（本轮只做台账）。"
+  ]
+}

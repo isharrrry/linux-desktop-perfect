@@ -1,0 +1,54 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- ⭐ `D-R8`（工程卫生）：不依赖 `$(BaseIntermediateOutputPath)` 指向哪里的产物目录排除。
+       实现在仓根 `BuildHygiene.props`（全仓唯一一份；理由与两种被否决的落点见 `src/Linux/build/MilBridge/W21B-report.md` §2）。
+       **故意不加 `Exists()` 条件**：文件找不到要大声失败。 -->
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('BuildHygiene.props'))" />
+  <!--
+    D-F1 判据 runner（T2 车道，2026-09-14）—— **只做"读数"**，判据在 eval-df1-criteria.py（只有一份判据实现）。
+    骨架逐条照抄 src/Linux/build/MilBridge/tests/HbTextLineParity/HbTextLineParity.csproj（那份是对拍 harness）：
+      · ⭐ `<Compile Include>` 指向 src/Microsoft.DotNet.Wpf.Linux/src/shims/PresentationCore.HbTextLine.cs **本身**（编入真源 ⇒ 拿到 internals）
+      · 门禁期可用 -p:HbShimSrc=… 指向 staging 副本做开发（与 harness 同款）
+      · 引用 PC/WindowsBase/DWF 的自产件 + SkiaSharp 2.88.9（DWF 的 font collection 需要）
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <AssemblyName>FallbackCriteria</AssemblyName>
+    <RootNamespace>Df1.FallbackCriteria</RootNamespace>
+    <NoWarn>$(NoWarn);CS1591;CS0649;CA1416</NoWarn>
+    <HbShimSrc Condition="'$(HbShimSrc)' == ''">$(MSBuildThisFileDirectory)../../shims/PresentationCore.HbTextLine.cs</HbShimSrc>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="$(HbShimSrc)" Link="PresentationCore.HbTextLine.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="PresentationCore">
+      <HintPath>$(MSBuildThisFileDirectory)../../PresentationCore/bin/$(WpfLinuxSelfBuiltConfiguration)/PresentationCore.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+    <Reference Include="WindowsBase">
+      <HintPath>$(MSBuildThisFileDirectory)../../WindowsBase/bin/$(WpfLinuxSelfBuiltConfiguration)/WindowsBase.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+    <Reference Include="DirectWriteForwarder">
+      <HintPath>$(MSBuildThisFileDirectory)../../DirectWriteForwarder/bin/$(WpfLinuxSelfBuiltConfiguration)/DirectWriteForwarder.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.IO.Packaging" Version="9.0.0" />
+    <PackageReference Include="System.Formats.Nrbf" Version="9.0.0" />
+    <PackageReference Include="System.Configuration.ConfigurationManager" Version="9.0.0" />
+    <PackageReference Include="System.Windows.Extensions" Version="9.0.0" />
+    <PackageReference Include="SkiaSharp" Version="2.88.9" />
+    <PackageReference Include="SkiaSharp.NativeAssets.Linux" Version="2.88.9" />
+  </ItemGroup>
+</Project>

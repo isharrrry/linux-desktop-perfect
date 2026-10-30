@@ -1,0 +1,11 @@
+# WindowsBase 专用 shim（每行一个相对仓库根的路径）
+# WindowsWin32：CsWin32 生成类型的字节级等价（Windows.Win32.Foundation/Gdi/PInvoke
+#   句柄结构 + DwmIsCompositionEnabled），Linux 上无 CsWin32 源码生成器，故手写。
+src/Microsoft.DotNet.Wpf.Linux/src/shims/WindowsWin32.Shim.cs
+# Accessibility.IAccessible：上游由 WinForms 的 Accessibility 程序集提供，
+# Linux 上不可用，故手写 Guid + InterfaceIsDual 声明（2 行体量）。
+src/Microsoft.DotNet.Wpf.Linux/src/shims/Accessibility.Shim.cs
+# M7b：Win32 子集 shim 的 DllImportResolver（user32/gdi32/kernel32/PresentationNative_cor3
+#   → src/WpfGfx.Linux.Native/bin/libwpfwin32.so）。模块初始化器必须在首个 P/Invoke
+#   之前注册，所以只能靠 [ModuleInitializer] 而不能靠显式调用。
+src/Microsoft.DotNet.Wpf.Linux/src/shims/Win32ShimResolver.cs

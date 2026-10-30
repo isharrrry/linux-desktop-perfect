@@ -1,0 +1,63 @@
+# ARTIFACT-SRC-FP.txt 由 src/Linux/build/artifact-src-fp.py **生成**，不要手改。
+# 维度 A（src）：上游被编译的源 + 本工程生成物/垫片 + 决定它们的应用器脚本 + port-lib 输入
+# 维度 B（peer）：本工程 csproj 引用的**本仓内产物**字节（自指已排除）—— 2026-09-14 加
+#   【为什么】PF ⇄ Reach 真互引 ⇒ Roslyn 把被引件字节纳入输入哈希 ⇒ 该对无字节不动点、`pf` 每波必变；
+#   只覆盖 src 时 `state=ok` 是**必要不充分**（源没变、peer 变了 ⇒ 产物照样变）。
+# 排除：src/Linux/build/PresentationCore.Linux/{bin,obj}/**、.artifacts/**、本文件自己
+# 重算比对：python3 src/Linux/build/artifact-src-fp.py --check（缺本文件 / 缺被引产物 / 旧格式 ⇒ noinfo，**不报绿**）
+fp=1702c7a097f35b51
+n=1373
+peer_fp=09bf648113e58a1f
+peer_n=8
+tool_sha256=e978d6f4a345e4f90432ea63440cf507a11eaffb96c601e0e75dc04c197ee660
+# 被引产物（sha256 前 16 + 仓库相对路径；**产物字节**，不是源）
+peer=7ef51cf912234384  src/Microsoft.DotNet.Wpf.Linux/src/DirectWrite/Provider/bin/Release/DirectWrite.Linux.Provider.dll
+peer=84f3b2d47af514e3  src/Microsoft.DotNet.Wpf.Linux/src/DirectWriteForwarder/bin/Release/DirectWriteForwarder.dll
+peer=c34c8d128c29b75f  src/Microsoft.DotNet.Wpf.Linux/src/System.Windows.Extensions/bin/Release/System.Windows.Extensions.dll
+peer=43c9cfade4428d54  src/Microsoft.DotNet.Wpf.Linux/src/System.Windows.Input.Manipulations/bin/Release/System.Windows.Input.Manipulations.dll
+peer=ad433d7e151fa9a8  src/Microsoft.DotNet.Wpf.Linux/src/System.Xaml/bin/Release/System.Xaml.dll
+peer=4f68cf9dfa6b837e  src/Microsoft.DotNet.Wpf.Linux/src/UIAutomationProvider/bin/Release/UIAutomationProvider.dll
+peer=dae88cddb93738c6  src/Microsoft.DotNet.Wpf.Linux/src/UIAutomationTypes/bin/Release/UIAutomationTypes.dll
+peer=42a9c4728647fc7b  src/Microsoft.DotNet.Wpf.Linux/src/WindowsBase/bin/Release/WindowsBase.dll
+# 逐文件（**源侧**）：sha256 前 16 + 仓库相对路径；只列**本仓自有输入**（上游 `src/Microsoft.DotNet.Wpf/**` 不列，用 --list 看全量）
+file=6d3d32ff14e68fb8  src/Linux/build/MilBridge/src/MilBridge.Resolver/MilCoreDllImportResolver.cs
+file=b38e0b9cda89d702  src/Linux/build/port-lib.py
+file=19f150b5a8050c96  src/Microsoft.DotNet.Wpf.Linux/src/PresentationCore/FamilyCollection.Linux.cs
+file=13b57098224f833e  src/Microsoft.DotNet.Wpf.Linux/src/PresentationCore/FontCacheUtil.Linux.cs
+file=f56e647e21c29ef0  src/Microsoft.DotNet.Wpf.Linux/src/PresentationCore/HwndKeyboardInputProvider.Linux.cs
+file=4b88cb1be27d41b5  src/Microsoft.DotNet.Wpf.Linux/src/PresentationCore/HwndSource.Linux.cs
+file=309c5280207061e0  src/Microsoft.DotNet.Wpf.Linux/src/PresentationCore/HwndTarget.Linux.cs
+file=c07290b51816e305  src/Microsoft.DotNet.Wpf.Linux/src/PresentationCore/InputManager.Linux.cs
+file=3a079a8f23dbdc02  src/Microsoft.DotNet.Wpf.Linux/src/PresentationCore/InputProviderSite.Linux.cs
+file=d816fd8379184813  src/Microsoft.DotNet.Wpf.Linux/src/PresentationCore/MimeTypeMapper.Linux.cs
+file=5a8736f336aba74a  src/Microsoft.DotNet.Wpf.Linux/src/PresentationCore/MouseDevice.Linux.cs
+file=7424c0f4c836e638  src/Microsoft.DotNet.Wpf.Linux/src/PresentationCore/OleServicesContext.Linux.cs
+file=1006066cd7f6ae39  src/Microsoft.DotNet.Wpf.Linux/src/PresentationCore/SR.g.cs
+file=04b64eaaf77572ee  src/Microsoft.DotNet.Wpf.Linux/src/PresentationCore/SecurityHelper.Linux.cs
+file=5f729e403fc6c7b1  src/Microsoft.DotNet.Wpf.Linux/src/PresentationCore/SimpleTextLine.Linux.cs
+file=fd57318ade379427  src/Microsoft.DotNet.Wpf.Linux/src/PresentationCore/StylusLogic.Linux.cs
+file=8c94b39877a62b52  src/Microsoft.DotNet.Wpf.Linux/src/PresentationCore/TextCompositionManager.Linux.cs
+file=452159c2d4879266  src/Microsoft.DotNet.Wpf.Linux/src/PresentationCore/TextFormatterImp.Linux.cs
+file=18ef64f370306faf  src/Microsoft.DotNet.Wpf.Linux/src/PresentationCore/WispTabletDeviceCollection.Linux.cs
+file=1f252d8d7cf9372c  src/Microsoft.DotNet.Wpf.Linux/src/shims/LinuxAssemblyIdentity.cs
+file=fddea33690155928  src/Microsoft.DotNet.Wpf.Linux/src/shims/PresentationCore.AssemblyAttrs.cs
+file=54e9e2518ce18258  src/Microsoft.DotNet.Wpf.Linux/src/shims/PresentationCore.Factory.Linux.cs
+file=8222fa3cf3fea4e7  src/Microsoft.DotNet.Wpf.Linux/src/shims/PresentationCore.FontBridge.cs
+file=a40fe0a1151ebd0f  src/Microsoft.DotNet.Wpf.Linux/src/shims/PresentationCore.HbTextLine.cs
+file=114325a81619621d  src/Microsoft.DotNet.Wpf.Linux/src/shims/PresentationCore.OleApi.Stubs.cs
+file=3733ba6e63c30b32  src/Microsoft.DotNet.Wpf.Linux/src/shims/Win32ShimResolver.cs
+file=1264a4da5d15917f  src/WpfGfx.Linux.Native/tools/patch-presentationcore-apartment.py
+file=5acf5a1f6f7aa93a  src/WpfGfx.Linux.Native/tools/patch-presentationcore-compositefont.py
+file=72922654c71c1eff  src/WpfGfx.Linux.Native/tools/patch-presentationcore-fontcache.py
+file=24e296052230be9a  src/WpfGfx.Linux.Native/tools/patch-presentationcore-hbtextline-shimsha.py
+file=ee8f8a6737a993fd  src/WpfGfx.Linux.Native/tools/patch-presentationcore-hwndtarget-trace.py
+file=b653e317aec089a6  src/WpfGfx.Linux.Native/tools/patch-presentationcore-inputsite-trace.py
+file=6de55e7c53fa74fe  src/WpfGfx.Linux.Native/tools/patch-presentationcore-inputtrace.py
+file=7f9f2b30155a12f4  src/WpfGfx.Linux.Native/tools/patch-presentationcore-lineheight-trace.py
+file=73ab21958469fd57  src/WpfGfx.Linux.Native/tools/patch-presentationcore-mimetype.py
+file=b75376a87b789184  src/WpfGfx.Linux.Native/tools/patch-presentationcore-mousecapture-release.py
+file=a456731247cc718a  src/WpfGfx.Linux.Native/tools/patch-presentationcore-olecontext.py
+file=258e33e25b80ab8a  src/WpfGfx.Linux.Native/tools/patch-presentationcore-registry.py
+file=a64c0de8b064fd10  src/WpfGfx.Linux.Native/tools/patch-presentationcore-securityzone.py
+file=eacc8b053d34d2ae  src/WpfGfx.Linux.Native/tools/patch-presentationcore-textline-fallback.py
+file=cfe58bbf12622ec6  src/WpfGfx.Linux.Native/tools/patch-swe-linux.py

@@ -1,0 +1,65 @@
+<Project>
+  <!--
+    ==========================================================================
+    CycleStub.ReachFramework —— ReachFramework 的**编译期最小 API 替身**
+    ==========================================================================
+    为什么存在（结构性理由，非偷懒）：
+      上游用 $(WpfCycleBreakersDir) 下的
+        CycleBreakers/ReachFramework/ReachFramework-System.Printing-api-cycle.csproj
+      给 System.Printing 的 API 面提供 ReachFramework 侧类型，用来打破
+        System.Printing ⇄ ReachFramework ⇄ System.Printing 的**编译期**循环。
+      而**本仓库的上游快照里没有 CycleBreakers/ 目录**（实测：
+        `find upstream/wpf -iname "*api-cycle*" -o -iname "*impl-cycle*"` 为空，
+        `grep -rn WpfCycleBreakersDir upstream/wpf` 只有引用、没有定义），
+      该工程**不可移植**（源码根本不存在）。
+
+    本替身做什么：
+      只声明 System.Printing 的 API 面**引用到**的 ReachFramework 类型（类型即够：
+      实测 System.Printing/ref/System.Printing.cs 对这些类型**只做类型引用、不访问任何成员**）。
+      形状（sealed/struct/enum 取值）逐项抄自上游真源码，不是凭记忆：
+        · System.Printing.PrintTicket      ← ReachFramework/PrintConfig/PrtTicket_Public_Simple.cs:240
+        · System.Printing.PrintCapabilities← ReachFramework/PrintConfig/PrtCap_Public_Simple.cs:179
+        · System.Printing.PrintTicketScope ← ReachFramework/PrintConfig/PTManager.cs:160（3 个取值照抄）
+        · System.Printing.ValidationResult ← ReachFramework/PrintConfig/PTManager.cs:49（struct）
+        · System.Windows.Xps.Packaging.PackagingProgressEventArgs
+                                           ← ReachFramework/Packaging/XpsInterleavingPolicy.cs:102
+
+    身份与运行期语义（关键）：
+      · AssemblyName **就是 ReachFramework**、AssemblyVersion 4.0.0.1、WCP 公开签名
+        —— 与真 ReachFramework.dll 身份一致，因此 System.Printing.dll 里对这些类型的
+        引用在**运行期自动绑定到真 ReachFramework.dll**（本替身只参与编译，不参与运行）。
+      · 参考方一律 <Private>false</Private>，绝不进任何输出目录，避免出现两个同名程序集。
+      · 本替身里的成员体（若有）永不执行 —— 没有任何伪造行为。
+
+    恢复条件：若日后需要真 ReachFramework 参与 System.Printing 的编译（例如要编译真
+      System.Printing 实现），删掉本工程并把真 DLL 接到同一 Reference 上即可（身份相同、可直接替换）。
+    ==========================================================================
+  -->
+  <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk" />
+  <Import Project="$(MSBuildThisFileDirectory)../../../Linux/build/Directory.Upstream.props" />
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <AssemblyName>ReachFramework</AssemblyName>
+    <RootNamespace>MS.Internal</RootNamespace>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <EnableDefaultEmbeddedResourceItems>false</EnableDefaultEmbeddedResourceItems>
+    <NoWarn>$(NoWarn);CS1591;CS8002;CA1416;CA1420;WPF0001</NoWarn>
+    <LangVersion>latest</LangVersion>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <ProduceReferenceAssembly>false</ProduceReferenceAssembly>
+    <SignAssembly>true</SignAssembly>
+    <PublicSign>true</PublicSign>
+    <AssemblyOriginatorKeyFile>$(WpfLinuxRoot)src/Linux/build/keys/WcpPublicKey.snk</AssemblyOriginatorKeyFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="ApiSubset.cs" />
+    <Compile Include="$(WpfLinuxRoot)src/Microsoft.DotNet.Wpf.Linux/src/shims/LinuxAssemblyIdentity.cs" />
+  </ItemGroup>
+
+  <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
+</Project>

@@ -1,0 +1,6 @@
+<Application x:Class="LinuxDesktopPerfect.Samples.WpfPrintDoc.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             StartupUri="PrintWindow.xaml">
+    <Application.Resources />
+</Application>

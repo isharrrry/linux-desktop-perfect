@@ -1,0 +1,13 @@
+{
+  "purpose": "派生构建必须带的属性（否则会走 Windows 专属工具链）；来源 2026-10-30 实测",
+  "checked_on": { "snapshot": "release/10.0@2565b0112", "sdk": "10.0.401", "project": "src/Microsoft.DotNet.Wpf/src/WindowsBase/WindowsBase.csproj" },
+  "flags": [
+    { "flag": "-p:UsingToolXliff=false", "why": "XliffTasks 只在 dnceng 私有源，本机不可达" },
+    { "flag": "-p:RunApiCompat=false", "why": "ApiCompat 基线以 Windows 为准，Linux 上必然差异；且包在 dnceng" },
+    { "flag": "-p:RunRefApiCompat=false", "why": "同上（ref 侧目标 WpfValidateApiCompatForRef）" },
+    { "flag": "-p:RunNetFrameworkApiCompat=false", "why": "同上（net48 对照）" },
+    { "flag": "-p:PerlCommand=/usr/bin/perl", "why": "GenerateAvTraceMessages 用 .tools 里的 Strawberry Perl（Windows 版）；系统 perl 5.34 可跑 GenTraceStrings.pl" }
+  ],
+  "result": "dotnet build WindowsBase.csproj → rc=0，WindowsBase.dll 1,023,488 B（2026-10-30）",
+  "degradations": ["D-002 离线桩包（Microsoft.Private.Winforms / Intellisense / NETCore.Platforms）"]
+}

@@ -1,0 +1,34 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- #34 波：`System.Windows.Extensions` 的 **Linux 原生替身**。
+       为什么需要它：官方包在**非 Windows** 上把 `XamlAccessLevel` 等类型实现成"直接抛
+       PlatformNotSupportedException（'System.Windows.Extensions types are not supported on this platform.'）"，
+       于是任何**生成了 GeneratedInternalTypeHelper 的程序集一装 BAML 就崩**（实测：HandyControl 示例工程）。
+       本工程只提供 WPF 在 Linux 上真正会用到的那部分（见 PORT-CHANGES.md），
+       并以 `<PackageReference ... ExcludeAssets="runtime" />` 的方式**替换官方包的运行期实现**。 -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <AssemblyName>System.Windows.Extensions</AssemblyName>
+    <RootNamespace>System.Windows.Extensions</RootNamespace>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <NoWarn>$(NoWarn);CA1416</NoWarn>
+    <!-- 身份对齐：deps.json 里官方包是 9.0.0.0 ⇒ 我们的替身也报同一个 AssemblyVersion，
+         免得运行期因版本不匹配而拒绝装载（本替身不做强名称签名；.NET Core 不走 PKT 校验）。 -->
+    <Version>9.0.0</Version>
+    <AssemblyVersion>9.0.0.0</AssemblyVersion>
+    <!-- ⚠️【`#38`】**公开签名**：不签名的话，强命名的自产件（`System.Xaml`/`WindowsBase` 用
+         `src/Linux/build/keys/WcpPublicKey.snk` 公开签名）引用本替身会产生 `CS8002`
+         （"引用程序集…没有强名称"），而 `integration-wave.sh` 把**警告也算失败步骤** ⇒ 波红。
+         签名用的是**本仓自己的公钥**（公开签名，无需私钥）⇒ 身份是**我们的**，不是伪装成官方包。 -->
+    <SignAssembly>true</SignAssembly>
+    <PublicSign>true</PublicSign>
+    <AssemblyOriginatorKeyFile>$(MSBuildThisFileDirectory)../../../Linux/build/keys/WcpPublicKey.snk</AssemblyOriginatorKeyFile>
+    <FileVersion>9.0.0.0</FileVersion>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="System.Windows.Extensions.Linux.cs" />
+  </ItemGroup>
+</Project>

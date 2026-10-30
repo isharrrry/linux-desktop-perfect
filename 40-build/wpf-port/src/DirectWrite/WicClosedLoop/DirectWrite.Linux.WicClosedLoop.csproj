@@ -1,0 +1,46 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- ⭐ `D-R8`（工程卫生）：不依赖 `$(BaseIntermediateOutputPath)` 指向哪里的产物目录排除。
+       实现在仓根 `BuildHygiene.props`（全仓唯一一份；理由与两种被否决的落点见 `src/Linux/build/MilBridge/W21B-report.md` §2）。
+       **故意不加 `Exists()` 条件**：文件找不到要大声失败。 -->
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('BuildHygiene.props'))" />
+  <!--
+    T2 · WIC 托管侧闭环 harness（验收 ①-⑤）
+    =====================================================================================
+    【为什么它自己装 DllImportResolver】
+      `Win32ShimResolver` 的 WIC 映射只在 **PresentationCore 重建后**才生效；本轮不能重建 PC。
+      所以本 harness 用与 `MilCoreStandaloneInstaller` 同一套"独立宿主自装解析器"的办法：
+      对 **PresentationCore 程序集**装一个解析器，把 `WindowsCodecs.dll` 指到我们的
+      `libwpfwic.so`。这样托管闭环**现在**就能跑，且**不碰 PC 的任何文件**。
+    【引用形态】照 src/Linux/samples/HelloWpf 的 HintPath 形态（ProjectReference 不传递私有依赖）。
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>disable</Nullable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <AssemblyName>DirectWrite.Linux.WicClosedLoop</AssemblyName>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <BaseOutputPath>$(MSBuildThisFileDirectory)bin\</BaseOutputPath>
+    <BaseIntermediateOutputPath>$(MSBuildThisFileDirectory)obj\</BaseIntermediateOutputPath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Reference Include="WindowsBase"><HintPath>$(RepoRoot)src/Microsoft.DotNet.Wpf.Linux/src/WindowsBase/bin/$(WpfLinuxSelfBuiltConfiguration)/WindowsBase.dll</HintPath><Private>true</Private></Reference>
+    <Reference Include="System.Xaml"><HintPath>$(RepoRoot)src/Microsoft.DotNet.Wpf.Linux/src/System.Xaml/bin/$(WpfLinuxSelfBuiltConfiguration)/System.Xaml.dll</HintPath><Private>true</Private></Reference>
+    <Reference Include="System.Windows.Input.Manipulations"><HintPath>$(RepoRoot)src/Microsoft.DotNet.Wpf.Linux/src/System.Windows.Input.Manipulations/bin/$(WpfLinuxSelfBuiltConfiguration)/System.Windows.Input.Manipulations.dll</HintPath><Private>true</Private></Reference>
+    <Reference Include="UIAutomationTypes"><HintPath>$(RepoRoot)src/Microsoft.DotNet.Wpf.Linux/src/UIAutomationTypes/bin/$(WpfLinuxSelfBuiltConfiguration)/UIAutomationTypes.dll</HintPath><Private>true</Private></Reference>
+    <Reference Include="UIAutomationProvider"><HintPath>$(RepoRoot)src/Microsoft.DotNet.Wpf.Linux/src/UIAutomationProvider/bin/$(WpfLinuxSelfBuiltConfiguration)/UIAutomationProvider.dll</HintPath><Private>true</Private></Reference>
+    <Reference Include="PresentationCore"><HintPath>$(RepoRoot)src/Microsoft.DotNet.Wpf.Linux/src/PresentationCore/bin/$(WpfLinuxSelfBuiltConfiguration)/PresentationCore.dll</HintPath><Private>true</Private></Reference>
+    <Reference Include="DirectWriteForwarder"><HintPath>$(RepoRoot)src/Microsoft.DotNet.Wpf.Linux/src/DirectWriteForwarder/bin/$(WpfLinuxSelfBuiltConfiguration)/DirectWriteForwarder.dll</HintPath><Private>true</Private></Reference>
+    <Reference Include="DirectWrite.Linux.Provider"><HintPath>$(RepoRoot)src/Microsoft.DotNet.Wpf.Linux/src/DirectWrite/Provider/bin/$(WpfLinuxSelfBuiltConfiguration)/DirectWrite.Linux.Provider.dll</HintPath><Private>true</Private></Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="SkiaSharp" Version="$(SkiaSharpVersion)" />
+    <PackageReference Include="SkiaSharp.NativeAssets.Linux" Version="$(SkiaSharpVersion)" />
+    <PackageReference Include="System.IO.Packaging" Version="9.0.0" />
+    <PackageReference Include="System.Formats.Nrbf" Version="9.0.0" />
+    <PackageReference Include="System.Configuration.ConfigurationManager" Version="9.0.0" />
+    <PackageReference Include="System.Windows.Extensions" Version="9.0.0" />
+  </ItemGroup>
+</Project>

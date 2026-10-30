@@ -1,0 +1,180 @@
+{
+  "scr": "SCR-07",
+  "source": "界面设计说明 §8",
+  "generated_from": "界面图/build-wireframe.mjs --emit-expect（与结构图读同一张表）",
+  "nodes": [
+    {
+      "path": "0",
+      "role": "frame",
+      "name": "WinFormsBasics",
+      "states": [
+        "showing",
+        "active"
+      ],
+      "actions": [
+        "focus"
+      ],
+      "acc": [
+        "ACC-028",
+        "ACC-027"
+      ],
+      "bounds": null,
+      "value": null,
+      "relations": []
+    },
+    {
+      "path": "0/0",
+      "role": "push button",
+      "name": "确定",
+      "states": [
+        "enabled"
+      ],
+      "actions": [
+        "click"
+      ],
+      "acc": [
+        "ACC-028",
+        "ACC-027"
+      ],
+      "bounds": null,
+      "value": null,
+      "relations": []
+    },
+    {
+      "path": "0/1",
+      "role": "entry",
+      "name": "输入",
+      "states": [
+        "editable"
+      ],
+      "actions": [
+        "set-text"
+      ],
+      "acc": [
+        "ACC-028",
+        "ACC-027"
+      ],
+      "bounds": null,
+      "value": null,
+      "relations": []
+    },
+    {
+      "path": "0/2",
+      "role": "list",
+      "name": "列表",
+      "states": [
+        "enabled"
+      ],
+      "actions": [
+        "select"
+      ],
+      "acc": [
+        "ACC-028",
+        "ACC-027"
+      ],
+      "bounds": null,
+      "value": null,
+      "relations": []
+    },
+    {
+      "path": "0/3",
+      "role": "combo box",
+      "name": "下拉",
+      "states": [
+        "expandable"
+      ],
+      "actions": [
+        "expand"
+      ],
+      "acc": [
+        "ACC-028",
+        "ACC-027"
+      ],
+      "bounds": null,
+      "value": null,
+      "relations": []
+    },
+    {
+      "path": "0/4",
+      "role": "panel",
+      "name": "子窗体容器",
+      "states": [
+        "visible"
+      ],
+      "actions": [],
+      "acc": [
+        "ACC-028",
+        "ACC-027"
+      ],
+      "bounds": null,
+      "value": null,
+      "relations": []
+    },
+    {
+      "path": "0/5",
+      "role": "menu bar",
+      "name": "菜单",
+      "states": [
+        "visible"
+      ],
+      "actions": [],
+      "acc": [
+        "ACC-028",
+        "ACC-027"
+      ],
+      "bounds": null,
+      "value": null,
+      "relations": []
+    },
+    {
+      "path": "0/5/0/0",
+      "role": "menu item",
+      "name": "文件",
+      "states": [
+        "enabled"
+      ],
+      "actions": [
+        "click"
+      ],
+      "acc": [
+        "ACC-028",
+        "ACC-027"
+      ],
+      "bounds": null,
+      "value": null,
+      "relations": []
+    },
+    {
+      "path": "0/6",
+      "role": "filler",
+      "name": "正则 缺失控件.*D-\\d{3}",
+      "states": [
+        "visible"
+      ],
+      "actions": [],
+      "acc": [
+        "ACC-028",
+        "ACC-027"
+      ],
+      "bounds": null,
+      "value": null,
+      "relations": []
+    },
+    {
+      "path": "0/7",
+      "role": "label",
+      "name": "正则 msaa=(on|off)",
+      "states": [
+        "visible"
+      ],
+      "actions": [],
+      "acc": [
+        "ACC-028",
+        "ACC-027"
+      ],
+      "bounds": null,
+      "value": null,
+      "relations": []
+    }
+  ]
+}

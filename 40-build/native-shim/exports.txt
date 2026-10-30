@@ -1,0 +1,1174 @@
+# exports.txt — TBL-001 出口清单（IF-006 契约）
+# 生成器：50-verify/contract/gen-exports.mjs（勿手改；改生成器或实现后重跑）
+# 列：lib	symbol	status	owner	since[	note]（note 为可选列；为空时省略，行尾不留制表符）
+# status 判定：impl=实现侧有该符号；stub=函数体仅常量返回；gap=声明有实现无（note 写替代路径）
+# lib 列：若实现将落在哪个自产 .so（概设 §2.4）；status=gap 表示当前无实现，不是没登记
+# 规模：1166 行（impl 565 / stub 3 / gap 598）
+# 输入：上游 1534 条 DllImport 声明（另有 0 条属性块后无 extern 声明被跳过）、native-shim 486 个导出、milcore 109 个导出
+# 排除：wpf_*（shim 内部件）、WpfLinuxWin32_*（桥件，非 Win32 契约入口）
+libwpfgfx_linux.so	GetNextPerfElementId	impl	MOD-25	10.0.11
+libwpfgfx_linux.so	IWICColorContext_GetExifColorSpace_Proxy	impl	MOD-25	10.0.11
+libwpfgfx_linux.so	IWICColorContext_GetProfileBytes_Proxy	impl	MOD-25	10.0.11
+libwpfgfx_linux.so	IWICColorContext_GetType_Proxy	impl	MOD-25	10.0.11
+libwpfgfx_linux.so	InteropDeviceBitmap_AddDirtyRect	gap	MOD-25	10.0.11	无实现（wpfgfx_v0400）
+libwpfgfx_linux.so	InteropDeviceBitmap_Create	gap	MOD-25	10.0.11	无实现（wpfgfx_v0400）
+libwpfgfx_linux.so	InteropDeviceBitmap_Detach	gap	MOD-25	10.0.11	无实现（wpfgfx_v0400）
+libwpfgfx_linux.so	InteropDeviceBitmap_GetAsSoftwareBitmap	gap	MOD-25	10.0.11	无实现（wpfgfx_v0400）
+libwpfgfx_linux.so	MIL3DCalcProjected2DBounds	impl	MOD-25	10.0.11
+libwpfgfx_linux.so	MILAddRef	impl	MOD-25	10.0.11
+libwpfgfx_linux.so	MILCreateEventProxy	impl	MOD-25	10.0.11
+libwpfgfx_linux.so	MILCreateFactory	impl	MOD-25	10.0.11
+libwpfgfx_linux.so	MILCreateStreamFromStreamDescriptor	impl	MOD-25	10.0.11
+libwpfgfx_linux.so	MILFactoryCreateBitmapRenderTarget	impl	MOD-25	10.0.11
+libwpfgfx_linux.so	MILFactoryCreateMediaPlayer	gap	MOD-25	10.0.11	无实现（wpfgfx_v0400）
+libwpfgfx_linux.so	MILFactoryCreateSWRenderTargetForBitmap	impl	MOD-25	10.0.11
+libwpfgfx_linux.so	MILIStreamWrite	impl	MOD-25	10.0.11
+libwpfgfx_linux.so	MILMediaCanPause	gap	MOD-25	10.0.11	无实现（wpfgfx_v0400）
+libwpfgfx_linux.so	MILMediaClose	gap	MOD-25	10.0.11	无实现（wpfgfx_v0400）
+libwpfgfx_linux.so	MILMediaGetBufferingProgress	gap	MOD-25	10.0.11	无实现（wpfgfx_v0400）
+libwpfgfx_linux.so	MILMediaGetDownloadProgress	gap	MOD-25	10.0.11	无实现（wpfgfx_v0400）
+libwpfgfx_linux.so	MILMediaGetMediaLength	gap	MOD-25	10.0.11	无实现（wpfgfx_v0400）
+libwpfgfx_linux.so	MILMediaGetNaturalHeight	gap	MOD-25	10.0.11	无实现（wpfgfx_v0400）
+libwpfgfx_linux.so	MILMediaGetNaturalWidth	gap	MOD-25	10.0.11	无实现（wpfgfx_v0400）
+libwpfgfx_linux.so	MILMediaGetPosition	gap	MOD-25	10.0.11	无实现（wpfgfx_v0400）
+libwpfgfx_linux.so	MILMediaHasAudio	gap	MOD-25	10.0.11	无实现（wpfgfx_v0400）
+libwpfgfx_linux.so	MILMediaHasVideo	gap	MOD-25	10.0.11	无实现（wpfgfx_v0400）
+libwpfgfx_linux.so	MILMediaIsBuffering	gap	MOD-25	10.0.11	无实现（wpfgfx_v0400）
+libwpfgfx_linux.so	MILMediaNeedUIFrameUpdate	gap	MOD-25	10.0.11	无实现（wpfgfx_v0400）
+libwpfgfx_linux.so	MILMediaOpen	gap	MOD-25	10.0.11	无实现（wpfgfx_v0400）
+libwpfgfx_linux.so	MILMediaProcessExitHandler	gap	MOD-25	10.0.11	无实现（wpfgfx_v0400）
+libwpfgfx_linux.so	MILMediaSetBalance	gap	MOD-25	10.0.11	无实现（wpfgfx_v0400）
+libwpfgfx_linux.so	MILMediaSetIsScrubbingEnabled	gap	MOD-25	10.0.11	无实现（wpfgfx_v0400）
+libwpfgfx_linux.so	MILMediaSetPosition	gap	MOD-25	10.0.11	无实现（wpfgfx_v0400）
+libwpfgfx_linux.so	MILMediaSetRate	gap	MOD-25	10.0.11	无实现（wpfgfx_v0400）
+libwpfgfx_linux.so	MILMediaSetVolume	gap	MOD-25	10.0.11	无实现（wpfgfx_v0400）
+libwpfgfx_linux.so	MILMediaShutdown	gap	MOD-25	10.0.11	无实现（wpfgfx_v0400）
+libwpfgfx_linux.so	MILMediaStop	gap	MOD-25	10.0.11	无实现（wpfgfx_v0400）
+libwpfgfx_linux.so	MILQueryInterface	impl	MOD-25	10.0.11
+libwpfgfx_linux.so	MILRelease	impl	MOD-25	10.0.11
+libwpfgfx_linux.so	MILRenderTargetBitmapClear	impl	MOD-25	10.0.11
+libwpfgfx_linux.so	MILRenderTargetBitmapGetBitmap	impl	MOD-25	10.0.11
+libwpfgfx_linux.so	MILSwDoubleBufferedBitmapAddDirtyRect	impl	MOD-25	10.0.11
+libwpfgfx_linux.so	MILSwDoubleBufferedBitmapCreate	impl	MOD-25	10.0.11
+libwpfgfx_linux.so	MILSwDoubleBufferedBitmapGetBackBuffer	impl	MOD-25	10.0.11
+libwpfgfx_linux.so	MILSwDoubleBufferedBitmapProtectBackBuffer	impl	MOD-25	10.0.11
+libwpfgfx_linux.so	MILUpdateSystemParametersInfo	impl	MOD-25	10.0.11
+libwpfgfx_linux.so	MediaControl_Attach	gap	MOD-25	10.0.11	无实现（milctrl）
+libwpfgfx_linux.so	MediaControl_CanAttach	gap	MOD-25	10.0.11	无实现（milctrl）
+libwpfgfx_linux.so	MediaControl_GetDataPtr	gap	MOD-25	10.0.11	无实现（milctrl）
+libwpfgfx_linux.so	MediaControl_Release	gap	MOD-25	10.0.11	无实现（milctrl）
+libwpfgfx_linux.so	MilChannel_AppendCommandData	impl	MOD-25	10.0.11	milcore 导出清单（上游未声明）
+libwpfgfx_linux.so	MilChannel_BeginCommand	impl	MOD-25	10.0.11	milcore 导出清单（上游未声明）
+libwpfgfx_linux.so	MilChannel_CloseBatch	impl	MOD-25	10.0.11
+libwpfgfx_linux.so	MilChannel_CommitChannel	impl	MOD-25	10.0.11
+libwpfgfx_linux.so	MilChannel_EndCommand	impl	MOD-25	10.0.11	milcore 导出清单（上游未声明）
+libwpfgfx_linux.so	MilChannel_GetMarshalType	impl	MOD-25	10.0.11
+libwpfgfx_linux.so	MilChannel_SetNotificationWindow	impl	MOD-25	10.0.11
+libwpfgfx_linux.so	MilCompositionEngine_DeinitializePartitionManager	impl	MOD-25	10.0.11
+libwpfgfx_linux.so	MilCompositionEngine_EnterCompositionEngineLock	impl	MOD-25	10.0.11
+libwpfgfx_linux.so	MilCompositionEngine_EnterMediaSystemLock	impl	MOD-25	10.0.11
+libwpfgfx_linux.so	MilCompositionEngine_ExitCompositionEngineLock	impl	MOD-25	10.0.11
+libwpfgfx_linux.so	MilCompositionEngine_ExitMediaSystemLock	impl	MOD-25	10.0.11
+libwpfgfx_linux.so	MilCompositionEngine_InitializePartitionManager	impl	MOD-25	10.0.11
+libwpfgfx_linux.so	MilComposition_PeekNextMessage	impl	MOD-25	10.0.11
+libwpfgfx_linux.so	MilComposition_SyncFlush	impl	MOD-25	10.0.11
+libwpfgfx_linux.so	MilComposition_WaitForNextMessage	impl	MOD-25	10.0.11
+libwpfgfx_linux.so	MilConnection_CreateChannel	impl	MOD-25	10.0.11
+libwpfgfx_linux.so	MilConnection_DestroyChannel	impl	MOD-25	10.0.11
+libwpfgfx_linux.so	MilContent_AttachToHwnd	impl	MOD-25	10.0.11
+libwpfgfx_linux.so	MilContent_DetachFromHwnd	impl	MOD-25	10.0.11
+libwpfgfx_linux.so	MilCreateReversePInvokeWrapper	impl	MOD-25	10.0.11
+libwpfgfx_linux.so	MilFontFace_RegisterFromFile	impl	MOD-25	10.0.11	milcore 导出清单（上游未声明）
+libwpfgfx_linux.so	MilGlyphCache_AppendCommandDataAtRenderTime	impl	MOD-25	10.0.11
+libwpfgfx_linux.so	MilGlyphCache_BeginCommandAtRenderTime	impl	MOD-25	10.0.11
+libwpfgfx_linux.so	MilGlyphCache_EndCommandAtRenderTime	impl	MOD-25	10.0.11
+libwpfgfx_linux.so	MilGlyphRun_GetGlyphOutline	impl	MOD-25	10.0.11
+libwpfgfx_linux.so	MilGlyphRun_ReleasePathGeometryData	impl	MOD-25	10.0.11
+libwpfgfx_linux.so	MilGlyphRun_SetGeometryAtRenderTime	impl	MOD-25	10.0.11
+libwpfgfx_linux.so	MilReleasePInvokePtrBlocking	impl	MOD-25	10.0.11
+libwpfgfx_linux.so	MilResource_CreateCWICWrapperBitmap	impl	MOD-25	10.0.11
+libwpfgfx_linux.so	MilResource_CreateOrAddRefOnChannel	impl	MOD-25	10.0.11
+libwpfgfx_linux.so	MilResource_DuplicateHandle	impl	MOD-25	10.0.11
+libwpfgfx_linux.so	MilResource_GetRefCountOnChannel	impl	MOD-25	10.0.11
+libwpfgfx_linux.so	MilResource_ReleaseOnChannel	impl	MOD-25	10.0.11
+libwpfgfx_linux.so	MilResource_SendCommand	impl	MOD-25	10.0.11	milcore 导出清单（上游未声明）
+libwpfgfx_linux.so	MilResource_SendCommandBitmapSource	impl	MOD-25	10.0.11	milcore 导出清单（上游未声明）
+libwpfgfx_linux.so	MilResource_SendCommandMedia	gap	MOD-25	10.0.11	milcore 登记 NotImpl（E_NOTIMPL）
+libwpfgfx_linux.so	MilUtility_ArcToBezier	impl	MOD-25	10.0.11
+libwpfgfx_linux.so	MilUtility_CopyPixelBuffer	impl	MOD-25	10.0.11
+libwpfgfx_linux.so	MilUtility_GeometryGetArea	impl	MOD-25	10.0.11
+libwpfgfx_linux.so	MilUtility_GetPointAtLengthFraction	impl	MOD-25	10.0.11
+libwpfgfx_linux.so	MilUtility_GetTileBrushMapping	impl	MOD-25	10.0.11
+libwpfgfx_linux.so	MilUtility_PathGeometryBounds	impl	MOD-25	10.0.11
+libwpfgfx_linux.so	MilUtility_PathGeometryCombine	impl	MOD-25	10.0.11
+libwpfgfx_linux.so	MilUtility_PathGeometryFlatten	impl	MOD-25	10.0.11
+libwpfgfx_linux.so	MilUtility_PathGeometryHitTest	impl	MOD-25	10.0.11
+libwpfgfx_linux.so	MilUtility_PathGeometryHitTestPathGeometry	impl	MOD-25	10.0.11
+libwpfgfx_linux.so	MilUtility_PathGeometryOutline	impl	MOD-25	10.0.11
+libwpfgfx_linux.so	MilUtility_PathGeometryWiden	impl	MOD-25	10.0.11
+libwpfgfx_linux.so	MilUtility_PolygonBounds	impl	MOD-25	10.0.11
+libwpfgfx_linux.so	MilUtility_PolygonHitTest	impl	MOD-25	10.0.11
+libwpfgfx_linux.so	MilVersionCheck	impl	MOD-25	10.0.11
+libwpfgfx_linux.so	MilVisualTarget_AttachToHwnd	impl	MOD-25	10.0.11
+libwpfgfx_linux.so	MilVisualTarget_DetachFromHwnd	impl	MOD-25	10.0.11
+libwpfgfx_linux.so	RenderOptions_EnableHardwareAccelerationInRdp	impl	MOD-25	10.0.11
+libwpfgfx_linux.so	RenderOptions_ForceSoftwareRenderingModeForProcess	impl	MOD-25	10.0.11
+libwpfgfx_linux.so	RenderOptions_IsSoftwareRenderingForcedForProcess	impl	MOD-25	10.0.11
+libwpfgfx_linux.so	WgxConnection_Create	impl	MOD-25	10.0.11
+libwpfgfx_linux.so	WgxConnection_Disconnect	impl	MOD-25	10.0.11
+libwpfgfx_linux.so	WgxConnection_SameThreadPresent	impl	MOD-25	10.0.11
+libwpfgfx_linux.so	WgxConnection_ShouldForceSoftwareForGraphicsStreamClient	impl	MOD-25	10.0.11
+libwpfgfx_linux.so	WpfGfx_SetDisableBoundsCheckProtection	impl	MOD-25	10.0.11
+libwpfwic.so	CloseColorProfile	gap	MOD-42	10.0.11	无实现（mscms）
+libwpfwic.so	CreateMultiProfileTransform	gap	MOD-42	10.0.11	无实现（mscms）
+libwpfwic.so	DeleteColorTransform	gap	MOD-42	10.0.11	无实现（mscms）
+libwpfwic.so	GetColorDirectory	gap	MOD-42	10.0.11	无实现（mscms）
+libwpfwic.so	GetColorProfileFromHandle	gap	MOD-42	10.0.11	无实现（mscms）
+libwpfwic.so	GetColorProfileHeader	gap	MOD-42	10.0.11	无实现（mscms）
+libwpfwic.so	GetStandardColorSpaceProfile	gap	MOD-42	10.0.11	无实现（mscms）
+libwpfwic.so	IEnumString_Next_WIC_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
+libwpfwic.so	IEnumString_Reset_WIC_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
+libwpfwic.so	IPropertyBag2_Write_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
+libwpfwic.so	IWICBitmapClipper_Initialize_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
+libwpfwic.so	IWICBitmapCodecInfo_DoesSupportAnimation_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
+libwpfwic.so	IWICBitmapCodecInfo_DoesSupportLossless_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
+libwpfwic.so	IWICBitmapCodecInfo_DoesSupportMultiframe_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
+libwpfwic.so	IWICBitmapCodecInfo_GetContainerFormat_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
+libwpfwic.so	IWICBitmapCodecInfo_GetDeviceManufacturer_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
+libwpfwic.so	IWICBitmapCodecInfo_GetDeviceModels_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
+libwpfwic.so	IWICBitmapCodecInfo_GetFileExtensions_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
+libwpfwic.so	IWICBitmapCodecInfo_GetMimeTypes_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
+libwpfwic.so	IWICBitmapDecoder_CopyPalette_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
+libwpfwic.so	IWICBitmapDecoder_GetColorContexts_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
+libwpfwic.so	IWICBitmapDecoder_GetDecoderInfo_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
+libwpfwic.so	IWICBitmapDecoder_GetFrameCount_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
+libwpfwic.so	IWICBitmapDecoder_GetFrame_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
+libwpfwic.so	IWICBitmapDecoder_GetMetadataQueryReader_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
+libwpfwic.so	IWICBitmapDecoder_GetPreview_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
+libwpfwic.so	IWICBitmapDecoder_GetThumbnail_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
+libwpfwic.so	IWICBitmapEncoder_Commit_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
+libwpfwic.so	IWICBitmapEncoder_CreateNewFrame_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
+libwpfwic.so	IWICBitmapEncoder_GetEncoderInfo_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
+libwpfwic.so	IWICBitmapEncoder_GetMetadataQueryWriter_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
+libwpfwic.so	IWICBitmapEncoder_Initialize_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
+libwpfwic.so	IWICBitmapEncoder_SetPalette_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
+libwpfwic.so	IWICBitmapEncoder_SetThumbnail_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
+libwpfwic.so	IWICBitmapFlipRotator_Initialize_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
+libwpfwic.so	IWICBitmapFrameDecode_GetColorContexts_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
+libwpfwic.so	IWICBitmapFrameDecode_GetMetadataQueryReader_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
+libwpfwic.so	IWICBitmapFrameDecode_GetThumbnail_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
+libwpfwic.so	IWICBitmapFrameEncode_Commit_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
+libwpfwic.so	IWICBitmapFrameEncode_GetMetadataQueryWriter_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
+libwpfwic.so	IWICBitmapFrameEncode_Initialize_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
+libwpfwic.so	IWICBitmapFrameEncode_SetColorContexts_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
+libwpfwic.so	IWICBitmapFrameEncode_SetResolution_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
+libwpfwic.so	IWICBitmapFrameEncode_SetSize_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
+libwpfwic.so	IWICBitmapFrameEncode_SetThumbnail_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
+libwpfwic.so	IWICBitmapFrameEncode_WriteSource_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
+libwpfwic.so	IWICBitmapLock_GetDataPointer_STA_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
+libwpfwic.so	IWICBitmapLock_GetStride_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
+libwpfwic.so	IWICBitmapScaler_Initialize_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
+libwpfwic.so	IWICBitmapSource_CopyPalette_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
+libwpfwic.so	IWICBitmapSource_CopyPixels_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
+libwpfwic.so	IWICBitmapSource_GetPixelFormat_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
+libwpfwic.so	IWICBitmapSource_GetResolution_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
+libwpfwic.so	IWICBitmapSource_GetSize_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
+libwpfwic.so	IWICBitmap_Lock_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
+libwpfwic.so	IWICBitmap_SetPalette_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
+libwpfwic.so	IWICBitmap_SetResolution_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
+libwpfwic.so	IWICColorContext_InitializeFromMemory_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
+libwpfwic.so	IWICColorTransform_Initialize_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecsext）
+libwpfwic.so	IWICComponentFactory_CreateMetadataWriterFromReader_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
+libwpfwic.so	IWICComponentFactory_CreateQueryWriterFromBlockWriter_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
+libwpfwic.so	IWICComponentInfo_GetAuthor_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
+libwpfwic.so	IWICComponentInfo_GetCLSID_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
+libwpfwic.so	IWICComponentInfo_GetFriendlyName_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
+libwpfwic.so	IWICComponentInfo_GetSpecVersion_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
+libwpfwic.so	IWICComponentInfo_GetVersion_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
+libwpfwic.so	IWICFastMetadataEncoder_Commit_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
+libwpfwic.so	IWICFastMetadataEncoder_GetMetadataQueryWriter_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
+libwpfwic.so	IWICFormatConverter_Initialize_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
+libwpfwic.so	IWICImagingFactory_CreateBitmapClipper_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
+libwpfwic.so	IWICImagingFactory_CreateBitmapFlipRotator_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
+libwpfwic.so	IWICImagingFactory_CreateBitmapFromHBITMAP_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
+libwpfwic.so	IWICImagingFactory_CreateBitmapFromHICON_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
+libwpfwic.so	IWICImagingFactory_CreateBitmapFromMemory_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
+libwpfwic.so	IWICImagingFactory_CreateBitmapFromSource_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
+libwpfwic.so	IWICImagingFactory_CreateBitmapScaler_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
+libwpfwic.so	IWICImagingFactory_CreateBitmap_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
+libwpfwic.so	IWICImagingFactory_CreateComponentInfo_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
+libwpfwic.so	IWICImagingFactory_CreateDecoderFromFileHandle_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
+libwpfwic.so	IWICImagingFactory_CreateDecoderFromStream_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
+libwpfwic.so	IWICImagingFactory_CreateEncoder_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
+libwpfwic.so	IWICImagingFactory_CreateFastMetadataEncoderFromDecoder_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
+libwpfwic.so	IWICImagingFactory_CreateFastMetadataEncoderFromFrameDecode_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
+libwpfwic.so	IWICImagingFactory_CreateFormatConverter_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
+libwpfwic.so	IWICImagingFactory_CreatePalette_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
+libwpfwic.so	IWICImagingFactory_CreateQueryWriterFromReader_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
+libwpfwic.so	IWICImagingFactory_CreateQueryWriter_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
+libwpfwic.so	IWICImagingFactory_CreateStream_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
+libwpfwic.so	IWICMetadataBlockReader_GetCount_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
+libwpfwic.so	IWICMetadataBlockReader_GetReaderByIndex_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
+libwpfwic.so	IWICMetadataQueryReader_GetContainerFormat_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
+libwpfwic.so	IWICMetadataQueryReader_GetEnumerator_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
+libwpfwic.so	IWICMetadataQueryReader_GetLocation_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
+libwpfwic.so	IWICMetadataQueryReader_GetMetadataByName_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
+libwpfwic.so	IWICMetadataQueryWriter_RemoveMetadataByName_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
+libwpfwic.so	IWICMetadataQueryWriter_SetMetadataByName_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
+libwpfwic.so	IWICPalette_GetColorCount_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
+libwpfwic.so	IWICPalette_GetColors_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
+libwpfwic.so	IWICPalette_GetType_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
+libwpfwic.so	IWICPalette_HasAlpha_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
+libwpfwic.so	IWICPalette_InitializeCustom_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
+libwpfwic.so	IWICPalette_InitializeFromBitmap_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
+libwpfwic.so	IWICPalette_InitializeFromPalette_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
+libwpfwic.so	IWICPalette_InitializePredefined_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
+libwpfwic.so	IWICPixelFormatInfo_GetBitsPerPixel_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
+libwpfwic.so	IWICPixelFormatInfo_GetChannelCount_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
+libwpfwic.so	IWICPixelFormatInfo_GetChannelMask_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
+libwpfwic.so	IWICStream_InitializeFromIStream_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
+libwpfwic.so	IWICStream_InitializeFromMemory_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
+libwpfwic.so	OpenColorProfile	gap	MOD-42	10.0.11	无实现（mscms）
+libwpfwic.so	TranslateColors	gap	MOD-42	10.0.11	无实现（mscms）
+libwpfwic.so	WICConvertBitmapSource	gap	MOD-41	10.0.11	无实现（windowscodecs）
+libwpfwic.so	WICCreateBitmapFromSection	gap	MOD-41	10.0.11	无实现（windowscodecs）
+libwpfwic.so	WICCreateColorContext_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
+libwpfwic.so	WICCreateColorTransform_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecsext）
+libwpfwic.so	WICCreateImagingFactory_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
+libwpfwic.so	WICMapGuidToShortName	gap	MOD-41	10.0.11	无实现（windowscodecs）
+libwpfwic.so	WICMapShortNameToGuid	gap	MOD-41	10.0.11	无实现（windowscodecs）
+libwpfwic.so	WICSetEncoderFormat_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
+libwpfwin32.so	AccessibleChildren	gap	MOD-63	10.0.11	无实现（oleacc）
+libwpfwin32.so	AccessibleObjectFromEvent	gap	MOD-63	10.0.11	无实现（oleacc）
+libwpfwin32.so	AccessibleObjectFromWindow	gap	MOD-63	10.0.11	无实现（oleacc）
+libwpfwin32.so	ActivateKeyboardLayout	impl	MOD-11	10.0.11
+libwpfwin32.so	AddStroke	gap	MOD-83	10.0.11	无实现（mshwgst）
+libwpfwin32.so	AdjustWindowRectEx	impl	MOD-11	10.0.11
+libwpfwin32.so	AlphaBlend	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	AreDpiAwarenessContextsEqual	impl	MOD-11	10.0.11
+libwpfwin32.so	BeginPaint	impl	MOD-11	10.0.11
+libwpfwin32.so	BeginPanningFeedback	impl	MOD-04	10.0.11
+libwpfwin32.so	BeginPanningFeedbackW	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	BitBlt	gap	MOD-13	10.0.11	无实现（gdi32）
+libwpfwin32.so	BlockInput	gap	MOD-11	10.0.11	无实现（user32）
+libwpfwin32.so	BringWindowToTop	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	BufferPointerPacketsInteractionContext	gap	MOD-84	10.0.11	Windows Ink 面；未迁移
+libwpfwin32.so	CallNextHookEx	impl	MOD-11	10.0.11
+libwpfwin32.so	CallWindowProc	impl	MOD-11	10.0.11
+libwpfwin32.so	CallWindowProcA	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	CallWindowProcW	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	ChangeWindowMessageFilter	impl	MOD-11	10.0.11
+libwpfwin32.so	ChangeWindowMessageFilterEx	impl	MOD-11	10.0.11
+libwpfwin32.so	ClientToScreen	impl	MOD-11	10.0.11
+libwpfwin32.so	CloseHandle	impl	MOD-15	10.0.11
+libwpfwin32.so	ClosePrinter	gap	MOD-82	10.0.11	打印路径走 CUPS（MOD-82）；未实现
+libwpfwin32.so	CloseThemeData	gap	MOD-04	10.0.11	无实现（uxtheme）
+libwpfwin32.so	CoCreateInstance	gap	MOD-63	10.0.11	无实现（ole32）
+libwpfwin32.so	CoDecrementMTAUsage	gap	MOD-02	10.0.11	无实现（api-ms-win-core-com）
+libwpfwin32.so	CoGetObjectContext	gap	MOD-02	10.0.11	无实现（api-ms-win-core-com）
+libwpfwin32.so	CoIncrementMTAUsage	gap	MOD-02	10.0.11	无实现（api-ms-win-core-com）
+libwpfwin32.so	CoInitialize	gap	MOD-63	10.0.11	无实现（ole32）
+libwpfwin32.so	CoInternetCreateSecurityManager	gap	MOD-15	10.0.11	无实现（urlmon）
+libwpfwin32.so	CoInternetIsFeatureEnabled	gap	MOD-15	10.0.11	无实现（urlmon）
+libwpfwin32.so	CoInternetIsFeatureZoneElevationEnabled	gap	MOD-15	10.0.11	无实现（urlmon）
+libwpfwin32.so	CoInternetSetFeatureEnabled	gap	MOD-15	10.0.11	无实现（urlmon）
+libwpfwin32.so	CoRegisterPSClsid	gap	MOD-63	10.0.11	无实现（ole32）
+libwpfwin32.so	CoUninitialize	gap	MOD-63	10.0.11	无实现（ole32）
+libwpfwin32.so	CombineRgn	impl	MOD-13	10.0.11
+libwpfwin32.so	CommDlgExtendedError	gap	MOD-62	10.0.11	无实现（comdlg32）
+libwpfwin32.so	CommandLineToArgvW	gap	MOD-15	10.0.11	无实现（shell32）
+libwpfwin32.so	CompressionNative_Crc32	gap	MOD-15	10.0.11	无实现（system.io.compression.native）
+libwpfwin32.so	CompressionNative_Deflate	gap	MOD-15	10.0.11	无实现（system.io.compression.native）
+libwpfwin32.so	CompressionNative_DeflateEnd	gap	MOD-15	10.0.11	无实现（system.io.compression.native）
+libwpfwin32.so	CompressionNative_DeflateInit2_	gap	MOD-15	10.0.11	无实现（system.io.compression.native）
+libwpfwin32.so	CompressionNative_Inflate	gap	MOD-15	10.0.11	无实现（system.io.compression.native）
+libwpfwin32.so	CompressionNative_InflateEnd	gap	MOD-15	10.0.11	无实现（system.io.compression.native）
+libwpfwin32.so	CompressionNative_InflateInit2_	gap	MOD-15	10.0.11	无实现（system.io.compression.native）
+libwpfwin32.so	ConvertStringSecurityDescriptorToSecurityDescriptor	gap	MOD-15	10.0.11	无实现（advapi32）
+libwpfwin32.so	CreateBitmap	impl	MOD-13	10.0.11
+libwpfwin32.so	CreateCaret	impl	MOD-11	10.0.11
+libwpfwin32.so	CreateCompatibleBitmap	impl	MOD-13	10.0.11
+libwpfwin32.so	CreateCompatibleDC	impl	MOD-13	10.0.11
+libwpfwin32.so	CreateCompatibleDCW	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	CreateContext	gap	MOD-83	10.0.11	无实现（mshwgst）
+libwpfwin32.so	CreateDC	impl	MOD-13	10.0.11
+libwpfwin32.so	CreateDCA	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	CreateDCW	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	CreateDIBSection	impl	MOD-13	10.0.11
+libwpfwin32.so	CreateDocContext	impl	MOD-16	10.0.11
+libwpfwin32.so	CreateEvent	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	CreateEventA	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	CreateEventW	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	CreateFile	impl	MOD-15	10.0.11
+libwpfwin32.so	CreateFileA	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	CreateFileMapping	impl	MOD-15	10.0.11
+libwpfwin32.so	CreateFileMappingA	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	CreateFileMappingW	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	CreateFileW	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	CreateICW	gap	MOD-13	10.0.11	无实现（gdi32）
+libwpfwin32.so	CreateIcon	gap	MOD-11	10.0.11	无实现（user32）
+libwpfwin32.so	CreateIconIndirect	impl	MOD-11	10.0.11
+libwpfwin32.so	CreateInstalledObjectsInfo	impl	MOD-16	10.0.11
+libwpfwin32.so	CreateInteractionContext	gap	MOD-84	10.0.11	Windows Ink 面；未迁移
+libwpfwin32.so	CreateRecognizer	gap	MOD-83	10.0.11	无实现（mshwgst）
+libwpfwin32.so	CreateRectRgn	impl	MOD-13	10.0.11
+libwpfwin32.so	CreateRectRgnIndirect	impl	MOD-13	10.0.11
+libwpfwin32.so	CreateResetEvent	gap	MOD-84	10.0.11	PenImc 替身（MOD-84，libinput/XInput2）；未实现
+libwpfwin32.so	CreateRoundRectRgn	impl	MOD-13	10.0.11
+libwpfwin32.so	CreateSolidBrush	impl	MOD-13	10.0.11
+libwpfwin32.so	CreateStreamOnHGlobal	gap	MOD-63	10.0.11	无实现（ole32）
+libwpfwin32.so	CreateTextAnalysisSink	gap	MOD-16	10.0.11	无实现（presentationnative）
+libwpfwin32.so	CreateTextAnalysisSource	gap	MOD-16	10.0.11	无实现（presentationnative）
+libwpfwin32.so	CreateWindowEx	impl	MOD-11	10.0.11
+libwpfwin32.so	CreateWindowExA	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	CreateWindowExW	impl	MOD-11	10.0.11
+libwpfwin32.so	CriticalCreateCompatibleBitmap	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	CriticalGetStockObject	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	CriticalSetWindowTheme	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	DRMAcquireLicense	gap	MOD-85	10.0.11	明确降级 D-001（E_NOTIMPL）
+libwpfwin32.so	DRMActivate	gap	MOD-85	10.0.11	明确降级 D-001（E_NOTIMPL）
+libwpfwin32.so	DRMAddRightWithUser	gap	MOD-85	10.0.11	明确降级 D-001（E_NOTIMPL）
+libwpfwin32.so	DRMCloseEnvironmentHandle	gap	MOD-85	10.0.11	明确降级 D-001（E_NOTIMPL）
+libwpfwin32.so	DRMCloseHandle	gap	MOD-85	10.0.11	明确降级 D-001（E_NOTIMPL）
+libwpfwin32.so	DRMClosePubHandle	gap	MOD-85	10.0.11	明确降级 D-001（E_NOTIMPL）
+libwpfwin32.so	DRMCloseQueryHandle	gap	MOD-85	10.0.11	明确降级 D-001（E_NOTIMPL）
+libwpfwin32.so	DRMCloseSession	gap	MOD-85	10.0.11	明确降级 D-001（E_NOTIMPL）
+libwpfwin32.so	DRMCreateBoundLicense	gap	MOD-85	10.0.11	明确降级 D-001（E_NOTIMPL）
+libwpfwin32.so	DRMCreateClientSession	gap	MOD-85	10.0.11	明确降级 D-001（E_NOTIMPL）
+libwpfwin32.so	DRMCreateEnablingBitsDecryptor	gap	MOD-85	10.0.11	明确降级 D-001（E_NOTIMPL）
+libwpfwin32.so	DRMCreateEnablingBitsEncryptor	gap	MOD-85	10.0.11	明确降级 D-001（E_NOTIMPL）
+libwpfwin32.so	DRMCreateIssuanceLicense	gap	MOD-85	10.0.11	明确降级 D-001（E_NOTIMPL）
+libwpfwin32.so	DRMCreateLicenseStorageSession	gap	MOD-85	10.0.11	明确降级 D-001（E_NOTIMPL）
+libwpfwin32.so	DRMCreateRight	gap	MOD-85	10.0.11	明确降级 D-001（E_NOTIMPL）
+libwpfwin32.so	DRMCreateUser	gap	MOD-85	10.0.11	明确降级 D-001（E_NOTIMPL）
+libwpfwin32.so	DRMDeconstructCertificateChain	gap	MOD-85	10.0.11	明确降级 D-001（E_NOTIMPL）
+libwpfwin32.so	DRMDecrypt	gap	MOD-85	10.0.11	明确降级 D-001（E_NOTIMPL）
+libwpfwin32.so	DRMDeleteLicense	gap	MOD-85	10.0.11	明确降级 D-001（E_NOTIMPL）
+libwpfwin32.so	DRMEncrypt	gap	MOD-85	10.0.11	明确降级 D-001（E_NOTIMPL）
+libwpfwin32.so	DRMEnumerateLicense	gap	MOD-85	10.0.11	明确降级 D-001（E_NOTIMPL）
+libwpfwin32.so	DRMGetApplicationSpecificData	gap	MOD-85	10.0.11	明确降级 D-001（E_NOTIMPL）
+libwpfwin32.so	DRMGetBoundLicenseAttribute	gap	MOD-85	10.0.11	明确降级 D-001（E_NOTIMPL）
+libwpfwin32.so	DRMGetBoundLicenseObject	gap	MOD-85	10.0.11	明确降级 D-001（E_NOTIMPL）
+libwpfwin32.so	DRMGetInfo	gap	MOD-85	10.0.11	明确降级 D-001（E_NOTIMPL）
+libwpfwin32.so	DRMGetIntervalTime	gap	MOD-85	10.0.11	明确降级 D-001（E_NOTIMPL）
+libwpfwin32.so	DRMGetIssuanceLicenseInfo	gap	MOD-85	10.0.11	明确降级 D-001（E_NOTIMPL）
+libwpfwin32.so	DRMGetIssuanceLicenseTemplate	gap	MOD-85	10.0.11	明确降级 D-001（E_NOTIMPL）
+libwpfwin32.so	DRMGetNameAndDescription	gap	MOD-85	10.0.11	明确降级 D-001（E_NOTIMPL）
+libwpfwin32.so	DRMGetOwnerLicense	gap	MOD-85	10.0.11	明确降级 D-001（E_NOTIMPL）
+libwpfwin32.so	DRMGetRevocationPoint	gap	MOD-85	10.0.11	明确降级 D-001（E_NOTIMPL）
+libwpfwin32.so	DRMGetRightInfo	gap	MOD-85	10.0.11	明确降级 D-001（E_NOTIMPL）
+libwpfwin32.so	DRMGetSecurityProvider	gap	MOD-85	10.0.11	明确降级 D-001（E_NOTIMPL）
+libwpfwin32.so	DRMGetServiceLocation	gap	MOD-85	10.0.11	明确降级 D-001（E_NOTIMPL）
+libwpfwin32.so	DRMGetSignedIssuanceLicense	gap	MOD-85	10.0.11	明确降级 D-001（E_NOTIMPL）
+libwpfwin32.so	DRMGetUnboundLicenseAttribute	gap	MOD-85	10.0.11	明确降级 D-001（E_NOTIMPL）
+libwpfwin32.so	DRMGetUnboundLicenseObject	gap	MOD-85	10.0.11	明确降级 D-001（E_NOTIMPL）
+libwpfwin32.so	DRMGetUnboundLicenseObjectCount	gap	MOD-85	10.0.11	明确降级 D-001（E_NOTIMPL）
+libwpfwin32.so	DRMGetUserInfo	gap	MOD-85	10.0.11	明确降级 D-001（E_NOTIMPL）
+libwpfwin32.so	DRMGetUserRights	gap	MOD-85	10.0.11	明确降级 D-001（E_NOTIMPL）
+libwpfwin32.so	DRMGetUsers	gap	MOD-85	10.0.11	明确降级 D-001（E_NOTIMPL）
+libwpfwin32.so	DRMInitEnvironment	gap	MOD-85	10.0.11	明确降级 D-001（E_NOTIMPL）
+libwpfwin32.so	DRMIsActivated	gap	MOD-85	10.0.11	明确降级 D-001（E_NOTIMPL）
+libwpfwin32.so	DRMParseUnboundLicense	gap	MOD-85	10.0.11	明确降级 D-001（E_NOTIMPL）
+libwpfwin32.so	DRMRegisterContent	gap	MOD-85	10.0.11	明确降级 D-001（E_NOTIMPL）
+libwpfwin32.so	DRMSetApplicationSpecificData	gap	MOD-85	10.0.11	明确降级 D-001（E_NOTIMPL）
+libwpfwin32.so	DRMSetIntervalTime	gap	MOD-85	10.0.11	明确降级 D-001（E_NOTIMPL）
+libwpfwin32.so	DRMSetMetaData	gap	MOD-85	10.0.11	明确降级 D-001（E_NOTIMPL）
+libwpfwin32.so	DRMSetNameAndDescription	gap	MOD-85	10.0.11	明确降级 D-001（E_NOTIMPL）
+libwpfwin32.so	DRMSetRevocationPoint	gap	MOD-85	10.0.11	明确降级 D-001（E_NOTIMPL）
+libwpfwin32.so	DbgPrint	gap	MOD-15	10.0.11	无实现（ntdll）
+libwpfwin32.so	DbgUserBreakPoint	gap	MOD-15	10.0.11	无实现（ntdll）
+libwpfwin32.so	DeactivateActCtx	impl	MOD-15	10.0.11
+libwpfwin32.so	DefWindowProc	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	DefWindowProcA	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	DefWindowProcW	impl	MOD-11	10.0.11
+libwpfwin32.so	DefWindowProcWorker	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	DeleteDC	impl	MOD-13	10.0.11
+libwpfwin32.so	DeleteObject	impl	MOD-13	10.0.11
+libwpfwin32.so	DestroyAlternate	gap	MOD-83	10.0.11	无实现（mshwgst）
+libwpfwin32.so	DestroyCaret	impl	MOD-11	10.0.11
+libwpfwin32.so	DestroyContext	gap	MOD-83	10.0.11	无实现（mshwgst）
+libwpfwin32.so	DestroyCursor	impl	MOD-11	10.0.11
+libwpfwin32.so	DestroyDocContext	impl	MOD-16	10.0.11
+libwpfwin32.so	DestroyIcon	impl	MOD-11	10.0.11
+libwpfwin32.so	DestroyInstalledObjectsInfo	impl	MOD-16	10.0.11
+libwpfwin32.so	DestroyInteractionContext	gap	MOD-84	10.0.11	Windows Ink 面；未迁移
+libwpfwin32.so	DestroyRecognizer	gap	MOD-83	10.0.11	无实现（mshwgst）
+libwpfwin32.so	DestroyResetEvent	gap	MOD-84	10.0.11	PenImc 替身（MOD-84，libinput/XInput2）；未实现
+libwpfwin32.so	DestroyWindow	impl	MOD-11	10.0.11
+libwpfwin32.so	DeviceCapabilitiesW	gap	MOD-82	10.0.11	打印路径走 CUPS（MOD-82）；未实现
+libwpfwin32.so	DisableProcessWindowsGhosting	gap	MOD-11	10.0.11	无实现（user32）
+libwpfwin32.so	DispatchMessage	impl	MOD-11	10.0.11
+libwpfwin32.so	DispatchMessageA	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	DispatchMessageW	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	DoDragDrop	gap	MOD-63	10.0.11	无实现（ole32）
+libwpfwin32.so	DockPattern_SetDockPosition	gap	MOD-81	10.0.11	托管桥替代（MOD-81，AT-SPI over D-Bus）；无原生入口
+libwpfwin32.so	DocumentPropertiesW	gap	MOD-82	10.0.11	打印路径走 CUPS（MOD-82）；未实现
+libwpfwin32.so	DragQueryFile	gap	MOD-15	10.0.11	无实现（shell32）
+libwpfwin32.so	DrawMenuBar	impl	MOD-11	10.0.11
+libwpfwin32.so	DuplicateHandle	impl	MOD-15	10.0.11
+libwpfwin32.so	DwmDefWindowProc	gap	MOD-11	10.0.11	无实现（dwmapi）
+libwpfwin32.so	DwmEnableBlurBehindWindow	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	DwmExtendFrameIntoClientArea	impl	MOD-11	10.0.11
+libwpfwin32.so	DwmGetColorizationColor	gap	MOD-11	10.0.11	无实现（dwmapi）
+libwpfwin32.so	DwmGetCompositionTimingInfo	gap	MOD-11	10.0.11	无实现（dwmapi）
+libwpfwin32.so	DwmGetWindowAttribute	impl	MOD-11	10.0.11
+libwpfwin32.so	DwmInvalidateIconicBitmaps	gap	MOD-11	10.0.11	无实现（dwmapi）
+libwpfwin32.so	DwmIsCompositionEnabled	impl	MOD-11	10.0.11
+libwpfwin32.so	DwmSetIconicLivePreviewBitmap	gap	MOD-11	10.0.11	无实现（dwmapi）
+libwpfwin32.so	DwmSetIconicThumbnail	gap	MOD-11	10.0.11	无实现（dwmapi）
+libwpfwin32.so	DwmSetWindowAttribute	impl	MOD-11	10.0.11
+libwpfwin32.so	EnableMenuItem	impl	MOD-11	10.0.11
+libwpfwin32.so	EnableNonClientDpiScaling	impl	MOD-11	10.0.11
+libwpfwin32.so	EnableWindow	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	EnableWindowWrapper	impl	MOD-16	10.0.11
+libwpfwin32.so	EndDoc	impl	MOD-13	10.0.11
+libwpfwin32.so	EndInkInput	gap	MOD-83	10.0.11	无实现（mshwgst）
+libwpfwin32.so	EndPage	impl	MOD-13	10.0.11
+libwpfwin32.so	EndPaint	impl	MOD-11	10.0.11
+libwpfwin32.so	EndPanningFeedback	impl	MOD-04	10.0.11
+libwpfwin32.so	EndPanningFeedbackW	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	EnumChildWindows	gap	MOD-11	10.0.11	无实现（user32）
+libwpfwin32.so	EnumDisplayMonitors	impl	MOD-11	10.0.11
+libwpfwin32.so	EnumThreadWindows	impl	MOD-11	10.0.11
+libwpfwin32.so	EventRegister	gap	MOD-15	10.0.11	无实现（advapi32）
+libwpfwin32.so	EventUnregister	gap	MOD-15	10.0.11	无实现（advapi32）
+libwpfwin32.so	EventWrite	gap	MOD-15	10.0.11	无实现（advapi32）
+libwpfwin32.so	ExpandCollapsePattern_Collapse	gap	MOD-81	10.0.11	托管桥替代（MOD-81，AT-SPI over D-Bus）；无原生入口
+libwpfwin32.so	ExpandCollapsePattern_Expand	gap	MOD-81	10.0.11	托管桥替代（MOD-81，AT-SPI over D-Bus）；无原生入口
+libwpfwin32.so	ExtEscape	impl	MOD-13	10.0.11
+libwpfwin32.so	ExtractIconEx	impl	MOD-15	10.0.11
+libwpfwin32.so	ExtractIconExA	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	ExtractIconExW	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	FillRect	impl	MOD-11	10.0.11
+libwpfwin32.so	FindClose	impl	MOD-15	10.0.11
+libwpfwin32.so	FindFirstFile	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	FindFirstFileA	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	FindFirstFileW	impl	MOD-15	10.0.11
+libwpfwin32.so	FindMimeFromData	gap	MOD-15	10.0.11	无实现（urlmon）
+libwpfwin32.so	FindNLSString	impl	MOD-15	10.0.11
+libwpfwin32.so	FindNLSStringW	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	FindNextFileA	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	FindNextFileW	impl	MOD-15	10.0.11
+libwpfwin32.so	FindWindowEx	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	FindWindowExA	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	FindWindowExW	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	FindWindowExWrapper	impl	MOD-16	10.0.11
+libwpfwin32.so	FormatMessageW	gap	MOD-15	10.0.11	无实现（kernel32）
+libwpfwin32.so	FreeLibrary	impl	MOD-15	10.0.11
+libwpfwin32.so	FreeLibraryW	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	FsClearUpdateInfoInPage	impl	MOD-16	10.0.11
+libwpfwin32.so	FsClearUpdateInfoInSubpage	impl	MOD-16	10.0.11
+libwpfwin32.so	FsClearUpdateInfoInSubtrack	impl	MOD-16	10.0.11
+libwpfwin32.so	FsCompareSubpages	impl	MOD-16	10.0.11
+libwpfwin32.so	FsCompareSubtrack	impl	MOD-16	10.0.11
+libwpfwin32.so	FsCreatePageBottomless	impl	MOD-16	10.0.11
+libwpfwin32.so	FsCreatePageFinite	impl	MOD-16	10.0.11
+libwpfwin32.so	FsCreateSubpageBottomless	gap	MOD-16	10.0.11	无实现（presentationnative）
+libwpfwin32.so	FsCreateSubpageFinite	impl	MOD-16	10.0.11
+libwpfwin32.so	FsDestroyPage	impl	MOD-16	10.0.11
+libwpfwin32.so	FsDestroyPageBreakRecord	impl	MOD-16	10.0.11
+libwpfwin32.so	FsDestroySubpage	impl	MOD-16	10.0.11
+libwpfwin32.so	FsDestroySubpageBreakRecord	gap	MOD-16	10.0.11	无实现（presentationnative）
+libwpfwin32.so	FsDestroySubtrack	impl	MOD-16	10.0.11
+libwpfwin32.so	FsDestroySubtrackBreakRecord	gap	MOD-16	10.0.11	无实现（presentationnative）
+libwpfwin32.so	FsDuplicatePageBreakRecord	gap	MOD-16	10.0.11	无实现（presentationnative）
+libwpfwin32.so	FsDuplicateSubpageBreakRecord	gap	MOD-16	10.0.11	无实现（presentationnative）
+libwpfwin32.so	FsDuplicateSubtrackBreakRecord	gap	MOD-16	10.0.11	无实现（presentationnative）
+libwpfwin32.so	FsFormatSubtrackBottomless	gap	MOD-16	10.0.11	无实现（presentationnative）
+libwpfwin32.so	FsFormatSubtrackFinite	impl	MOD-16	10.0.11
+libwpfwin32.so	FsGetEmptySpaces	gap	MOD-16	10.0.11	无实现（presentationnative）
+libwpfwin32.so	FsGetMaxNumberEmptySpaces	gap	MOD-16	10.0.11	无实现（presentationnative）
+libwpfwin32.so	FsGetNextTick	gap	MOD-16	10.0.11	无实现（presentationnative）
+libwpfwin32.so	FsGetNumberSubpageFootnotes	gap	MOD-16	10.0.11	无实现（presentationnative）
+libwpfwin32.so	FsGetNumberSubtrackFootnotes	gap	MOD-16	10.0.11	无实现（presentationnative）
+libwpfwin32.so	FsGetSubpageColumnBalancingInfo	impl	MOD-16	10.0.11
+libwpfwin32.so	FsGetSubpageFootnoteInfo	gap	MOD-16	10.0.11	无实现（presentationnative）
+libwpfwin32.so	FsGetSubtrackColumnBalancingInfo	impl	MOD-16	10.0.11
+libwpfwin32.so	FsQueryAttachedObjectList	impl	MOD-16	10.0.11
+libwpfwin32.so	FsQueryDcpLineVariantsFromCachedTextPara	gap	MOD-16	10.0.11	无实现（presentationnative）
+libwpfwin32.so	FsQueryFigureObjectDetails	impl	MOD-16	10.0.11
+libwpfwin32.so	FsQueryFloaterDetails	impl	MOD-16	10.0.11
+libwpfwin32.so	FsQueryHeightDefinedColumnSpanAreaList	gap	MOD-16	10.0.11	无实现（presentationnative）
+libwpfwin32.so	FsQueryLineCompositeElementList	impl	MOD-16	10.0.11
+libwpfwin32.so	FsQueryLineListComposite	impl	MOD-16	10.0.11
+libwpfwin32.so	FsQueryLineListSingle	impl	MOD-16	10.0.11
+libwpfwin32.so	FsQueryPageDetails	impl	MOD-16	10.0.11
+libwpfwin32.so	FsQueryPageSectionList	gap	MOD-16	10.0.11	无实现（presentationnative）
+libwpfwin32.so	FsQuerySectionBasicColumnList	gap	MOD-16	10.0.11	无实现（presentationnative）
+libwpfwin32.so	FsQuerySectionDetails	gap	MOD-16	10.0.11	无实现（presentationnative）
+libwpfwin32.so	FsQuerySegmentDefinedColumnSpanAreaList	gap	MOD-16	10.0.11	无实现（presentationnative）
+libwpfwin32.so	FsQuerySubpageBasicColumnList	gap	MOD-16	10.0.11	无实现（presentationnative）
+libwpfwin32.so	FsQuerySubpageDetails	impl	MOD-16	10.0.11
+libwpfwin32.so	FsQuerySubpageHeightDefinedColumnSpanAreaList	gap	MOD-16	10.0.11	无实现（presentationnative）
+libwpfwin32.so	FsQuerySubpageSegmentDefinedColumnSpanAreaList	gap	MOD-16	10.0.11	无实现（presentationnative）
+libwpfwin32.so	FsQuerySubtrackDetails	impl	MOD-16	10.0.11
+libwpfwin32.so	FsQuerySubtrackParaList	impl	MOD-16	10.0.11
+libwpfwin32.so	FsQueryTableObjCellList	impl	MOD-16	10.0.11
+libwpfwin32.so	FsQueryTableObjDetails	impl	MOD-16	10.0.11
+libwpfwin32.so	FsQueryTableObjRowDetails	impl	MOD-16	10.0.11
+libwpfwin32.so	FsQueryTableObjRowList	impl	MOD-16	10.0.11
+libwpfwin32.so	FsQueryTableObjTableProperDetails	impl	MOD-16	10.0.11
+libwpfwin32.so	FsQueryTextDetails	impl	MOD-16	10.0.11
+libwpfwin32.so	FsQueryTrackDetails	impl	MOD-16	10.0.11
+libwpfwin32.so	FsQueryTrackParaList	impl	MOD-16	10.0.11
+libwpfwin32.so	FsRegisterFloatObstacle	gap	MOD-16	10.0.11	无实现（presentationnative）
+libwpfwin32.so	FsSetDebugFlags	gap	MOD-16	10.0.11	无实现（presentationnative）
+libwpfwin32.so	FsSynchronizeBottomlessSubtrack	impl	MOD-16	10.0.11
+libwpfwin32.so	FsTransferDisplayInfoSubpage	impl	MOD-16	10.0.11
+libwpfwin32.so	FsTransferDisplayInfoSubtrack	impl	MOD-16	10.0.11
+libwpfwin32.so	FsTransformBbox	gap	MOD-16	10.0.11	无实现（presentationnative）
+libwpfwin32.so	FsTransformRectangle	gap	MOD-16	10.0.11	无实现（presentationnative）
+libwpfwin32.so	FsUpdateBottomlessPage	impl	MOD-16	10.0.11
+libwpfwin32.so	FsUpdateBottomlessSubpage	gap	MOD-16	10.0.11	无实现（presentationnative）
+libwpfwin32.so	FsUpdateBottomlessSubtrack	gap	MOD-16	10.0.11	无实现（presentationnative）
+libwpfwin32.so	FsUpdateFinitePage	impl	MOD-16	10.0.11
+libwpfwin32.so	GdipBitmapGetPixel	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	GdipBitmapLockBits	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	GdipBitmapUnlockBits	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	GdipCreateBitmapFromFile	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	GdipCreateBitmapFromHBITMAP	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	GdipCreateBitmapFromScan0	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	GdipCreateBitmapFromStream	impl	MOD-14	10.0.11
+libwpfwin32.so	GdipCreateHBITMAPFromBitmap	impl	MOD-14	10.0.11
+libwpfwin32.so	GdipCreateHICONFromBitmap	gap	MOD-14	10.0.11	无实现（gdiplus）
+libwpfwin32.so	GdipDisposeImage	impl	MOD-14	10.0.11
+libwpfwin32.so	GdipGetImageDecoders	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	GdipGetImageDecodersSize	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	GdipGetImageEncoders	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	GdipGetImageEncodersSize	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	GdipGetImageHeight	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	GdipGetImagePixelFormat	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	GdipGetImageRawFormat	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	GdipGetImageWidth	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	GdipGetPropertyItem	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	GdipGetPropertyItemSize	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	GdipImageForceValidation	impl	MOD-14	10.0.11
+libwpfwin32.so	GdipImageGetFrameCount	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	GdipImageGetFrameDimensionsCount	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	GdipImageGetFrameDimensionsList	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	GdipImageSelectActiveFrame	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	GdipLoadImageFromFile	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	GdipSaveImageToFile	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	GdipSaveImageToStream	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	GdiplusShutdown	impl	MOD-14	10.0.11
+libwpfwin32.so	GdiplusStartup	impl	MOD-14	10.0.11
+libwpfwin32.so	GetACP	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	GetActiveWindow	impl	MOD-11	10.0.11
+libwpfwin32.so	GetAltTabInfo	gap	MOD-11	10.0.11	无实现（user32）
+libwpfwin32.so	GetAlternateList	gap	MOD-83	10.0.11	无实现（mshwgst）
+libwpfwin32.so	GetAncestor	impl	MOD-11	10.0.11
+libwpfwin32.so	GetAncestorWrapper	impl	MOD-16	10.0.11
+libwpfwin32.so	GetAsyncKeyState	impl	MOD-11	10.0.11
+libwpfwin32.so	GetBitmapBits	impl	MOD-13	10.0.11
+libwpfwin32.so	GetCapture	impl	MOD-11	10.0.11
+libwpfwin32.so	GetCaretBlinkTime	impl	MOD-11	10.0.11
+libwpfwin32.so	GetClassLongPtr	gap	MOD-11	10.0.11	无实现（user32）
+libwpfwin32.so	GetClassName	impl	MOD-11	10.0.11
+libwpfwin32.so	GetClassNameA	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	GetClassNameW	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	GetClientRect	impl	MOD-11	10.0.11
+libwpfwin32.so	GetClipboardFormatName	gap	MOD-11	10.0.11	无实现（user32）
+libwpfwin32.so	GetComboBoxInfo	gap	MOD-11	10.0.11	无实现（user32）
+libwpfwin32.so	GetConfidenceLevel	gap	MOD-83	10.0.11	无实现（mshwgst）
+libwpfwin32.so	GetCurrentProcess	impl	MOD-15	10.0.11
+libwpfwin32.so	GetCurrentProcessExplicitAppUserModelID	gap	MOD-15	10.0.11	无实现（shell32）
+libwpfwin32.so	GetCurrentProcessId	gap	MOD-15	10.0.11	无实现（kernel32）
+libwpfwin32.so	GetCurrentThemeName	impl	MOD-04	10.0.11
+libwpfwin32.so	GetCurrentThemeNameW	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	GetCurrentThread	gap	MOD-15	10.0.11	无实现（kernel32）
+libwpfwin32.so	GetCurrentThreadId	impl	MOD-15	10.0.11
+libwpfwin32.so	GetCursor	impl	MOD-11	10.0.11
+libwpfwin32.so	GetCursorPos	impl	MOD-11	10.0.11
+libwpfwin32.so	GetDC	impl	MOD-11	10.0.11
+libwpfwin32.so	GetDesktopWindow	impl	MOD-11	10.0.11
+libwpfwin32.so	GetDeviceCaps	impl	MOD-13	10.0.11
+libwpfwin32.so	GetDeviceCapsA	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	GetDeviceCapsW	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	GetDoubleClickTime	impl	MOD-11	10.0.11
+libwpfwin32.so	GetDpiForMonitor	impl	MOD-13	10.0.11
+libwpfwin32.so	GetDpiForSystem	impl	MOD-11	10.0.11
+libwpfwin32.so	GetDpiForWindow	impl	MOD-11	10.0.11
+libwpfwin32.so	GetDpiForWindowW	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	GetFileSizeEx	impl	MOD-15	10.0.11
+libwpfwin32.so	GetFloaterHandlerInfo	impl	MOD-16	10.0.11
+libwpfwin32.so	GetFocus	impl	MOD-11	10.0.11
+libwpfwin32.so	GetForegroundWindow	impl	MOD-11	10.0.11
+libwpfwin32.so	GetGUIThreadInfo	gap	MOD-11	10.0.11	无实现（user32）
+libwpfwin32.so	GetIconInfo	impl	MOD-11	10.0.11
+libwpfwin32.so	GetIconInfoImpl	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	GetKeyState	impl	MOD-11	10.0.11
+libwpfwin32.so	GetKeyboardLayout	impl	MOD-11	10.0.11
+libwpfwin32.so	GetKeyboardLayoutList	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	GetKeyboardLayoutListWrapper	impl	MOD-16	10.0.11
+libwpfwin32.so	GetKeyboardState	impl	MOD-11	10.0.11
+libwpfwin32.so	GetLastInputInfo	gap	MOD-11	10.0.11	无实现（user32）
+libwpfwin32.so	GetLastSystemEventData	gap	MOD-84	10.0.11	PenImc 替身（MOD-84，libinput/XInput2）；未实现
+libwpfwin32.so	GetLatticePtr	gap	MOD-83	10.0.11	无实现（mshwgst）
+libwpfwin32.so	GetLayeredWindowAttributes	impl	MOD-11	10.0.11
+libwpfwin32.so	GetLocaleInfo	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	GetLocaleInfoA	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	GetLocaleInfoW	impl	MOD-15	10.0.11
+libwpfwin32.so	GetMenu	gap	MOD-11	10.0.11	无实现（user32）
+libwpfwin32.so	GetMenuBarInfoWrapper	gap	MOD-16	10.0.11	无实现（presentationnative）
+libwpfwin32.so	GetMenuItemCount	gap	MOD-11	10.0.11	无实现（user32）
+libwpfwin32.so	GetMenuItemID	gap	MOD-11	10.0.11	无实现（user32）
+libwpfwin32.so	GetMenuItemInfo	gap	MOD-11	10.0.11	无实现（user32）
+libwpfwin32.so	GetMenuItemRect	gap	MOD-11	10.0.11	无实现（user32）
+libwpfwin32.so	GetMenuState	gap	MOD-11	10.0.11	无实现（user32）
+libwpfwin32.so	GetMenuString	gap	MOD-11	10.0.11	无实现（user32）
+libwpfwin32.so	GetMessage	gap	MOD-11	10.0.11	无实现（user32）
+libwpfwin32.so	GetMessageExtraInfo	impl	MOD-11	10.0.11
+libwpfwin32.so	GetMessagePos	impl	MOD-11	10.0.11
+libwpfwin32.so	GetMessageTime	impl	MOD-11	10.0.11
+libwpfwin32.so	GetMessageW	impl	MOD-11	10.0.11
+libwpfwin32.so	GetModuleFileName	impl	MOD-15	10.0.11
+libwpfwin32.so	GetModuleFileNameA	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	GetModuleFileNameEx	gap	MOD-15	10.0.11	无实现（psapi）
+libwpfwin32.so	GetModuleFileNameW	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	GetModuleHandle	impl	MOD-15	10.0.11
+libwpfwin32.so	GetModuleHandleA	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	GetModuleHandleEx	impl	MOD-15	10.0.11
+libwpfwin32.so	GetModuleHandleExA	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	GetModuleHandleExW	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	GetModuleHandleW	impl	MOD-15	10.0.11
+libwpfwin32.so	GetMonitorInfo	impl	MOD-11	10.0.11
+libwpfwin32.so	GetMonitorInfoA	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	GetMonitorInfoW	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	GetMouseMovePointsEx	impl	MOD-11	10.0.11
+libwpfwin32.so	GetNumberSubstitutionList	gap	MOD-16	10.0.11	无实现（presentationnative）
+libwpfwin32.so	GetOEMCP	impl	MOD-15	10.0.11
+libwpfwin32.so	GetObject	impl	MOD-13	10.0.11
+libwpfwin32.so	GetObjectA	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	GetObjectW	impl	MOD-13	10.0.11
+libwpfwin32.so	GetOpenFileName	gap	MOD-62	10.0.11	无实现（comdlg32）
+libwpfwin32.so	GetParent	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	GetParentWrapper	impl	MOD-16	10.0.11
+libwpfwin32.so	GetPenEvent	gap	MOD-84	10.0.11	PenImc 替身（MOD-84，libinput/XInput2）；未实现
+libwpfwin32.so	GetPenEventMultiple	gap	MOD-84	10.0.11	PenImc 替身（MOD-84，libinput/XInput2）；未实现
+libwpfwin32.so	GetPhysicalCursorPos	gap	MOD-11	10.0.11	无实现（user32）
+libwpfwin32.so	GetPointerCursorId	impl	MOD-11	10.0.11
+libwpfwin32.so	GetPointerDeviceCursors	impl	MOD-11	10.0.11
+libwpfwin32.so	GetPointerDeviceProperties	impl	MOD-11	10.0.11
+libwpfwin32.so	GetPointerDeviceRects	impl	MOD-11	10.0.11
+libwpfwin32.so	GetPointerDevices	impl	MOD-11	10.0.11
+libwpfwin32.so	GetPointerInfo	impl	MOD-11	10.0.11
+libwpfwin32.so	GetPointerInfoHistory	impl	MOD-11	10.0.11
+libwpfwin32.so	GetPointerPenInfo	impl	MOD-11	10.0.11
+libwpfwin32.so	GetPointerTouchInfo	impl	MOD-11	10.0.11
+libwpfwin32.so	GetPrinterW	gap	MOD-82	10.0.11	打印路径走 CUPS（MOD-82）；未实现
+libwpfwin32.so	GetProcAddress	impl	MOD-15	10.0.11
+libwpfwin32.so	GetProcAddressA	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	GetProcAddressNoThrow	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	GetProcAddressW	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	GetProcessDpiAwareness	gap	MOD-13	10.0.11	无实现（shcore）
+libwpfwin32.so	GetProcessHandleFromHwnd	gap	MOD-63	10.0.11	无实现（oleacc）
+libwpfwin32.so	GetProcessImageFileName	gap	MOD-15	10.0.11	无实现（psapi）
+libwpfwin32.so	GetProp	impl	MOD-11	10.0.11
+libwpfwin32.so	GetPropA	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	GetPropW	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	GetRawInputDeviceInfo	impl	MOD-11	10.0.11
+libwpfwin32.so	GetRawInputDeviceInfoA	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	GetRawInputDeviceInfoW	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	GetRawInputDeviceList	impl	MOD-11	10.0.11
+libwpfwin32.so	GetRawPointerDeviceData	impl	MOD-11	10.0.11
+libwpfwin32.so	GetSaveFileName	gap	MOD-62	10.0.11	无实现（comdlg32）
+libwpfwin32.so	GetScriptAnalysisList	gap	MOD-16	10.0.11	无实现（presentationnative）
+libwpfwin32.so	GetScrollBarInfo	gap	MOD-11	10.0.11	无实现（user32）
+libwpfwin32.so	GetScrollInfo	gap	MOD-11	10.0.11	无实现（user32）
+libwpfwin32.so	GetShellWindow	gap	MOD-11	10.0.11	无实现（user32）
+libwpfwin32.so	GetStockObject	impl	MOD-13	10.0.11
+libwpfwin32.so	GetString	gap	MOD-83	10.0.11	无实现（mshwgst）
+libwpfwin32.so	GetStringTypeEx	impl	MOD-15	10.0.11
+libwpfwin32.so	GetStringTypeExA	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	GetStringTypeExW	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	GetSubMenu	gap	MOD-11	10.0.11	无实现（user32）
+libwpfwin32.so	GetSysColor	impl	MOD-11	10.0.11
+libwpfwin32.so	GetSystemInfo	gap	MOD-15	10.0.11	无实现（kernel32）
+libwpfwin32.so	GetSystemMenu	impl	MOD-11	10.0.11
+libwpfwin32.so	GetSystemMetrics	impl	MOD-11	10.0.11
+libwpfwin32.so	GetSystemPowerStatus	impl	MOD-15	10.0.11
+libwpfwin32.so	GetTableObjHandlerInfo	impl	MOD-16	10.0.11
+libwpfwin32.so	GetTempFileName	impl	MOD-15	10.0.11
+libwpfwin32.so	GetTempFileNameA	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	GetTempFileNameW	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	GetTextExtentPoint32Wrapper	gap	MOD-16	10.0.11	无实现（presentationnative）
+libwpfwin32.so	GetThreadDpiHostingBehavior	stub	MOD-11	10.0.11
+libwpfwin32.so	GetTickCount	impl	MOD-15	10.0.11
+libwpfwin32.so	GetTickCount64	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	GetTitleBarInfo	gap	MOD-11	10.0.11	无实现（user32）
+libwpfwin32.so	GetTraceEnableFlags	gap	MOD-15	10.0.11	无实现（advapi32）
+libwpfwin32.so	GetTraceEnableLevel	gap	MOD-15	10.0.11	无实现（advapi32）
+libwpfwin32.so	GetUrlCacheConfigInfoW	gap	MOD-15	10.0.11	无实现（wininet）
+libwpfwin32.so	GetVersionEx	gap	MOD-15	10.0.11	无实现（kernel32）
+libwpfwin32.so	GetWindow	impl	MOD-11	10.0.11
+libwpfwin32.so	GetWindowDC	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	GetWindowDpiAwarenessContext	impl	MOD-11	10.0.11
+libwpfwin32.so	GetWindowLong	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	GetWindowLongA	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	GetWindowLongPtr	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	GetWindowLongPtrA	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	GetWindowLongPtrW	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	GetWindowLongPtrWrapper	impl	MOD-16	10.0.11
+libwpfwin32.so	GetWindowLongW	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	GetWindowLongWrapper	impl	MOD-16	10.0.11
+libwpfwin32.so	GetWindowPlacement	impl	MOD-11	10.0.11
+libwpfwin32.so	GetWindowRect	impl	MOD-11	10.0.11
+libwpfwin32.so	GetWindowRgn	gap	MOD-11	10.0.11	无实现（user32）
+libwpfwin32.so	GetWindowText	impl	MOD-11	10.0.11
+libwpfwin32.so	GetWindowTextA	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	GetWindowTextLengthW	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	GetWindowTextLengthWrapper	impl	MOD-16	10.0.11
+libwpfwin32.so	GetWindowTextW	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	GetWindowTextWrapper	impl	MOD-16	10.0.11
+libwpfwin32.so	GetWindowThreadProcessId	impl	MOD-11	10.0.11
+libwpfwin32.so	GetWindowWrapper	impl	MOD-16	10.0.11
+libwpfwin32.so	GlobalAddAtom	gap	MOD-15	10.0.11	无实现（kernel32）
+libwpfwin32.so	GlobalAlloc	gap	MOD-15	10.0.11	无实现（kernel32）
+libwpfwin32.so	GlobalDeleteAtomWrapper	impl	MOD-16	10.0.11
+libwpfwin32.so	GlobalFree	impl	MOD-15	10.0.11
+libwpfwin32.so	GlobalLock	impl	MOD-15	10.0.11
+libwpfwin32.so	GlobalReAlloc	gap	MOD-15	10.0.11	无实现（kernel32）
+libwpfwin32.so	GlobalSize	gap	MOD-15	10.0.11	无实现（kernel32）
+libwpfwin32.so	GlobalUnlock	impl	MOD-15	10.0.11
+libwpfwin32.so	GridPattern_GetItem	gap	MOD-81	10.0.11	托管桥替代（MOD-81，AT-SPI over D-Bus）；无原生入口
+libwpfwin32.so	HideCaret	impl	MOD-11	10.0.11
+libwpfwin32.so	ImmAssociateContext	gap	MOD-36	10.0.11	无实现（imm32）
+libwpfwin32.so	ImmConfigureIME	gap	MOD-36	10.0.11	无实现（imm32）
+libwpfwin32.so	ImmGetCompositionString	gap	MOD-36	10.0.11	无实现（imm32）
+libwpfwin32.so	ImmGetContext	gap	MOD-36	10.0.11	无实现（imm32）
+libwpfwin32.so	ImmGetConversionStatus	gap	MOD-36	10.0.11	无实现（imm32）
+libwpfwin32.so	ImmGetDefaultIMEWnd	gap	MOD-36	10.0.11	无实现（imm32）
+libwpfwin32.so	ImmGetOpenStatus	gap	MOD-36	10.0.11	无实现（imm32）
+libwpfwin32.so	ImmGetProperty	gap	MOD-36	10.0.11	无实现（imm32）
+libwpfwin32.so	ImmNotifyIME	gap	MOD-36	10.0.11	无实现（imm32）
+libwpfwin32.so	ImmReleaseContext	gap	MOD-36	10.0.11	无实现（imm32）
+libwpfwin32.so	ImmSetCandidateWindow	gap	MOD-36	10.0.11	无实现（imm32）
+libwpfwin32.so	ImmSetCompositionWindow	gap	MOD-36	10.0.11	无实现（imm32）
+libwpfwin32.so	ImmSetConversionStatus	gap	MOD-36	10.0.11	无实现（imm32）
+libwpfwin32.so	ImmSetOpenStatus	gap	MOD-36	10.0.11	无实现（imm32）
+libwpfwin32.so	InSendMessage	gap	MOD-11	10.0.11	无实现（user32）
+libwpfwin32.so	IntGetProcAddress	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	InternetGetCookieExW	gap	MOD-15	10.0.11	无实现（wininet）
+libwpfwin32.so	InternetSetCookieExW	gap	MOD-15	10.0.11	无实现（wininet）
+libwpfwin32.so	IntersectRect	gap	MOD-11	10.0.11	无实现（user32）
+libwpfwin32.so	InvalidateRect	impl	MOD-11	10.0.11
+libwpfwin32.so	InvokePattern_Invoke	gap	MOD-81	10.0.11	托管桥替代（MOD-81，AT-SPI over D-Bus）；无原生入口
+libwpfwin32.so	IsChild	impl	MOD-11	10.0.11
+libwpfwin32.so	IsClipboardFormatAvailable	gap	MOD-11	10.0.11	无实现（user32）
+libwpfwin32.so	IsDebuggerPresent	stub	MOD-15	10.0.11
+libwpfwin32.so	IsHungAppWindow	gap	MOD-11	10.0.11	无实现（user32）
+libwpfwin32.so	IsIconic	impl	MOD-11	10.0.11
+libwpfwin32.so	IsProcessDPIAware	impl	MOD-11	10.0.11
+libwpfwin32.so	IsThemeActive	stub	MOD-04	10.0.11
+libwpfwin32.so	IsThemeActiveW	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	IsWinEventHookInstalled	impl	MOD-11	10.0.11
+libwpfwin32.so	IsWindow	impl	MOD-11	10.0.11
+libwpfwin32.so	IsWindowEnabled	impl	MOD-11	10.0.11
+libwpfwin32.so	IsWindowUnicode	impl	MOD-11	10.0.11
+libwpfwin32.so	IsWindowVisible	impl	MOD-11	10.0.11
+libwpfwin32.so	IsWindows10OrGreater	gap	MOD-16	10.0.11	无实现（presentationnative）
+libwpfwin32.so	IsWindows10RS1OrGreater	gap	MOD-16	10.0.11	无实现（presentationnative）
+libwpfwin32.so	IsWindows10RS2OrGreater	gap	MOD-16	10.0.11	无实现（presentationnative）
+libwpfwin32.so	IsWindows10RS3OrGreater	gap	MOD-16	10.0.11	无实现（presentationnative）
+libwpfwin32.so	IsWindows10RS4OrGreater	gap	MOD-16	10.0.11	无实现（presentationnative）
+libwpfwin32.so	IsWindows10RS5OrGreater	gap	MOD-16	10.0.11	无实现（presentationnative）
+libwpfwin32.so	IsWindows10TH1OrGreater	gap	MOD-16	10.0.11	无实现（presentationnative）
+libwpfwin32.so	IsWindows10TH2OrGreater	gap	MOD-16	10.0.11	无实现（presentationnative）
+libwpfwin32.so	IsWindows7OrGreater	gap	MOD-16	10.0.11	无实现（presentationnative）
+libwpfwin32.so	IsWindows7SP1OrGreater	gap	MOD-16	10.0.11	无实现（presentationnative）
+libwpfwin32.so	IsWindows8OrGreater	gap	MOD-16	10.0.11	无实现（presentationnative）
+libwpfwin32.so	IsWindows8Point1OrGreater	gap	MOD-16	10.0.11	无实现（presentationnative）
+libwpfwin32.so	IsWindowsServer	gap	MOD-16	10.0.11	无实现（presentationnative）
+libwpfwin32.so	IsWindowsVistaOrGreater	gap	MOD-16	10.0.11	无实现（presentationnative）
+libwpfwin32.so	IsWindowsVistaSP1OrGreater	gap	MOD-16	10.0.11	无实现（presentationnative）
+libwpfwin32.so	IsWindowsVistaSP2OrGreater	gap	MOD-16	10.0.11	无实现（presentationnative）
+libwpfwin32.so	IsWindowsXPOrGreater	gap	MOD-16	10.0.11	无实现（presentationnative）
+libwpfwin32.so	IsWindowsXPSP1OrGreater	gap	MOD-16	10.0.11	无实现（presentationnative）
+libwpfwin32.so	IsWindowsXPSP2OrGreater	gap	MOD-16	10.0.11	无实现（presentationnative）
+libwpfwin32.so	IsWindowsXPSP3OrGreater	gap	MOD-16	10.0.11	无实现（presentationnative）
+libwpfwin32.so	IsWow64Process	gap	MOD-15	10.0.11	无实现（kernel32）
+libwpfwin32.so	IsfCompressPacketData	gap	MOD-84	10.0.11	PenImc 替身（MOD-84，libinput/XInput2）；未实现
+libwpfwin32.so	IsfCompressPropertyData	gap	MOD-84	10.0.11	PenImc 替身（MOD-84，libinput/XInput2）；未实现
+libwpfwin32.so	IsfDecompressPacketData	gap	MOD-84	10.0.11	PenImc 替身（MOD-84，libinput/XInput2）；未实现
+libwpfwin32.so	IsfDecompressPropertyData	gap	MOD-84	10.0.11	PenImc 替身（MOD-84，libinput/XInput2）；未实现
+libwpfwin32.so	IsfLoadCompressor	gap	MOD-84	10.0.11	PenImc 替身（MOD-84，libinput/XInput2）；未实现
+libwpfwin32.so	IsfReleaseCompressor	gap	MOD-84	10.0.11	PenImc 替身（MOD-84，libinput/XInput2）；未实现
+libwpfwin32.so	ItemContainerPattern_FindItemByProperty	gap	MOD-81	10.0.11	托管桥替代（MOD-81，AT-SPI over D-Bus）；无原生入口
+libwpfwin32.so	KillTimer	impl	MOD-11	10.0.11
+libwpfwin32.so	LoAcquireBreakRecord	gap	MOD-16	10.0.11	无实现（presentationnative）
+libwpfwin32.so	LoAcquirePenaltyModule	impl	MOD-16	10.0.11
+libwpfwin32.so	LoCloneBreakRecord	gap	MOD-16	10.0.11	无实现（presentationnative）
+libwpfwin32.so	LoCreateBreaks	gap	MOD-16	10.0.11	无实现（presentationnative）
+libwpfwin32.so	LoCreateContext	impl	MOD-16	10.0.11
+libwpfwin32.so	LoCreateLine	gap	MOD-16	10.0.11	无实现（presentationnative）
+libwpfwin32.so	LoCreateParaBreakingSession	impl	MOD-16	10.0.11
+libwpfwin32.so	LoDestroyContext	impl	MOD-16	10.0.11
+libwpfwin32.so	LoDisplayLine	gap	MOD-16	10.0.11	无实现（presentationnative）
+libwpfwin32.so	LoDisposeBreakRecord	gap	MOD-16	10.0.11	无实现（presentationnative）
+libwpfwin32.so	LoDisposeLine	gap	MOD-16	10.0.11	无实现（presentationnative）
+libwpfwin32.so	LoDisposeParaBreakingSession	impl	MOD-16	10.0.11
+libwpfwin32.so	LoDisposePenaltyModule	impl	MOD-16	10.0.11
+libwpfwin32.so	LoEnumLine	gap	MOD-16	10.0.11	无实现（presentationnative）
+libwpfwin32.so	LoGetEscString	impl	MOD-16	10.0.11
+libwpfwin32.so	LoGetPenaltyModuleInternalHandle	impl	MOD-16	10.0.11
+libwpfwin32.so	LoQueryLineCpPpoint	gap	MOD-16	10.0.11	无实现（presentationnative）
+libwpfwin32.so	LoQueryLinePointPcp	gap	MOD-16	10.0.11	无实现（presentationnative）
+libwpfwin32.so	LoRelievePenaltyResource	gap	MOD-16	10.0.11	无实现（presentationnative）
+libwpfwin32.so	LoSetBreaking	impl	MOD-16	10.0.11
+libwpfwin32.so	LoSetDoc	impl	MOD-16	10.0.11
+libwpfwin32.so	LoSetTabs	impl	MOD-16	10.0.11
+libwpfwin32.so	LoadCursor	impl	MOD-11	10.0.11
+libwpfwin32.so	LoadCursorA	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	LoadCursorW	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	LoadImage	impl	MOD-11	10.0.11
+libwpfwin32.so	LoadImageA	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	LoadImageCursor	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	LoadImageW	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	LoadLibrary	impl	MOD-15	10.0.11
+libwpfwin32.so	LoadLibraryA	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	LoadLibraryEx	impl	MOD-15	10.0.11
+libwpfwin32.so	LoadLibraryExA	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	LoadLibraryExW	impl	MOD-15	10.0.11
+libwpfwin32.so	LoadLibraryW	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	LoadStringW	gap	MOD-11	10.0.11	无实现（user32）
+libwpfwin32.so	LocalFree	impl	MOD-15	10.0.11
+libwpfwin32.so	LocbkGetObjectHandlerInfo	gap	MOD-16	10.0.11	无实现（presentationnative）
+libwpfwin32.so	LockWispObjectFromGit	gap	MOD-84	10.0.11	PenImc 替身（MOD-84，libinput/XInput2）；未实现
+libwpfwin32.so	LsDisableSpecialCharacterLigature	impl	MOD-16	10.0.11
+libwpfwin32.so	MILGetClassificationTables	impl	MOD-16	10.0.11
+libwpfwin32.so	MapViewOfFileEx	impl	MOD-15	10.0.11
+libwpfwin32.so	MapVirtualKey	impl	MOD-11	10.0.11
+libwpfwin32.so	MapVirtualKeyA	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	MapVirtualKeyW	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	MapWindowPoints	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	MapWindowPointsWrapper	impl	MOD-16	10.0.11
+libwpfwin32.so	MessageBeep	impl	MOD-11	10.0.11
+libwpfwin32.so	MessageBox	impl	MOD-11	10.0.11
+libwpfwin32.so	MessageBoxA	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	MessageBoxW	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	MonitorFromPoint	impl	MOD-11	10.0.11
+libwpfwin32.so	MonitorFromRect	impl	MOD-11	10.0.11
+libwpfwin32.so	MonitorFromWindow	impl	MOD-11	10.0.11
+libwpfwin32.so	MoveWindow	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	MsgWaitForMultipleObjects	gap	MOD-11	10.0.11	无实现（user32）
+libwpfwin32.so	MsgWaitForMultipleObjectsEx	impl	MOD-11	10.0.11
+libwpfwin32.so	MultiByteToWideChar	impl	MOD-15	10.0.11
+libwpfwin32.so	MultipleViewPattern_GetViewName	gap	MOD-81	10.0.11	托管桥替代（MOD-81，AT-SPI over D-Bus）；无原生入口
+libwpfwin32.so	MultipleViewPattern_SetCurrentView	gap	MOD-81	10.0.11	托管桥替代（MOD-81，AT-SPI over D-Bus）；无原生入口
+libwpfwin32.so	NlCreateHyphenator	gap	MOD-16	10.0.11	无实现（presentationnative）
+libwpfwin32.so	NlDestroyHyphenator	gap	MOD-16	10.0.11	无实现（presentationnative）
+libwpfwin32.so	NlGetClassObject	gap	MOD-16	10.0.11	无实现（presentationnative）
+libwpfwin32.so	NlHyphenate	gap	MOD-16	10.0.11	无实现（presentationnative）
+libwpfwin32.so	NlLoad	gap	MOD-16	10.0.11	无实现（presentationnative）
+libwpfwin32.so	NlUnload	gap	MOD-16	10.0.11	无实现（presentationnative）
+libwpfwin32.so	NotifyWinEvent	impl	MOD-11	10.0.11
+libwpfwin32.so	NtQueryInformationProcess	gap	MOD-15	10.0.11	无实现（ntdll）
+libwpfwin32.so	ObjectFromLresult	gap	MOD-63	10.0.11	无实现（oleacc）
+libwpfwin32.so	ObtainUserAgentString	gap	MOD-15	10.0.11	无实现（urlmon）
+libwpfwin32.so	OleFlushClipboard	gap	MOD-63	10.0.11	无实现（ole32）
+libwpfwin32.so	OleGetClipboard	gap	MOD-63	10.0.11	无实现（ole32）
+libwpfwin32.so	OleInitialize	gap	MOD-63	10.0.11	无实现（ole32）
+libwpfwin32.so	OleIsCurrentClipboard	gap	MOD-63	10.0.11	无实现（ole32）
+libwpfwin32.so	OleSetClipboard	gap	MOD-63	10.0.11	无实现（ole32）
+libwpfwin32.so	OleUninitialize	gap	MOD-63	10.0.11	无实现（ole32）
+libwpfwin32.so	OpenFileMapping	gap	MOD-15	10.0.11	无实现（kernel32）
+libwpfwin32.so	OpenPrinterA	gap	MOD-82	10.0.11	打印路径走 CUPS（MOD-82）；未实现
+libwpfwin32.so	OpenPrinterW	gap	MOD-82	10.0.11	打印路径走 CUPS（MOD-82）；未实现
+libwpfwin32.so	OpenProcess	impl	MOD-15	10.0.11
+libwpfwin32.so	PTCloseProvider	gap	MOD-82	10.0.11	打印路径走 CUPS（MOD-82）；未实现
+libwpfwin32.so	PTConvertDevModeToPrintTicket	gap	MOD-82	10.0.11	打印路径走 CUPS（MOD-82）；未实现
+libwpfwin32.so	PTConvertPrintTicketToDevMode	gap	MOD-82	10.0.11	打印路径走 CUPS（MOD-82）；未实现
+libwpfwin32.so	PTGetPrintCapabilities	gap	MOD-82	10.0.11	打印路径走 CUPS（MOD-82）；未实现
+libwpfwin32.so	PTMergeAndValidatePrintTicket	gap	MOD-82	10.0.11	打印路径走 CUPS（MOD-82）；未实现
+libwpfwin32.so	PTOpenProviderEx	gap	MOD-82	10.0.11	打印路径走 CUPS（MOD-82）；未实现
+libwpfwin32.so	PTReleaseMemory	gap	MOD-82	10.0.11	打印路径走 CUPS（MOD-82）；未实现
+libwpfwin32.so	PeekMessage	impl	MOD-11	10.0.11
+libwpfwin32.so	PeekMessageA	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	PeekMessageW	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	PhysicalToLogicalPoint	gap	MOD-11	10.0.11	无实现（user32）
+libwpfwin32.so	PlaySound	gap	MOD-83	10.0.11	无实现（winmm）
+libwpfwin32.so	PlaySoundW	gap	MOD-83	10.0.11	无实现（winmm）
+libwpfwin32.so	PostMessage	impl	MOD-11	10.0.11
+libwpfwin32.so	PostMessageA	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	PostMessageW	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	PostQuitMessage	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	PostThreadMessage	gap	MOD-11	10.0.11	无实现（user32）
+libwpfwin32.so	PostThreadMessageW	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	PrintDlgEx	gap	MOD-62	10.0.11	无实现（comdlg32）
+libwpfwin32.so	PrintWindow	impl	MOD-11	10.0.11
+libwpfwin32.so	Process	gap	MOD-83	10.0.11	无实现（mshwgst）
+libwpfwin32.so	ProcessBufferedPacketsInteractionContext	gap	MOD-84	10.0.11	Windows Ink 面；未迁移
+libwpfwin32.so	ProcessIdToSessionId	impl	MOD-15	10.0.11
+libwpfwin32.so	ProcessUnhandledException	gap	MOD-51	10.0.11	ClickOnce/XBAP 宿主件；不在 V1 范围
+libwpfwin32.so	PropVariantClear	gap	MOD-63	10.0.11	无实现（ole32）
+libwpfwin32.so	PtInRegion	gap	MOD-13	10.0.11	无实现（gdi32）
+libwpfwin32.so	QueryPerformanceCounter	impl	MOD-15	10.0.11
+libwpfwin32.so	QueryPerformanceFrequency	impl	MOD-15	10.0.11
+libwpfwin32.so	RaiseResetEvent	gap	MOD-84	10.0.11	PenImc 替身（MOD-84，libinput/XInput2）；未实现
+libwpfwin32.so	RangeValuePattern_SetValue	gap	MOD-81	10.0.11	托管桥替代（MOD-81，AT-SPI over D-Bus）；无原生入口
+libwpfwin32.so	ReadProcessMemory	gap	MOD-15	10.0.11	无实现（kernel32）
+libwpfwin32.so	RealGetWindowClass	gap	MOD-11	10.0.11	无实现（user32）
+libwpfwin32.so	RedrawWindow	impl	MOD-11	10.0.11
+libwpfwin32.so	RegisterClassEx	impl	MOD-11	10.0.11
+libwpfwin32.so	RegisterClassExA	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	RegisterClassExW	impl	MOD-11	10.0.11
+libwpfwin32.so	RegisterClipboardFormat	gap	MOD-11	10.0.11	无实现（user32）
+libwpfwin32.so	RegisterDllForSxSCOM	gap	MOD-84	10.0.11	PenImc 替身（MOD-84，libinput/XInput2）；未实现
+libwpfwin32.so	RegisterDragDrop	gap	MOD-63	10.0.11	无实现（ole32）
+libwpfwin32.so	RegisterHotKey	gap	MOD-11	10.0.11	无实现（user32）
+libwpfwin32.so	RegisterOutputCallbackInteractionContext	gap	MOD-84	10.0.11	Windows Ink 面；未迁移
+libwpfwin32.so	RegisterPowerSettingNotification	impl	MOD-11	10.0.11
+libwpfwin32.so	RegisterTraceGuidsW	gap	MOD-15	10.0.11	无实现（advapi32）
+libwpfwin32.so	RegisterWindowMessage	impl	MOD-11	10.0.11
+libwpfwin32.so	RegisterWindowMessageA	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	RegisterWindowMessageW	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	ReleaseCapture	impl	MOD-11	10.0.11
+libwpfwin32.so	ReleaseDC	impl	MOD-11	10.0.11
+libwpfwin32.so	ReleaseStgMedium	gap	MOD-63	10.0.11	无实现（ole32）
+libwpfwin32.so	RemoveMenu	impl	MOD-11	10.0.11
+libwpfwin32.so	RemoveProp	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	RemovePropA	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	RemovePropW	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	ResetContext	gap	MOD-83	10.0.11	无实现（mshwgst）
+libwpfwin32.so	ResetEvent	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	RevokeDragDrop	gap	MOD-63	10.0.11	无实现（ole32）
+libwpfwin32.so	RoActivateInstance	gap	MOD-02	10.0.11	无实现（api-ms-win-core-winrt）
+libwpfwin32.so	RoGetActivationFactory	gap	MOD-02	10.0.11	无实现（api-ms-win-core-winrt）
+libwpfwin32.so	RtlGetVersion	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	RtlGetVersionA	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	RtlMoveMemory	gap	MOD-15	10.0.11	无实现（kernel32）
+libwpfwin32.so	RtlNtStatusToDosError	gap	MOD-15	10.0.11	无实现（ntdll）
+libwpfwin32.so	SHAddToRecentDocs	gap	MOD-15	10.0.11	无实现（shell32）
+libwpfwin32.so	SHAppBarMessage	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	SHCreateItemFromParsingName	impl	MOD-15	10.0.11
+libwpfwin32.so	SHFileOperation	gap	MOD-15	10.0.11	无实现（shell32）
+libwpfwin32.so	SHGetFileInfoA	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	SHGetFileInfoW	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	SHGetFolderPath	gap	MOD-15	10.0.11	无实现（shfolder）
+libwpfwin32.so	SHGetFolderPathEx	gap	MOD-15	10.0.11	无实现（shell32）
+libwpfwin32.so	SHGetItemFromDataObject	gap	MOD-15	10.0.11	无实现（shell32）
+libwpfwin32.so	ScreenToClient	impl	MOD-11	10.0.11
+libwpfwin32.so	ScrollItemPattern_ScrollIntoView	gap	MOD-81	10.0.11	托管桥替代（MOD-81，AT-SPI over D-Bus）；无原生入口
+libwpfwin32.so	ScrollPattern_Scroll	gap	MOD-81	10.0.11	托管桥替代（MOD-81，AT-SPI over D-Bus）；无原生入口
+libwpfwin32.so	ScrollPattern_SetScrollPercent	gap	MOD-81	10.0.11	托管桥替代（MOD-81，AT-SPI over D-Bus）；无原生入口
+libwpfwin32.so	SelectObject	impl	MOD-13	10.0.11
+libwpfwin32.so	SelectionItemPattern_AddToSelection	gap	MOD-81	10.0.11	托管桥替代（MOD-81，AT-SPI over D-Bus）；无原生入口
+libwpfwin32.so	SelectionItemPattern_RemoveFromSelection	gap	MOD-81	10.0.11	托管桥替代（MOD-81，AT-SPI over D-Bus）；无原生入口
+libwpfwin32.so	SelectionItemPattern_Select	gap	MOD-81	10.0.11	托管桥替代（MOD-81，AT-SPI over D-Bus）；无原生入口
+libwpfwin32.so	SendInput	impl	MOD-11	10.0.11
+libwpfwin32.so	SendMessage	impl	MOD-11	10.0.11
+libwpfwin32.so	SendMessageA	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	SendMessageTimeout	impl	MOD-11	10.0.11
+libwpfwin32.so	SendMessageTimeoutA	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	SendMessageTimeoutW	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	SendMessageW	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	SetActiveWindow	impl	MOD-11	10.0.11
+libwpfwin32.so	SetCapture	impl	MOD-11	10.0.11
+libwpfwin32.so	SetCaretPos	impl	MOD-11	10.0.11
+libwpfwin32.so	SetClassLong	impl	MOD-11	10.0.11
+libwpfwin32.so	SetClassLongA	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	SetClassLongPtr	impl	MOD-11	10.0.11
+libwpfwin32.so	SetClassLongPtrA	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	SetClassLongPtrW	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	SetClassLongW	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	SetCurrentProcessExplicitAppUserModelID	gap	MOD-15	10.0.11	无实现（shell32）
+libwpfwin32.so	SetCursor	impl	MOD-11	10.0.11
+libwpfwin32.so	SetDisablePenImcBoundsCheckProtection	gap	MOD-84	10.0.11	PenImc 替身（MOD-84，libinput/XInput2）；未实现
+libwpfwin32.so	SetEnabledUnicodeRanges	gap	MOD-83	10.0.11	无实现（mshwgst）
+libwpfwin32.so	SetEnhMetaFileBits	impl	MOD-13	10.0.11
+libwpfwin32.so	SetErrorInfo	gap	MOD-63	10.0.11	无实现（oleaut32）
+libwpfwin32.so	SetErrorMode	impl	MOD-15	10.0.11
+libwpfwin32.so	SetEvent	impl	MOD-15	10.0.11
+libwpfwin32.so	SetFocus	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	SetFocusWrapper	impl	MOD-16	10.0.11
+libwpfwin32.so	SetForegroundWindow	impl	MOD-11	10.0.11
+libwpfwin32.so	SetInteractionConfigurationInteractionContext	gap	MOD-84	10.0.11	Windows Ink 面；未迁移
+libwpfwin32.so	SetLastError	gap	MOD-15	10.0.11	无实现（kernel32）
+libwpfwin32.so	SetLayeredWindowAttributes	impl	MOD-11	10.0.11
+libwpfwin32.so	SetMessageExtraInfo	impl	MOD-11	10.0.11
+libwpfwin32.so	SetParent	impl	MOD-11	10.0.11
+libwpfwin32.so	SetProcessDPIAware	impl	MOD-11	10.0.11
+libwpfwin32.so	SetProcessWorkingSetSize	impl	MOD-15	10.0.11
+libwpfwin32.so	SetProp	impl	MOD-11	10.0.11
+libwpfwin32.so	SetPropA	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	SetPropW	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	SetPropertyInteractionContext	gap	MOD-84	10.0.11	Windows Ink 面；未迁移
+libwpfwin32.so	SetScrollPosWrapper	impl	MOD-16	10.0.11
+libwpfwin32.so	SetThreadDpiAwarenessContext	impl	MOD-11	10.0.11
+libwpfwin32.so	SetTimer	impl	MOD-11	10.0.11
+libwpfwin32.so	SetTimerInternal	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	SetWinEventHook	impl	MOD-11	10.0.11
+libwpfwin32.so	SetWindowCompositionAttribute	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	SetWindowLong	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	SetWindowLongA	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	SetWindowLongPtr	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	SetWindowLongPtrA	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	SetWindowLongPtrW	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	SetWindowLongPtrWrapper	impl	MOD-16	10.0.11
+libwpfwin32.so	SetWindowLongW	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	SetWindowLongWrapper	impl	MOD-16	10.0.11
+libwpfwin32.so	SetWindowPlacement	impl	MOD-11	10.0.11
+libwpfwin32.so	SetWindowPos	impl	MOD-11	10.0.11
+libwpfwin32.so	SetWindowRgn	impl	MOD-11	10.0.11
+libwpfwin32.so	SetWindowText	impl	MOD-11	10.0.11
+libwpfwin32.so	SetWindowTextA	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	SetWindowTextW	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	SetWindowTheme	impl	MOD-04	10.0.11
+libwpfwin32.so	SetWindowThemeAttribute	impl	MOD-04	10.0.11
+libwpfwin32.so	SetWindowThemeAttributeW	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	SetWindowsHookEx	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	SetWindowsHookExA	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	SetWindowsHookExW	impl	MOD-11	10.0.11
+libwpfwin32.so	ShellExecute	gap	MOD-15	10.0.11	无实现（shell32）
+libwpfwin32.so	ShellExecuteEx	gap	MOD-15	10.0.11	无实现（shell32）
+libwpfwin32.so	ShellExecuteW	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	Shell_NotifyIcon	gap	MOD-15	10.0.11	无实现（shell32）
+libwpfwin32.so	ShowCaret	impl	MOD-11	10.0.11
+libwpfwin32.so	ShowCursor	impl	MOD-11	10.0.11
+libwpfwin32.so	ShowWindow	impl	MOD-11	10.0.11
+libwpfwin32.so	ShowWindowAsync	impl	MOD-11	10.0.11
+libwpfwin32.so	StartDoc	impl	MOD-13	10.0.11
+libwpfwin32.so	StartDocA	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	StartDocW	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	StartPage	impl	MOD-13	10.0.11
+libwpfwin32.so	StgCreateDocfileOnILockBytes	gap	MOD-63	10.0.11	无实现（ole32）
+libwpfwin32.so	StgCreateStorageEx	gap	MOD-63	10.0.11	无实现（ole32）
+libwpfwin32.so	StgOpenStorageEx	gap	MOD-63	10.0.11	无实现（ole32）
+libwpfwin32.so	StgOpenStorageOnILockBytes	gap	MOD-63	10.0.11	无实现（ole32）
+libwpfwin32.so	SwitchToThisWindow	gap	MOD-11	10.0.11	无实现（user32）
+libwpfwin32.so	SynchronizedInputPattern_Cancel	gap	MOD-81	10.0.11	托管桥替代（MOD-81，AT-SPI over D-Bus）；无原生入口
+libwpfwin32.so	SynchronizedInputPattern_StartListening	gap	MOD-81	10.0.11	托管桥替代（MOD-81，AT-SPI over D-Bus）；无原生入口
+libwpfwin32.so	SysAllocString	gap	MOD-63	10.0.11	无实现（oleaut32）
+libwpfwin32.so	SysFreeString	gap	MOD-63	10.0.11	无实现（oleaut32）
+libwpfwin32.so	SystemParametersInfo	impl	MOD-11	10.0.11
+libwpfwin32.so	SystemParametersInfoA	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	SystemParametersInfoW	impl	MOD-11	10.0.11
+libwpfwin32.so	TF_CreateCategoryMgr	gap	MOD-36	10.0.11	无实现（msctf）
+libwpfwin32.so	TF_CreateDisplayAttributeMgr	gap	MOD-36	10.0.11	无实现（msctf）
+libwpfwin32.so	TF_CreateInputProcessorProfiles	gap	MOD-36	10.0.11	无实现（msctf）
+libwpfwin32.so	TF_CreateThreadMgr	gap	MOD-36	10.0.11	无实现（msctf）
+libwpfwin32.so	TextPattern_GetSelection	gap	MOD-81	10.0.11	托管桥替代（MOD-81，AT-SPI over D-Bus）；无原生入口
+libwpfwin32.so	TextPattern_GetVisibleRanges	gap	MOD-81	10.0.11	托管桥替代（MOD-81，AT-SPI over D-Bus）；无原生入口
+libwpfwin32.so	TextPattern_RangeFromChild	gap	MOD-81	10.0.11	托管桥替代（MOD-81，AT-SPI over D-Bus）；无原生入口
+libwpfwin32.so	TextPattern_RangeFromPoint	gap	MOD-81	10.0.11	托管桥替代（MOD-81，AT-SPI over D-Bus）；无原生入口
+libwpfwin32.so	TextPattern_get_DocumentRange	gap	MOD-81	10.0.11	托管桥替代（MOD-81，AT-SPI over D-Bus）；无原生入口
+libwpfwin32.so	TextPattern_get_SupportedTextSelection	gap	MOD-81	10.0.11	托管桥替代（MOD-81，AT-SPI over D-Bus）；无原生入口
+libwpfwin32.so	TextRange_AddToSelection	gap	MOD-81	10.0.11	托管桥替代（MOD-81，AT-SPI over D-Bus）；无原生入口
+libwpfwin32.so	TextRange_Clone	gap	MOD-81	10.0.11	托管桥替代（MOD-81，AT-SPI over D-Bus）；无原生入口
+libwpfwin32.so	TextRange_Compare	gap	MOD-81	10.0.11	托管桥替代（MOD-81，AT-SPI over D-Bus）；无原生入口
+libwpfwin32.so	TextRange_CompareEndpoints	gap	MOD-81	10.0.11	托管桥替代（MOD-81，AT-SPI over D-Bus）；无原生入口
+libwpfwin32.so	TextRange_ExpandToEnclosingUnit	gap	MOD-81	10.0.11	托管桥替代（MOD-81，AT-SPI over D-Bus）；无原生入口
+libwpfwin32.so	TextRange_FindAttribute	gap	MOD-81	10.0.11	托管桥替代（MOD-81，AT-SPI over D-Bus）；无原生入口
+libwpfwin32.so	TextRange_FindText	gap	MOD-81	10.0.11	托管桥替代（MOD-81，AT-SPI over D-Bus）；无原生入口
+libwpfwin32.so	TextRange_GetAttributeValue	gap	MOD-81	10.0.11	托管桥替代（MOD-81，AT-SPI over D-Bus）；无原生入口
+libwpfwin32.so	TextRange_GetBoundingRectangles	gap	MOD-81	10.0.11	托管桥替代（MOD-81，AT-SPI over D-Bus）；无原生入口
+libwpfwin32.so	TextRange_GetChildren	gap	MOD-81	10.0.11	托管桥替代（MOD-81，AT-SPI over D-Bus）；无原生入口
+libwpfwin32.so	TextRange_GetEnclosingElement	gap	MOD-81	10.0.11	托管桥替代（MOD-81，AT-SPI over D-Bus）；无原生入口
+libwpfwin32.so	TextRange_GetText	gap	MOD-81	10.0.11	托管桥替代（MOD-81，AT-SPI over D-Bus）；无原生入口
+libwpfwin32.so	TextRange_Move	gap	MOD-81	10.0.11	托管桥替代（MOD-81，AT-SPI over D-Bus）；无原生入口
+libwpfwin32.so	TextRange_MoveEndpointByRange	gap	MOD-81	10.0.11	托管桥替代（MOD-81，AT-SPI over D-Bus）；无原生入口
+libwpfwin32.so	TextRange_MoveEndpointByUnit	gap	MOD-81	10.0.11	托管桥替代（MOD-81，AT-SPI over D-Bus）；无原生入口
+libwpfwin32.so	TextRange_RemoveFromSelection	gap	MOD-81	10.0.11	托管桥替代（MOD-81，AT-SPI over D-Bus）；无原生入口
+libwpfwin32.so	TextRange_ScrollIntoView	gap	MOD-81	10.0.11	托管桥替代（MOD-81，AT-SPI over D-Bus）；无原生入口
+libwpfwin32.so	TextRange_Select	gap	MOD-81	10.0.11	托管桥替代（MOD-81，AT-SPI over D-Bus）；无原生入口
+libwpfwin32.so	ToUnicode	gap	MOD-11	10.0.11	无实现（user32）
+libwpfwin32.so	TogglePattern_Toggle	gap	MOD-81	10.0.11	托管桥替代（MOD-81，AT-SPI over D-Bus）；无原生入口
+libwpfwin32.so	TraceEvent	gap	MOD-15	10.0.11	无实现（advapi32）
+libwpfwin32.so	TrackMouseEvent	impl	MOD-11	10.0.11
+libwpfwin32.so	TrackPopupMenuEx	impl	MOD-11	10.0.11
+libwpfwin32.so	TransformPattern_Move	gap	MOD-81	10.0.11	托管桥替代（MOD-81，AT-SPI over D-Bus）；无原生入口
+libwpfwin32.so	TransformPattern_Resize	gap	MOD-81	10.0.11	托管桥替代（MOD-81，AT-SPI over D-Bus）；无原生入口
+libwpfwin32.so	TransformPattern_Rotate	gap	MOD-81	10.0.11	托管桥替代（MOD-81，AT-SPI over D-Bus）；无原生入口
+libwpfwin32.so	TranslateMessage	impl	MOD-11	10.0.11
+libwpfwin32.so	TransparentBlt	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	UiaAddEvent	gap	MOD-81	10.0.11	托管桥替代（MOD-81，AT-SPI over D-Bus）；无原生入口
+libwpfwin32.so	UiaClientsAreListening	gap	MOD-81	10.0.11	托管桥替代（MOD-81，AT-SPI over D-Bus）；无原生入口
+libwpfwin32.so	UiaEventAddWindow	gap	MOD-81	10.0.11	托管桥替代（MOD-81，AT-SPI over D-Bus）；无原生入口
+libwpfwin32.so	UiaEventRemoveWindow	gap	MOD-81	10.0.11	托管桥替代（MOD-81，AT-SPI over D-Bus）；无原生入口
+libwpfwin32.so	UiaFind	gap	MOD-81	10.0.11	托管桥替代（MOD-81，AT-SPI over D-Bus）；无原生入口
+libwpfwin32.so	UiaGetErrorDescription	gap	MOD-81	10.0.11	托管桥替代（MOD-81，AT-SPI over D-Bus）；无原生入口
+libwpfwin32.so	UiaGetPatternProvider	gap	MOD-81	10.0.11	托管桥替代（MOD-81，AT-SPI over D-Bus）；无原生入口
+libwpfwin32.so	UiaGetPropertyValue	gap	MOD-81	10.0.11	托管桥替代（MOD-81，AT-SPI over D-Bus）；无原生入口
+libwpfwin32.so	UiaGetReservedMixedAttributeValue	gap	MOD-81	10.0.11	托管桥替代（MOD-81，AT-SPI over D-Bus）；无原生入口
+libwpfwin32.so	UiaGetReservedNotSupportedValue	gap	MOD-81	10.0.11	托管桥替代（MOD-81，AT-SPI over D-Bus）；无原生入口
+libwpfwin32.so	UiaGetRootNode	gap	MOD-81	10.0.11	托管桥替代（MOD-81，AT-SPI over D-Bus）；无原生入口
+libwpfwin32.so	UiaGetRuntimeId	gap	MOD-81	10.0.11	托管桥替代（MOD-81，AT-SPI over D-Bus）；无原生入口
+libwpfwin32.so	UiaGetUpdatedCache	gap	MOD-81	10.0.11	托管桥替代（MOD-81，AT-SPI over D-Bus）；无原生入口
+libwpfwin32.so	UiaHPatternObjectFromVariant	gap	MOD-81	10.0.11	托管桥替代（MOD-81，AT-SPI over D-Bus）；无原生入口
+libwpfwin32.so	UiaHTextRangeFromVariant	gap	MOD-81	10.0.11	托管桥替代（MOD-81，AT-SPI over D-Bus）；无原生入口
+libwpfwin32.so	UiaHUiaNodeFromVariant	gap	MOD-81	10.0.11	托管桥替代（MOD-81，AT-SPI over D-Bus）；无原生入口
+libwpfwin32.so	UiaHasServerSideProvider	gap	MOD-81	10.0.11	托管桥替代（MOD-81，AT-SPI over D-Bus）；无原生入口
+libwpfwin32.so	UiaHostProviderFromHwnd	gap	MOD-81	10.0.11	托管桥替代（MOD-81，AT-SPI over D-Bus）；无原生入口
+libwpfwin32.so	UiaLookupId	gap	MOD-81	10.0.11	托管桥替代（MOD-81，AT-SPI over D-Bus）；无原生入口
+libwpfwin32.so	UiaNavigate	gap	MOD-81	10.0.11	托管桥替代（MOD-81，AT-SPI over D-Bus）；无原生入口
+libwpfwin32.so	UiaNodeFromFocus	gap	MOD-81	10.0.11	托管桥替代（MOD-81，AT-SPI over D-Bus）；无原生入口
+libwpfwin32.so	UiaNodeFromHandle	gap	MOD-81	10.0.11	托管桥替代（MOD-81，AT-SPI over D-Bus）；无原生入口
+libwpfwin32.so	UiaNodeFromPoint	gap	MOD-81	10.0.11	托管桥替代（MOD-81，AT-SPI over D-Bus）；无原生入口
+libwpfwin32.so	UiaNodeFromProvider	gap	MOD-81	10.0.11	托管桥替代（MOD-81，AT-SPI over D-Bus）；无原生入口
+libwpfwin32.so	UiaNodeRelease	gap	MOD-81	10.0.11	托管桥替代（MOD-81，AT-SPI over D-Bus）；无原生入口
+libwpfwin32.so	UiaPatternRelease	gap	MOD-81	10.0.11	托管桥替代（MOD-81，AT-SPI over D-Bus）；无原生入口
+libwpfwin32.so	UiaRaiseActiveTextPositionChangedEvent	gap	MOD-81	10.0.11	托管桥替代（MOD-81，AT-SPI over D-Bus）；无原生入口
+libwpfwin32.so	UiaRaiseAsyncContentLoadedEvent	gap	MOD-81	10.0.11	托管桥替代（MOD-81，AT-SPI over D-Bus）；无原生入口
+libwpfwin32.so	UiaRaiseAutomationEvent	gap	MOD-81	10.0.11	托管桥替代（MOD-81，AT-SPI over D-Bus）；无原生入口
+libwpfwin32.so	UiaRaiseAutomationPropertyChangedEvent	gap	MOD-81	10.0.11	托管桥替代（MOD-81，AT-SPI over D-Bus）；无原生入口
+libwpfwin32.so	UiaRaiseNotificationEvent	gap	MOD-81	10.0.11	托管桥替代（MOD-81，AT-SPI over D-Bus）；无原生入口
+libwpfwin32.so	UiaRaiseStructureChangedEvent	gap	MOD-81	10.0.11	托管桥替代（MOD-81，AT-SPI over D-Bus）；无原生入口
+libwpfwin32.so	UiaRegisterProviderCallback	gap	MOD-81	10.0.11	托管桥替代（MOD-81，AT-SPI over D-Bus）；无原生入口
+libwpfwin32.so	UiaRemoveEvent	gap	MOD-81	10.0.11	托管桥替代（MOD-81，AT-SPI over D-Bus）；无原生入口
+libwpfwin32.so	UiaReturnRawElementProvider	gap	MOD-81	10.0.11	托管桥替代（MOD-81，AT-SPI over D-Bus）；无原生入口
+libwpfwin32.so	UiaSetFocus	gap	MOD-81	10.0.11	托管桥替代（MOD-81，AT-SPI over D-Bus）；无原生入口
+libwpfwin32.so	UiaTextRangeRelease	gap	MOD-81	10.0.11	托管桥替代（MOD-81，AT-SPI over D-Bus）；无原生入口
+libwpfwin32.so	UnhookWinEvent	impl	MOD-11	10.0.11
+libwpfwin32.so	UnhookWindowsHookEx	impl	MOD-11	10.0.11
+libwpfwin32.so	UnionRect	gap	MOD-11	10.0.11	无实现（user32）
+libwpfwin32.so	UnlockWispObjectFromGit	gap	MOD-84	10.0.11	PenImc 替身（MOD-84，libinput/XInput2）；未实现
+libwpfwin32.so	UnmapViewOfFile	impl	MOD-15	10.0.11
+libwpfwin32.so	UnregisterClass	impl	MOD-11	10.0.11
+libwpfwin32.so	UnregisterClassA	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	UnregisterClassW	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	UnregisterHotKey	gap	MOD-11	10.0.11	无实现（user32）
+libwpfwin32.so	UnregisterPowerSettingNotification	impl	MOD-11	10.0.11
+libwpfwin32.so	UnregisterTraceGuids	gap	MOD-15	10.0.11	无实现（advapi32）
+libwpfwin32.so	UpdateLayeredWindow	impl	MOD-11	10.0.11
+libwpfwin32.so	UpdatePanningFeedback	impl	MOD-04	10.0.11
+libwpfwin32.so	UpdatePanningFeedbackW	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	UpdateWindow	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	ValidateRect	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	ValuePattern_SetValue	gap	MOD-81	10.0.11	托管桥替代（MOD-81，AT-SPI over D-Bus）；无原生入口
+libwpfwin32.so	VariantClear	gap	MOD-63	10.0.11	无实现（oleaut32）
+libwpfwin32.so	VirtualAlloc	gap	MOD-15	10.0.11	无实现（kernel32）
+libwpfwin32.so	VirtualAllocEx	gap	MOD-15	10.0.11	无实现（kernel32）
+libwpfwin32.so	VirtualFree	gap	MOD-15	10.0.11	无实现（kernel32）
+libwpfwin32.so	VirtualFreeEx	gap	MOD-15	10.0.11	无实现（kernel32）
+libwpfwin32.so	VirtualizedItemPattern_Realize	gap	MOD-81	10.0.11	托管桥替代（MOD-81，AT-SPI over D-Bus）；无原生入口
+libwpfwin32.so	VkKeyScan	gap	MOD-11	10.0.11	无实现（user32）
+libwpfwin32.so	WTSFreeMemory	impl	MOD-15	10.0.11
+libwpfwin32.so	WTSQuerySessionInformation	impl	MOD-15	10.0.11
+libwpfwin32.so	WTSQuerySessionInformationA	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	WTSQuerySessionInformationW	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	WTSRegisterSessionNotification	impl	MOD-15	10.0.11
+libwpfwin32.so	WTSUnRegisterSessionNotification	impl	MOD-15	10.0.11
+libwpfwin32.so	WaitForMultipleObjectsEx	impl	MOD-15	10.0.11
+libwpfwin32.so	WaitForSingleObject	gap	MOD-15	10.0.11	无实现（kernel32）
+libwpfwin32.so	WideCharToMultiByte	gap	MOD-15	10.0.11	无实现（kernel32）
+libwpfwin32.so	WindowFromAccessibleObject	gap	MOD-63	10.0.11	无实现（oleacc）
+libwpfwin32.so	WindowFromPhysicalPoint	gap	MOD-11	10.0.11	无实现（user32）
+libwpfwin32.so	WindowFromPoint	impl	MOD-11	10.0.11
+libwpfwin32.so	WindowPattern_Close	gap	MOD-81	10.0.11	托管桥替代（MOD-81，AT-SPI over D-Bus）；无原生入口
+libwpfwin32.so	WindowPattern_SetWindowVisualState	gap	MOD-81	10.0.11	托管桥替代（MOD-81，AT-SPI over D-Bus）；无原生入口
+libwpfwin32.so	WindowPattern_WaitForInputIdle	gap	MOD-81	10.0.11	托管桥替代（MOD-81，AT-SPI over D-Bus）；无原生入口
+libwpfwin32.so	WindowsCreateString	gap	MOD-02	10.0.11	无实现（api-ms-win-core-winrt-string）
+libwpfwin32.so	WindowsCreateStringReference	gap	MOD-02	10.0.11	无实现（api-ms-win-core-winrt-string）
+libwpfwin32.so	WindowsDeleteString	gap	MOD-02	10.0.11	无实现（api-ms-win-core-winrt-string）
+libwpfwin32.so	WindowsDuplicateString	gap	MOD-02	10.0.11	无实现（api-ms-win-core-winrt-string）
+libwpfwin32.so	WindowsGetStringRawBuffer	gap	MOD-02	10.0.11	无实现（api-ms-win-core-winrt-string）
+libwpfwin32.so	WriteProcessMemory	gap	MOD-15	10.0.11	无实现（kernel32）
+libwpfwin32.so	int	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	keybd_event	impl	MOD-11	10.0.11
+libwpfwin32.so	lstrlen	gap	MOD-15	10.0.11	无实现（kernel32）
+libwpfwin32.so	mmioAscend	gap	MOD-83	10.0.11	无实现（winmm）
+libwpfwin32.so	mmioClose	gap	MOD-83	10.0.11	无实现（winmm）
+libwpfwin32.so	mmioDescend	gap	MOD-83	10.0.11	无实现（winmm）
+libwpfwin32.so	mmioOpenW	gap	MOD-83	10.0.11	无实现（winmm）
+libwpfwin32.so	mmioRead	gap	MOD-83	10.0.11	无实现（winmm）
+libwpfwin32.so	mouse_event	impl	MOD-11	10.0.11

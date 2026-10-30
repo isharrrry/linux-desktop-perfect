@@ -1,0 +1,201 @@
+{
+  "scr": "SCR-01",
+  "source": "界面设计说明 §2",
+  "generated_from": "界面图/build-wireframe.mjs --emit-expect（与结构图读同一张表）",
+  "nodes": [
+    {
+      "path": "0",
+      "role": "frame",
+      "name": "WpfFirstWindow",
+      "states": [
+        "showing",
+        "active",
+        "!iconified"
+      ],
+      "actions": [
+        "focus"
+      ],
+      "acc": [
+        "ACC-009",
+        "ACC-027"
+      ],
+      "bounds": null,
+      "value": null,
+      "relations": []
+    },
+    {
+      "path": "0/0",
+      "role": "label",
+      "name": "与标题一致",
+      "states": [
+        "visible"
+      ],
+      "actions": [],
+      "acc": [
+        "ACC-009",
+        "ACC-027"
+      ],
+      "bounds": null,
+      "value": null,
+      "relations": []
+    },
+    {
+      "path": "0/1",
+      "role": "entry",
+      "name": "输入样本",
+      "states": [
+        "enabled",
+        "editable",
+        "focusable"
+      ],
+      "actions": [
+        "set-text",
+        "focus"
+      ],
+      "acc": [
+        "ACC-010",
+        "ACC-027"
+      ],
+      "bounds": null,
+      "value": null,
+      "relations": []
+    },
+    {
+      "path": "0/2",
+      "role": "push button",
+      "name": "提交",
+      "states": [
+        "enabled",
+        "sensitive"
+      ],
+      "actions": [
+        "click"
+      ],
+      "acc": [
+        "ACC-010",
+        "ACC-027"
+      ],
+      "bounds": null,
+      "value": null,
+      "relations": []
+    },
+    {
+      "path": "0/3",
+      "role": "push button",
+      "name": "不可用示例",
+      "states": [
+        "!enabled",
+        "!sensitive"
+      ],
+      "actions": [
+        "—（负向断言）"
+      ],
+      "acc": [
+        "ACC-010",
+        "ACC-027"
+      ],
+      "bounds": null,
+      "value": null,
+      "relations": []
+    },
+    {
+      "path": "0/4",
+      "role": "status bar",
+      "name": "状态",
+      "states": [
+        "visible"
+      ],
+      "actions": [],
+      "acc": [
+        "ACC-011",
+        "ACC-026",
+        "ACC-027"
+      ],
+      "bounds": null,
+      "value": null,
+      "relations": []
+    },
+    {
+      "path": "0/4/0",
+      "role": "label",
+      "name": "正则 DPI [0-9]{3} \\([0-9]{2,3}%\\)",
+      "states": [
+        "visible"
+      ],
+      "actions": [],
+      "acc": [
+        "ACC-011",
+        "ACC-027"
+      ],
+      "bounds": null,
+      "value": null,
+      "relations": []
+    },
+    {
+      "path": "0/4/1",
+      "role": "label",
+      "name": "正则 composite=(true|false)",
+      "states": [
+        "visible"
+      ],
+      "actions": [],
+      "acc": [
+        "ACC-026",
+        "ACC-027"
+      ],
+      "bounds": null,
+      "value": null,
+      "relations": []
+    },
+    {
+      "path": "0/4/2",
+      "role": "label",
+      "name": "正则 hwnd=0x[0-9a-f]+",
+      "states": [
+        "visible"
+      ],
+      "actions": [],
+      "acc": [
+        "ACC-009",
+        "ACC-027"
+      ],
+      "bounds": null,
+      "value": null,
+      "relations": []
+    },
+    {
+      "path": "0/5",
+      "role": "drawing area",
+      "name": "几何画布",
+      "states": [
+        "visible"
+      ],
+      "actions": [],
+      "acc": [
+        "ACC-007",
+        "ACC-011"
+      ],
+      "bounds": null,
+      "value": null,
+      "relations": []
+    },
+    {
+      "path": "0/6",
+      "role": "push button",
+      "name": "放大 150%",
+      "states": [
+        "enabled"
+      ],
+      "actions": [
+        "click"
+      ],
+      "acc": [
+        "ACC-011",
+        "ACC-027"
+      ],
+      "bounds": null,
+      "value": null,
+      "relations": []
+    }
+  ]
+}

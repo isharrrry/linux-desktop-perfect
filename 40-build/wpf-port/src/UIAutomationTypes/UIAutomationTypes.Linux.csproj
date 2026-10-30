@@ -1,0 +1,116 @@
+<Project>
+  <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk" />
+  <Import Project="$(MSBuildThisFileDirectory)../../../Linux/build/Directory.Upstream.props" />
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <AssemblyName>UIAutomationTypes</AssemblyName>
+    <RootNamespace>MS.Internal</RootNamespace>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <EnableDefaultEmbeddedResourceItems>false</EnableDefaultEmbeddedResourceItems>
+    <NoWarn>$(NoWarn);0618;CS3016;CS0067;CS0169;CS0414;CS0649;CS1591;CS8632;CS0219;CS8981;CA1416;CA1420;WPF0001</NoWarn>
+    <DefineConstants>UIAUTOMATIONTYPES;WINDOWS_BASE_OR_PC</DefineConstants>
+    <LangVersion>latest</LangVersion>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <EnablePInvokeAnalyzer>false</EnablePInvokeAnalyzer>
+    <ProduceReferenceAssembly>false</ProduceReferenceAssembly>
+    <SignAssembly>true</SignAssembly>
+    <PublicSign>true</PublicSign>
+    <AssemblyOriginatorKeyFile>$(WpfLinuxRoot)src/Linux/build/keys/WcpPublicKey.snk</AssemblyOriginatorKeyFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System.Xaml"><HintPath>$(WpfLinuxRoot)src/Microsoft.DotNet.Wpf.Linux/src/System.Xaml/bin/$(Configuration)/System.Xaml.dll</HintPath><Private>true</Private></Reference>
+    <Reference Include="WindowsBase"><HintPath>$(WpfLinuxRoot)src/Microsoft.DotNet.Wpf.Linux/src/WindowsBase/bin/$(Configuration)/WindowsBase.dll</HintPath><Private>true</Private></Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/Common/src/System/SR.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/Shared/RefAssemblyAttrs.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/Shared/System/Windows/Interop/OperatingSystemVersion.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/Shared/System/Windows/Interop/OSVersionHelper.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/Shared/MS/Win32/ExternDll.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/Shared/MS/Win32/HandleCollector.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/Shared/MS/Win32/LoadLibraryHelper.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/Shared/MS/Win32/NativeMethodsCLR.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/Shared/MS/Win32/NativeMethodsOther.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/Shared/MS/Win32/NativeMethodsSetLastError.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/Shared/MS/Win32/UnsafeNativeMethodsCLR.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/UIAutomation/UIAutomationTypes/MS/Internal/Automation/AutomationIdentifierConstants.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/UIAutomation/UIAutomationTypes/MS/Internal/Automation/CodeQuality_Approved.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/UIAutomation/UIAutomationTypes/MS/Internal/Automation/UiaCoreTypesApi.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/UIAutomation/UIAutomationTypes/System/Windows/Automation/ActiveTextPositionChangedEventArgs.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/UIAutomation/UIAutomationTypes/System/Windows/Automation/AsyncContentLoadedEventArgs.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/UIAutomation/UIAutomationTypes/System/Windows/Automation/AsyncContentLoadedState.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/UIAutomation/UIAutomationTypes/System/Windows/Automation/AutomationElementIdentifiers.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/UIAutomation/UIAutomationTypes/System/Windows/Automation/AutomationEvent.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/UIAutomation/UIAutomationTypes/System/Windows/Automation/AutomationEventArgs.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/UIAutomation/UIAutomationTypes/System/Windows/Automation/AutomationIdentifier.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/UIAutomation/UIAutomationTypes/System/Windows/Automation/AutomationNotificationKind.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/UIAutomation/UIAutomationTypes/System/Windows/Automation/AutomationNotificationProcessing.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/UIAutomation/UIAutomationTypes/System/Windows/Automation/AutomationPattern.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/UIAutomation/UIAutomationTypes/System/Windows/Automation/AutomationProperty.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/UIAutomation/UIAutomationTypes/System/Windows/Automation/AutomationPropertyChangedEventArgs.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/UIAutomation/UIAutomationTypes/System/Windows/Automation/AutomationTextAttribute.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/UIAutomation/UIAutomationTypes/System/Windows/Automation/ControlType.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/UIAutomation/UIAutomationTypes/System/Windows/Automation/DockPatternIdentifiers.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/UIAutomation/UIAutomationTypes/System/Windows/Automation/ElementNotAvailableException.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/UIAutomation/UIAutomationTypes/System/Windows/Automation/ElementNotEnabledException.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/UIAutomation/UIAutomationTypes/System/Windows/Automation/ExpandCollapsePatternIdentifiers.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/UIAutomation/UIAutomationTypes/System/Windows/Automation/GridItemPatternIdentifiers.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/UIAutomation/UIAutomationTypes/System/Windows/Automation/GridPatternIdentifiers.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/UIAutomation/UIAutomationTypes/System/Windows/Automation/InvokePatternIdentifiers.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/UIAutomation/UIAutomationTypes/System/Windows/Automation/ItemContainerPatternIdentifiers.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/UIAutomation/UIAutomationTypes/System/Windows/Automation/MultipleViewPatternIdentifiers.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/UIAutomation/UIAutomationTypes/System/Windows/Automation/NoClickablePointException.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/UIAutomation/UIAutomationTypes/System/Windows/Automation/NotificationEventArgs.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/UIAutomation/UIAutomationTypes/System/Windows/Automation/OrientationType.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/UIAutomation/UIAutomationTypes/System/Windows/Automation/ProxyAssemblyNotLoadedException.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/UIAutomation/UIAutomationTypes/System/Windows/Automation/RangeValuePatternIdentifiers.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/UIAutomation/UIAutomationTypes/System/Windows/Automation/ScrollItemPatternIdentifiers.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/UIAutomation/UIAutomationTypes/System/Windows/Automation/ScrollPatternIdentifiers.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/UIAutomation/UIAutomationTypes/System/Windows/Automation/SelectionItemPatternIdentifiers.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/UIAutomation/UIAutomationTypes/System/Windows/Automation/SelectionPatternIdentifiers.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/UIAutomation/UIAutomationTypes/System/Windows/Automation/StructureChangedEventArgs.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/UIAutomation/UIAutomationTypes/System/Windows/Automation/SynchronizedInputPatternIdentifiers.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/UIAutomation/UIAutomationTypes/System/Windows/Automation/TableItemPatternIdentifiers.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/UIAutomation/UIAutomationTypes/System/Windows/Automation/TablePatternIdentifiers.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/UIAutomation/UIAutomationTypes/System/Windows/Automation/TextPatternIdentifiers.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/UIAutomation/UIAutomationTypes/System/Windows/Automation/TogglePatternIdentifiers.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/UIAutomation/UIAutomationTypes/System/Windows/Automation/TransformPatternIdentifiers.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/UIAutomation/UIAutomationTypes/System/Windows/Automation/TreeScope.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/UIAutomation/UIAutomationTypes/System/Windows/Automation/ValuePatternIdentifiers.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/UIAutomation/UIAutomationTypes/System/Windows/Automation/VirtualizedItemPatternIdentifiers.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/UIAutomation/UIAutomationTypes/System/Windows/Automation/WindowClosedEventArgs.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/UIAutomation/UIAutomationTypes/System/Windows/Automation/WindowPatternIdentifiers.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/UIAutomation/UIAutomationTypes/System/Windows/Automation/Text/TextEnums.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/UIAutomation/UIAutomationTypes/System/Windows/Automation/Provider/IRawElementProviderSimple.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/UIAutomation/UIAutomationTypes/System/Windows/Automation/Provider/ITextRangeProvider.cs" />
+    <Compile Include="$(WpfLinuxRoot)src/Microsoft.DotNet.Wpf.Linux/src/UIAutomationTypes/SR.g.cs" />
+  </ItemGroup>
+  <!-- WPF-on-Linux 兼容层：src/Microsoft.DotNet.Wpf.Linux/src/shims 下手写的等价类型（上游零改动） -->
+  <ItemGroup>
+    <Compile Include="$(WpfLinuxRoot)src/Microsoft.DotNet.Wpf.Linux/src/shims/Win32ShimResolver.cs" />
+    <Compile Include="$(WpfLinuxRoot)src/Microsoft.DotNet.Wpf.Linux/src/shims/Accessibility.Shim.cs" />
+  </ItemGroup>
+  <!-- 自产程序集身份：AssemblyVersion 4.0.0.1，必须 > 框架门面的 4.0.0.0 -->
+  <ItemGroup>
+    <Compile Include="$(WpfLinuxRoot)src/Microsoft.DotNet.Wpf.Linux/src/shims/LinuxAssemblyIdentity.cs" />
+  </ItemGroup>
+  <!-- 程序集清单资源：ManifestResourceName 必须显式（RootNamespace 被本脚本统一为
+       MS.Internal，靠 SDK 推导会与 gen-sr.py 的 SR 基名不一致 → 资源表静默失效） -->
+  <ItemGroup>
+    <EmbeddedResource Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/UIAutomation/UIAutomationTypes/Resources/Strings.resx">
+      <ManifestResourceName>UIAutomationTypes.Resources.Strings</ManifestResourceName>
+    </EmbeddedResource>
+  </ItemGroup>
+  <!-- ==== WPF-on-Linux D2：UIA 保留值短路（由 src/Linux/tools/patch-uiautomationtypes-reservedvalue.py 注入）==== -->
+  <ItemGroup>
+    <Compile Remove="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/UIAutomation/UIAutomationTypes/MS/Internal/Automation/UiaCoreTypesApi.cs" />
+    <Compile Include="$(WpfLinuxRoot)src/Microsoft.DotNet.Wpf.Linux/src/UIAutomationTypes/UiaCoreTypesApi.Linux.cs" />
+  </ItemGroup>
+  <!-- ==== WPF-on-Linux D2 结束 ==== -->
+  <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
+</Project>

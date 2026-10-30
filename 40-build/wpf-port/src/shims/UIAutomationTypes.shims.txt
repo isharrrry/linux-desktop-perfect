@@ -1,0 +1,2 @@
+src/Microsoft.DotNet.Wpf.Linux/src/shims/Win32ShimResolver.cs
+src/Microsoft.DotNet.Wpf.Linux/src/shims/Accessibility.Shim.cs

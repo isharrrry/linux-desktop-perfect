@@ -1,0 +1,182 @@
+{
+  "scr": "SCR-03",
+  "source": "界面设计说明 §4",
+  "generated_from": "界面图/build-wireframe.mjs --emit-expect（与结构图读同一张表）",
+  "nodes": [
+    {
+      "path": "0/0",
+      "role": "list",
+      "name": "格式",
+      "states": [
+        "enabled"
+      ],
+      "actions": [
+        "select"
+      ],
+      "acc": [
+        "ACC-018",
+        "ACC-027"
+      ],
+      "bounds": null,
+      "value": null,
+      "relations": []
+    },
+    {
+      "path": "0/0/0",
+      "role": "list item",
+      "name": "png",
+      "states": [
+        "selected"
+      ],
+      "actions": [
+        "click"
+      ],
+      "acc": [
+        "ACC-018",
+        "ACC-027"
+      ],
+      "bounds": null,
+      "value": null,
+      "relations": []
+    },
+    {
+      "path": "0/0/1",
+      "role": "list item",
+      "name": "jpeg",
+      "states": [
+        "selectable"
+      ],
+      "actions": [
+        "click"
+      ],
+      "acc": [
+        "ACC-018",
+        "ACC-027"
+      ],
+      "bounds": null,
+      "value": null,
+      "relations": []
+    },
+    {
+      "path": "0/0/2",
+      "role": "list item",
+      "name": "gif",
+      "states": [
+        "selectable"
+      ],
+      "actions": [
+        "click"
+      ],
+      "acc": [
+        "ACC-018",
+        "ACC-027"
+      ],
+      "bounds": null,
+      "value": null,
+      "relations": []
+    },
+    {
+      "path": "0/0/3",
+      "role": "list item",
+      "name": "bmp",
+      "states": [
+        "selectable"
+      ],
+      "actions": [
+        "click"
+      ],
+      "acc": [
+        "ACC-018",
+        "ACC-027"
+      ],
+      "bounds": null,
+      "value": null,
+      "relations": []
+    },
+    {
+      "path": "0/0/4",
+      "role": "list item",
+      "name": "tiff",
+      "states": [
+        "selectable"
+      ],
+      "actions": [
+        "click"
+      ],
+      "acc": [
+        "ACC-018",
+        "ACC-027"
+      ],
+      "bounds": null,
+      "value": null,
+      "relations": []
+    },
+    {
+      "path": "0/1",
+      "role": "image",
+      "name": "当前文件名",
+      "states": [
+        "visible"
+      ],
+      "actions": [],
+      "acc": [
+        "ACC-018",
+        "ACC-019"
+      ],
+      "bounds": null,
+      "value": null,
+      "relations": []
+    },
+    {
+      "path": "0/2",
+      "role": "label",
+      "name": "正则 \\d+×\\d+ [a-z]+",
+      "states": [
+        "visible"
+      ],
+      "actions": [],
+      "acc": [
+        "ACC-018",
+        "ACC-027"
+      ],
+      "bounds": null,
+      "value": null,
+      "relations": []
+    },
+    {
+      "path": "0/3",
+      "role": "check box",
+      "name": "应用 ICC",
+      "states": [
+        "enabled",
+        "checkable"
+      ],
+      "actions": [
+        "click"
+      ],
+      "acc": [
+        "ACC-019",
+        "ACC-027"
+      ],
+      "bounds": null,
+      "value": null,
+      "relations": []
+    },
+    {
+      "path": "0/4",
+      "role": "label",
+      "name": "正则 ΔE(00)?=[0-9.]+",
+      "states": [
+        "visible"
+      ],
+      "actions": [],
+      "acc": [
+        "ACC-019",
+        "ACC-027"
+      ],
+      "bounds": null,
+      "value": null,
+      "relations": []
+    }
+  ]
+}

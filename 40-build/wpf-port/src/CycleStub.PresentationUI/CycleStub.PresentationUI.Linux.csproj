@@ -1,0 +1,173 @@
+<Project>
+  <!--
+    ==========================================================================
+    CycleStub.PresentationUI —— PresentationUI 的**编译期/运行期最小替身**
+    ==========================================================================
+    为什么存在（结构性理由）：
+      PresentationFramework.csproj:1377 引用
+        $(WpfCycleBreakersDir)PresentationUI\PresentationUI-PresentationFramework-impl-cycle.csproj
+      用来拿到 MS.Internal.Documents.FindToolBar（PresentationUI 的文档查找工具条），
+      以打破 PresentationFramework ⇄ PresentationUI 的编译期循环。
+      而**本仓库的上游快照里没有 CycleBreakers/ 目录**（实测 find 为空），该工程不可移植。
+
+    为什么不做「真移植」：
+      FindToolBar 是**带 BAML 的控件**（PresentationUI/MS/Internal/Documents/FindToolBar.xaml，
+      根元素 `<ToolBar>`，code-behind 依赖 InitializeComponent() 生成的 BAML 装载代码）。
+      要真编它需要：PresentationUI 工程 + XAML 标记编译链 + 它自己的主题资源；
+      而它又依赖 PresentationFramework（循环）→ 仍需 cycle-breaker。
+      结论：按主控裁定走 stub 口径 —— 保留公开 API 形态，行为不伪造。
+
+    本替身的形态（逐项来自真源码 PresentationUI/MS/Internal/Documents/FindToolBar.xaml.cs）：
+      internal partial class FindToolBar（真基类 = System.Windows.Controls.ToolBar，见 FindToolBar.xaml 根元素）
+        · ctor、SearchText(get)、SearchUp(get/set)、MatchCase/MatchWholeWord/MatchDiacritic/
+          MatchKashida/MatchAlefHamza(get/set)、DocumentLoaded(get/set)、FindEnabled(get)、
+          event EventHandler FindClicked、GoToTextBox()
+      PF 实测用到的 11 个成员全部覆盖（见 ApiSubset 文件内注释）。
+      基类改取 System.Windows.UIElement（PresentationCore）+ 自声明 SetResourceReference：
+      真基类 ToolBar 属 PresentationFramework，替身若继承它会形成
+      「PF → PresentationUI 替身 → 真 PF」的**编译期**循环（运行期允许、编译期不行）。
+
+    身份与运行期语义：
+      · AssemblyName = **PresentationUI**、AssemblyVersion 4.0.0.1、WCP 公开签名
+        → 身份与未来真移植的 PresentationUI.dll 相同，可直接替换。
+      · 本替身**就是**当前运行期的 PresentationUI（未移植真件），因此
+        PF 对 FindToolBar 的调用会走到这里的空实现：工具条**不含任何模板/按钮**，
+        查找功能不可用（文档查看器的 Find 按钮不会出现）。
+        ⇒ 这是**明确的运行期功能降级**，与「伪造可用行为」无关：没有任何方法假装成功，
+           GoToTextBox()/事件均不产生虚假结果；找不到模板时 PF 自己的
+           `PART_FindToolBarHost` 逻辑会走它原有的空引用分支。
+      · 恢复条件：移植 PresentationUI（含 BAML 标记编译 + 其主题资源）后，
+        产出同名 PresentationUI.dll 覆盖本替身即可（身份一致）。
+
+    参考方：PresentationFramework.Linux.csproj 的 <Private>true</Private>（要随 PF 一起进输出目录）。
+    ==========================================================================
+  -->
+  <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk" />
+  <Import Project="$(MSBuildThisFileDirectory)../../../Linux/build/Directory.Upstream.props" />
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <AssemblyName>PresentationUI</AssemblyName>
+    <RootNamespace>MS.Internal</RootNamespace>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <EnableDefaultEmbeddedResourceItems>false</EnableDefaultEmbeddedResourceItems>
+    <!-- CS8002：本替身公开签名而 WindowsBase 在本工程中未签名（主控口径）—— 上游两者都签名故无此警告；
+         CS0067：FindClicked 在替身里无人订阅（真实实现里由 XAML 模板订阅） -->
+    <NoWarn>$(NoWarn);0618;CS1591;CS8002;CS0067;CA1416;CA1420;WPF0001</NoWarn>
+    <LangVersion>latest</LangVersion>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <ProduceReferenceAssembly>false</ProduceReferenceAssembly>
+    <SignAssembly>true</SignAssembly>
+    <PublicSign>true</PublicSign>
+    <AssemblyOriginatorKeyFile>$(WpfLinuxRoot)src/Linux/build/keys/WcpPublicKey.snk</AssemblyOriginatorKeyFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Reference Include="PresentationCore"><HintPath>$(WpfLinuxRoot)src/Microsoft.DotNet.Wpf.Linux/src/PresentationCore/bin/$(WpfLinuxSelfBuiltConfiguration)/PresentationCore.dll</HintPath><Private>true</Private></Reference>
+    <Reference Include="System.Xaml"><HintPath>$(WpfLinuxRoot)src/Microsoft.DotNet.Wpf.Linux/src/System.Xaml/bin/$(WpfLinuxSelfBuiltConfiguration)/System.Xaml.dll</HintPath><Private>true</Private></Reference>
+    <Reference Include="WindowsBase"><HintPath>$(WpfLinuxRoot)src/Microsoft.DotNet.Wpf.Linux/src/WindowsBase/bin/$(WpfLinuxSelfBuiltConfiguration)/WindowsBase.dll</HintPath><Private>true</Private></Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="FindToolBar.ApiSubset.cs" />
+    <Compile Include="$(WpfLinuxRoot)src/Microsoft.DotNet.Wpf.Linux/src/shims/LinuxAssemblyIdentity.cs" />
+  </ItemGroup>
+
+  <!-- ==== WPF-on-Linux 补丁块 A（T-B16，Sdk.targets 之前）：reapply-patches.py 追加 ==== -->
+  <!-- ============================================================================
+       WPF-on-Linux 补丁 A（`T-B16`）：主题字典输入项 ＋ 标记编译链 ＋ 标记编译期类型源
+       ============================================================================
+       ① `_PresentationBuildTasksAssembly` 必须在 Sdk.targets 之前设值
+          （Microsoft.WinFX.targets 的定义带 Condition="…==''"，先设值者胜）。
+       ② 自产 PF 的 `<Reference>`：**只**为标记编译期解析 `FlowDocumentPageViewer` /
+          `DocumentPageView` / `AdornerDecorator`（都在 PF）——用 HintPath 引用**已建成的** PF，
+          不是 ProjectReference ⇒ 不引入「PF ⇄ PresentationUI」工程引用环。
+          `Private=false`：不要把 PF 复制进本替身的输出目录。
+       ③ `<Page Themes/Generic.xaml>`：`Generator=MSBuild:Compile`；`UseWPF=false` 时 SDK 不再
+          提供 XAML 通配（那套定义在 Microsoft.NET.Sdk.WindowsDesktop.props，条件 UseWPF=true）
+          ⇒ 必须显式声明（照 `PresentationFramework.Classic.Linux` 已验证的一套）。
+       ============================================================================ -->
+  <PropertyGroup>
+    <PbtLinuxDir>$(WpfLinuxRoot)src/Microsoft.DotNet.Wpf.Linux/src/PresentationBuildTasks/</PbtLinuxDir>
+    <PbtLinuxConfiguration Condition="'$(PbtLinuxConfiguration)' == ''">Release</PbtLinuxConfiguration>
+    <_PresentationBuildTasksAssembly>$([System.IO.Path]::GetFullPath('$(PbtLinuxDir)bin/$(PbtLinuxConfiguration)/net10.0/PresentationBuildTasks.dll'))</_PresentationBuildTasksAssembly>
+    <DefaultXamlRuntime Condition="'$(DefaultXamlRuntime)' == ''">Wpf</DefaultXamlRuntime>
+    <!-- ⚠️ 闸：**缺省关**（照 T-B11/T-B13 的处置）。开着时页宿主确实被接出来了，但
+         (a) tab3 帧面判据不成立、(b) 该序形态下 tab2 帧变、(c) 新增一条 `E_HANDLE` ⇒
+         不默认启用。`-p:WpfLinuxPresentationUITheme=true` 才开（可复现）。 -->
+    <WpfLinuxPresentationUITheme Condition="'$(WpfLinuxPresentationUITheme)' == ''">false</WpfLinuxPresentationUITheme>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(WpfLinuxPresentationUITheme)' == 'true'">
+    <Reference Include="PresentationFramework">
+      <HintPath>$(WpfLinuxRoot)src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework/bin/Release/PresentationFramework.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(WpfLinuxPresentationUITheme)' == 'true'">
+    <Compile Include="ThemeInfo.Linux.cs" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(WpfLinuxPresentationUITheme)' == 'true'">
+    <Page Include="Themes/Generic.xaml">
+      <Link>Themes\Generic.xaml</Link>
+      <Generator>MSBuild:Compile</Generator>
+      <XamlRuntime>Wpf</XamlRuntime>
+      <SubType>Designer</SubType>
+    </Page>
+  </ItemGroup>
+  <!-- ==== 补丁块 A 结束（T-B16） ==== -->
+  <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
+  <!-- ==== WPF-on-Linux 补丁块 B（T-B16，Sdk.targets 之后）：reapply-patches.py 追加 ==== -->
+  <!-- ============================================================================
+       WPF-on-Linux 补丁 B（`T-B16`，Sdk.targets 之后）：标记编译链 ＋ 构建期自检
+       ============================================================================
+       ⚠️ net10.0 的 `TargetPlatformIdentifier` 为空，SDK **不会**自动导入 Microsoft.WinFX.targets
+          ⇒ MarkupCompilePass1/2、MainResourcesGeneration 整条 target 消失
+          ⇒ 后果是「构建成功但静默不产出 BAML」（Classic 的 T3 教训）。
+       ============================================================================ -->
+  <PropertyGroup>
+    <_WpfLinuxWinFXTargets>$(MSBuildSDKsPath)/Microsoft.NET.Sdk.WindowsDesktop/targets/Microsoft.WinFX.targets</_WpfLinuxWinFXTargets>
+  </PropertyGroup>
+  <Import Project="$(_WpfLinuxWinFXTargets)" Condition="Exists('$(_WpfLinuxWinFXTargets)')" />
+  <Import Project="$(WpfLinuxRoot)src/Linux/build/WpfMarkupCompile.Linux.targets" />
+
+  <!-- 摘掉 PBT 生成的 GeneratedInternalTypeHelper.g.cs（同 Classic 补丁 F：WindowsBase 对本
+       程序集授了 IVT ⇒ override 必须 `protected internal`，而 PBT 生成 `protected` ⇒ CS0507；
+       本 XAML 引用的本地类型 `PresentationUIStyleResources` 是 public，helper 用不到）。 -->
+  <Target Name="WpfLinuxPuiDropInternalTypeHelper"
+          AfterTargets="MarkupCompilePass1" BeforeTargets="CoreCompile">
+    <ItemGroup>
+      <_WpfPuiIth Include="@(Compile)" Condition="'%(Filename)' == 'GeneratedInternalTypeHelper'" />
+    </ItemGroup>
+    <ItemGroup>
+      <Compile Remove="@(_WpfPuiIth)" />
+    </ItemGroup>
+    <WriteLinesToFile File="$(IntermediateOutputPath)GeneratedInternalTypeHelper.g.cs"
+                      Lines="// WPF-on-Linux：内容按 `T-B16` 清空（等价 PBT 的 InternalTypeHelperNotRequired 行为）。"
+                      Overwrite="true"
+                      Condition="Exists('$(IntermediateOutputPath)GeneratedInternalTypeHelper.g.cs')" />
+  </Target>
+
+  <!-- 构建期自检：BAML 真的产出了吗（「构建成功但没有 BAML」是最难查的失败）。
+       只在闸开时自检（闸关时工程里没有 Page 项，自检会误报）。 -->
+  <Target Name="WpfLinuxPuiAssertBamlAndThemeInfo" AfterTargets="MainResourcesGeneration"
+          Condition="'$(WpfLinuxPresentationUITheme)' == 'true'">
+    <Error Condition="!Exists('$(_WpfLinuxWinFXTargets)')"
+           Text="找不到 SDK 的 WPF 标记编译 targets：$(_WpfLinuxWinFXTargets)" />
+    <Error Condition="!Exists('$(_PresentationBuildTasksAssembly)')"
+           Text="找不到 Linux 版标记编译器：$(_PresentationBuildTasksAssembly)" />
+    <ItemGroup>
+      <_WpfPuiBaml Include="@(Page->'$(IntermediateOutputPath)%(RelativeDir)%(Filename).baml')" />
+    </ItemGroup>
+    <Error Condition="'@(_WpfPuiBaml)' == ''" Text="工程里没有 Page 输入项 —— XAML 编译链没接上。" />
+    <Error Condition="!Exists('%(_WpfPuiBaml.Identity)')"
+           Text="XAML 未编译成 BAML：%(_WpfPuiBaml.Identity)" />
+    <Message Importance="high" Text="PresentationUI 主题 BAML：@(_WpfPuiBaml)" />
+  </Target>
+  <!-- ==== 补丁块 B 结束（T-B16） ==== -->
+</Project>

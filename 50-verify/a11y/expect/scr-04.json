@@ -1,0 +1,381 @@
+{
+  "scr": "SCR-04",
+  "source": "界面设计说明 §5",
+  "generated_from": "界面图/build-wireframe.mjs --emit-expect（与结构图读同一张表）",
+  "nodes": [
+    {
+      "path": "0/0",
+      "role": "combo box",
+      "name": "主题",
+      "states": [
+        "enabled",
+        "expandable"
+      ],
+      "actions": [
+        "expand",
+        "select"
+      ],
+      "acc": [
+        "ACC-020",
+        "ACC-027"
+      ],
+      "bounds": null,
+      "value": null,
+      "relations": []
+    },
+    {
+      "path": "0/1/0",
+      "role": "push button",
+      "name": "按钮",
+      "states": [
+        "enabled"
+      ],
+      "actions": [
+        "click"
+      ],
+      "acc": [
+        "ACC-006",
+        "ACC-027"
+      ],
+      "bounds": null,
+      "value": null,
+      "relations": []
+    },
+    {
+      "path": "0/1/1",
+      "role": "entry",
+      "name": "文本",
+      "states": [
+        "editable",
+        "enabled"
+      ],
+      "actions": [
+        "set-text"
+      ],
+      "acc": [
+        "ACC-006",
+        "ACC-027"
+      ],
+      "bounds": null,
+      "value": null,
+      "relations": []
+    },
+    {
+      "path": "0/1/2",
+      "role": "check box",
+      "name": "复选",
+      "states": [
+        "checkable",
+        "enabled"
+      ],
+      "actions": [
+        "click"
+      ],
+      "acc": [
+        "ACC-006",
+        "ACC-027"
+      ],
+      "bounds": null,
+      "value": null,
+      "relations": []
+    },
+    {
+      "path": "0/1/3",
+      "role": "radio button",
+      "name": "单选",
+      "states": [
+        "checkable",
+        "enabled"
+      ],
+      "actions": [
+        "click"
+      ],
+      "acc": [
+        "ACC-006",
+        "ACC-027"
+      ],
+      "bounds": null,
+      "value": null,
+      "relations": []
+    },
+    {
+      "path": "0/1/4",
+      "role": "slider",
+      "name": "滑杆",
+      "states": [
+        "enabled",
+        "focusable"
+      ],
+      "actions": [
+        "focus（值改走键盘注入）"
+      ],
+      "acc": [
+        "ACC-006",
+        "ACC-027"
+      ],
+      "bounds": null,
+      "value": null,
+      "relations": []
+    },
+    {
+      "path": "0/2/0",
+      "role": "list",
+      "name": "列表",
+      "states": [
+        "enabled"
+      ],
+      "actions": [
+        "select"
+      ],
+      "acc": [
+        "ACC-006",
+        "ACC-027"
+      ],
+      "bounds": null,
+      "value": null,
+      "relations": []
+    },
+    {
+      "path": "0/2/0/0",
+      "role": "list item",
+      "name": "正则 项 \\d+",
+      "states": [
+        "selectable"
+      ],
+      "actions": [
+        "click"
+      ],
+      "acc": [
+        "ACC-006",
+        "ACC-027"
+      ],
+      "bounds": null,
+      "value": null,
+      "relations": []
+    },
+    {
+      "path": "0/2/1",
+      "role": "combo box",
+      "name": "下拉",
+      "states": [
+        "expandable"
+      ],
+      "actions": [
+        "expand",
+        "select"
+      ],
+      "acc": [
+        "ACC-006",
+        "ACC-027"
+      ],
+      "bounds": null,
+      "value": null,
+      "relations": []
+    },
+    {
+      "path": "0/2/2",
+      "role": "table",
+      "name": "表格",
+      "states": [
+        "enabled"
+      ],
+      "actions": [
+        "scroll"
+      ],
+      "acc": [
+        "ACC-006",
+        "ACC-027"
+      ],
+      "bounds": null,
+      "value": null,
+      "relations": []
+    },
+    {
+      "path": "0/2/2/0/0",
+      "role": "table cell",
+      "name": "名称",
+      "states": [
+        "visible"
+      ],
+      "actions": [],
+      "acc": [
+        "ACC-006",
+        "ACC-027"
+      ],
+      "bounds": null,
+      "value": null,
+      "relations": []
+    },
+    {
+      "path": "0/3/0",
+      "role": "page tab list",
+      "name": "选项卡",
+      "states": [
+        "enabled"
+      ],
+      "actions": [],
+      "acc": [
+        "ACC-006",
+        "ACC-027"
+      ],
+      "bounds": null,
+      "value": null,
+      "relations": []
+    },
+    {
+      "path": "0/3/0/0",
+      "role": "page tab",
+      "name": "第一页",
+      "states": [
+        "selected"
+      ],
+      "actions": [
+        "click"
+      ],
+      "acc": [
+        "ACC-006",
+        "ACC-027"
+      ],
+      "bounds": null,
+      "value": null,
+      "relations": []
+    },
+    {
+      "path": "0/3/1",
+      "role": "panel",
+      "name": "分组",
+      "states": [
+        "visible"
+      ],
+      "actions": [],
+      "acc": [
+        "ACC-006",
+        "ACC-027"
+      ],
+      "bounds": null,
+      "value": null,
+      "relations": []
+    },
+    {
+      "path": "0/3/2",
+      "role": "panel",
+      "name": "折叠",
+      "states": [
+        "expandable",
+        "!expanded"
+      ],
+      "actions": [
+        "expand"
+      ],
+      "acc": [
+        "ACC-006",
+        "ACC-027"
+      ],
+      "bounds": null,
+      "value": null,
+      "relations": []
+    },
+    {
+      "path": "0/4",
+      "role": "tool bar",
+      "name": "Ribbon",
+      "states": [
+        "visible"
+      ],
+      "actions": [],
+      "acc": [
+        "ACC-021",
+        "ACC-027"
+      ],
+      "bounds": null,
+      "value": null,
+      "relations": []
+    },
+    {
+      "path": "0/4/0",
+      "role": "page tab",
+      "name": "开始",
+      "states": [
+        "selected"
+      ],
+      "actions": [
+        "click"
+      ],
+      "acc": [
+        "ACC-021",
+        "ACC-027"
+      ],
+      "bounds": null,
+      "value": null,
+      "relations": []
+    },
+    {
+      "path": "0/4/1",
+      "role": "panel",
+      "name": "剪贴板",
+      "states": [
+        "visible"
+      ],
+      "actions": [],
+      "acc": [
+        "ACC-021",
+        "ACC-027"
+      ],
+      "bounds": null,
+      "value": null,
+      "relations": []
+    },
+    {
+      "path": "0/4/1/0",
+      "role": "push button",
+      "name": "粘贴",
+      "states": [
+        "enabled"
+      ],
+      "actions": [
+        "click"
+      ],
+      "acc": [
+        "ACC-021",
+        "ACC-027"
+      ],
+      "bounds": null,
+      "value": null,
+      "relations": []
+    },
+    {
+      "path": "0/5",
+      "role": "combo box",
+      "name": "缩放",
+      "states": [
+        "expandable"
+      ],
+      "actions": [
+        "select"
+      ],
+      "acc": [
+        "ACC-011",
+        "ACC-027"
+      ],
+      "bounds": null,
+      "value": null,
+      "relations": []
+    },
+    {
+      "path": "0/6",
+      "role": "label",
+      "name": "正则 frames=\\d+",
+      "states": [
+        "visible"
+      ],
+      "actions": [],
+      "acc": [
+        "ACC-007",
+        "ACC-027"
+      ],
+      "bounds": null,
+      "value": null,
+      "relations": []
+    }
+  ]
+}

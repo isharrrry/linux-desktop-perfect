@@ -1,0 +1,237 @@
+{
+  "schema_version": "1.0",
+  "doc_version": "0.1",
+  "date": "2026-10-30",
+  "description": "LinuxDesktopPerfect 设计文档包的机器可读模型：编号族的计数、范围与定义方。文档与模型不一致即红（#编号检查器 / #覆盖检查器）。",
+  "counts": {
+    "requirements": 30,
+    "acceptance": 30,
+    "nonFunctional": 7,
+    "externalInterfaces": 7,
+    "decisions": 4,
+    "adrs": 15,
+    "modules": 38,
+    "systems": 8,
+    "risks": 13,
+    "stateMachines": 8,
+    "interfaces": 23,
+    "tables": 12,
+    "safety": 20,
+    "screens": 7,
+    "gaps": 12,
+    "testGates": 15
+  },
+  "ranges": {
+    "REQ-FN": [
+      1,
+      30
+    ],
+    "ACC": [
+      1,
+      30
+    ],
+    "NF": [
+      1,
+      7
+    ],
+    "XIF": [
+      1,
+      7
+    ],
+    "DQ": [
+      1,
+      4
+    ],
+    "ADR": [
+      1,
+      15
+    ],
+    "SYS": [
+      1,
+      8
+    ],
+    "R": [
+      1,
+      13
+    ],
+    "SM": [
+      1,
+      8
+    ],
+    "TBL": [
+      1,
+      12
+    ],
+    "SAFE": [
+      1,
+      20
+    ],
+    "SCR": [
+      1,
+      7
+    ],
+    "GAP": [
+      1,
+      12
+    ],
+    "TG": [
+      1,
+      15
+    ]
+  },
+  "moduleGroups": [
+    [
+      1,
+      6
+    ],
+    [
+      11,
+      17
+    ],
+    [
+      21,
+      25
+    ],
+    [
+      31,
+      36
+    ],
+    [
+      41,
+      42
+    ],
+    [
+      51,
+      53
+    ],
+    [
+      61,
+      63
+    ],
+    [
+      81,
+      86
+    ]
+  ],
+  "moduleNameDigits": 2,
+  "interfaceGroups": {
+    "ABI": [
+      1,
+      6
+    ],
+    "DUCE": [
+      11,
+      14
+    ],
+    "PACK": [
+      21,
+      24
+    ],
+    "IME": [
+      31,
+      31
+    ],
+    "PRINT": [
+      41,
+      41
+    ],
+    "A11Y": [
+      51,
+      53
+    ],
+    "MEDIA": [
+      61,
+      61
+    ],
+    "INTERNAL": [
+      71,
+      73
+    ]
+  },
+  "definitionOwners": {
+    "REQ-FN": "20-spec/需求与验收判据文档.md",
+    "ACC": "20-spec/需求与验收判据文档.md",
+    "NF": "20-spec/需求与验收判据文档.md",
+    "XIF": "20-spec/需求与验收判据文档.md",
+    "DQ": "20-spec/需求与验收判据文档.md",
+    "ADR": "30-design/概要设计.md",
+    "MOD": "30-design/概要设计.md",
+    "SYS": "30-design/概要设计.md",
+    "R": "30-design/概要设计.md",
+    "SM": "30-design/设计文档包/03-软件设计说明.md",
+    "IF": "30-design/设计文档包/04-接口设计说明.md",
+    "TBL": "30-design/设计文档包/05-数据与清单设计说明.md",
+    "SAFE": "30-design/设计文档包/06-安全性设计支撑材料.md",
+    "SCR": "30-design/设计文档包/界面设计说明.md",
+    "GAP": "30-design/设计文档包/界面设计说明.md",
+    "TG": "30-design/设计文档包/08-判据先行与界面检测设计说明.md"
+  },
+  "designLocatedIn": {
+    "MOD": "30-design/设计文档包/03-软件设计说明.md",
+    "TG": "30-design/设计文档包/08-判据先行与界面检测设计说明.md",
+    "SCR": "30-design/设计文档包/界面设计说明.md"
+  },
+  "specialFaces": 12,
+  "duceCommands": 118,
+  "milExports": 18,
+  "contractFiles": [
+    "exports.txt",
+    "win32_abi.h",
+    "DUCE 布局表",
+    "FrameworkList"
+  ],
+  "skeletonDirs": [
+    "00-admin",
+    "10-input",
+    "20-spec",
+    "30-design",
+    "30-design/设计文档包",
+    "30-design/checks",
+    "30-design/model",
+    "30-design/assets",
+    "40-build",
+    "40-build/upstream",
+    "40-build/upstream/wpf",
+    "40-build/appliers",
+    "40-build/wpf-port",
+    "40-build/native-shim",
+    "40-build/milcore",
+    "40-build/text-stack",
+    "40-build/wic-dwrite",
+    "40-build/pack",
+    "40-build/winforms-compat",
+    "40-build/service-adapters",
+    "50-verify",
+    "50-verify/读数",
+    "50-verify/index",
+    "50-verify/probe",
+    "50-verify/fake",
+    "50-verify/contract",
+    "50-verify/build",
+    "50-verify/render",
+    "50-verify/window",
+    "50-verify/text",
+    "50-verify/ime",
+    "50-verify/image",
+    "50-verify/theme",
+    "50-verify/media",
+    "50-verify/ink",
+    "50-verify/print",
+    "50-verify/doc",
+    "50-verify/compose",
+    "50-verify/a11y",
+    "50-verify/winforms",
+    "50-verify/perf",
+    "50-verify/degrade",
+    "60-deliver",
+    "70-operate",
+    "80-derived",
+    "90-archive",
+    "30-design/设计文档包/界面图",
+    "本体"
+  ],
+  "generatedDirs": [
+    "40-build/build",
+    "50-verify/读数/ACC-*"
+  ]
+}

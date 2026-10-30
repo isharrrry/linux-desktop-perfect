@@ -1,0 +1,44 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- ⭐ `D-R8`（工程卫生）：不依赖 `$(BaseIntermediateOutputPath)` 指向哪里的产物目录排除。
+       实现在仓根 `BuildHygiene.props`（全仓唯一一份；理由与两种被否决的落点见 `src/Linux/build/MilBridge/W21B-report.md` §2）。
+       **故意不加 `Exists()` 条件**：文件找不到要大声失败。 -->
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('BuildHygiene.props'))" />
+
+  <!--
+    T2 · Phase 1：DirectWriteForwarder 托管面的 **Linux 真实现**（Skia/FreeType 承载）。
+    =================================================================================
+    【这个工程是什么】
+      `src/Microsoft.DotNet.Wpf.Linux/src/DirectWriteForwarder/ManagedSurface.cs` 里有 65 处
+      PlatformNotSupportedException 占位。本工程提供它们的**可落地实现**：
+        · 字体族/字体面解析（文件 → SKTypeface，family/style 匹配 + 粗斜体回落）
+        · 度量 FontMetrics（ascent/descent/lineGap/cap/x-height/underline/strike，设计单位真值）
+        · 字形索引（UTF-16 → 码点 → glyph id，含代理对/孤立代理/未映射字符）
+        · 字形度量与 advance/定位（设计单位 → 像素，含 Display/GDI 兼容取整）
+        · OpenType 表访问（cmap/head/hhea/OS-2/post/hmtx/loca/glyf/name 直读）
+        · 字体文件分析（FontFile.Analyze）与信息字符串（GetInformationalStrings）
+        · IntPtr 句柄表（DWriteFontFaceAddRef / DWriteFontAddRef 的 Linux 等价物）
+
+    【它不是什么】
+      · 不是 COM/DWrite 的仿真层：没有任何 vtable，也不假装 `IDWriteFontFace*` 可用。
+      · 不含 shaping：GPOS/GSUB 不解释（Noto Sans 的 kern 也在 GPOS 里，Skia 的
+        旧 kern API 读不到），复杂脚本（阿拉伯/天城体/印度系）**本轮不做**。
+      · 不含 TrueTypeSubsetter（子集化）：见 REPORT.md 的降级清单。
+
+    【依赖】
+      只依赖 SkiaSharp 2.88.9（版本由 T0 锁定）+ NativeAssets.Linux。
+      不引用 WpfGfx.Linux、不引用 PresentationCore、不引用 DirectWriteForwarder 骨架 ——
+      方向是「骨架引用本工程」，反过来会成环。
+  -->
+
+  <PropertyGroup>
+    <AssemblyName>DirectWrite.Linux.Provider</AssemblyName>
+    <RootNamespace>MS.Internal.Text.TextInterface.Linux</RootNamespace>
+    <EnableDefaultCompileItems>true</EnableDefaultCompileItems>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="SkiaSharp" Version="$(SkiaSharpVersion)" />
+    <PackageReference Include="SkiaSharp.NativeAssets.Linux" Version="$(SkiaSharpVersion)" />
+  </ItemGroup>
+
+</Project>

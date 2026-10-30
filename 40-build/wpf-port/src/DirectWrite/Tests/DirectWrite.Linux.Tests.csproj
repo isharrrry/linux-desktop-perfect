@@ -1,0 +1,77 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- ⭐ `D-R8`（工程卫生）：不依赖 `$(BaseIntermediateOutputPath)` 指向哪里的产物目录排除。
+       实现在仓根 `BuildHygiene.props`（全仓唯一一份；理由与两种被否决的落点见 `src/Linux/build/MilBridge/W21B-report.md` §2）。
+       **故意不加 `Exists()` 条件**：文件找不到要大声失败。 -->
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('BuildHygiene.props'))" />
+
+  <!--
+    T2 · Phase 1：断言工程（探针的测试面）
+    =====================================================================================
+    四类断言：
+      1. 确定性   —— 同进程两次 + **跨进程**两次的摘要哈希一致（DigestTests）
+      2. 同源一致 —— 我们的度量/字形/advance 与 **Skia 直算**、与 **OpenType 表直读** 逐项一致
+                     （SkiaParityTests / OpenTypeOracleTests）
+      3. M1 一致  —— 与 M1 src/Microsoft.DotNet.Wpf.Linux/src/WpfGfx/Text/ 的 FontSet/GlyphRunLayout 对同输入结论相同
+                     （M1ConsistencyTests）
+      4. 边界     —— 空串 / 未映射字符 / 代理对 / 孤立代理 / 全 BMP 扫描 / 20 万字符
+                     （EdgeCaseTests / GlyphIndexTests）
+
+    【关于 M1 源码的链接方式（重要，避免"改了 src/ 却不知道"）】
+      M1 的 Text/ 类型是 internal，只对 WpfGfx.Linux.Windowing.Tests 开友元，
+      而 handoff §7 的目录边界不允许我们改 src/ 去加 InternalsVisibleTo。
+      所以这里用 <Compile Include="...Link="M1Link/..."> 把**那 4 个源文件本身**
+      编进本测试程序集：
+        · 不写 src/（只读它）：满足了"只允许写 src/Microsoft.DotNet.Wpf.Linux/src/DirectWrite/"的边界；
+        · 编的是同一份源码而非拷贝：src/ 一改，这里下次构建就跟上，
+          不会出现"验证的是三个月前的拷贝"这种事；
+        · 只链 4 个文件：FontSet(135) / GlyphRunLayout(162) / GlyphRunRequest(73) /
+          TextFontDescription(68) = 438 行，正好是"字体解析 + 排版数学"的全部；
+          Text/ 另外 4 个文件（TextRenderer/GlyphRunPainter/MilGlyphRunAdapter/
+          AssemblyInfo）是 MIL 与绘制的胶水，没有任何度量数学，链进来只会拖进
+          Resources/Contracts 的依赖。
+  -->
+
+  <PropertyGroup>
+    <AssemblyName>DirectWrite.Linux.Tests</AssemblyName>
+    <RootNamespace>MS.Internal.Text.TextInterface.Linux.Tests</RootNamespace>
+    <IsPackable>false</IsPackable>
+    <EnableDefaultCompileItems>true</EnableDefaultCompileItems>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
+    <PackageReference Include="xunit" Version="2.9.2" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2" />
+    <PackageReference Include="SkiaSharp" Version="$(SkiaSharpVersion)" />
+    <PackageReference Include="SkiaSharp.NativeAssets.Linux" Version="$(SkiaSharpVersion)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../Provider/DirectWrite.Linux.Provider.csproj" />
+    <!-- 探针只是被当**子进程**拉起（DigestTests），引用它只为保证构建顺序 -->
+    <ProjectReference Include="../Probe/DirectWrite.Linux.Probe.csproj" ReferenceOutputAssembly="false" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!--
+      摘要生成器：**同一个源文件**再编一份进本测试程序集。
+      这样"同进程两次"与"跨进程两次"比的是同一段计算（见 ProbeDigest.cs 的文件头）。
+    -->
+    <Compile Include="../Probe/ProbeDigest.cs" Link="Probe/ProbeDigest.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- M1 Text/ 的 5 个文件（原 4 个 + FontSet 新引用的 GlyphFaceCensus）（**只读** src/，编译进本程序集） -->
+    <Compile Include="$(RepoRoot)src/Microsoft.DotNet.Wpf.Linux/src/WpfGfx/Text/TextFontDescription.cs" Link="M1Link/TextFontDescription.cs" />
+    <Compile Include="$(RepoRoot)src/Microsoft.DotNet.Wpf.Linux/src/WpfGfx/Text/GlyphRunRequest.cs" Link="M1Link/GlyphRunRequest.cs" />
+    <Compile Include="$(RepoRoot)src/Microsoft.DotNet.Wpf.Linux/src/WpfGfx/Text/GlyphRunLayout.cs" Link="M1Link/GlyphRunLayout.cs" />
+    <Compile Include="$(RepoRoot)src/Microsoft.DotNet.Wpf.Linux/src/WpfGfx/Text/FontSet.cs" Link="M1Link/FontSet.cs" />
+    <Compile Include="$(RepoRoot)src/Microsoft.DotNet.Wpf.Linux/src/WpfGfx/Text/GlyphFaceCensus.cs" Link="M1Link/GlyphFaceCensus.cs" />
+    <!-- ⚠ 【维护约定】本清单是**显式**的（不是通配）：那 4 个 M1 源文件本身就是本测试的语义面，
+         通配会悄悄改变语义（新文件自动被拉进来）。⇒ **任何人给 src/Microsoft.DotNet.Wpf.Linux/src/WpfGfx/Text/ 新增
+         "被下列链接文件引用"的类型时，必须通知本工程维护者把该文件加进本清单**，
+         否则本工程会 CS0103 而主工程仍绿（主工程默认通配新文件 ⇒ 只有这里会红）。
+         例：FontSet.cs 引用 GlyphFaceCensus 后，本工程就红过（2026-09-11 修）。-->
+  </ItemGroup>
+
+</Project>

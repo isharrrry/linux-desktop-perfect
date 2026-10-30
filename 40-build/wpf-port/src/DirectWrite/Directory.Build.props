@@ -1,0 +1,46 @@
+<!--
+  src/Microsoft.DotNet.Wpf.Linux/src/DirectWrite/ —— T2 隔离 spike 的构建配置（**只对本目录以下生效**）。
+  ============================================================================
+  【为什么这里要放一个 Directory.Build.props】
+    这是本目录下三个工程（Provider / Probe / Tests）的唯一共同配置点：
+      · SkiaSharp 版本锁 2.88.9（T0 已裁决：4.x 有破坏性 API 变更，禁止升级）；
+      · net10.0 / Nullable=disable / ImplicitUsings=disable —— 与主工程一致；
+      · RepoRoot / DwRoot / FontsDir 三个路径变量，避免每个 csproj 各写一份相对路径。
+
+  【为什么它不会影响仓库里其它工程】
+    MSBuild 查找 Directory.Build.props 是**从工程目录向上、取最近的一个**。
+    仓库根目录没有 Directory.Build.props（实测），src/Linux/build/ 下也没有，
+    所以本文件只对本目录以下生效；反过来，本目录以下的工程也不会继承
+    将来可能出现的仓库根配置 —— 这是隔离 spike 想要的：
+    T2 的编译结果不随主控调整全局构建配置而漂移。
+-->
+<Project>
+
+  <PropertyGroup>
+    <!-- 仓库根：src/Microsoft.DotNet.Wpf.Linux/src/DirectWrite/../../../.. -->
+    <RepoRoot>$([MSBuild]::NormalizeDirectory('$(MSBuildThisFileDirectory)', '..', '..', '..', '..'))</RepoRoot>
+    <!-- 本目录根 -->
+    <DwRoot>$(MSBuildThisFileDirectory)</DwRoot>
+    <!-- 打包字体目录（确定性前提：SHA256SUMS 锁定的 4 份 Noto Sans）——落点在 src/Linux/build/fonts -->
+    <FontsDir>$([MSBuild]::NormalizeDirectory('$(RepoRoot)', 'src', 'Linux', 'build', 'fonts'))</FontsDir>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+    <IsPackable>false</IsPackable>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <!--
+      CS1591（缺 XML 注释）/ CS0649（字段未赋值）：与主工程同一套抑制口径，
+      避免"注释写少了导致编译失败"这种噪音。
+    -->
+    <NoWarn>$(NoWarn);CS1591;CS0649;CS0169;CA1416</NoWarn>
+    <SkiaSharpVersion>2.88.9</SkiaSharpVersion>
+  </PropertyGroup>
+
+</Project>

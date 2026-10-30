@@ -1,0 +1,67 @@
+# ARTIFACT-SRC-FP.txt 由 src/Linux/build/artifact-src-fp.py **生成**，不要手改。
+# 维度 A（src）：上游被编译的源 + 本工程生成物/垫片 + 决定它们的应用器脚本 + port-lib 输入
+# 维度 B（peer）：本工程 csproj 引用的**本仓内产物**字节（自指已排除）—— 2026-09-14 加
+#   【为什么】PF ⇄ Reach 真互引 ⇒ Roslyn 把被引件字节纳入输入哈希 ⇒ 该对无字节不动点、`pf` 每波必变；
+#   只覆盖 src 时 `state=ok` 是**必要不充分**（源没变、peer 变了 ⇒ 产物照样变）。
+# 排除：src/Linux/build/PresentationFramework.Linux/{bin,obj}/**、.artifacts/**、本文件自己
+# 重算比对：python3 src/Linux/build/artifact-src-fp.py --check（缺本文件 / 缺被引产物 / 旧格式 ⇒ noinfo，**不报绿**）
+fp=2e0e7dfb95cbe3ce
+n=1371
+peer_fp=245aed87b5301ba3
+peer_n=9
+tool_sha256=e978d6f4a345e4f90432ea63440cf507a11eaffb96c601e0e75dc04c197ee660
+# 被引产物（sha256 前 16 + 仓库相对路径；**产物字节**，不是源）
+peer=182828560ca94be0  src/Microsoft.DotNet.Wpf.Linux/src/CycleStub.PresentationUI/bin/Release/PresentationUI.dll
+peer=e0108ff2c98dddbd  src/Microsoft.DotNet.Wpf.Linux/src/PresentationCore/bin/Release/PresentationCore.dll
+peer=c9357ee240359755  src/Microsoft.DotNet.Wpf.Linux/src/ReachFramework/bin/Release/ReachFramework.dll
+peer=a71e177de2cb140d  src/Microsoft.DotNet.Wpf.Linux/src/System.Printing/bin/Release/System.Printing.dll
+peer=c34c8d128c29b75f  src/Microsoft.DotNet.Wpf.Linux/src/System.Windows.Extensions/bin/Release/System.Windows.Extensions.dll
+peer=ad433d7e151fa9a8  src/Microsoft.DotNet.Wpf.Linux/src/System.Xaml/bin/Release/System.Xaml.dll
+peer=4f68cf9dfa6b837e  src/Microsoft.DotNet.Wpf.Linux/src/UIAutomationProvider/bin/Release/UIAutomationProvider.dll
+peer=dae88cddb93738c6  src/Microsoft.DotNet.Wpf.Linux/src/UIAutomationTypes/bin/Release/UIAutomationTypes.dll
+peer=42a9c4728647fc7b  src/Microsoft.DotNet.Wpf.Linux/src/WindowsBase/bin/Release/WindowsBase.dll
+# 逐文件（**源侧**）：sha256 前 16 + 仓库相对路径；只列**本仓自有输入**（上游 `src/Microsoft.DotNet.Wpf/**` 不列，用 --list 看全量）
+file=b38e0b9cda89d702  src/Linux/build/port-lib.py
+file=03c7031a0aa2eaf3  src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework/Baml2006SchemaContext.Linux.cs
+file=287d08864e147219  src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework/ContainerParaClient.Linux.cs
+file=6d508ccc41d0e07b  src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework/DeferredTextReference.Linux.cs
+file=4c8edbc499b79a16  src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework/DocumentPageHost.Linux.cs
+file=5717fd2bab0da17d  src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework/DocumentPageView.Linux.cs
+file=3d9b8304945bc874  src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework/DocumentViewerBase.Linux.cs
+file=0236ea3c607560c5  src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework/FigureParaClient.Linux.cs
+file=7cf76f9329320bea  src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework/FlowDocumentFormatter.Linux.cs
+file=ccaa1fda3b359239  src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework/FlowDocumentPage.Linux.cs
+file=914b5abd6f9d0b18  src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework/FlowDocumentPaginator.Linux.cs
+file=5e2ab89a947213cf  src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework/FlowDocumentReader.Linux.cs
+file=36747aa3e50ddc32  src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework/FlowDocumentView.Linux.cs
+file=3af06981155e89aa  src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework/FrameworkElement.Linux.cs
+file=d5da15edc0530efb  src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework/PtsCache.Linux.cs
+file=3963ef305f0a81df  src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework/PtsHelper.Linux.cs
+file=2f14c854ca1138c5  src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework/PtsPage.Linux.cs
+file=8b8829d2a4ed015e  src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework/SR.g.cs
+file=e62edb1f82ba753a  src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework/SystemResources.Linux.cs
+file=6067276d0fc3a8da  src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework/TextBlock.Linux.cs
+file=6d769e8508f42b40  src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework/TextBox.Linux.cs
+file=a371e5b48b40447b  src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework/TextBoxBase.Linux.cs
+file=2859b73dd347fd8b  src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework/TextContainer.Linux.cs
+file=bb4f98dc236d5e25  src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework/TextEditorTyping.Linux.cs
+file=eb7a8568a54d284a  src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework/TextParaClient.Linux.cs
+file=5a0449ccc02e5433  src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework/Window.Linux.cs
+file=e1787fb13c4b5b62  src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework/WpfLinuxChainProbe.Linux.cs
+file=48a5c8501083b9f8  src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework/WpfLinuxCpDcpMapProbe.Linux.cs
+file=d35bd67eb6fa79f6  src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework/WpfLinuxEHandleProbe.Linux.cs
+file=5a3ad46f867c249c  src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework/WpfLinuxLineBreakProbe.Linux.cs
+file=1d22b92639d60a78  src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework/WpfLinuxLsSessionProbe.Linux.cs
+file=e2133cee9d585571  src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework/WpfLinuxPageVisProbe.Linux.cs
+file=7d1aa4d7b6c94fcc  src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework/WpfLinuxReaderPageHost.Linux.cs
+file=c52d91b02e673cee  src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework/WpfLinuxTextParaChainProbe.Linux.cs
+file=a895f2a6dd654ad1  src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework/WpfLinuxTextSrcProbe.Linux.cs
+file=1f252d8d7cf9372c  src/Microsoft.DotNet.Wpf.Linux/src/shims/LinuxAssemblyIdentity.cs
+file=8b26028f141b6959  src/Microsoft.DotNet.Wpf.Linux/src/shims/PresentationFramework.AssemblyAttrs.Shim.cs
+file=a76b6a7edd8bfd8a  src/Microsoft.DotNet.Wpf.Linux/src/shims/PresentationFramework.NrbfFrameworkObjects.Shim.cs
+file=92e3ab95b890416c  src/WpfGfx.Linux.Native/tools/patch-presentationframework-mirror-trace.py
+file=31bddc43cceb79d3  src/WpfGfx.Linux.Native/tools/patch-presentationframework-textbox-textdp-trace.py
+file=577ccb08c7e356ee  src/WpfGfx.Linux.Native/tools/patch-presentationframework-texteditor-trace.py
+file=7417118e0925d425  src/WpfGfx.Linux.Native/tools/patch-presentationframework-window-minmax-notify.py
+file=d9030585b4e8959d  src/WpfGfx.Linux.Native/tools/patch-presentationframework-xamlaccess.py
+file=cfe58bbf12622ec6  src/WpfGfx.Linux.Native/tools/patch-swe-linux.py

@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="860" height="468" viewBox="0 0 860 468" font-family="Noto Sans CJK SC, Source Han Sans SC, sans-serif">
+<rect width="860" height="468" fill="#ffffff"/>
+<text x="26" y="34" font-size="20" font-weight="700" fill="#111">SCR-01 窗口与消息泵样本</text>
+<text x="26" y="58" font-size="12" fill="#555">由《界面设计说明》§2 元素属性表生成：11 个可检测节点，3 层；左侧缩进表示 path 层级，右侧为 role · path · 状态/动作数</text>
+<text x="26" y="74" font-size="11" fill="#8a8a8a">路径即结构判据的 join 键；图与表不一致时以表为准并重跑本脚本（--check 会红）</text>
+<line x1="36" y1="74" x2="36" y2="402" stroke="#e2e2e2" stroke-width="1" stroke-dasharray="3 4"/>
+<line x1="60" y1="74" x2="60" y2="402" stroke="#e2e2e2" stroke-width="1" stroke-dasharray="3 4"/>
+<g data-path="0" data-role="frame" data-name="WpfFirstWindow">
+<rect x="26" y="78" width="808" height="24" rx="3" fill="#f7f7f7" stroke="#d0d0d0"/>
+<text x="34" y="94" font-size="12" fill="#111">主窗口</text>
+<text x="826" y="94" font-size="10" fill="#666" text-anchor="end">frame · 0 · 状态 3 / 动作 1 · ACC-009 ACC-027</text>
+</g>
+<g data-path="0/0" data-role="label" data-name="与标题一致">
+<rect x="50" y="108" width="784" height="24" rx="3" fill="#f7f7f7" stroke="#d0d0d0"/>
+<text x="58" y="124" font-size="12" fill="#111">窗口标题文本</text>
+<text x="826" y="124" font-size="10" fill="#666" text-anchor="end">label · 0/0 · 状态 1 / 动作 0 · ACC-009 ACC-027</text>
+</g>
+<g data-path="0/1" data-role="entry" data-name="输入样本">
+<rect x="50" y="138" width="784" height="24" rx="3" fill="#eef4ff" stroke="#7aa2e8"/>
+<text x="58" y="154" font-size="12" fill="#111">输入框</text>
+<text x="826" y="154" font-size="10" fill="#666" text-anchor="end">entry · 0/1 · 状态 3 / 动作 2 · ACC-010 ACC-027</text>
+</g>
+<g data-path="0/2" data-role="push button" data-name="提交">
+<rect x="50" y="168" width="784" height="24" rx="3" fill="#eef4ff" stroke="#7aa2e8"/>
+<text x="58" y="184" font-size="12" fill="#111">提交按钮</text>
+<text x="826" y="184" font-size="10" fill="#666" text-anchor="end">push button · 0/2 · 状态 2 / 动作 1 · ACC-010 ACC-027</text>
+</g>
+<g data-path="0/3" data-role="push button" data-name="不可用示例">
+<rect x="50" y="198" width="784" height="24" rx="3" fill="#eef4ff" stroke="#7aa2e8"/>
+<text x="58" y="214" font-size="12" fill="#111">禁用演示按钮</text>
+<text x="826" y="214" font-size="10" fill="#666" text-anchor="end">push button · 0/3 · 状态 2 / 动作 1 · ACC-010 ACC-027</text>
+</g>
+<g data-path="0/4" data-role="status bar" data-name="状态">
+<rect x="50" y="228" width="784" height="24" rx="3" fill="#f7f7f7" stroke="#d0d0d0"/>
+<text x="58" y="244" font-size="12" fill="#111">状态条根</text>
+<text x="826" y="244" font-size="10" fill="#666" text-anchor="end">status bar · 0/4 · 状态 1 / 动作 0 · ACC-011 ACC-026 ACC-027</text>
+</g>
+<g data-path="0/4/0" data-role="label" data-name="正则 DPI [0-9]{3} \([0-9]{2,3}%\)">
+<rect x="74" y="258" width="760" height="24" rx="3" fill="#f7f7f7" stroke="#d0d0d0"/>
+<text x="82" y="274" font-size="12" fill="#111">DPI 读数</text>
+<text x="826" y="274" font-size="10" fill="#666" text-anchor="end">label · 0/4/0 · 状态 1 / 动作 0 · ACC-011 ACC-027</text>
+</g>
+<g data-path="0/4/1" data-role="label" data-name="正则 composite=(true|false)">
+<rect x="74" y="288" width="760" height="24" rx="3" fill="#f7f7f7" stroke="#d0d0d0"/>
+<text x="82" y="304" font-size="12" fill="#111">合成读数</text>
+<text x="826" y="304" font-size="10" fill="#666" text-anchor="end">label · 0/4/1 · 状态 1 / 动作 0 · ACC-026 ACC-027</text>
+</g>
+<g data-path="0/4/2" data-role="label" data-name="正则 hwnd=0x[0-9a-f]+">
+<rect x="74" y="318" width="760" height="24" rx="3" fill="#f7f7f7" stroke="#d0d0d0"/>
+<text x="82" y="334" font-size="12" fill="#111">句柄读数</text>
+<text x="826" y="334" font-size="10" fill="#666" text-anchor="end">label · 0/4/2 · 状态 1 / 动作 0 · ACC-009 ACC-027</text>
+</g>
+<g data-path="0/5" data-role="drawing area" data-name="几何画布">
+<rect x="50" y="348" width="784" height="24" rx="3" fill="#f7f7f7" stroke="#d0d0d0"/>
+<text x="58" y="364" font-size="12" fill="#111">画布区</text>
+<text x="826" y="364" font-size="10" fill="#666" text-anchor="end">drawing area · 0/5 · 状态 1 / 动作 0 · ACC-007 ACC-011</text>
+</g>
+<g data-path="0/6" data-role="push button" data-name="放大 150%">
+<rect x="50" y="378" width="784" height="24" rx="3" fill="#eef4ff" stroke="#7aa2e8"/>
+<text x="58" y="394" font-size="12" fill="#111">缩放把手</text>
+<text x="826" y="394" font-size="10" fill="#666" text-anchor="end">push button · 0/6 · 状态 1 / 动作 1 · ACC-011 ACC-027</text>
+</g>
+<text x="26" y="444" font-size="10" fill="#8a8a8a">蓝框＝可交互节点（Button/Entry/Check/Radio/Slider 类）；全部节点须能在 AT-SPI 树快照中按 path 命中（TG-012 / ACC-027）</text>
+</svg>

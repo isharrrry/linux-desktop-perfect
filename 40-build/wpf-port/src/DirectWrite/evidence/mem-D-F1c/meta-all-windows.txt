@@ -1,0 +1,805 @@
+########## df1c-sysfont-A2 ##########
+CMD=bash -c export DOTNET_GCHeapHardLimit=0x80000000; exec dotnet '/home/links-dev/netTest/wpf-linux-20260906/wpf-linux/build/DirectWrite.Linux/FallbackCriteria/bin/Debug/FallbackCriteria.dll' --mode=all --strict-probe  PID=190632  START=2026-09-15 11:28:00
+RC=0
+PEAK_HWM_KB=3476872
+CPU_TICKS_LAST=1178（/100 = 秒；ticks 取自 /proc/<pid>/stat 的 utime+stime）
+WALL_S=12
+OPENED_FONT_FACES（maps ∪ fd 去重）：
+    /home/links-dev/netTest/wpf-linux-20260906/wpf-linux/build/fonts/NotoSans-Regular.ttf
+    /usr/share/fonts/opentype/malayalam/Chilanka-Regular.otf
+    /usr/share/fonts/opentype/malayalam/Gayathri-Bold.otf
+    /usr/share/fonts/opentype/malayalam/Gayathri-Regular.otf
+    /usr/share/fonts/opentype/malayalam/Gayathri-Thin.otf
+    /usr/share/fonts/opentype/malayalam/Manjari-Bold.otf
+    /usr/share/fonts/opentype/malayalam/Manjari-Regular.otf
+    /usr/share/fonts/opentype/malayalam/Manjari-Thin.otf
+    /usr/share/fonts/opentype/noto/NotoSansCJK-Black.ttc
+    /usr/share/fonts/opentype/noto/NotoSansCJK-Bold.ttc
+    /usr/share/fonts/opentype/noto/NotoSansCJK-DemiLight.ttc
+    /usr/share/fonts/opentype/noto/NotoSansCJK-Light.ttc
+    /usr/share/fonts/opentype/noto/NotoSansCJK-Medium.ttc
+    /usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc
+    /usr/share/fonts/opentype/noto/NotoSansCJK-Thin.ttc
+    /usr/share/fonts/opentype/noto/NotoSerifCJK-Black.ttc
+    /usr/share/fonts/opentype/noto/NotoSerifCJK-Bold.ttc
+    /usr/share/fonts/opentype/noto/NotoSerifCJK-ExtraLight.ttc
+    /usr/share/fonts/opentype/noto/NotoSerifCJK-Light.ttc
+    /usr/share/fonts/opentype/noto/NotoSerifCJK-Medium.ttc
+    /usr/share/fonts/opentype/noto/NotoSerifCJK-Regular.ttc
+    /usr/share/fonts/opentype/noto/NotoSerifCJK-SemiBold.ttc
+    /usr/share/fonts/opentype/urw-base35/C059-BdIta.otf
+    /usr/share/fonts/opentype/urw-base35/C059-Bold.otf
+    /usr/share/fonts/opentype/urw-base35/C059-Italic.otf
+    /usr/share/fonts/opentype/urw-base35/C059-Roman.otf
+    /usr/share/fonts/opentype/urw-base35/D050000L.otf
+    /usr/share/fonts/opentype/urw-base35/NimbusMonoPS-Bold.otf
+    /usr/share/fonts/opentype/urw-base35/NimbusMonoPS-BoldItalic.otf
+    /usr/share/fonts/opentype/urw-base35/NimbusMonoPS-Italic.otf
+    /usr/share/fonts/opentype/urw-base35/NimbusMonoPS-Regular.otf
+    /usr/share/fonts/opentype/urw-base35/NimbusRoman-Bold.otf
+    /usr/share/fonts/opentype/urw-base35/NimbusRoman-BoldItalic.otf
+    /usr/share/fonts/opentype/urw-base35/NimbusRoman-Italic.otf
+    /usr/share/fonts/opentype/urw-base35/NimbusRoman-Regular.otf
+    /usr/share/fonts/opentype/urw-base35/NimbusSans-Bold.otf
+    /usr/share/fonts/opentype/urw-base35/NimbusSans-BoldItalic.otf
+    /usr/share/fonts/opentype/urw-base35/NimbusSans-Italic.otf
+    /usr/share/fonts/opentype/urw-base35/NimbusSans-Regular.otf
+    /usr/share/fonts/opentype/urw-base35/NimbusSansNarrow-Bold.otf
+    /usr/share/fonts/opentype/urw-base35/NimbusSansNarrow-BoldOblique.otf
+    /usr/share/fonts/opentype/urw-base35/NimbusSansNarrow-Oblique.otf
+    /usr/share/fonts/opentype/urw-base35/NimbusSansNarrow-Regular.otf
+    /usr/share/fonts/opentype/urw-base35/P052-Bold.otf
+    /usr/share/fonts/opentype/urw-base35/P052-BoldItalic.otf
+    /usr/share/fonts/opentype/urw-base35/P052-Italic.otf
+    /usr/share/fonts/opentype/urw-base35/P052-Roman.otf
+    /usr/share/fonts/opentype/urw-base35/StandardSymbolsPS.otf
+    /usr/share/fonts/opentype/urw-base35/URWBookman-Demi.otf
+    /usr/share/fonts/opentype/urw-base35/URWBookman-DemiItalic.otf
+    /usr/share/fonts/opentype/urw-base35/URWBookman-Light.otf
+    /usr/share/fonts/opentype/urw-base35/URWBookman-LightItalic.otf
+    /usr/share/fonts/opentype/urw-base35/URWGothic-Book.otf
+    /usr/share/fonts/opentype/urw-base35/URWGothic-BookOblique.otf
+    /usr/share/fonts/opentype/urw-base35/URWGothic-Demi.otf
+    /usr/share/fonts/opentype/urw-base35/URWGothic-DemiOblique.otf
+    /usr/share/fonts/opentype/urw-base35/Z003-MediumItalic.otf
+    /usr/share/fonts/truetype/Gargi/Gargi.ttf
+    /usr/share/fonts/truetype/Gubbi/Gubbi.ttf
+    /usr/share/fonts/truetype/Nakula/nakula.ttf
+    /usr/share/fonts/truetype/Navilu/Navilu.ttf
+    /usr/share/fonts/truetype/Sahadeva/sahadeva.ttf
+    /usr/share/fonts/truetype/Sarai/Sarai.ttf
+    /usr/share/fonts/truetype/abyssinica/AbyssinicaSIL-Regular.ttf
+    /usr/share/fonts/truetype/arphic/ukai.ttc
+    /usr/share/fonts/truetype/arphic/uming.ttc
+    /usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf
+    /usr/share/fonts/truetype/dejavu/DejaVuSans.ttf
+    /usr/share/fonts/truetype/dejavu/DejaVuSansMono-Bold.ttf
+    /usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf
+    /usr/share/fonts/truetype/dejavu/DejaVuSerif-Bold.ttf
+    /usr/share/fonts/truetype/dejavu/DejaVuSerif.ttf
+    /usr/share/fonts/truetype/droid/DroidSansFallbackFull.ttf
+    /usr/share/fonts/truetype/fonts-beng-extra/Ani.ttf
+    /usr/share/fonts/truetype/fonts-beng-extra/JamrulNormal.ttf
+    /usr/share/fonts/truetype/fonts-beng-extra/LikhanNormal.ttf
+    /usr/share/fonts/truetype/fonts-beng-extra/MitraMono.ttf
+    /usr/share/fonts/truetype/fonts-beng-extra/Mukti.ttf
+    /usr/share/fonts/truetype/fonts-beng-extra/Muktibold.ttf
+    /usr/share/fonts/truetype/fonts-deva-extra/chandas1-2.ttf
+    /usr/share/fonts/truetype/fonts-deva-extra/kalimati.ttf
+    /usr/share/fonts/truetype/fonts-deva-extra/samanata.ttf
+    /usr/share/fonts/truetype/fonts-gujr-extra/Rekha.ttf
+    /usr/share/fonts/truetype/fonts-gujr-extra/aakar-medium.ttf
+    /usr/share/fonts/truetype/fonts-gujr-extra/padmaa-Bold.1.1.ttf
+    /usr/share/fonts/truetype/fonts-gujr-extra/padmaa-Medium-0.5.ttf
+    /usr/share/fonts/truetype/fonts-gujr-extra/padmaa.ttf
+    /usr/share/fonts/truetype/fonts-guru-extra/Saab.ttf
+    /usr/share/fonts/truetype/fonts-kalapi/Kalapi.ttf
+    /usr/share/fonts/truetype/fonts-orya-extra/utkal.ttf
+    /usr/share/fonts/truetype/fonts-telu-extra/Pothana2000.ttf
+    /usr/share/fonts/truetype/fonts-telu-extra/vemana2000.ttf
+    /usr/share/fonts/truetype/fonts-yrsa-rasa/Rasa-Bold.ttf
+    /usr/share/fonts/truetype/fonts-yrsa-rasa/Rasa-Light.ttf
+    /usr/share/fonts/truetype/fonts-yrsa-rasa/Rasa-Medium.ttf
+    /usr/share/fonts/truetype/fonts-yrsa-rasa/Rasa-Regular.ttf
+    /usr/share/fonts/truetype/fonts-yrsa-rasa/Rasa-SemiBold.ttf
+    /usr/share/fonts/truetype/fonts-yrsa-rasa/Yrsa-Bold.ttf
+    /usr/share/fonts/truetype/fonts-yrsa-rasa/Yrsa-BoldItalic.ttf
+    /usr/share/fonts/truetype/fonts-yrsa-rasa/Yrsa-Italic.ttf
+    /usr/share/fonts/truetype/fonts-yrsa-rasa/Yrsa-Light.ttf
+    /usr/share/fonts/truetype/fonts-yrsa-rasa/Yrsa-LightItalic.ttf
+    /usr/share/fonts/truetype/fonts-yrsa-rasa/Yrsa-Medium.ttf
+    /usr/share/fonts/truetype/fonts-yrsa-rasa/Yrsa-MediumItalic.ttf
+    /usr/share/fonts/truetype/fonts-yrsa-rasa/Yrsa-Regular.ttf
+    /usr/share/fonts/truetype/fonts-yrsa-rasa/Yrsa-SemiBold.ttf
+    /usr/share/fonts/truetype/fonts-yrsa-rasa/Yrsa-SemiBoldItalic.ttf
+    /usr/share/fonts/truetype/freefont/FreeMono.ttf
+    /usr/share/fonts/truetype/freefont/FreeMonoBold.ttf
+    /usr/share/fonts/truetype/freefont/FreeMonoBoldOblique.ttf
+    /usr/share/fonts/truetype/freefont/FreeMonoOblique.ttf
+    /usr/share/fonts/truetype/freefont/FreeSans.ttf
+    /usr/share/fonts/truetype/freefont/FreeSansBold.ttf
+    /usr/share/fonts/truetype/freefont/FreeSansBoldOblique.ttf
+    /usr/share/fonts/truetype/freefont/FreeSansOblique.ttf
+    /usr/share/fonts/truetype/freefont/FreeSerif.ttf
+    /usr/share/fonts/truetype/freefont/FreeSerifBold.ttf
+    /usr/share/fonts/truetype/freefont/FreeSerifBoldItalic.ttf
+    /usr/share/fonts/truetype/freefont/FreeSerifItalic.ttf
+    /usr/share/fonts/truetype/kacst-one/KacstOne-Bold.ttf
+    /usr/share/fonts/truetype/kacst-one/KacstOne.ttf
+    /usr/share/fonts/truetype/kacst/KacstArt.ttf
+    /usr/share/fonts/truetype/kacst/KacstBook.ttf
+    /usr/share/fonts/truetype/kacst/KacstDecorative.ttf
+    /usr/share/fonts/truetype/kacst/KacstDigital.ttf
+    /usr/share/fonts/truetype/kacst/KacstFarsi.ttf
+    /usr/share/fonts/truetype/kacst/KacstLetter.ttf
+    /usr/share/fonts/truetype/kacst/KacstNaskh.ttf
+    /usr/share/fonts/truetype/kacst/KacstOffice.ttf
+    /usr/share/fonts/truetype/kacst/KacstPen.ttf
+    /usr/share/fonts/truetype/kacst/KacstPoster.ttf
+    /usr/share/fonts/truetype/kacst/KacstQurn.ttf
+    /usr/share/fonts/truetype/kacst/KacstScreen.ttf
+    /usr/share/fonts/truetype/kacst/KacstTitle.ttf
+    /usr/share/fonts/truetype/kacst/KacstTitleL.ttf
+    /usr/share/fonts/truetype/kacst/mry_KacstQurn.ttf
+    /usr/share/fonts/truetype/lao/Phetsarath_OT.ttf
+    /usr/share/fonts/truetype/liberation/LiberationMono-Bold.ttf
+    /usr/share/fonts/truetype/liberation/LiberationMono-BoldItalic.ttf
+    /usr/share/fonts/truetype/liberation/LiberationMono-Italic.ttf
+    /usr/share/fonts/truetype/liberation/LiberationMono-Regular.ttf
+    /usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf
+    /usr/share/fonts/truetype/liberation/LiberationSans-BoldItalic.ttf
+    /usr/share/fonts/truetype/liberation/LiberationSans-Italic.ttf
+    /usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf
+    /usr/share/fonts/truetype/liberation/LiberationSansNarrow-Bold.ttf
+    /usr/share/fonts/truetype/liberation/LiberationSansNarrow-BoldItalic.ttf
+    /usr/share/fonts/truetype/liberation/LiberationSansNarrow-Italic.ttf
+    /usr/share/fonts/truetype/liberation/LiberationSansNarrow-Regular.ttf
+    /usr/share/fonts/truetype/liberation/LiberationSerif-Bold.ttf
+    /usr/share/fonts/truetype/liberation/LiberationSerif-BoldItalic.ttf
+    /usr/share/fonts/truetype/liberation/LiberationSerif-Italic.ttf
+    /usr/share/fonts/truetype/liberation/LiberationSerif-Regular.ttf
+    /usr/share/fonts/truetype/liberation2/LiberationMono-Bold.ttf
+    /usr/share/fonts/truetype/liberation2/LiberationMono-BoldItalic.ttf
+    /usr/share/fonts/truetype/liberation2/LiberationMono-Italic.ttf
+    /usr/share/fonts/truetype/liberation2/LiberationMono-Regular.ttf
+    /usr/share/fonts/truetype/liberation2/LiberationSans-Bold.ttf
+    /usr/share/fonts/truetype/liberation2/LiberationSans-BoldItalic.ttf
+    /usr/share/fonts/truetype/liberation2/LiberationSans-Italic.ttf
+    /usr/share/fonts/truetype/liberation2/LiberationSans-Regular.ttf
+    /usr/share/fonts/truetype/liberation2/LiberationSerif-Bold.ttf
+    /usr/share/fonts/truetype/liberation2/LiberationSerif-BoldItalic.ttf
+    /usr/share/fonts/truetype/liberation2/LiberationSerif-Italic.ttf
+    /usr/share/fonts/truetype/liberation2/LiberationSerif-Regular.ttf
+    /usr/share/fonts/truetype/libreoffice/opens___.ttf
+    /usr/share/fonts/truetype/lohit-assamese/Lohit-Assamese.ttf
+    /usr/share/fonts/truetype/lohit-bengali/Lohit-Bengali.ttf
+    /usr/share/fonts/truetype/lohit-devanagari/Lohit-Devanagari.ttf
+    /usr/share/fonts/truetype/lohit-gujarati/Lohit-Gujarati.ttf
+    /usr/share/fonts/truetype/lohit-kannada/Lohit-Kannada.ttf
+    /usr/share/fonts/truetype/lohit-malayalam/Lohit-Malayalam.ttf
+    /usr/share/fonts/truetype/lohit-oriya/Lohit-Odia.ttf
+    /usr/share/fonts/truetype/lohit-punjabi/Lohit-Gurmukhi.ttf
+    /usr/share/fonts/truetype/lohit-tamil-classical/Lohit-Tamil-Classical.ttf
+    /usr/share/fonts/truetype/lohit-tamil/Lohit-Tamil.ttf
+    /usr/share/fonts/truetype/lohit-telugu/Lohit-Telugu.ttf
+    /usr/share/fonts/truetype/malayalam/AnjaliOldLipi-Regular.ttf
+    /usr/share/fonts/truetype/malayalam/Dyuthi-Regular.ttf
+    /usr/share/fonts/truetype/malayalam/Karumbi-Regular.ttf
+    /usr/share/fonts/truetype/malayalam/Keraleeyam-Regular.ttf
+    /usr/share/fonts/truetype/malayalam/Meera-Regular.ttf
+    /usr/share/fonts/truetype/malayalam/Rachana-Bold.ttf
+    /usr/share/fonts/truetype/malayalam/Rachana-Regular.ttf
+    /usr/share/fonts/truetype/malayalam/RaghuMalayalamSans-Regular.ttf
+    /usr/share/fonts/truetype/malayalam/Suruma.ttf
+    /usr/share/fonts/truetype/malayalam/Uroob-Regular.ttf
+    /usr/share/fonts/truetype/noto/NotoColorEmoji.ttf
+    /usr/share/fonts/truetype/noto/NotoMono-Regular.ttf
+    /usr/share/fonts/truetype/noto/NotoSansMono-Bold.ttf
+    /usr/share/fonts/truetype/noto/NotoSansMono-Regular.ttf
+    /usr/share/fonts/truetype/padauk/Padauk-Bold.ttf
+    /usr/share/fonts/truetype/padauk/Padauk-Regular.ttf
+    /usr/share/fonts/truetype/padauk/PadaukBook-Bold.ttf
+    /usr/share/fonts/truetype/padauk/PadaukBook-Regular.ttf
+    /usr/share/fonts/truetype/pagul/Pagul.ttf
+    /usr/share/fonts/truetype/quicksand/Quicksand-Bold.ttf
+    /usr/share/fonts/truetype/quicksand/Quicksand-Light.ttf
+    /usr/share/fonts/truetype/quicksand/Quicksand-Medium.ttf
+    /usr/share/fonts/truetype/quicksand/Quicksand-Regular.ttf
+    /usr/share/fonts/truetype/samyak-fonts/Samyak-Gujarati.ttf
+    /usr/share/fonts/truetype/samyak-fonts/Samyak-Malayalam.ttf
+    /usr/share/fonts/truetype/samyak-fonts/Samyak-Tamil.ttf
+    /usr/share/fonts/truetype/samyak/Samyak-Devanagari.ttf
+    /usr/share/fonts/truetype/sinhala/lklug.ttf
+    /usr/share/fonts/truetype/teluguvijayam/Gidugu.ttf
+    /usr/share/fonts/truetype/teluguvijayam/Gurajada.ttf
+    /usr/share/fonts/truetype/teluguvijayam/LakkiReddy.ttf
+    /usr/share/fonts/truetype/teluguvijayam/Mandali-Regular.ttf
+    /usr/share/fonts/truetype/teluguvijayam/NATS.ttf
+    /usr/share/fonts/truetype/teluguvijayam/NTR.ttf
+    /usr/share/fonts/truetype/teluguvijayam/Peddana-Regular.ttf
+    /usr/share/fonts/truetype/teluguvijayam/Ponnala.ttf
+    /usr/share/fonts/truetype/teluguvijayam/PottiSreeramulu.ttf
+    /usr/share/fonts/truetype/teluguvijayam/Ramaraja-Regular.ttf
+    /usr/share/fonts/truetype/teluguvijayam/RaviPrakash.ttf
+    /usr/share/fonts/truetype/teluguvijayam/SreeKrushnadevaraya.ttf
+    /usr/share/fonts/truetype/teluguvijayam/Suravaram.ttf
+    /usr/share/fonts/truetype/teluguvijayam/SyamalaRamana.ttf
+    /usr/share/fonts/truetype/teluguvijayam/TenaliRamakrishna-Regular.ttf
+    /usr/share/fonts/truetype/teluguvijayam/TimmanaRegular.ttf
+    /usr/share/fonts/truetype/teluguvijayam/dhurjati.ttf
+    /usr/share/fonts/truetype/teluguvijayam/mallanna.ttf
+    /usr/share/fonts/truetype/teluguvijayam/ramabhadra.ttf
+    /usr/share/fonts/truetype/teluguvijayam/suranna.ttf
+    /usr/share/fonts/truetype/tibetan-machine/TibetanMachineUni.ttf
+    /usr/share/fonts/truetype/tlwg/Garuda-Bold.ttf
+    /usr/share/fonts/truetype/tlwg/Garuda-BoldOblique.ttf
+    /usr/share/fonts/truetype/tlwg/Garuda-Oblique.ttf
+    /usr/share/fonts/truetype/tlwg/Garuda.ttf
+    /usr/share/fonts/truetype/tlwg/Kinnari-Bold.ttf
+    /usr/share/fonts/truetype/tlwg/Kinnari-BoldItalic.ttf
+    /usr/share/fonts/truetype/tlwg/Kinnari-BoldOblique.ttf
+    /usr/share/fonts/truetype/tlwg/Kinnari-Italic.ttf
+    /usr/share/fonts/truetype/tlwg/Kinnari-Oblique.ttf
+    /usr/share/fonts/truetype/tlwg/Kinnari.ttf
+    /usr/share/fonts/truetype/tlwg/Laksaman-Bold.ttf
+    /usr/share/fonts/truetype/tlwg/Laksaman-BoldItalic.ttf
+    /usr/share/fonts/truetype/tlwg/Laksaman-Italic.ttf
+    /usr/share/fonts/truetype/tlwg/Laksaman.ttf
+    /usr/share/fonts/truetype/tlwg/Loma-Bold.ttf
+    /usr/share/fonts/truetype/tlwg/Loma-BoldOblique.ttf
+    /usr/share/fonts/truetype/tlwg/Loma-Oblique.ttf
+    /usr/share/fonts/truetype/tlwg/Loma.ttf
+    /usr/share/fonts/truetype/tlwg/Norasi-Bold.ttf
+    /usr/share/fonts/truetype/tlwg/Norasi-BoldItalic.ttf
+    /usr/share/fonts/truetype/tlwg/Norasi-BoldOblique.ttf
+    /usr/share/fonts/truetype/tlwg/Norasi-Italic.ttf
+    /usr/share/fonts/truetype/tlwg/Norasi-Oblique.ttf
+    /usr/share/fonts/truetype/tlwg/Norasi.ttf
+    /usr/share/fonts/truetype/tlwg/Purisa-Bold.ttf
+    /usr/share/fonts/truetype/tlwg/Purisa-BoldOblique.ttf
+    /usr/share/fonts/truetype/tlwg/Purisa-Oblique.ttf
+    /usr/share/fonts/truetype/tlwg/Purisa.ttf
+    /usr/share/fonts/truetype/tlwg/Sawasdee-Bold.ttf
+    /usr/share/fonts/truetype/tlwg/Sawasdee-BoldOblique.ttf
+    /usr/share/fonts/truetype/tlwg/Sawasdee-Oblique.ttf
+    /usr/share/fonts/truetype/tlwg/Sawasdee.ttf
+    /usr/share/fonts/truetype/tlwg/TlwgMono-Bold.ttf
+    /usr/share/fonts/truetype/tlwg/TlwgMono-BoldOblique.ttf
+    /usr/share/fonts/truetype/tlwg/TlwgMono-Oblique.ttf
+    /usr/share/fonts/truetype/tlwg/TlwgMono.ttf
+    /usr/share/fonts/truetype/tlwg/TlwgTypewriter-Bold.ttf
+    /usr/share/fonts/truetype/tlwg/TlwgTypewriter-BoldOblique.ttf
+    /usr/share/fonts/truetype/tlwg/TlwgTypewriter-Oblique.ttf
+    /usr/share/fonts/truetype/tlwg/TlwgTypewriter.ttf
+    /usr/share/fonts/truetype/tlwg/TlwgTypist-Bold.ttf
+    /usr/share/fonts/truetype/tlwg/TlwgTypist-BoldOblique.ttf
+    /usr/share/fonts/truetype/tlwg/TlwgTypist-Oblique.ttf
+    /usr/share/fonts/truetype/tlwg/TlwgTypist.ttf
+    /usr/share/fonts/truetype/tlwg/TlwgTypo-Bold.ttf
+    /usr/share/fonts/truetype/tlwg/TlwgTypo-BoldOblique.ttf
+    /usr/share/fonts/truetype/tlwg/TlwgTypo-Oblique.ttf
+    /usr/share/fonts/truetype/tlwg/TlwgTypo.ttf
+    /usr/share/fonts/truetype/tlwg/Umpush-Bold.ttf
+    /usr/share/fonts/truetype/tlwg/Umpush-BoldOblique.ttf
+    /usr/share/fonts/truetype/tlwg/Umpush-Light.ttf
+    /usr/share/fonts/truetype/tlwg/Umpush-LightOblique.ttf
+    /usr/share/fonts/truetype/tlwg/Umpush-Oblique.ttf
+    /usr/share/fonts/truetype/tlwg/Umpush.ttf
+    /usr/share/fonts/truetype/tlwg/Waree-Bold.ttf
+    /usr/share/fonts/truetype/tlwg/Waree-BoldOblique.ttf
+    /usr/share/fonts/truetype/tlwg/Waree-Oblique.ttf
+    /usr/share/fonts/truetype/tlwg/Waree.ttf
+    /usr/share/fonts/truetype/ttf-khmeros-core/KhmerOS.ttf
+    /usr/share/fonts/truetype/ttf-khmeros-core/KhmerOSsys.ttf
+    /usr/share/fonts/truetype/ubuntu/Ubuntu-B.ttf
+    /usr/share/fonts/truetype/ubuntu/Ubuntu-BI.ttf
+    /usr/share/fonts/truetype/ubuntu/Ubuntu-C.ttf
+    /usr/share/fonts/truetype/ubuntu/Ubuntu-L.ttf
+    /usr/share/fonts/truetype/ubuntu/Ubuntu-LI.ttf
+    /usr/share/fonts/truetype/ubuntu/Ubuntu-M.ttf
+    /usr/share/fonts/truetype/ubuntu/Ubuntu-MI.ttf
+    /usr/share/fonts/truetype/ubuntu/Ubuntu-R.ttf
+    /usr/share/fonts/truetype/ubuntu/Ubuntu-RI.ttf
+    /usr/share/fonts/truetype/ubuntu/Ubuntu-Th.ttf
+    /usr/share/fonts/truetype/ubuntu/UbuntuMono-B.ttf
+    /usr/share/fonts/truetype/ubuntu/UbuntuMono-BI.ttf
+    /usr/share/fonts/truetype/ubuntu/UbuntuMono-R.ttf
+    /usr/share/fonts/truetype/ubuntu/UbuntuMono-RI.ttf
+
+########## df1c-localize-B2 ##########
+CMD=bash -c export DOTNET_GCHeapHardLimit=0x60000000; exec dotnet '/home/links-dev/netTest/wpf-linux-20260906/wpf-linux/build/DirectWrite.Linux/FallbackCriteria/bin/Debug/FallbackCriteria.dll' --mode=null --para=b34  PID=195459  START=2026-09-15 11:28:41
+RC=0
+PEAK_HWM_KB=3463368
+CPU_TICKS_LAST=427（/100 = 秒；ticks 取自 /proc/<pid>/stat 的 utime+stime）
+WALL_S=4
+OPENED_FONT_FACES（maps ∪ fd 去重）：
+    /home/links-dev/netTest/wpf-linux-20260906/wpf-linux/build/fonts/NotoSans-Regular.ttf
+    /usr/share/fonts/opentype/malayalam/Chilanka-Regular.otf
+    /usr/share/fonts/opentype/malayalam/Gayathri-Bold.otf
+    /usr/share/fonts/opentype/malayalam/Gayathri-Regular.otf
+    /usr/share/fonts/opentype/malayalam/Gayathri-Thin.otf
+    /usr/share/fonts/opentype/malayalam/Manjari-Bold.otf
+    /usr/share/fonts/opentype/malayalam/Manjari-Regular.otf
+    /usr/share/fonts/opentype/malayalam/Manjari-Thin.otf
+    /usr/share/fonts/opentype/noto/NotoSansCJK-Black.ttc
+    /usr/share/fonts/opentype/noto/NotoSansCJK-Bold.ttc
+    /usr/share/fonts/opentype/noto/NotoSansCJK-DemiLight.ttc
+    /usr/share/fonts/opentype/noto/NotoSansCJK-Light.ttc
+    /usr/share/fonts/opentype/noto/NotoSansCJK-Medium.ttc
+    /usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc
+    /usr/share/fonts/opentype/noto/NotoSansCJK-Thin.ttc
+    /usr/share/fonts/opentype/noto/NotoSerifCJK-Black.ttc
+    /usr/share/fonts/opentype/noto/NotoSerifCJK-Bold.ttc
+    /usr/share/fonts/opentype/noto/NotoSerifCJK-ExtraLight.ttc
+    /usr/share/fonts/opentype/noto/NotoSerifCJK-Light.ttc
+    /usr/share/fonts/opentype/noto/NotoSerifCJK-Medium.ttc
+    /usr/share/fonts/opentype/noto/NotoSerifCJK-Regular.ttc
+    /usr/share/fonts/opentype/noto/NotoSerifCJK-SemiBold.ttc
+    /usr/share/fonts/opentype/urw-base35/C059-BdIta.otf
+    /usr/share/fonts/opentype/urw-base35/C059-Bold.otf
+    /usr/share/fonts/opentype/urw-base35/C059-Italic.otf
+    /usr/share/fonts/opentype/urw-base35/C059-Roman.otf
+    /usr/share/fonts/opentype/urw-base35/D050000L.otf
+    /usr/share/fonts/opentype/urw-base35/NimbusMonoPS-Bold.otf
+    /usr/share/fonts/opentype/urw-base35/NimbusMonoPS-BoldItalic.otf
+    /usr/share/fonts/opentype/urw-base35/NimbusMonoPS-Italic.otf
+    /usr/share/fonts/opentype/urw-base35/NimbusMonoPS-Regular.otf
+    /usr/share/fonts/opentype/urw-base35/NimbusRoman-Bold.otf
+    /usr/share/fonts/opentype/urw-base35/NimbusRoman-BoldItalic.otf
+    /usr/share/fonts/opentype/urw-base35/NimbusRoman-Italic.otf
+    /usr/share/fonts/opentype/urw-base35/NimbusRoman-Regular.otf
+    /usr/share/fonts/opentype/urw-base35/NimbusSans-Bold.otf
+    /usr/share/fonts/opentype/urw-base35/NimbusSans-BoldItalic.otf
+    /usr/share/fonts/opentype/urw-base35/NimbusSans-Italic.otf
+    /usr/share/fonts/opentype/urw-base35/NimbusSans-Regular.otf
+    /usr/share/fonts/opentype/urw-base35/NimbusSansNarrow-Bold.otf
+    /usr/share/fonts/opentype/urw-base35/NimbusSansNarrow-BoldOblique.otf
+    /usr/share/fonts/opentype/urw-base35/NimbusSansNarrow-Oblique.otf
+    /usr/share/fonts/opentype/urw-base35/NimbusSansNarrow-Regular.otf
+    /usr/share/fonts/opentype/urw-base35/P052-Bold.otf
+    /usr/share/fonts/opentype/urw-base35/P052-BoldItalic.otf
+    /usr/share/fonts/opentype/urw-base35/P052-Italic.otf
+    /usr/share/fonts/opentype/urw-base35/P052-Roman.otf
+    /usr/share/fonts/opentype/urw-base35/StandardSymbolsPS.otf
+    /usr/share/fonts/opentype/urw-base35/URWBookman-Demi.otf
+    /usr/share/fonts/opentype/urw-base35/URWBookman-DemiItalic.otf
+    /usr/share/fonts/opentype/urw-base35/URWBookman-Light.otf
+    /usr/share/fonts/opentype/urw-base35/URWBookman-LightItalic.otf
+    /usr/share/fonts/opentype/urw-base35/URWGothic-Book.otf
+    /usr/share/fonts/opentype/urw-base35/URWGothic-BookOblique.otf
+    /usr/share/fonts/opentype/urw-base35/URWGothic-Demi.otf
+    /usr/share/fonts/opentype/urw-base35/URWGothic-DemiOblique.otf
+    /usr/share/fonts/opentype/urw-base35/Z003-MediumItalic.otf
+    /usr/share/fonts/truetype/Gargi/Gargi.ttf
+    /usr/share/fonts/truetype/Gubbi/Gubbi.ttf
+    /usr/share/fonts/truetype/Nakula/nakula.ttf
+    /usr/share/fonts/truetype/Navilu/Navilu.ttf
+    /usr/share/fonts/truetype/Sahadeva/sahadeva.ttf
+    /usr/share/fonts/truetype/Sarai/Sarai.ttf
+    /usr/share/fonts/truetype/abyssinica/AbyssinicaSIL-Regular.ttf
+    /usr/share/fonts/truetype/arphic/ukai.ttc
+    /usr/share/fonts/truetype/arphic/uming.ttc
+    /usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf
+    /usr/share/fonts/truetype/dejavu/DejaVuSans.ttf
+    /usr/share/fonts/truetype/dejavu/DejaVuSansMono-Bold.ttf
+    /usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf
+    /usr/share/fonts/truetype/dejavu/DejaVuSerif-Bold.ttf
+    /usr/share/fonts/truetype/dejavu/DejaVuSerif.ttf
+    /usr/share/fonts/truetype/droid/DroidSansFallbackFull.ttf
+    /usr/share/fonts/truetype/fonts-beng-extra/Ani.ttf
+    /usr/share/fonts/truetype/fonts-beng-extra/JamrulNormal.ttf
+    /usr/share/fonts/truetype/fonts-beng-extra/LikhanNormal.ttf
+    /usr/share/fonts/truetype/fonts-beng-extra/MitraMono.ttf
+    /usr/share/fonts/truetype/fonts-beng-extra/Mukti.ttf
+    /usr/share/fonts/truetype/fonts-beng-extra/Muktibold.ttf
+    /usr/share/fonts/truetype/fonts-deva-extra/chandas1-2.ttf
+    /usr/share/fonts/truetype/fonts-deva-extra/kalimati.ttf
+    /usr/share/fonts/truetype/fonts-deva-extra/samanata.ttf
+    /usr/share/fonts/truetype/fonts-gujr-extra/Rekha.ttf
+    /usr/share/fonts/truetype/fonts-gujr-extra/aakar-medium.ttf
+    /usr/share/fonts/truetype/fonts-gujr-extra/padmaa-Bold.1.1.ttf
+    /usr/share/fonts/truetype/fonts-gujr-extra/padmaa-Medium-0.5.ttf
+    /usr/share/fonts/truetype/fonts-gujr-extra/padmaa.ttf
+    /usr/share/fonts/truetype/fonts-guru-extra/Saab.ttf
+    /usr/share/fonts/truetype/fonts-kalapi/Kalapi.ttf
+    /usr/share/fonts/truetype/fonts-orya-extra/utkal.ttf
+    /usr/share/fonts/truetype/fonts-telu-extra/Pothana2000.ttf
+    /usr/share/fonts/truetype/fonts-telu-extra/vemana2000.ttf
+    /usr/share/fonts/truetype/fonts-yrsa-rasa/Rasa-Bold.ttf
+    /usr/share/fonts/truetype/fonts-yrsa-rasa/Rasa-Light.ttf
+    /usr/share/fonts/truetype/fonts-yrsa-rasa/Rasa-Medium.ttf
+    /usr/share/fonts/truetype/fonts-yrsa-rasa/Rasa-Regular.ttf
+    /usr/share/fonts/truetype/fonts-yrsa-rasa/Rasa-SemiBold.ttf
+    /usr/share/fonts/truetype/fonts-yrsa-rasa/Yrsa-Bold.ttf
+    /usr/share/fonts/truetype/fonts-yrsa-rasa/Yrsa-BoldItalic.ttf
+    /usr/share/fonts/truetype/fonts-yrsa-rasa/Yrsa-Italic.ttf
+    /usr/share/fonts/truetype/fonts-yrsa-rasa/Yrsa-Light.ttf
+    /usr/share/fonts/truetype/fonts-yrsa-rasa/Yrsa-LightItalic.ttf
+    /usr/share/fonts/truetype/fonts-yrsa-rasa/Yrsa-Medium.ttf
+    /usr/share/fonts/truetype/fonts-yrsa-rasa/Yrsa-MediumItalic.ttf
+    /usr/share/fonts/truetype/fonts-yrsa-rasa/Yrsa-Regular.ttf
+    /usr/share/fonts/truetype/fonts-yrsa-rasa/Yrsa-SemiBold.ttf
+    /usr/share/fonts/truetype/fonts-yrsa-rasa/Yrsa-SemiBoldItalic.ttf
+    /usr/share/fonts/truetype/freefont/FreeMono.ttf
+    /usr/share/fonts/truetype/freefont/FreeMonoBold.ttf
+    /usr/share/fonts/truetype/freefont/FreeMonoBoldOblique.ttf
+    /usr/share/fonts/truetype/freefont/FreeMonoOblique.ttf
+    /usr/share/fonts/truetype/freefont/FreeSans.ttf
+    /usr/share/fonts/truetype/freefont/FreeSansBold.ttf
+    /usr/share/fonts/truetype/freefont/FreeSansBoldOblique.ttf
+    /usr/share/fonts/truetype/freefont/FreeSansOblique.ttf
+    /usr/share/fonts/truetype/freefont/FreeSerif.ttf
+    /usr/share/fonts/truetype/freefont/FreeSerifBold.ttf
+    /usr/share/fonts/truetype/freefont/FreeSerifBoldItalic.ttf
+    /usr/share/fonts/truetype/freefont/FreeSerifItalic.ttf
+    /usr/share/fonts/truetype/kacst-one/KacstOne-Bold.ttf
+    /usr/share/fonts/truetype/kacst-one/KacstOne.ttf
+    /usr/share/fonts/truetype/kacst/KacstArt.ttf
+    /usr/share/fonts/truetype/kacst/KacstBook.ttf
+    /usr/share/fonts/truetype/kacst/KacstDecorative.ttf
+    /usr/share/fonts/truetype/kacst/KacstDigital.ttf
+    /usr/share/fonts/truetype/kacst/KacstFarsi.ttf
+    /usr/share/fonts/truetype/kacst/KacstLetter.ttf
+    /usr/share/fonts/truetype/kacst/KacstNaskh.ttf
+    /usr/share/fonts/truetype/kacst/KacstOffice.ttf
+    /usr/share/fonts/truetype/kacst/KacstPen.ttf
+    /usr/share/fonts/truetype/kacst/KacstPoster.ttf
+    /usr/share/fonts/truetype/kacst/KacstQurn.ttf
+    /usr/share/fonts/truetype/kacst/KacstScreen.ttf
+    /usr/share/fonts/truetype/kacst/KacstTitle.ttf
+    /usr/share/fonts/truetype/kacst/KacstTitleL.ttf
+    /usr/share/fonts/truetype/kacst/mry_KacstQurn.ttf
+    /usr/share/fonts/truetype/lao/Phetsarath_OT.ttf
+    /usr/share/fonts/truetype/liberation/LiberationMono-Bold.ttf
+    /usr/share/fonts/truetype/liberation/LiberationMono-BoldItalic.ttf
+    /usr/share/fonts/truetype/liberation/LiberationMono-Italic.ttf
+    /usr/share/fonts/truetype/liberation/LiberationMono-Regular.ttf
+    /usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf
+    /usr/share/fonts/truetype/liberation/LiberationSans-BoldItalic.ttf
+    /usr/share/fonts/truetype/liberation/LiberationSans-Italic.ttf
+    /usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf
+    /usr/share/fonts/truetype/liberation/LiberationSansNarrow-Bold.ttf
+    /usr/share/fonts/truetype/liberation/LiberationSansNarrow-BoldItalic.ttf
+    /usr/share/fonts/truetype/liberation/LiberationSansNarrow-Italic.ttf
+    /usr/share/fonts/truetype/liberation/LiberationSansNarrow-Regular.ttf
+    /usr/share/fonts/truetype/liberation/LiberationSerif-Bold.ttf
+    /usr/share/fonts/truetype/liberation/LiberationSerif-BoldItalic.ttf
+    /usr/share/fonts/truetype/liberation/LiberationSerif-Italic.ttf
+    /usr/share/fonts/truetype/liberation/LiberationSerif-Regular.ttf
+    /usr/share/fonts/truetype/liberation2/LiberationMono-Bold.ttf
+    /usr/share/fonts/truetype/liberation2/LiberationMono-BoldItalic.ttf
+    /usr/share/fonts/truetype/liberation2/LiberationMono-Italic.ttf
+    /usr/share/fonts/truetype/liberation2/LiberationMono-Regular.ttf
+    /usr/share/fonts/truetype/liberation2/LiberationSans-Bold.ttf
+    /usr/share/fonts/truetype/liberation2/LiberationSans-BoldItalic.ttf
+    /usr/share/fonts/truetype/liberation2/LiberationSans-Italic.ttf
+    /usr/share/fonts/truetype/liberation2/LiberationSans-Regular.ttf
+    /usr/share/fonts/truetype/liberation2/LiberationSerif-Bold.ttf
+    /usr/share/fonts/truetype/liberation2/LiberationSerif-BoldItalic.ttf
+    /usr/share/fonts/truetype/liberation2/LiberationSerif-Italic.ttf
+    /usr/share/fonts/truetype/liberation2/LiberationSerif-Regular.ttf
+    /usr/share/fonts/truetype/libreoffice/opens___.ttf
+    /usr/share/fonts/truetype/lohit-assamese/Lohit-Assamese.ttf
+    /usr/share/fonts/truetype/lohit-bengali/Lohit-Bengali.ttf
+    /usr/share/fonts/truetype/lohit-devanagari/Lohit-Devanagari.ttf
+    /usr/share/fonts/truetype/lohit-gujarati/Lohit-Gujarati.ttf
+    /usr/share/fonts/truetype/lohit-kannada/Lohit-Kannada.ttf
+    /usr/share/fonts/truetype/lohit-malayalam/Lohit-Malayalam.ttf
+    /usr/share/fonts/truetype/lohit-oriya/Lohit-Odia.ttf
+    /usr/share/fonts/truetype/lohit-punjabi/Lohit-Gurmukhi.ttf
+    /usr/share/fonts/truetype/lohit-tamil-classical/Lohit-Tamil-Classical.ttf
+    /usr/share/fonts/truetype/lohit-tamil/Lohit-Tamil.ttf
+    /usr/share/fonts/truetype/lohit-telugu/Lohit-Telugu.ttf
+    /usr/share/fonts/truetype/malayalam/AnjaliOldLipi-Regular.ttf
+    /usr/share/fonts/truetype/malayalam/Dyuthi-Regular.ttf
+    /usr/share/fonts/truetype/malayalam/Karumbi-Regular.ttf
+    /usr/share/fonts/truetype/malayalam/Keraleeyam-Regular.ttf
+    /usr/share/fonts/truetype/malayalam/Meera-Regular.ttf
+    /usr/share/fonts/truetype/malayalam/Rachana-Bold.ttf
+    /usr/share/fonts/truetype/malayalam/Rachana-Regular.ttf
+    /usr/share/fonts/truetype/malayalam/RaghuMalayalamSans-Regular.ttf
+    /usr/share/fonts/truetype/malayalam/Suruma.ttf
+    /usr/share/fonts/truetype/malayalam/Uroob-Regular.ttf
+    /usr/share/fonts/truetype/noto/NotoColorEmoji.ttf
+    /usr/share/fonts/truetype/noto/NotoMono-Regular.ttf
+    /usr/share/fonts/truetype/noto/NotoSansMono-Bold.ttf
+    /usr/share/fonts/truetype/noto/NotoSansMono-Regular.ttf
+    /usr/share/fonts/truetype/padauk/Padauk-Bold.ttf
+    /usr/share/fonts/truetype/padauk/Padauk-Regular.ttf
+    /usr/share/fonts/truetype/padauk/PadaukBook-Bold.ttf
+    /usr/share/fonts/truetype/padauk/PadaukBook-Regular.ttf
+    /usr/share/fonts/truetype/pagul/Pagul.ttf
+    /usr/share/fonts/truetype/quicksand/Quicksand-Bold.ttf
+    /usr/share/fonts/truetype/quicksand/Quicksand-Light.ttf
+    /usr/share/fonts/truetype/quicksand/Quicksand-Medium.ttf
+    /usr/share/fonts/truetype/quicksand/Quicksand-Regular.ttf
+    /usr/share/fonts/truetype/samyak-fonts/Samyak-Gujarati.ttf
+    /usr/share/fonts/truetype/samyak-fonts/Samyak-Malayalam.ttf
+    /usr/share/fonts/truetype/samyak-fonts/Samyak-Tamil.ttf
+    /usr/share/fonts/truetype/samyak/Samyak-Devanagari.ttf
+    /usr/share/fonts/truetype/sinhala/lklug.ttf
+    /usr/share/fonts/truetype/teluguvijayam/Gidugu.ttf
+    /usr/share/fonts/truetype/teluguvijayam/Gurajada.ttf
+    /usr/share/fonts/truetype/teluguvijayam/LakkiReddy.ttf
+    /usr/share/fonts/truetype/teluguvijayam/Mandali-Regular.ttf
+    /usr/share/fonts/truetype/teluguvijayam/NATS.ttf
+    /usr/share/fonts/truetype/teluguvijayam/NTR.ttf
+    /usr/share/fonts/truetype/teluguvijayam/Peddana-Regular.ttf
+    /usr/share/fonts/truetype/teluguvijayam/Ponnala.ttf
+    /usr/share/fonts/truetype/teluguvijayam/PottiSreeramulu.ttf
+    /usr/share/fonts/truetype/teluguvijayam/Ramaraja-Regular.ttf
+    /usr/share/fonts/truetype/teluguvijayam/RaviPrakash.ttf
+    /usr/share/fonts/truetype/teluguvijayam/SreeKrushnadevaraya.ttf
+    /usr/share/fonts/truetype/teluguvijayam/Suravaram.ttf
+    /usr/share/fonts/truetype/teluguvijayam/SyamalaRamana.ttf
+    /usr/share/fonts/truetype/teluguvijayam/TenaliRamakrishna-Regular.ttf
+    /usr/share/fonts/truetype/teluguvijayam/TimmanaRegular.ttf
+    /usr/share/fonts/truetype/teluguvijayam/dhurjati.ttf
+    /usr/share/fonts/truetype/teluguvijayam/mallanna.ttf
+    /usr/share/fonts/truetype/teluguvijayam/ramabhadra.ttf
+    /usr/share/fonts/truetype/teluguvijayam/suranna.ttf
+    /usr/share/fonts/truetype/tibetan-machine/TibetanMachineUni.ttf
+    /usr/share/fonts/truetype/tlwg/Garuda-Bold.ttf
+    /usr/share/fonts/truetype/tlwg/Garuda-BoldOblique.ttf
+    /usr/share/fonts/truetype/tlwg/Garuda-Oblique.ttf
+    /usr/share/fonts/truetype/tlwg/Garuda.ttf
+    /usr/share/fonts/truetype/tlwg/Kinnari-Bold.ttf
+    /usr/share/fonts/truetype/tlwg/Kinnari-BoldItalic.ttf
+    /usr/share/fonts/truetype/tlwg/Kinnari-BoldOblique.ttf
+    /usr/share/fonts/truetype/tlwg/Kinnari-Italic.ttf
+    /usr/share/fonts/truetype/tlwg/Kinnari-Oblique.ttf
+    /usr/share/fonts/truetype/tlwg/Kinnari.ttf
+    /usr/share/fonts/truetype/tlwg/Laksaman-Bold.ttf
+    /usr/share/fonts/truetype/tlwg/Laksaman-BoldItalic.ttf
+    /usr/share/fonts/truetype/tlwg/Laksaman-Italic.ttf
+    /usr/share/fonts/truetype/tlwg/Laksaman.ttf
+    /usr/share/fonts/truetype/tlwg/Loma-Bold.ttf
+    /usr/share/fonts/truetype/tlwg/Loma-BoldOblique.ttf
+    /usr/share/fonts/truetype/tlwg/Loma-Oblique.ttf
+    /usr/share/fonts/truetype/tlwg/Loma.ttf
+    /usr/share/fonts/truetype/tlwg/Norasi-Bold.ttf
+    /usr/share/fonts/truetype/tlwg/Norasi-BoldItalic.ttf
+    /usr/share/fonts/truetype/tlwg/Norasi-BoldOblique.ttf
+    /usr/share/fonts/truetype/tlwg/Norasi-Italic.ttf
+    /usr/share/fonts/truetype/tlwg/Norasi-Oblique.ttf
+    /usr/share/fonts/truetype/tlwg/Norasi.ttf
+    /usr/share/fonts/truetype/tlwg/Purisa-Bold.ttf
+    /usr/share/fonts/truetype/tlwg/Purisa-BoldOblique.ttf
+    /usr/share/fonts/truetype/tlwg/Purisa-Oblique.ttf
+    /usr/share/fonts/truetype/tlwg/Purisa.ttf
+    /usr/share/fonts/truetype/tlwg/Sawasdee-Bold.ttf
+    /usr/share/fonts/truetype/tlwg/Sawasdee-BoldOblique.ttf
+    /usr/share/fonts/truetype/tlwg/Sawasdee-Oblique.ttf
+    /usr/share/fonts/truetype/tlwg/Sawasdee.ttf
+    /usr/share/fonts/truetype/tlwg/TlwgMono-Bold.ttf
+    /usr/share/fonts/truetype/tlwg/TlwgMono-BoldOblique.ttf
+    /usr/share/fonts/truetype/tlwg/TlwgMono-Oblique.ttf
+    /usr/share/fonts/truetype/tlwg/TlwgMono.ttf
+    /usr/share/fonts/truetype/tlwg/TlwgTypewriter-Bold.ttf
+    /usr/share/fonts/truetype/tlwg/TlwgTypewriter-BoldOblique.ttf
+    /usr/share/fonts/truetype/tlwg/TlwgTypewriter-Oblique.ttf
+    /usr/share/fonts/truetype/tlwg/TlwgTypewriter.ttf
+    /usr/share/fonts/truetype/tlwg/TlwgTypist-Bold.ttf
+    /usr/share/fonts/truetype/tlwg/TlwgTypist-BoldOblique.ttf
+    /usr/share/fonts/truetype/tlwg/TlwgTypist-Oblique.ttf
+    /usr/share/fonts/truetype/tlwg/TlwgTypist.ttf
+    /usr/share/fonts/truetype/tlwg/TlwgTypo-Bold.ttf
+    /usr/share/fonts/truetype/tlwg/TlwgTypo-BoldOblique.ttf
+    /usr/share/fonts/truetype/tlwg/TlwgTypo-Oblique.ttf
+    /usr/share/fonts/truetype/tlwg/TlwgTypo.ttf
+    /usr/share/fonts/truetype/tlwg/Umpush-Bold.ttf
+    /usr/share/fonts/truetype/tlwg/Umpush-BoldOblique.ttf
+    /usr/share/fonts/truetype/tlwg/Umpush-Light.ttf
+    /usr/share/fonts/truetype/tlwg/Umpush-LightOblique.ttf
+    /usr/share/fonts/truetype/tlwg/Umpush-Oblique.ttf
+    /usr/share/fonts/truetype/tlwg/Umpush.ttf
+    /usr/share/fonts/truetype/tlwg/Waree-Bold.ttf
+    /usr/share/fonts/truetype/tlwg/Waree-BoldOblique.ttf
+    /usr/share/fonts/truetype/tlwg/Waree-Oblique.ttf
+    /usr/share/fonts/truetype/tlwg/Waree.ttf
+    /usr/share/fonts/truetype/ttf-khmeros-core/KhmerOS.ttf
+    /usr/share/fonts/truetype/ttf-khmeros-core/KhmerOSsys.ttf
+    /usr/share/fonts/truetype/ubuntu/Ubuntu-B.ttf
+    /usr/share/fonts/truetype/ubuntu/Ubuntu-BI.ttf
+    /usr/share/fonts/truetype/ubuntu/Ubuntu-C.ttf
+    /usr/share/fonts/truetype/ubuntu/Ubuntu-L.ttf
+    /usr/share/fonts/truetype/ubuntu/Ubuntu-LI.ttf
+    /usr/share/fonts/truetype/ubuntu/Ubuntu-M.ttf
+    /usr/share/fonts/truetype/ubuntu/Ubuntu-MI.ttf
+    /usr/share/fonts/truetype/ubuntu/Ubuntu-R.ttf
+    /usr/share/fonts/truetype/ubuntu/Ubuntu-RI.ttf
+    /usr/share/fonts/truetype/ubuntu/Ubuntu-Th.ttf
+    /usr/share/fonts/truetype/ubuntu/UbuntuMono-B.ttf
+    /usr/share/fonts/truetype/ubuntu/UbuntuMono-BI.ttf
+    /usr/share/fonts/truetype/ubuntu/UbuntuMono-R.ttf
+    /usr/share/fonts/truetype/ubuntu/UbuntuMono-RI.ttf
+
+########## df1c-fontdir-E2 ##########
+CMD=bash -c export DOTNET_GCHeapHardLimit=0x80000000 WPF_LINUX_FONT_DIR='/home/links-dev/netTest/wpf-linux-20260906/wpf-linux/build/fonts'; exec dotnet '/home/links-dev/netTest/wpf-linux-20260906/wpf-linux/build/DirectWrite.Linux/FallbackCriteria/bin/Debug/FallbackCriteria.dll' --mode=all --strict-probe  PID=194528  START=2026-09-15 11:28:29
+RC=0
+PEAK_HWM_KB=63192
+CPU_TICKS_LAST=20（/100 = 秒；ticks 取自 /proc/<pid>/stat 的 utime+stime）
+WALL_S=0
+OPENED_FONT_FACES（maps ∪ fd 去重）：
+    /home/links-dev/netTest/wpf-linux-20260906/wpf-linux/build/fonts/NotoSans-Bold.ttf
+    /home/links-dev/netTest/wpf-linux-20260906/wpf-linux/build/fonts/NotoSans-BoldItalic.ttf
+    /home/links-dev/netTest/wpf-linux-20260906/wpf-linux/build/fonts/NotoSans-Italic.ttf
+    /home/links-dev/netTest/wpf-linux-20260906/wpf-linux/build/fonts/NotoSans-Regular.ttf
+
+########## w3-mem-system ##########
+CMD=bash -c export DOTNET_GCHeapHardLimit=0x10000000 DF1_REPO='/home/links-dev/netTest/wpf-linux-20260906/wpf-linux'; exec /home/links-dev/.dotnet/dotnet '/home/links-dev/netTest/wpf-linux-20260906/wpf-linux/build/DirectWrite.Linux/FallbackCriteria/bin/Debug/FallbackCriteria.dll' --mode=null --para=b34  PID=910216  START=2026-09-15 12:15:53
+TIMEV_MAX_RSS_KB=2119824（/usr/bin/time -v 的权威峰值）
+RC=0
+PEAK_HWM_KB=2119824
+CPU_TICKS_LAST=0（/100 = 秒；ticks 取自 /proc/<pid>/stat 的 utime+stime）
+WALL_S=3
+OPENED_FONT_FACES（maps ∪ fd 去重）：
+
+########## w3-prefix-system ##########
+CMD=bash -c export DOTNET_GCHeapHardLimit=0x10000000 DF1_REPO='/home/links-dev/netTest/wpf-linux-20260906/wpf-linux'; exec /home/links-dev/.dotnet/dotnet '/home/links-dev/wfp-runs/df1c-prefix-host2/FallbackCriteria.dll' --mode=null --para=b34  PID=930403  START=2026-09-15 12:17:34
+TIMEV_MAX_RSS_KB=3459876（/usr/bin/time -v 的权威峰值）
+RC=0
+PEAK_HWM_KB=3459876
+CPU_TICKS_LAST=471（/100 = 秒；ticks 取自 /proc/<pid>/stat 的 utime+stime）
+WALL_S=4
+OPENED_FONT_FACES（maps ∪ fd 去重）：
+
+########## w4-mem-system ##########
+CMD=bash -c export DOTNET_GCHeapHardLimit=0x10000000 DF1_REPO='/home/links-dev/netTest/wpf-linux-20260906/wpf-linux'; exec /home/links-dev/.dotnet/dotnet '/home/links-dev/netTest/wpf-linux-20260906/wpf-linux/build/DirectWrite.Linux/FallbackCriteria/bin/Debug/FallbackCriteria.dll' --mode=null --para=b34  PID=937955  START=2026-09-15 12:20:23
+TIMEV_MAX_RSS_KB=2119788（/usr/bin/time -v 的权威峰值）
+RC=0
+SNAP_AT_PEAK time=12:20:26.620 rss_kb=1979960 priv_dirty_kb=201044 priv_clean_kb=31132 shared_clean_kb=1748632 shared_dirty_kb=24 anon_kb=195884（**峰值那一刻**的 smaps_rollup 分解，整棵树求和）
+PEAK_HWM_KB=2119788
+CPU_TICKS_LAST=0（/100 = 秒；ticks 取自 /proc/<pid>/stat 的 utime+stime）
+WALL_S=4
+OPENED_FONT_FACES（maps ∪ fd 去重）：
+
+########## w4-criteria ##########
+CMD=bash -c export DOTNET_GCHeapHardLimit=0x10000000 DF1_REPO='/home/links-dev/netTest/wpf-linux-20260906/wpf-linux'; exec bash src/Microsoft.DotNet.Wpf.Linux/src/DirectWrite/FallbackCriteria/run-df1-criteria.sh  PID=945174  START=2026-09-15 12:20:49
+TIMEV_MAX_RSS_KB=2101504（/usr/bin/time -v 的权威峰值）
+RC=0
+SNAP_AT_PEAK time=12:20:53.618 rss_kb=2110680 priv_dirty_kb=314164 priv_clean_kb=34668 shared_clean_kb=1761720 shared_dirty_kb=36 anon_kb=308000（**峰值那一刻**的 smaps_rollup 分解，整棵树求和）
+PEAK_HWM_KB=2101504
+CPU_TICKS_LAST=0（/100 = 秒；ticks 取自 /proc/<pid>/stat 的 utime+stime）
+WALL_S=5
+OPENED_FONT_FACES（maps ∪ fd 去重）：
+
+########## w5-mem-system ##########
+CMD=bash -c export DOTNET_GCHeapHardLimit=0x10000000 DF1_REPO='/home/links-dev/netTest/wpf-linux-20260906/wpf-linux'; exec /home/links-dev/.dotnet/dotnet '/home/links-dev/netTest/wpf-linux-20260906/wpf-linux/build/DirectWrite.Linux/FallbackCriteria/bin/Debug/FallbackCriteria.dll' --mode=null --para=b34  PID=986437  START=2026-09-15 12:24:20
+TIMEV_MAX_RSS_KB=2099304（/usr/bin/time -v 的权威峰值）
+RC=0
+SNAP_AT_PEAK time=12:24:23.769 rss_kb=2067276 priv_dirty_kb=282056 priv_clean_kb=32968 shared_clean_kb=1752776 shared_dirty_kb=24 anon_kb=276092（**峰值那一刻**的 smaps_rollup 分解，整棵树求和）
+PEAK_HWM_KB=2099304
+CPU_TICKS_LAST=375（/100 = 秒；ticks 取自 /proc/<pid>/stat 的 utime+stime）
+WALL_S=3
+OPENED_FONT_FACES（maps ∪ fd 去重）：
+
+########## w5-scale-1CJK ##########
+CMD=bash -c export DOTNET_GCHeapHardLimit=0x10000000 DF1_REPO='/home/links-dev/netTest/wpf-linux-20260906/wpf-linux' WPF_LINUX_FONT_DIR='/home/links-dev/wfp-runs/fontdir-1'; exec /home/links-dev/.dotnet/dotnet '/home/links-dev/netTest/wpf-linux-20260906/wpf-linux/build/DirectWrite.Linux/FallbackCriteria/bin/Debug/FallbackCriteria.dll' --mode=null --para=b34  PID=990003  START=2026-09-15 12:24:35
+TIMEV_MAX_RSS_KB=410128（/usr/bin/time -v 的权威峰值）
+RC=0
+SNAP_AT_PEAK time=12:24:36.442 rss_kb=393128 priv_dirty_kb=173444 priv_clean_kb=16068 shared_clean_kb=203604 shared_dirty_kb=32 anon_kb=168628（**峰值那一刻**的 smaps_rollup 分解，整棵树求和）
+PEAK_HWM_KB=410128
+CPU_TICKS_LAST=58（/100 = 秒；ticks 取自 /proc/<pid>/stat 的 utime+stime）
+WALL_S=1
+OPENED_FONT_FACES（maps ∪ fd 去重）：
+
+########## w5-scale-7CJK ##########
+CMD=bash -c export DOTNET_GCHeapHardLimit=0x10000000 DF1_REPO='/home/links-dev/netTest/wpf-linux-20260906/wpf-linux' WPF_LINUX_FONT_DIR='/home/links-dev/wfp-runs/fontdir-7'; exec /home/links-dev/.dotnet/dotnet '/home/links-dev/netTest/wpf-linux-20260906/wpf-linux/build/DirectWrite.Linux/FallbackCriteria/bin/Debug/FallbackCriteria.dll' --mode=null --para=b34  PID=990923  START=2026-09-15 12:24:36
+TIMEV_MAX_RSS_KB=979676（/usr/bin/time -v 的权威峰值）
+RC=0
+SNAP_AT_PEAK time=12:24:37.318 rss_kb=691868 priv_dirty_kb=192552 priv_clean_kb=32672 shared_clean_kb=467000 shared_dirty_kb=36 anon_kb=188164（**峰值那一刻**的 smaps_rollup 分解，整棵树求和）
+PEAK_HWM_KB=979676
+CPU_TICKS_LAST=0（/100 = 秒；ticks 取自 /proc/<pid>/stat 的 utime+stime）
+WALL_S=2
+OPENED_FONT_FACES（maps ∪ fd 去重）：
+
+########## w5-scale-4LAT ##########
+CMD=bash -c export DOTNET_GCHeapHardLimit=0x10000000 DF1_REPO='/home/links-dev/netTest/wpf-linux-20260906/wpf-linux' WPF_LINUX_FONT_DIR='/home/links-dev/netTest/wpf-linux-20260906/wpf-linux/build/fonts'; exec /home/links-dev/.dotnet/dotnet '/home/links-dev/netTest/wpf-linux-20260906/wpf-linux/build/DirectWrite.Linux/FallbackCriteria/bin/Debug/FallbackCriteria.dll' --mode=null --para=b34  PID=992720  START=2026-09-15 12:24:38
+TIMEV_MAX_RSS_KB=71316（/usr/bin/time -v 的权威峰值）
+RC=0
+SNAP_AT_PEAK time=NA rss_kb=0 priv_dirty_kb=0 priv_clean_kb=0 shared_clean_kb=0 shared_dirty_kb=0 anon_kb=0（**峰值那一刻**的 smaps_rollup 分解，整棵树求和）
+PEAK_HWM_KB=71316
+CPU_TICKS_LAST=0（/100 = 秒；ticks 取自 /proc/<pid>/stat 的 utime+stime）
+WALL_S=0
+OPENED_FONT_FACES（maps ∪ fd 去重）：
+
+########## w5-criteria ##########
+CMD=bash -c export DOTNET_GCHeapHardLimit=0x10000000 DF1_REPO='/home/links-dev/netTest/wpf-linux-20260906/wpf-linux'; exec bash src/Microsoft.DotNet.Wpf.Linux/src/DirectWrite/FallbackCriteria/run-df1-criteria.sh  PID=993202  START=2026-09-15 12:24:48
+TIMEV_MAX_RSS_KB=2115536（/usr/bin/time -v 的权威峰值）
+RC=0
+SNAP_AT_PEAK time=12:24:51.172 rss_kb=2023264 priv_dirty_kb=235808 priv_clean_kb=31448 shared_clean_kb=1755972 shared_dirty_kb=36 anon_kb=230820（**峰值那一刻**的 smaps_rollup 分解，整棵树求和）
+PEAK_HWM_KB=2115536
+CPU_TICKS_LAST=0（/100 = 秒；ticks 取自 /proc/<pid>/stat 的 utime+stime）
+WALL_S=5
+OPENED_FONT_FACES（maps ∪ fd 去重）：
+
+########## w6-sys ##########
+CMD=bash -c export DOTNET_GCHeapHardLimit=0x10000000 DF1_REPO='/home/links-dev/netTest/wpf-linux-20260906/wpf-linux'; exec /home/links-dev/.dotnet/dotnet '/home/links-dev/netTest/wpf-linux-20260906/wpf-linux/build/DirectWrite.Linux/FallbackCriteria/bin/Debug/FallbackCriteria.dll' --mode=null --para=b34  PID=1005943  START=2026-09-15 12:27:14
+TIMEV_MAX_RSS_KB=2119948（/usr/bin/time -v 的权威峰值）
+RC=0
+SNAP_AT_PEAK time=12:27:18.863 rss_kb=2068488 priv_dirty_kb=282412 priv_clean_kb=32984 shared_clean_kb=1753220 shared_dirty_kb=32 anon_kb=276496（**峰值那一刻**的 smaps_rollup 分解，整棵树求和）
+PEAK_HWM_KB=2119948
+CPU_TICKS_LAST=484（/100 = 秒；ticks 取自 /proc/<pid>/stat 的 utime+stime）
+WALL_S=5
+OPENED_FONT_FACES（maps ∪ fd 去重）：
+
+########## w6-1CJK ##########
+CMD=bash -c export DOTNET_GCHeapHardLimit=0x10000000 DF1_REPO='/home/links-dev/netTest/wpf-linux-20260906/wpf-linux' WPF_LINUX_FONT_DIR='/home/links-dev/wfp-runs/fontdir-1'; exec /home/links-dev/.dotnet/dotnet '/home/links-dev/netTest/wpf-linux-20260906/wpf-linux/build/DirectWrite.Linux/FallbackCriteria/bin/Debug/FallbackCriteria.dll' --mode=null --para=b34  PID=1009506  START=2026-09-15 12:27:19
+TIMEV_MAX_RSS_KB=415348（/usr/bin/time -v 的权威峰值）
+RC=0
+SNAP_AT_PEAK time=12:27:19.827 rss_kb=416208 priv_dirty_kb=193028 priv_clean_kb=17204 shared_clean_kb=205972 shared_dirty_kb=28 anon_kb=187880（**峰值那一刻**的 smaps_rollup 分解，整棵树求和）
+PEAK_HWM_KB=415348
+CPU_TICKS_LAST=70（/100 = 秒；ticks 取自 /proc/<pid>/stat 的 utime+stime）
+WALL_S=1
+OPENED_FONT_FACES（maps ∪ fd 去重）：
+
+########## w6-7CJK ##########
+CMD=bash -c export DOTNET_GCHeapHardLimit=0x10000000 DF1_REPO='/home/links-dev/netTest/wpf-linux-20260906/wpf-linux' WPF_LINUX_FONT_DIR='/home/links-dev/wfp-runs/fontdir-7'; exec /home/links-dev/.dotnet/dotnet '/home/links-dev/netTest/wpf-linux-20260906/wpf-linux/build/DirectWrite.Linux/FallbackCriteria/bin/Debug/FallbackCriteria.dll' --mode=null --para=b34  PID=1010430  START=2026-09-15 12:27:20
+TIMEV_MAX_RSS_KB=994588（/usr/bin/time -v 的权威峰值）
+RC=0
+SNAP_AT_PEAK time=12:27:20.850 rss_kb=738572 priv_dirty_kb=192716 priv_clean_kb=17792 shared_clean_kb=528232 shared_dirty_kb=36 anon_kb=188328（**峰值那一刻**的 smaps_rollup 分解，整棵树求和）
+PEAK_HWM_KB=994588
+CPU_TICKS_LAST=0（/100 = 秒；ticks 取自 /proc/<pid>/stat 的 utime+stime）
+WALL_S=1
+OPENED_FONT_FACES（maps ∪ fd 去重）：
+
+########## w6-4LAT ##########
+CMD=bash -c export DOTNET_GCHeapHardLimit=0x10000000 DF1_REPO='/home/links-dev/netTest/wpf-linux-20260906/wpf-linux' WPF_LINUX_FONT_DIR='/home/links-dev/netTest/wpf-linux-20260906/wpf-linux/build/fonts'; exec /home/links-dev/.dotnet/dotnet '/home/links-dev/netTest/wpf-linux-20260906/wpf-linux/build/DirectWrite.Linux/FallbackCriteria/bin/Debug/FallbackCriteria.dll' --mode=null --para=b34  PID=1012231  START=2026-09-15 12:27:21
+TIMEV_MAX_RSS_KB=71356（/usr/bin/time -v 的权威峰值）
+RC=0
+SNAP_AT_PEAK time=NA rss_kb=0 priv_dirty_kb=0 priv_clean_kb=0 shared_clean_kb=0 shared_dirty_kb=0 anon_kb=0（**峰值那一刻**的 smaps_rollup 分解，整棵树求和）
+PEAK_HWM_KB=71356
+CPU_TICKS_LAST=0（/100 = 秒；ticks 取自 /proc/<pid>/stat 的 utime+stime）
+WALL_S=1
+OPENED_FONT_FACES（maps ∪ fd 去重）：
+
+########## w6-criteria ##########
+CMD=bash -c export DOTNET_GCHeapHardLimit=0x10000000 DF1_REPO='/home/links-dev/netTest/wpf-linux-20260906/wpf-linux'; exec bash src/Microsoft.DotNet.Wpf.Linux/src/DirectWrite/FallbackCriteria/run-df1-criteria.sh  PID=1015020  START=2026-09-15 12:28:05
+TIMEV_MAX_RSS_KB=2104812（/usr/bin/time -v 的权威峰值）
+RC=0
+SNAP_AT_PEAK time=12:28:10.767 rss_kb=1438996 priv_dirty_kb=232212 priv_clean_kb=26108 shared_clean_kb=1207580 shared_dirty_kb=36 anon_kb=227524（**峰值那一刻**的 smaps_rollup 分解，整棵树求和）
+PEAK_HWM_KB=2104812
+CPU_TICKS_LAST=0（/100 = 秒；ticks 取自 /proc/<pid>/stat 的 utime+stime）
+WALL_S=6
+OPENED_FONT_FACES（maps ∪ fd 去重）：
+
+########## w6b-1CJK ##########
+CMD=bash -c export DOTNET_GCHeapHardLimit=0x10000000 DF1_REPO='/home/links-dev/netTest/wpf-linux-20260906/wpf-linux' WPF_LINUX_FONT_DIR='/home/links-dev/wfp-runs/fontdir-1'; exec /home/links-dev/.dotnet/dotnet '/home/links-dev/netTest/wpf-linux-20260906/wpf-linux/build/DirectWrite.Linux/FallbackCriteria/bin/Debug/FallbackCriteria.dll' --mode=null --para=b34  PID=1013211  START=2026-09-15 12:27:46
+TIMEV_MAX_RSS_KB=415144（/usr/bin/time -v 的权威峰值）
+RC=0
+SNAP_AT_PEAK time=12:27:47.968 rss_kb=414692 priv_dirty_kb=192620 priv_clean_kb=16264 shared_clean_kb=205776 shared_dirty_kb=32 anon_kb=187656（**峰值那一刻**的 smaps_rollup 分解，整棵树求和）
+PEAK_HWM_KB=415144
+CPU_TICKS_LAST=69（/100 = 秒；ticks 取自 /proc/<pid>/stat 的 utime+stime）
+WALL_S=2
+OPENED_FONT_FACES（maps ∪ fd 去重）：
+
+########## w6c-1CJK ##########
+CMD=bash -c export DOTNET_GCHeapHardLimit=0x10000000 DF1_REPO='/home/links-dev/netTest/wpf-linux-20260906/wpf-linux' WPF_LINUX_FONT_DIR='/home/links-dev/wfp-runs/fontdir-1'; exec /home/links-dev/.dotnet/dotnet '/home/links-dev/netTest/wpf-linux-20260906/wpf-linux/build/DirectWrite.Linux/FallbackCriteria/bin/Debug/FallbackCriteria.dll' --mode=null --para=b34  PID=1036579  START=2026-09-15 12:30:05
+TIMEV_MAX_RSS_KB=409772（/usr/bin/time -v 的权威峰值）
+RC=0
+SNAP_AT_PEAK time=12:30:07.074 rss_kb=402592 priv_dirty_kb=189688 priv_clean_kb=16188 shared_clean_kb=204576 shared_dirty_kb=32 anon_kb=184848（**峰值那一刻**的 smaps_rollup 分解，整棵树求和）
+PEAK_HWM_KB=409772
+CPU_TICKS_LAST=63（/100 = 秒；ticks 取自 /proc/<pid>/stat 的 utime+stime）
+WALL_S=2
+OPENED_FONT_FACES（maps ∪ fd 去重）：
+
+########## w6d-1CJK ##########
+CMD=bash -c export DOTNET_GCHeapHardLimit=0x10000000 DF1_REPO='/home/links-dev/netTest/wpf-linux-20260906/wpf-linux' WPF_LINUX_FONT_DIR='/home/links-dev/wfp-runs/fontdir-1'; exec /home/links-dev/.dotnet/dotnet '/home/links-dev/netTest/wpf-linux-20260906/wpf-linux/build/DirectWrite.Linux/FallbackCriteria/bin/Debug/FallbackCriteria.dll' --mode=null --para=b34  PID=1038462  START=2026-09-15 12:30:17
+TIMEV_MAX_RSS_KB=415288（/usr/bin/time -v 的权威峰值）
+RC=0
+SNAP_AT_PEAK time=12:30:18.924 rss_kb=397244 priv_dirty_kb=177340 priv_clean_kb=16244 shared_clean_kb=203636 shared_dirty_kb=24 anon_kb=172524（**峰值那一刻**的 smaps_rollup 分解，整棵树求和）
+PEAK_HWM_KB=415288
+CPU_TICKS_LAST=57（/100 = 秒；ticks 取自 /proc/<pid>/stat 的 utime+stime）
+WALL_S=2
+OPENED_FONT_FACES（maps ∪ fd 去重）：
+
+########## w2-criteria-final ##########
+CMD=bash -c export DOTNET_GCHeapHardLimit=0x10000000 DF1_REPO='/home/links-dev/netTest/wpf-linux-20260906/wpf-linux'; exec bash src/Microsoft.DotNet.Wpf.Linux/src/DirectWrite/FallbackCriteria/run-df1-criteria.sh  PID=885857  START=2026-09-15 12:04:02
+TIMEV_MAX_RSS_KB=3470484（/usr/bin/time -v 的权威峰值）
+RC=1
+PEAK_HWM_KB=3470484
+CPU_TICKS_LAST=0（/100 = 秒；ticks 取自 /proc/<pid>/stat 的 utime+stime）
+WALL_S=21
+OPENED_FONT_FACES（maps ∪ fd 去重）：
+

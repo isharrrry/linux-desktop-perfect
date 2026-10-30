@@ -1,0 +1,70 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- ⭐ `D-R8`（工程卫生）：不依赖 `$(BaseIntermediateOutputPath)` 指向哪里的产物目录排除。
+       实现在仓根 `BuildHygiene.props`（全仓唯一一份；理由与两种被否决的落点见 `src/Linux/build/MilBridge/W21B-report.md` §2）。
+       **故意不加 `Exists()` 条件**：文件找不到要大声失败。 -->
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('BuildHygiene.props'))" />
+
+  <!--
+    T2 · Phase 2 端到端：SystemFonts 探针（任务 3 的复验入口）
+    =====================================================================================
+    这个工程回答一个问题：**重建依赖链之后，`SystemFonts.MessageFontFamily` 能不能用？**
+
+    它同时依赖两条上游：
+      · T2（本报告）：字体解析 —— MessageFontFamily 的 face name 要能解析成真实的字体族；
+      · M7b：`SystemParametersInfoW`（SPI_GETNONCLIENTMETRICS）—— 提供 lfMessageFont.lfFaceName。
+    任何一条不通，结论就必须如实写成"谁没通"，而不是把默认值当成成功。
+
+    输出：KEY=VALUE（含异常类型与消息原文），由 src/Microsoft.DotNet.Wpf.Linux/src/DirectWrite/Tests 逐条断言。
+
+    引用 PresentationFramework 用 ProjectReference（而不是 HintPath），
+    这样它的**依赖树**（PresentationCore / WindowsBase / ReachFramework / …）
+    会一起拷到输出目录 —— 单靠 HintPath 只会拷一个 dll，运行时会在加载依赖时失败。
+  -->
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <AssemblyName>DirectWrite.Linux.SystemFontsProbe</AssemblyName>
+    <RootNamespace>MS.Internal.Text.TextInterface.Linux.SystemFontsProbe</RootNamespace>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <BaseOutputPath>$(MSBuildThisFileDirectory)bin\</BaseOutputPath>
+    <BaseIntermediateOutputPath>$(MSBuildThisFileDirectory)obj\</BaseIntermediateOutputPath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!--
+      WindowsBase：PC/PF 是通过 <Reference><HintPath> 引它的（Private=true 只把 dll 拷进
+      **它们自己的**输出），所以本工程的输出目录里没有它 → 运行期 FileNotFoundException。
+      这里显式引用一次（读它们的产物，不改它们）。
+    -->
+    <Reference Include="WindowsBase">
+      <HintPath>$(WpfLinuxRoot)src/Microsoft.DotNet.Wpf.Linux/src/WindowsBase/bin/$(WpfLinuxSelfBuiltConfiguration)/WindowsBase.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+    <!-- SkiaSharp：Provider 的运行期依赖（PC→Provider 用的是 Reference，不走传递拷贝） -->
+    <PackageReference Include="SkiaSharp" Version="$(SkiaSharpVersion)" />
+    <PackageReference Include="SkiaSharp.NativeAssets.Linux" Version="$(SkiaSharpVersion)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../PresentationFramework/PresentationFramework.Linux.csproj" />
+    <!-- SystemFonts 的返回类型（FontFamily/FontWeight/…）在 PresentationCore 里，
+         编译期需要直接引用（传递引用不足以绑定类型）。 -->
+    <ProjectReference Include="../../PresentationCore/PresentationCore.Linux.csproj" />
+  </ItemGroup>
+
+  <!--
+    与 PresentationCore/PresentationFramework 同一处置（它们的 csproj 里有同名 Target）：
+    目标包 Microsoft.NETCore.App.Ref 会注入一个 WindowsBase 门面（v4.0.0.0），
+    它按"版本高者胜"压过自产的 WindowsBase（4.0.0.1）且不会被拷到输出目录。
+    摘掉没有 HintPath 的那一个，只留上面显式引用的自产版本。
+  -->
+  <Target Name="WpfLinux_DropFrameworkWindowsBase"
+          BeforeTargets="_HandlePackageFileConflicts"
+          Condition="Exists('$(WpfLinuxRoot)src/Microsoft.DotNet.Wpf.Linux/src/WindowsBase/bin/$(WpfLinuxSelfBuiltConfiguration)/WindowsBase.dll')">
+    <ItemGroup>
+      <Reference Remove="@(Reference)"
+                 Condition="'%(Reference.Filename)' == 'WindowsBase' and '%(Reference.HintPath)' == ''" />
+    </ItemGroup>
+  </Target>
+
+</Project>

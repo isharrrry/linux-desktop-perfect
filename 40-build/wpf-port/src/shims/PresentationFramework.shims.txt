@@ -1,0 +1,15 @@
+# PresentationFramework 专用 shim（每行一个相对仓库根的路径）
+#
+# PresentationFramework.NrbfFrameworkObjects.Shim.cs：
+#   上游 MS/Internal/DataStreams.cs 依赖 WinForms 私有包 System.Private.Windows.Core
+#   的 System.Private.Windows.BinaryFormat（BinaryFormatWriter.TryWriteFrameworkObject /
+#   SerializationRecord.TryGetFrameworkObject）。该包在镜像上 NU1101 不存在（已实测），
+#   故按调用点反推的两个成员提供**语义化降级** shim（恒 false → 上游自己的
+#   BinaryFormatter 回退分支）。详见文件头注释与 docs/U2-PresentationFramework-prep.md。
+src/Microsoft.DotNet.Wpf.Linux/src/shims/PresentationFramework.NrbfFrameworkObjects.Shim.cs
+#
+# PresentationFramework.AssemblyAttrs.Shim.cs：
+#   程序集级 [assembly: CLSCompliant(false)]。上游由 Arcade 生成 AssemblyInfo 时补上，
+#   本工程切断 Arcade 继承后缺失 → 4 条 CS3021（成员级 [CLSCompliant(false)] 失效）。
+#   取值 false 经实测二选一确定（true 会新增数百条 CS3001/CS3003）。
+src/Microsoft.DotNet.Wpf.Linux/src/shims/PresentationFramework.AssemblyAttrs.Shim.cs

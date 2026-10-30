@@ -1,0 +1,179 @@
+{
+  "scr": "SCR-02",
+  "source": "界面设计说明 §3",
+  "generated_from": "界面图/build-wireframe.mjs --emit-expect（与结构图读同一张表）",
+  "nodes": [
+    {
+      "path": "0/1",
+      "role": "list",
+      "name": "字体族",
+      "states": [
+        "enabled",
+        "visible"
+      ],
+      "actions": [
+        "select"
+      ],
+      "acc": [
+        "ACC-013",
+        "ACC-027"
+      ],
+      "bounds": null,
+      "value": null,
+      "relations": []
+    },
+    {
+      "path": "0/1/0",
+      "role": "list item",
+      "name": "正则 ^[\\w\\s.-]+$",
+      "states": [
+        "selected"
+      ],
+      "actions": [
+        "click"
+      ],
+      "acc": [
+        "ACC-013",
+        "ACC-027"
+      ],
+      "bounds": null,
+      "value": null,
+      "relations": []
+    },
+    {
+      "path": "0/2/0",
+      "role": "paragraph",
+      "name": "正则 汉\\p{Han}",
+      "states": [
+        "visible"
+      ],
+      "actions": [],
+      "acc": [
+        "ACC-013",
+        "ACC-027"
+      ],
+      "bounds": null,
+      "value": null,
+      "relations": []
+    },
+    {
+      "path": "0/2/1",
+      "role": "paragraph",
+      "name": "正则 [A-Za-z]",
+      "states": [
+        "visible"
+      ],
+      "actions": [],
+      "acc": [
+        "ACC-013",
+        "ACC-027"
+      ],
+      "bounds": null,
+      "value": null,
+      "relations": []
+    },
+    {
+      "path": "0/2/2",
+      "role": "paragraph",
+      "name": "正则 [→∑≈]",
+      "states": [
+        "visible"
+      ],
+      "actions": [],
+      "acc": [
+        "ACC-013",
+        "ACC-027"
+      ],
+      "bounds": null,
+      "value": null,
+      "relations": []
+    },
+    {
+      "path": "0/3",
+      "role": "paragraph",
+      "name": "含 RTL 字符（正则 \\p{Arabic}）",
+      "states": [
+        "visible"
+      ],
+      "actions": [],
+      "acc": [
+        "ACC-014",
+        "ACC-027"
+      ],
+      "bounds": null,
+      "value": null,
+      "relations": []
+    },
+    {
+      "path": "0/4",
+      "role": "paragraph",
+      "name": "正则 行布局",
+      "states": [
+        "visible"
+      ],
+      "actions": [
+        "scroll"
+      ],
+      "acc": [
+        "ACC-015",
+        "ACC-027"
+      ],
+      "bounds": null,
+      "value": null,
+      "relations": []
+    },
+    {
+      "path": "0/5",
+      "role": "paragraph",
+      "name": "正则 CFF",
+      "states": [
+        "visible"
+      ],
+      "actions": [],
+      "acc": [
+        "ACC-016",
+        "ACC-027"
+      ],
+      "bounds": null,
+      "value": null,
+      "relations": []
+    },
+    {
+      "path": "0/6",
+      "role": "entry",
+      "name": "输入法样本",
+      "states": [
+        "enabled",
+        "editable",
+        "focusable"
+      ],
+      "actions": [
+        "set-text",
+        "focus"
+      ],
+      "acc": [
+        "ACC-017",
+        "ACC-027"
+      ],
+      "bounds": null,
+      "value": null,
+      "relations": []
+    },
+    {
+      "path": "0/7",
+      "role": "label",
+      "name": "正则 ^预编辑：.*$",
+      "states": [
+        "visible"
+      ],
+      "actions": [],
+      "acc": [
+        "ACC-017",
+        "ACC-027"
+      ],
+      "bounds": null,
+      "value": null,
+      "relations": []
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+<Project>
+  <!-- 改动4：切断对上游 Arcade SDK 的继承，使本工程自包含 -->
+  <PropertyGroup>
+    <UpstreamWpfRoot Condition="'$(UpstreamWpfRoot)' == '' and '$(UPSTREAM_WPF_ROOT)' != ''">$(UPSTREAM_WPF_ROOT)</UpstreamWpfRoot>
+    <UpstreamWpfRoot Condition="'$(UpstreamWpfRoot)' == ''">$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)../../../../'))/</UpstreamWpfRoot>
+    <!-- 关掉会干扰的 SDK 默认行为 -->
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <NoWarn>$(NoWarn);CS0618;CS0067;CS0169;CS0414;CS1591;CS8632;NU1701;MSB3277</NoWarn>
+    <!-- 上游代码大量使用未标注可为 null 的 API，不做 nullable 检查 -->
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <Deterministic>true</Deterministic>
+  </PropertyGroup>
+</Project>

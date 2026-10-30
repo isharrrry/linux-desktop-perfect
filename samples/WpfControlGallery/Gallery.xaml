@@ -1,0 +1,73 @@
+<Window x:Class="LinuxDesktopPerfect.Samples.WpfControlGallery.Gallery"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:ribbon="clr-namespace:System.Windows.Controls.Ribbon;assembly=System.Windows.Controls.Ribbon"
+        Title="WpfControlGallery" Height="820" Width="1024"
+        AutomationProperties.Name="WpfControlGallery">
+    <!-- 对应 SCR-04 元素属性表：0/0 ~ 0/6。0/1、0/2、0/3 是无名分组容器（GroupBox 提供 peer），
+         名字不在表里，故不设 AutomationProperties.Name；桥接层对无名容器的角色口径见 GAP。 -->
+    <StackPanel Margin="12">
+        <TextBlock x:Name="TitleText" Text="WpfControlGallery" AutomationProperties.Name="WpfControlGallery" FontSize="20" Margin="0,0,0,8" />
+        <ComboBox AutomationProperties.Name="主题" SelectedIndex="0" Margin="0,0,0,8">
+            <ComboBoxItem Content="Aero" AutomationProperties.Name="Aero" />
+            <ComboBoxItem Content="Aero2" AutomationProperties.Name="Aero2" />
+            <ComboBoxItem Content="AeroLite" AutomationProperties.Name="AeroLite" />
+            <ComboBoxItem Content="Luna" AutomationProperties.Name="Luna" />
+            <ComboBoxItem Content="Royale" AutomationProperties.Name="Royale" />
+            <ComboBoxItem Content="Classic" AutomationProperties.Name="Classic" />
+        </ComboBox>
+        <GroupBox Margin="0,0,0,8">
+            <StackPanel>
+                <Button Content="按钮" AutomationProperties.Name="按钮" />
+                <TextBox AutomationProperties.Name="文本" />
+                <CheckBox Content="复选" AutomationProperties.Name="复选" />
+                <RadioButton Content="单选" AutomationProperties.Name="单选" />
+                <Slider AutomationProperties.Name="滑杆" Minimum="0" Maximum="100" Value="50" />
+            </StackPanel>
+        </GroupBox>
+        <GroupBox Margin="0,0,0,8">
+            <StackPanel>
+                <ListBox AutomationProperties.Name="列表" Height="64">
+                    <ListBoxItem Content="项 1" AutomationProperties.Name="项 1" IsSelected="True" />
+                    <ListBoxItem Content="项 2" AutomationProperties.Name="项 2" />
+                </ListBox>
+                <ComboBox AutomationProperties.Name="下拉" SelectedIndex="0">
+                    <ComboBoxItem Content="选项一" AutomationProperties.Name="选项一" />
+                </ComboBox>
+                <DataGrid AutomationProperties.Name="表格" AutoGenerateColumns="False" Height="90">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="名称" Binding="{Binding Name}" />
+                    </DataGrid.Columns>
+                </DataGrid>
+            </StackPanel>
+        </GroupBox>
+        <GroupBox Margin="0,0,0,8">
+            <StackPanel>
+                <TabControl AutomationProperties.Name="选项卡">
+                    <TabItem Header="第一页" AutomationProperties.Name="第一页" />
+                    <TabItem Header="第二页" AutomationProperties.Name="第二页" />
+                </TabControl>
+                <GroupBox Header="分组" AutomationProperties.Name="分组">
+                    <TextBlock Text="分组内容" />
+                </GroupBox>
+                <Expander Header="折叠" AutomationProperties.Name="折叠" IsExpanded="False">
+                    <TextBlock Text="折叠内容" />
+                </Expander>
+            </StackPanel>
+        </GroupBox>
+        <ribbon:Ribbon AutomationProperties.Name="Ribbon" Height="120" Margin="0,0,0,8">
+            <ribbon:RibbonTab Header="开始" AutomationProperties.Name="开始">
+                <ribbon:RibbonGroup Header="剪贴板" AutomationProperties.Name="剪贴板">
+                    <ribbon:RibbonButton Label="粘贴" AutomationProperties.Name="粘贴" />
+                </ribbon:RibbonGroup>
+            </ribbon:RibbonTab>
+        </ribbon:Ribbon>
+        <ComboBox AutomationProperties.Name="缩放" SelectedIndex="0" Margin="0,0,0,8">
+            <ComboBoxItem Content="100%" AutomationProperties.Name="100%" />
+            <ComboBoxItem Content="125%" AutomationProperties.Name="125%" />
+            <ComboBoxItem Content="150%" AutomationProperties.Name="150%" />
+            <ComboBoxItem Content="200%" AutomationProperties.Name="200%" />
+        </ComboBox>
+        <TextBlock AutomationProperties.Name="frames=0" Text="frames=0" />
+    </StackPanel>
+</Window>

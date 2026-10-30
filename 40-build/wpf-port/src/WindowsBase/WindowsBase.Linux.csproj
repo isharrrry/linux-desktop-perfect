@@ -1,0 +1,460 @@
+<Project>
+  <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk" />
+  <Import Project="$(MSBuildThisFileDirectory)../../../Linux/build/Directory.Upstream.props" />
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <AssemblyName>WindowsBase</AssemblyName>
+    <RootNamespace>System.Windows</RootNamespace>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <EnableDefaultEmbeddedResourceItems>false</EnableDefaultEmbeddedResourceItems>
+    <NoWarn>$(NoWarn);0618;CS3016;CS0067;CS0169;CS0414;CS0649;CS1591;CS8632;CS0219;CS8981;CA1416;CA1420;WPF0001</NoWarn>
+    <DefineConstants>BASE_NATIVEMETHODS;WINDOWS_BASE</DefineConstants>
+    <LangVersion>latest</LangVersion>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <EnablePInvokeAnalyzer>false</EnablePInvokeAnalyzer>
+    <ProduceReferenceAssembly>false</ProduceReferenceAssembly>
+    <SignAssembly>true</SignAssembly>
+    <PublicSign>true</PublicSign>
+    <AssemblyOriginatorKeyFile>$(WpfLinuxRoot)src/Linux/build/keys/WcpPublicKey.snk</AssemblyOriginatorKeyFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="System.Configuration.ConfigurationManager" Version="9.0.0" />
+    <PackageReference Include="System.Diagnostics.EventLog" Version="9.0.0" />
+    <PackageReference Include="System.IO.Packaging" Version="9.0.0" />
+    <PackageReference Include="System.Security.Cryptography.Xml" Version="9.0.0" />
+    <PackageReference Include="System.Security.Permissions" Version="9.0.0" />
+    <!-- ── `#38` 波：官方包换成 Linux 原生替身（**编译期也不许用包**）──────────────
+        官方包在非 Windows 上把 `XamlAccessLevel`/`SoundPlayer` 等实现成**必抛**桩，只有 `runtimes/win` 是真的
+        ⇒ 任何生成 `GeneratedInternalTypeHelper` 的程序集一装 BAML 就崩（实测：第三方应用 HandyControl）。
+    
+        ⚠️ **为什么留着包引用、却把 compile/runtime 资产排除掉**（`#38` 实测的根因）：
+          `System.Security.Permissions 9.0.0` **传递依赖** `System.Windows.Extensions 9.0.0`
+          ⇒ 就算把直接包引用**整条删掉**，restore 仍会把包拉回来（`project.assets.json` 里 SWE 命中 14 处），
+          RAR 于是**按包**解析（包是**签名的**，`PublicKeyToken=cc7b13ffcd2ddd51`），
+          而 `System.Xaml` 的 `TypeForwardedTo(XamlAccessLevel)` 也就带着**包的身份**，
+          最终 `PresentationFramework` 报 `CS0012`（"类型 XamlAccessLevel 在未引用的程序集中定义"）。
+          ⇒ 必须让**包在编译期一个字都不出现**：`ExcludeAssets="compile;runtime"`（只留它作依赖图的占位）。
+          ⚠️ `#36` 只试过 `ExcludeAssets="runtime"` —— **编译资产还在** ⇒ 包照样赢（那条否证不适用于本形态）。
+    
+        实现由下面的 `<Reference>` 提供：同名程序集、`AssemblyVersion=9.0.0.0`（与 deps.json 对齐）、**不抛**。
+        依赖图里 SWE 的**运行期**资产被排除 ⇒ 包那份 dll **不会**被拷进输出，替身会（`<Private>true</Private>`）。 -->
+    <PackageReference Include="System.Windows.Extensions" Version="9.0.0" ExcludeAssets="compile;runtime" />
+    <Reference Include="System.Windows.Extensions">
+      <HintPath>$(WpfLinuxRoot)src/Microsoft.DotNet.Wpf.Linux/src/System.Windows.Extensions/bin/$(Configuration)/System.Windows.Extensions.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="System.Xaml"><HintPath>$(WpfLinuxRoot)src/Microsoft.DotNet.Wpf.Linux/src/System.Xaml/bin/$(Configuration)/System.Xaml.dll</HintPath><Private>true</Private></Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/Common/src/System/AppContextDefaultValues.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/Common/src/System/LocalAppContext.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/GlobalUsings.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/LibraryAssemblyInfo.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/AppContextDefaultValues.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/Common/src/System/SR.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/MS/Internal/IO/Packaging/PackagingExtensions.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/SR.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/Shared/RefAssemblyAttrs.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/Shared/MS/Internal/ReflectionUtils.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/Shared/MS/Internal/ResourceIDHelper.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/Shared/MS/Internal/SecurityHelper.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/Shared/MS/Internal/SafeSecurityHelper.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/Shared/MS/Internal/CulturePreservingExecutionContext.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/Shared/MS/Internal/DoubleUtil.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/Shared/MS/Internal/Invariant.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/Shared/MS/Internal/MatrixUtil.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/Shared/MS/Internal/Registry.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/Shared/MS/Internal/TokenizerHelper.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/Shared/MS/Internal/IO/Packaging/CompoundFile/ContainerFlags.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/Shared/MS/Internal/IO/Packaging/PackagePartExtensions.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/Shared/MS/Internal/IO/Packaging/PackagingUtilities.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/Shared/MS/Internal/ReaderWriterLockSlimWrapper.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/Shared/MS/Internal/ReaderWriterLockWrapper.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/Shared/MS/Utility/DpiAwarenessContext/DpiAwarenessContextHandle.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/Shared/MS/Utility/DpiAwarenessContext/DpiAwarenessContextHandle+DpiUtil.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/Shared/MS/Utility/DpiAwarenessContext/DpiAwarenessContextValue.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/Shared/MS/Utility/FrugalList.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/Shared/MS/Utility/FrugalMap.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/Shared/MS/Utility/ItemList.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/Shared/MS/Utility/Trace.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/Shared/MS/Utility/TraceProvider.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/Shared/Tracing/managed/wpf-etw.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/Shared/MS/Win32/ExternDll.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/Shared/MS/Win32/HandleCollector.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/Shared/MS/Win32/NativeMethodsCLR.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/Shared/MS/Win32/NativeMethodsOther.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/Shared/MS/Win32/NativeMethodsSetLastError.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/Shared/MS/Win32/UnsafeNativeMethodsCLR.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/Shared/MS/Win32/UnsafeNativeMethodsEventTrace.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/Shared/MS/Win32/UnsafeNativeMethodsOther.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/Shared/MS/Win32/UnsafeNativeMethodsTextServices.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/Shared/MS/Win32/SafeNativeMethodsCLR.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/Shared/MS/Win32/SafeNativeMethodsOther.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/Shared/System/Windows/Markup/ReflectionHelper.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/Shared/System/Windows/Interop/OSVersionHelper.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/Shared/System/Windows/Interop/OperatingSystemVersion.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/MS/Internal/AssemblyHelper.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/MS/Internal/AvTrace.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/MS/Internal/AvTraceDetails.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/MS/Internal/AvTraceFormat.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/MS/Internal/CleanupHelper.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/MS/Internal/BaseAppContextSwitches.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/MS/Internal/ComponentModel/APCustomTypeDescriptor.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/MS/Internal/ComponentModel/AttachedPropertyMethodSelector.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/MS/Internal/ComponentModel/AttachInfo.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/MS/Internal/ComponentModel/DependencyObjectPropertyDescriptor.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/MS/Internal/ComponentModel/DependencyObjectProvider.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/MS/Internal/ComponentModel/DependencyPropertyAttribute.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/MS/Internal/ComponentModel/DependencyPropertyKind.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/MS/Internal/ComponentModel/DPCustomTypeDescriptor.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/MS/Internal/ComponentModel/PropertyChangeTracker.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/MS/Internal/ComponentModel/PropertyDescriptorComparer.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/MS/Internal/ComponentModel/PropertyKey.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/MS/Internal/ContentType.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/Shared/MS/Internal/CriticalExceptions.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/MS/Internal/DefaultValueFactory.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/MS/Internal/FreezableDefaultValueFactory.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/MS/Internal/Generated/AvTraceMessages.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/MS/Internal/GenericsInstances.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/MS/Internal/InheritanceContextChangedEventManager.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/MS/Internal/InheritanceContextHelper.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/MS/Internal/Interop/ErrorCodes.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/MS/Internal/Interop/NativeStructs.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/MS/Internal/Interop/NativeValues.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/MS/Internal/IO/Packaging/CompoundFile/CFStream.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/MS/Internal/IO/Packaging/CompoundFile/CompoundFileReference.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/MS/Internal/IO/Packaging/CompoundFile/CompoundFileStreamReference.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/MS/Internal/IO/Packaging/CompoundFile/CompoundFileStorageReference.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/MS/Internal/IO/Packaging/CompoundFile/CompoundFileDeflateTransform.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/MS/Internal/IO/Packaging/CompoundFile/CompressionTransform.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/MS/Internal/IO/Packaging/CompoundFile/ContainerUtilities.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/MS/Internal/IO/Packaging/CompoundFile/NativeCompoundFileAPIs.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/MS/Internal/IO/Packaging/CompoundFile/PrivateUnsafeNativeCompoundFileMethods.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/MS/Internal/IO/Packaging/CompoundFile/InternalSafeNativeCompoundFileConstants.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/MS/Internal/IO/Packaging/CompoundFile/InternalSafeNativeCompoundFileInterfaces.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/MS/Internal/IO/Packaging/CompoundFile/RightsManagementEncryptedStream.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/MS/Internal/IO/Packaging/CompoundFile/RightsManagementEncryptionTransform.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/MS/Internal/IO/Packaging/CompoundFile/StreamWithDictionary.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/MS/Internal/IO/Packaging/CompoundFile/UserUseLicenseDictionaryLoader.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/MS/Internal/IO/Packaging/CompoundFile/VersionedStream.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/MS/Internal/IO/Packaging/CompoundFile/VersionedStreamOwner.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/MS/Internal/IO/Packaging/Certificate.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/MS/Internal/IO/Packaging/DeflateEmulationStream.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/MS/Internal/IO/Packaging/CompressEmulationStream.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/MS/Internal/IO/Packaging/CustomSignedXml.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/MS/Internal/IO/Packaging/IgnoreFlushAndCloseStream.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/MS/Internal/IO/Packaging/InternalRelationshipCollection.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/MS/Internal/IO/Packaging/OlePropertyStructs.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/MS/Internal/IO/Packaging/PartManifestEntry.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/MS/Internal/IO/Packaging/PackUriHelper.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/MS/Internal/IO/Packaging/StorageBasedPackageProperties.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/MS/Internal/IO/Packaging/XmlDigitalSignatureProcessor.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/MS/Internal/IO/Packaging/XmlSignatureManifest.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/MS/Internal/IO/Packaging/XmlSignatureProperties.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/MS/Internal/IO/Packaging/XmlStringTable.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/MS/Internal/IO/Packaging/ITrackingMemoryStreamFactory.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/MS/Internal/IO/Packaging/TrackingMemoryStream.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/MS/Internal/IO/Packaging/TrackingMemoryStreamFactory.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/MS/Internal/IO/Packaging/SparseMemoryStream.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/MS/Internal/KnownBoxes.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/MS/Internal/NamedObject.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/MS/Internal/ObservableCollectionDefaultValueFactory.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/MS/Internal/PlatformCulture.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/MS/Internal/Security/AttachmentService.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/MS/Internal/ShutDownListener.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/MS/Internal/SystemCoreExtensionMethods.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/MS/Internal/SystemDataExtensionMethods.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/MS/Internal/SystemDrawingExtensionMethods.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/MS/Internal/SystemXmlExtensionMethods.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/MS/Internal/SystemXmlLinqExtensionMethods.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/MS/Internal/TraceLevelStore.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/MS/Internal/Threading/ExceptionFilterHelper.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/MS/Internal/Utilities.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/MS/Internal/Verify.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/MS/Internal/WeakEventTable.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/MS/Internal/WeakReferenceKey.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/OtherAssemblyAttrs.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/Collections/ObjectModel/WeakReadOnlyCollection.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/ComponentModel/CurrentChangedEventManager.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/ComponentModel/CurrentChangingEventArgs.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/ComponentModel/CurrentChangingEventManager.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/ComponentModel/DependencyPropertyDescriptor.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/ComponentModel/ErrorsChangedEventManager.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/ComponentModel/ICollectionView.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/ComponentModel/ICollectionViewFactory.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/ComponentModel/ICollectionViewLiveShaping.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/ComponentModel/IEditableCollectionView.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/ComponentModel/IEditableCollectionViewAddNewItem.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/ComponentModel/IItemProperties.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/ComponentModel/GroupDescription.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/ComponentModel/PropertyChangedEventManager.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/ComponentModel/PropertyFilterFlags.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/ComponentModel/PropertyFilterAttribute.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/ComponentModel/SortDescription.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/ComponentModel/SortDescriptionCollection.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/Collections/Specialized/CollectionChangedEventManager.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/Diagnostics/Generated/PresentationTraceSources.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/Diagnostics/PresentationTraceSources.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/IO/Packaging/CompoundFile/DataSpaceManager.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/IO/Packaging/CompoundFile/FormatVersion.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/IO/Packaging/CompoundFile/StorageInfo.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/IO/Packaging/CompoundFile/StorageRoot.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/IO/Packaging/CompoundFile/StreamInfo.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/IO/Packaging/CompoundFile/VersionPair.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/IO/Packaging/EncryptedPackage.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/IO/Packaging/RightsManagementInformation.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/IO/Packaging/PackageDigitalSignature.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/IO/Packaging/PackageDigitalSignatureManager.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/Windows/AccessibilitySwitches.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/Windows/AttachedPropertyBrowsableAttribute.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/Windows/AttachedPropertyBrowsableForTypeAttribute.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/Windows/AttachedPropertyBrowsableWhenAttributePresentAttribute.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/Windows/BaseCompatibilityPreferences.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/Windows/CoerceValueCallback.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/Windows/Converters/Generated/Int32RectValueSerializer.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/Windows/Converters/Generated/PointValueSerializer.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/Windows/Converters/Generated/RectValueSerializer.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/Windows/Converters/Generated/SizeValueSerializer.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/Windows/Converters/Generated/VectorValueSerializer.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/Windows/DeferredReference.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/Windows/DependencyObject.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/Windows/DependencyObjectType.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/Windows/DependencyProperty.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/Windows/DependencyPropertyKey.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/Windows/DependencyPropertyChangedEventArgs.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/Windows/DependencyPropertyChangedEventHandler.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/Windows/DependencyPropertyValueSerializer.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/Windows/DependencySource.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/Windows/DependentList.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/Windows/DesignerSerializationOptions.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/Windows/DesignerSerializationOptionsAttribute.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/Windows/NameScope.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/Windows/EffectiveValueEntry.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/Windows/EntryIndex.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/Windows/Expression.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/Windows/ExpressionConverter.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/Windows/Freezable.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/Windows/FreezeValueCallback.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/Windows/Generated/Int32Rect.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/Windows/Generated/Int32RectConverter.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/Windows/Generated/Point.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/Windows/Generated/PointConverter.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/Windows/Generated/Rect.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/Windows/Generated/RectConverter.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/Windows/Generated/Size.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/Windows/Generated/SizeConverter.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/Windows/Generated/Vector.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/Windows/Generated/VectorConverter.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/Windows/Input/Key.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/Windows/Input/KeyConverter.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/Windows/Input/KeyInterop.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/Windows/Input/KeyValueSerializer.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/Windows/Int32Rect.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/Windows/ISealable.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/Windows/IWeakEventListener.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/Windows/LocalValueEnumerator.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/Windows/Media/Converters/Generated/MatrixValueSerializer.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/Windows/Media/DisableDpiAwarenessAttribute.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/Windows/Media/Matrix.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/Windows/Media/Generated/Matrix.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/Windows/Media/Generated/MatrixConverter.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/Windows/Media/TextFormattingMode.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/Windows/Point.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/Windows/PropertyChangedCallback.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/Windows/PropertyMetadata.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/Windows/Rect.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/Windows/Size.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/Windows/UncommonField.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/Windows/ValidateValueCallback.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/Windows/Vector.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/Windows/WeakEventManager.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/Windows/WeakEventManagerT.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/Windows/Data/DataSourceProvider.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/Windows/Markup/DateTimeConverter2.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/Windows/Markup/InternalTypeHelper.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/Windows/Markup/IReceiveMarkupExtension.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/Windows/Markup/ServiceProviders.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/Windows/Markup/TypeTypeConverter.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/Shared/System/Windows/Markup/Replacements/TypeUriConverter.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/Shared/System/Windows/Markup/TypeConverterHelper.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/Shared/System/Windows/Markup/XmlCompatibilityReader.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/Shared/System/Windows/Markup/XmlWrappingReader.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/Windows/Markup/Primitives/MarkupObject.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/Windows/Markup/Primitives/MarkupProperty.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/Shared/System/Windows/Markup/RuntimeIdentifierPropertyAttribute.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/Shared/MS/Internal/CopyOnWriteList.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/Shared/MS/Internal/WeakReferenceList.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/Shared/MS/Internal/WeakReferenceEnumerator.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/Shared/MS/Win32/HwndSubclass.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/Shared/MS/Win32/HwndWrapper.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/Shared/MS/Win32/HwndWrapperHook.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/Shared/MS/Win32/ManagedWndProcTracker.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/Shared/MS/Win32/MessageOnlyHwndWrapper.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/Shared/MS/Internal/TextServicesLoader.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/MS/Internal/PriorityChain.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/MS/Internal/PriorityItem.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/MS/Internal/PriorityQueue.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/MS/Internal/Threading/ExceptionWrapper.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/Windows/Input/ModifierKeys.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/Windows/Input/ModifierKeysConverter.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/Windows/Input/ModifierKeysValueSerializer.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/Windows/Input/TraversalRequest.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/Windows/Threading/PriorityRange.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/Windows/Threading/DispatcherPriority.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/Windows/Threading/Dispatcher.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/Windows/Threading/DispatcherPriorityAwaitable.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/Windows/Threading/DispatcherPriorityAwaiter.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/Windows/Threading/DispatcherSynchronizationContext.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/Windows/Threading/DispatcherHookEventArgs.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/Windows/Threading/DispatcherHooks.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/Windows/Threading/DispatcherProcessingDisabled.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/Windows/Threading/DispatcherObject.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/Windows/Threading/DispatcherFrame.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/Windows/Threading/DispatcherOperation.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/Windows/Threading/DispatcherOperationStatus.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/Windows/Threading/DispatcherOperationTaskMapping.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/Windows/Threading/DispatcherOperationTaskSource.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/Windows/Threading/DispatcherEventArgs.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/Windows/Threading/DispatcherExceptionEventArgs.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/Windows/Threading/DispatcherExceptionFilterEventArgs.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/Windows/Threading/DispatcherTimer.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/Windows/Interop/MSG.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/Windows/Interop/ComponentDispatcher.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/Windows/Interop/ComponentDispatcherThread.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/Windows/Interop/IKeyboardInputSink.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/Windows/Interop/IKeyboardInputSite.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/Common/src/System/IO/Compression/DeflateZLib/ZLibNative.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/Common/src/System/IO/Compression/DeflateZLib/ZLibNative.Windows.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/Common/src/Interop/Windows/zlib/zlib.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/Common/src/Interop/Windows/Interop.Libraries.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/Security/RightsManagement/Grant.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/Security/RightsManagement/SecureEnvironment.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/Security/RightsManagement/CryptoProvider.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/Security/RightsManagement/UnsignedPublishLicense.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/Security/RightsManagement/PublishLicense.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/Security/RightsManagement/UseLicense.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/Security/RightsManagement/User.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/Security/RightsManagement/UserActivationMode.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/Security/RightsManagement/Right.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/Security/RightsManagement/AuthenticationType.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/Security/RightsManagement/Exceptions.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/Security/RightsManagement/RightsManagementFailureCode.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/Security/RightsManagement/LocalizedNameDescriptionPair.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/MS/Internal/Security/RightsManagement/SafeRightsManagementEnvironmentHandle.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/MS/Internal/Security/RightsManagement/SafeRightsManagementHandle.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/MS/Internal/Security/RightsManagement/SafeRightsManagementQueryHandle.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/MS/Internal/Security/RightsManagement/SafeRightsManagementPubHandle.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/MS/Internal/Security/RightsManagement/SafeRightsManagementSessionHandle.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/MS/Internal/Security/RightsManagement/ClientSession.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/MS/Internal/Security/RightsManagement/CallbackHandler.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/MS/Internal/Security/RightsManagement/Errors.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/MS/Internal/Security/RightsManagement/IssuanceLicense.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/MS/Internal/Security/RightsManagement/InternalSafeNativeMethods.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/MS/Internal/Security/RightsManagement/PrivateUnsafeNativeMethods.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/MS/Internal/Security/RightsManagement/NativeRightsManagementAPIsConstants.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/MS/Internal/Security/RightsManagement/NativeRightsManagementAPIsStructures.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/MS/Internal/Security/RightsManagement/RightNameExpirationInfoPair.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/MS/Internal/Security/RightsManagement/RevocationPoint.cs" />
+    <Compile Include="$(WpfLinuxRoot)src/Microsoft.DotNet.Wpf.Linux/src/WindowsBase/SR.g.cs" />
+  </ItemGroup>
+  <!-- WPF-on-Linux 兼容层：src/Microsoft.DotNet.Wpf.Linux/src/shims 下手写的等价类型（上游零改动） -->
+  <ItemGroup>
+    <Compile Include="$(WpfLinuxRoot)src/Microsoft.DotNet.Wpf.Linux/src/shims/WindowsWin32.Shim.cs" />
+    <Compile Include="$(WpfLinuxRoot)src/Microsoft.DotNet.Wpf.Linux/src/shims/Accessibility.Shim.cs" />
+    <Compile Include="$(WpfLinuxRoot)src/Microsoft.DotNet.Wpf.Linux/src/shims/Win32ShimResolver.cs" />
+  </ItemGroup>
+  <!-- 自产程序集身份：AssemblyVersion 4.0.0.1，必须 > 框架门面的 4.0.0.0 -->
+  <ItemGroup>
+    <Compile Include="$(WpfLinuxRoot)src/Microsoft.DotNet.Wpf.Linux/src/shims/LinuxAssemblyIdentity.cs" />
+  </ItemGroup>
+  <!-- 程序集清单资源：ManifestResourceName 必须显式（RootNamespace 被本脚本统一为
+       MS.Internal，靠 SDK 推导会与 gen-sr.py 的 SR 基名不一致 → 资源表静默失效） -->
+  <ItemGroup>
+    <EmbeddedResource Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/Resources/Strings.resx">
+      <ManifestResourceName>WindowsBase.Resources.Strings</ManifestResourceName>
+    </EmbeddedResource>
+  </ItemGroup>
+  <!-- ==== WPF-on-Linux 补丁开关：以下内容由 reapply-patches.py 追加 ==== -->
+  <!-- ============================================================================
+       WPF-on-Linux 补丁 G：SecurityHelper.ReadRegistryValue 的 null 守卫
+       ============================================================================
+       上游 Shared/MS/Internal/SecurityHelper.cs:215 直接
+           RegistryKey key = baseRegistryKey.OpenSubKey(keyName);
+       而 Unix 上 `Registry.CurrentUser` 返回 **null**（不是抛异常），于是 NRE。
+       链路：AvTrace.IsWpfTracingEnabledInRegistry → ReadRegistryValue →
+       TraceDependencyProperty..cctor → System.Windows.PresentationSource 静态构造失败
+       → HwndSource 不可用。
+       处置：编译输入换成 src/Microsoft.DotNet.Wpf.Linux/src/WindowsBase/SecurityHelper.Linux.cs ——
+       它由本脚本从上游**逐字复制 + 插入 1 行 null 守卫**生成，因此永远与上游同步。
+       生成物的完整内容与守卫行见该文件头部。
+       ⚠️ 生成物由 reapply-patches.py 负责刷新；不要手改它。
+       ============================================================================ -->
+  <ItemGroup>
+    <Compile Remove="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/Shared/MS/Internal/SecurityHelper.cs" />
+    <Compile Include="$(WpfLinuxRoot)src/Microsoft.DotNet.Wpf.Linux/src/WindowsBase/SecurityHelper.Linux.cs" />
+  </ItemGroup>
+
+  <!-- ============================================================================
+       WPF-on-Linux 补丁 F：Linux 版 MS.Utility.EventTrace（替换上游 Trace.cs）
+       ============================================================================
+       上游 Trace.cs 的静态构造函数在 Linux 上必然抛异常（详见
+       src/Microsoft.DotNet.Wpf.Linux/src/shims/WindowsBase.EventTrace.Shim.cs 顶部的完整推导与实测症状）。
+       这里成对地「摘掉上游文件 + 加入 Linux 版」，两个条目不可分离。
+       ============================================================================ -->
+  <ItemGroup>
+    <Compile Remove="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/Shared/MS/Utility/Trace.cs" />
+    <Compile Include="$(WpfLinuxRoot)src/Microsoft.DotNet.Wpf.Linux/src/shims/WindowsBase.EventTrace.Shim.cs" />
+  </ItemGroup>
+  <!-- ==== WPF-on-Linux 补丁结束 ==== -->
+  <!-- ==== WPF-on-Linux M7c 补丁 M：TSF 的 Registry null 守卫（由 src/Linux/tools/patch-presentationcore-textservices.py 注入）==== -->
+  <ItemGroup>
+    <Compile Remove="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/Shared/MS/Internal/TextServicesLoader.cs" />
+    <Compile Include="$(WpfLinuxRoot)src/Microsoft.DotNet.Wpf.Linux/src/WindowsBase/TextServicesLoader.Linux.cs" />
+  </ItemGroup>
+  <!-- ==== WPF-on-Linux M7c 补丁 M 结束 ==== -->
+  <!-- ==== WPF-on-Linux 补丁 N：assert 原文可见（由 src/Linux/tools/patch-shared-invariant-failfast.py 注入）==== -->
+  <ItemGroup>
+    <Compile Remove="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/Shared/MS/Internal/Invariant.cs" />
+    <Compile Include="$(WpfLinuxRoot)src/Microsoft.DotNet.Wpf.Linux/src/WindowsBase/Invariant.Linux.cs" />
+  </ItemGroup>
+  <!-- ==== WPF-on-Linux 补丁 N 结束 ==== -->
+  <!-- ==== WPF-on-Linux M7b 补丁 P：建窗失败诊断（由 src/Linux/tools/patch-shared-hwndwrapper-diag.py 注入）==== -->
+  <ItemGroup>
+    <Compile Remove="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/Shared/MS/Win32/HwndWrapper.cs" />
+    <Compile Include="$(WpfLinuxRoot)src/Microsoft.DotNet.Wpf.Linux/src/WindowsBase/HwndWrapper.Linux.cs" />
+  </ItemGroup>
+  <!-- ==== WPF-on-Linux M7b 补丁 P 结束 ==== -->
+  <!-- ==== T1c 输入链读数：Dispatcher 出队插桩（patch-windowsbase-msgflow.py 注入）==== -->
+  <ItemGroup>
+    <Compile Remove="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/Windows/Threading/Dispatcher.cs" />
+    <Compile Include="$(WpfLinuxRoot)src/Microsoft.DotNet.Wpf.Linux/src/WindowsBase/Dispatcher.Linux.cs" />
+  </ItemGroup>
+  <!-- ==== T1c 输入链读数结束 ==== -->
+  <!-- ==== T1c 第 5 批：DP 读路径为什么不解析 deferred（patch-windowsbase-dpvalue-trace.py 注入）==== -->
+  <ItemGroup>
+    <Compile Remove="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/Windows/DependencyObject.cs" />
+    <Compile Include="$(WpfLinuxRoot)src/Microsoft.DotNet.Wpf.Linux/src/WindowsBase/DependencyObject.Linux.cs" />
+  </ItemGroup>
+  <!-- ==== T1c 第 5 批 结束 ==== -->
+  <!-- ==== T1c 第 6 批：EffectiveValueEntry.GetFlattenedEntry 的三个 return（patch-windowsbase-entry-flatten-trace.py 注入）==== -->
+  <ItemGroup>
+    <Compile Remove="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/Windows/EffectiveValueEntry.cs" />
+    <Compile Include="$(WpfLinuxRoot)src/Microsoft.DotNet.Wpf.Linux/src/WindowsBase/EffectiveValueEntry.Linux.cs" />
+  </ItemGroup>
+  <!-- ==== T1c 第 6 批（flatten）结束 ==== -->
+  <!-- ==== WPF-on-Linux 修法 D-G65：DispatcherSynchronizationContext.Wait 不再走原生等待（patch-windowsbase-focus-wait.py 注入）==== -->
+  <ItemGroup>
+    <Compile Remove="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/WindowsBase/System/Windows/Threading/DispatcherSynchronizationContext.cs" />
+    <Compile Include="$(WpfLinuxRoot)src/Microsoft.DotNet.Wpf.Linux/src/WindowsBase/DispatcherSynchronizationContext.Linux.cs" />
+  </ItemGroup>
+  <!-- ==== WPF-on-Linux 修法 D-G65 结束 ==== -->
+  <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
+</Project>

@@ -1,0 +1,18 @@
+{
+  "snapshot": "dotnet/wpf release/10.0（整仓只读快照：仓库根 + src/ + eng/ + packaging/ + test/）",
+  "commit": "2565b0112868a77d29992c86a0c695c9d4d6d7fb",
+  "commit_short": "2565b0112",
+  "commit_date": "2026-09-24",
+  "ref": "upstream/release/10.0（本地 clone）",
+  "source_repo": "/home/links-dev/netTest/GitProj/WPFOnLinux（含 upstream = https://github.com/dotnet/wpf.git）",
+  "fallback_source": "https://gitee.com/mirrors/wpf.git 的 release/10.0 = 01dce087bb8fc7835e722b34acb53100b140f122（GitHub 直连在本机不可用）",
+  "extract_command": "git -C <WPFOnLinux> archive 2565b0112 | tar -x -C 40-build/upstream/wpf",
+  "sdk_required_by_snapshot": "10.0.112（派生构建用本仓 40-build/global.json 的 10.0.401，rollForward=latestFeature）",
+  "files": 7380,
+  "cs_files": 4538,
+  "bytes": 125525384,
+  "readonly": true,
+  "tracked_in_git": false,
+  "correction": "2026-10-30 第一次导出只取了 src/Microsoft.DotNet.Wpf 子树，缺仓库根的 Directory.Build.props/targets、eng/、NuGet.config，导致派生构建在包管理与属性导入处失败；已改为整仓导出（本次）。",
+  "note": "快照本体不入版本控制（.gitignore 已排除）；用 extract_command 或 fallback_source 可完整复算。本文件随之入库。"
+}

@@ -1,0 +1,124 @@
+# DUCE 命令布局表（TBL-003 机械侧）
+# 生成器：50-verify/contract/gen-duce-layout.mjs（勿手改）
+# 列：id,名称,参数结构体,字节长度,实现状态,降级编号,来源
+# 字节长度空 = 待对拍确认（见来源列）；变长命令的长度是固定头，尾部单独处理
+# 规模：118 行；定长 112、变长 17、gap 6
+id,名称,参数结构体,字节长度,实现状态,降级编号,来源
+0x00,MilCmdInvalid,,,gap,—（哨兵命令，不参与解码）,无参数结构体；长度待对拍确认；0x00 哨兵
+0x01,MilCmdTransportSyncFlush,,8,impl,—,无参数结构体；MilCommandLayout.cs:FixedSize；参数结构体待对拍确认
+0x02,MilCmdTransportDestroyResourcesOnChannel,,8,impl,—,无参数结构体；MilCommandLayout.cs:FixedSize；参数结构体待对拍确认
+0x03,MilCmdPartitionRegisterForNotifications,MILCMD_PARTITION_REGISTERFORNOTIFICATIONS,8,impl,—,MilCommandStructs.cs:MILCMD_PARTITION_REGISTERFORNOTIFICATIONS(2 字段)；MilCommandLayout.cs:FixedSize
+0x04,MilCmdChannelRequestTier,MILCMD_CHANNEL_REQUESTTIER,8,impl,—,MilCommandStructs.cs:MILCMD_CHANNEL_REQUESTTIER(2 字段)；MilCommandLayout.cs:FixedSize
+0x05,MilCmdPartitionSetVBlankSyncMode,MILCMD_PARTITION_SETVBLANKSYNCMODE,8,impl,—,MilCommandStructs.cs:MILCMD_PARTITION_SETVBLANKSYNCMODE(2 字段)；MilCommandLayout.cs:FixedSize
+0x06,MilCmdPartitionNotifyPresent,MILCMD_PARTITION_NOTIFYPRESENT,12,impl,—,MilCommandStructs.cs:MILCMD_PARTITION_NOTIFYPRESENT(2 字段)；MilCommandLayout.cs:FixedSize
+0x07,MilCmdChannelCreateResource,,8,impl,—,无参数结构体；MilCommandLayout.cs:FixedSize；参数结构体待对拍确认
+0x08,MilCmdChannelDeleteResource,,8,impl,—,无参数结构体；MilCommandLayout.cs:FixedSize；参数结构体待对拍确认
+0x09,MilCmdChannelDuplicateHandle,,8,impl,—,无参数结构体；MilCommandLayout.cs:FixedSize；参数结构体待对拍确认
+0x0a,MilCmdD3DImage,,,gap,待登记（缺陷册未分配 D- 编号）,无参数结构体；长度待对拍确认；s_notImpl（E_NOTIMPL）；参数结构体待对拍确认；字节长度待对拍确认
+0x0b,MilCmdD3DImagePresent,,,gap,待登记（缺陷册未分配 D- 编号）,无参数结构体；长度待对拍确认；s_notImpl（E_NOTIMPL）；参数结构体待对拍确认；字节长度待对拍确认
+0x0c,MilCmdBitmapSource,MILCMD_BITMAP_SOURCE,16,impl,—,MilCommandStructs.cs:MILCMD_BITMAP_SOURCE(3 字段)；MilCommandLayout.cs:FixedSize
+0x0d,MilCmdBitmapInvalidate,MILCMD_BITMAP_INVALIDATE,28,impl,—,MilCommandStructs.cs:MILCMD_BITMAP_INVALIDATE(4 字段)；MilCommandLayout.cs:FixedSize
+0x0e,MilCmdDoubleResource,MILCMD_DOUBLERESOURCE,16,impl,—,MilCommandStructs.cs:MILCMD_DOUBLERESOURCE(3 字段)；MilCommandLayout.cs:FixedSize
+0x0f,MilCmdColorResource,MILCMD_COLORRESOURCE,24,impl,—,MilCommandStructs.cs:MILCMD_COLORRESOURCE(3 字段)；MilCommandLayout.cs:FixedSize
+0x10,MilCmdPointResource,MILCMD_POINTRESOURCE,24,impl,—,MilCommandStructs.cs:MILCMD_POINTRESOURCE(3 字段)；MilCommandLayout.cs:FixedSize
+0x11,MilCmdRectResource,MILCMD_RECTRESOURCE,40,impl,—,MilCommandStructs.cs:MILCMD_RECTRESOURCE(3 字段)；MilCommandLayout.cs:FixedSize
+0x12,MilCmdSizeResource,MILCMD_SIZERESOURCE,24,impl,—,MilCommandStructs.cs:MILCMD_SIZERESOURCE(3 字段)；MilCommandLayout.cs:FixedSize
+0x13,MilCmdMatrixResource,MILCMD_MATRIXRESOURCE,56,impl,—,MilCommandStructs.cs:MILCMD_MATRIXRESOURCE(3 字段)；MilCommandLayout.cs:FixedSize
+0x14,MilCmdPoint3DResource,MILCMD_POINT3DRESOURCE,20,impl,—,MilCommandStructs.cs:MILCMD_POINT3DRESOURCE(3 字段)；MilCommandLayout.cs:FixedSize
+0x15,MilCmdVector3DResource,MILCMD_VECTOR3DRESOURCE,20,impl,—,MilCommandStructs.cs:MILCMD_VECTOR3DRESOURCE(3 字段)；MilCommandLayout.cs:FixedSize
+0x16,MilCmdQuaternionResource,MILCMD_QUATERNIONRESOURCE,24,impl,—,MilCommandStructs.cs:MILCMD_QUATERNIONRESOURCE(3 字段)；MilCommandLayout.cs:FixedSize
+0x17,MilCmdMediaPlayer,,,gap,待登记（缺陷册未分配 D- 编号）,无参数结构体；长度待对拍确认；s_notImpl（E_NOTIMPL）；参数结构体待对拍确认；字节长度待对拍确认
+0x18,MilCmdRenderData,MILCMD_RENDERDATA,12,impl,—,MilCommandStructs.cs:MILCMD_RENDERDATA(3 字段)；MilCommandLayout.cs:FixedSize；HasVariablePayload=变长（长度为固定头）
+0x19,MilCmdEtwEventResource,MILCMD_ETWEVENTRESOURCE,12,impl,—,MilCommandStructs.cs:MILCMD_ETWEVENTRESOURCE(3 字段)；MilCommandLayout.cs:FixedSize
+0x1a,MilCmdVisualCreate,,8,impl,—,无参数结构体；MilCommandLayout.cs:FixedSize；参数结构体待对拍确认
+0x1b,MilCmdVisualSetOffset,MILCMD_VISUAL_SETOFFSET,24,impl,—,MilCommandStructs.cs:MILCMD_VISUAL_SETOFFSET(4 字段)；MilCommandLayout.cs:FixedSize
+0x1c,MilCmdVisualSetTransform,MILCMD_VISUAL_SETTRANSFORM,12,impl,—,MilCommandStructs.cs:MILCMD_VISUAL_SETTRANSFORM(3 字段)；MilCommandLayout.cs:FixedSize
+0x1d,MilCmdVisualSetEffect,MILCMD_VISUAL_SETEFFECT,12,impl,—,MilCommandStructs.cs:MILCMD_VISUAL_SETEFFECT(3 字段)；MilCommandLayout.cs:FixedSize
+0x1e,MilCmdVisualSetCacheMode,MILCMD_VISUAL_SETCACHEMODE,12,impl,—,MilCommandStructs.cs:MILCMD_VISUAL_SETCACHEMODE(3 字段)；MilCommandLayout.cs:FixedSize
+0x1f,MilCmdVisualSetClip,MILCMD_VISUAL_SETCLIP,12,impl,—,MilCommandStructs.cs:MILCMD_VISUAL_SETCLIP(3 字段)；MilCommandLayout.cs:FixedSize
+0x20,MilCmdVisualSetAlpha,MILCMD_VISUAL_SETALPHA,16,impl,—,MilCommandStructs.cs:MILCMD_VISUAL_SETALPHA(3 字段)；MilCommandLayout.cs:FixedSize
+0x21,MilCmdVisualSetRenderOptions,MILCMD_VISUAL_SETRENDEROPTIONS,36,impl,—,MilCommandStructs.cs:MILCMD_VISUAL_SETRENDEROPTIONS(3 字段)；MilCommandLayout.cs:FixedSize
+0x22,MilCmdVisualSetContent,MILCMD_VISUAL_SETCONTENT,12,impl,—,MilCommandStructs.cs:MILCMD_VISUAL_SETCONTENT(3 字段)；MilCommandLayout.cs:FixedSize
+0x23,MilCmdVisualSetAlphaMask,MILCMD_VISUAL_SETALPHAMASK,12,impl,—,MilCommandStructs.cs:MILCMD_VISUAL_SETALPHAMASK(3 字段)；MilCommandLayout.cs:FixedSize
+0x24,MilCmdVisualRemoveAllChildren,MILCMD_VISUAL_REMOVEALLCHILDREN,8,impl,—,MilCommandStructs.cs:MILCMD_VISUAL_REMOVEALLCHILDREN(2 字段)；MilCommandLayout.cs:FixedSize
+0x25,MilCmdVisualRemoveChild,MILCMD_VISUAL_REMOVECHILD,12,impl,—,MilCommandStructs.cs:MILCMD_VISUAL_REMOVECHILD(3 字段)；MilCommandLayout.cs:FixedSize
+0x26,MilCmdVisualInsertChildAt,MILCMD_VISUAL_INSERTCHILDAT,16,impl,—,MilCommandStructs.cs:MILCMD_VISUAL_INSERTCHILDAT(4 字段)；MilCommandLayout.cs:FixedSize
+0x27,MilCmdVisualSetGuidelineCollection,MILCMD_VISUAL_SETGUIDELINECOLLECTION,16,impl,—,MilCommandStructs.cs:MILCMD_VISUAL_SETGUIDELINECOLLECTION(5 字段)；MilCommandLayout.cs:FixedSize；HasVariablePayload=变长（长度为固定头）
+0x28,MilCmdVisualSetScrollableAreaClip,MILCMD_VISUAL_SETSCROLLABLEAREACLIP,44,impl,—,MilCommandStructs.cs:MILCMD_VISUAL_SETSCROLLABLEAREACLIP(4 字段)；MilCommandLayout.cs:FixedSize
+0x29,MilCmdViewport3DVisualSetCamera,MILCMD_VIEWPORT3DVISUAL_SETCAMERA,12,impl,—,MilCommandStructs.cs:MILCMD_VIEWPORT3DVISUAL_SETCAMERA(3 字段)；MilCommandLayout.cs:FixedSize
+0x2a,MilCmdViewport3DVisualSetViewport,MILCMD_VIEWPORT3DVISUAL_SETVIEWPORT,40,impl,—,MilCommandStructs.cs:MILCMD_VIEWPORT3DVISUAL_SETVIEWPORT(3 字段)；MilCommandLayout.cs:FixedSize
+0x2b,MilCmdViewport3DVisualSet3DChild,MILCMD_VIEWPORT3DVISUAL_SET3DCHILD,12,impl,—,MilCommandStructs.cs:MILCMD_VIEWPORT3DVISUAL_SET3DCHILD(3 字段)；MilCommandLayout.cs:FixedSize
+0x2c,MilCmdVisual3DSetContent,MILCMD_VISUAL3D_SETCONTENT,12,impl,—,MilCommandStructs.cs:MILCMD_VISUAL3D_SETCONTENT(3 字段)；MilCommandLayout.cs:FixedSize
+0x2d,MilCmdVisual3DSetTransform,MILCMD_VISUAL3D_SETTRANSFORM,12,impl,—,MilCommandStructs.cs:MILCMD_VISUAL3D_SETTRANSFORM(3 字段)；MilCommandLayout.cs:FixedSize
+0x2e,MilCmdVisual3DRemoveAllChildren,MILCMD_VISUAL3D_REMOVEALLCHILDREN,8,impl,—,MilCommandStructs.cs:MILCMD_VISUAL3D_REMOVEALLCHILDREN(2 字段)；MilCommandLayout.cs:FixedSize
+0x2f,MilCmdVisual3DRemoveChild,MILCMD_VISUAL3D_REMOVECHILD,12,impl,—,MilCommandStructs.cs:MILCMD_VISUAL3D_REMOVECHILD(3 字段)；MilCommandLayout.cs:FixedSize
+0x30,MilCmdVisual3DInsertChildAt,MILCMD_VISUAL3D_INSERTCHILDAT,16,impl,—,MilCommandStructs.cs:MILCMD_VISUAL3D_INSERTCHILDAT(4 字段)；MilCommandLayout.cs:FixedSize
+0x31,MilCmdHwndTargetCreate,MILCMD_HWNDTARGET_CREATE,92,impl,—,MilCommandStructs.cs:MILCMD_HWNDTARGET_CREATE(15 字段)；MilCommandLayout.cs:FixedSize
+0x32,MilCmdHwndTargetSuppressLayered,MILCMD_HWNDTARGET_SUPPRESSLAYERED,12,impl,—,MilCommandStructs.cs:MILCMD_HWNDTARGET_SUPPRESSLAYERED(3 字段)；MilCommandLayout.cs:FixedSize
+0x33,MilCmdTargetUpdateWindowSettings,MILCMD_TARGET_UPDATEWINDOWSETTINGS,72,impl,—,MilCommandStructs.cs:MILCMD_TARGET_UPDATEWINDOWSETTINGS(12 字段)；MilCommandLayout.cs:FixedSize
+0x34,MilCmdGenericTargetCreate,MILCMD_GENERICTARGET_CREATE,36,impl,—,MilCommandStructs.cs:MILCMD_GENERICTARGET_CREATE(7 字段)；MilCommandLayout.cs:FixedSize
+0x35,MilCmdTargetSetRoot,MILCMD_TARGET_SETROOT,12,impl,—,MilCommandStructs.cs:MILCMD_TARGET_SETROOT(3 字段)；MilCommandLayout.cs:FixedSize
+0x36,MilCmdTargetSetClearColor,MILCMD_TARGET_SETCLEARCOLOR,24,impl,—,MilCommandStructs.cs:MILCMD_TARGET_SETCLEARCOLOR(3 字段)；MilCommandLayout.cs:FixedSize
+0x37,MilCmdTargetInvalidate,MILCMD_TARGET_INVALIDATE,24,impl,—,MilCommandStructs.cs:MILCMD_TARGET_INVALIDATE(3 字段)；MilCommandLayout.cs:FixedSize
+0x38,MilCmdTargetSetFlags,MILCMD_TARGET_SETFLAGS,12,impl,—,MilCommandStructs.cs:MILCMD_TARGET_SETFLAGS(3 字段)；MilCommandLayout.cs:FixedSize
+0x39,MilCmdHwndTargetDpiChanged,MILCMD_HWNDTARGET_DPICHANGED,28,impl,—,MilCommandStructs.cs:MILCMD_HWNDTARGET_DPICHANGED(5 字段)；MilCommandLayout.cs:FixedSize
+0x3a,MilCmdGlyphRunCreate,MILCMD_GLYPHRUN_CREATE,76,impl,—,MilCommandStructs.cs:MILCMD_GLYPHRUN_CREATE(11 字段)；MilCommandLayout.cs:FixedSize；HasVariablePayload=变长（长度为固定头）
+0x3b,MilCmdDoubleBufferedBitmap,,,gap,待登记（缺陷册未分配 D- 编号）,无参数结构体；长度待对拍确认；s_notImpl（E_NOTIMPL）；参数结构体待对拍确认；字节长度待对拍确认
+0x3c,MilCmdDoubleBufferedBitmapCopyForward,,,gap,待登记（缺陷册未分配 D- 编号）,无参数结构体；长度待对拍确认；s_notImpl（E_NOTIMPL）；参数结构体待对拍确认；字节长度待对拍确认
+0x3d,MilCmdPartitionNotifyPolicyChangeForNonInteractiveMode,MILCMD_PARTITION_NOTIFYPOLICYCHANGEFORNONINTERACTIVEMODE,8,impl,—,MilCommandStructs.cs:MILCMD_PARTITION_NOTIFYPOLICYCHANGEFORNONINTERACTIVEMODE(2 字段)；MilCommandLayout.cs:FixedSize
+0x57,MilCmdAxisAngleRotation3D,MILCMD_AXISANGLEROTATION3D,36,impl,—,MilCommandStructs.cs:MILCMD_AXISANGLEROTATION3D(6 字段)；MilCommandLayout.cs:FixedSize
+0x58,MilCmdQuaternionRotation3D,MILCMD_QUATERNIONROTATION3D,28,impl,—,MilCommandStructs.cs:MILCMD_QUATERNIONROTATION3D(4 字段)；MilCommandLayout.cs:FixedSize
+0x59,MilCmdPerspectiveCamera,MILCMD_PERSPECTIVECAMERA,96,impl,—,MilCommandStructs.cs:MILCMD_PERSPECTIVECAMERA(15 字段)；MilCommandLayout.cs:FixedSize
+0x5a,MilCmdOrthographicCamera,MILCMD_ORTHOGRAPHICCAMERA,96,impl,—,MilCommandStructs.cs:MILCMD_ORTHOGRAPHICCAMERA(15 字段)；MilCommandLayout.cs:FixedSize
+0x5b,MilCmdMatrixCamera,MILCMD_MATRIXCAMERA,140,impl,—,MilCommandStructs.cs:MILCMD_MATRIXCAMERA(5 字段)；MilCommandLayout.cs:FixedSize
+0x5c,MilCmdModel3DGroup,MILCMD_MODEL3DGROUP,16,impl,—,MilCommandStructs.cs:MILCMD_MODEL3DGROUP(4 字段)；MilCommandLayout.cs:FixedSize；HasVariablePayload=变长（长度为固定头）
+0x5d,MilCmdAmbientLight,MILCMD_AMBIENTLIGHT,32,impl,—,MilCommandStructs.cs:MILCMD_AMBIENTLIGHT(5 字段)；MilCommandLayout.cs:FixedSize
+0x5e,MilCmdDirectionalLight,MILCMD_DIRECTIONALLIGHT,48,impl,—,MilCommandStructs.cs:MILCMD_DIRECTIONALLIGHT(7 字段)；MilCommandLayout.cs:FixedSize
+0x5f,MilCmdPointLight,MILCMD_POINTLIGHT,96,impl,—,MilCommandStructs.cs:MILCMD_POINTLIGHT(15 字段)；MilCommandLayout.cs:FixedSize
+0x60,MilCmdSpotLight,MILCMD_SPOTLIGHT,136,impl,—,MilCommandStructs.cs:MILCMD_SPOTLIGHT(21 字段)；MilCommandLayout.cs:FixedSize
+0x61,MilCmdGeometryModel3D,MILCMD_GEOMETRYMODEL3D,24,impl,—,MilCommandStructs.cs:MILCMD_GEOMETRYMODEL3D(6 字段)；MilCommandLayout.cs:FixedSize
+0x62,MilCmdMeshGeometry3D,MILCMD_MESHGEOMETRY3D,24,impl,—,MilCommandStructs.cs:MILCMD_MESHGEOMETRY3D(6 字段)；MilCommandLayout.cs:FixedSize；HasVariablePayload=变长（长度为固定头）
+0x63,MilCmdMaterialGroup,MILCMD_MATERIALGROUP,12,impl,—,MilCommandStructs.cs:MILCMD_MATERIALGROUP(3 字段)；MilCommandLayout.cs:FixedSize；HasVariablePayload=变长（长度为固定头）
+0x64,MilCmdDiffuseMaterial,MILCMD_DIFFUSEMATERIAL,44,impl,—,MilCommandStructs.cs:MILCMD_DIFFUSEMATERIAL(5 字段)；MilCommandLayout.cs:FixedSize
+0x65,MilCmdSpecularMaterial,MILCMD_SPECULARMATERIAL,36,impl,—,MilCommandStructs.cs:MILCMD_SPECULARMATERIAL(5 字段)；MilCommandLayout.cs:FixedSize
+0x66,MilCmdEmissiveMaterial,MILCMD_EMISSIVEMATERIAL,28,impl,—,MilCommandStructs.cs:MILCMD_EMISSIVEMATERIAL(4 字段)；MilCommandLayout.cs:FixedSize
+0x67,MilCmdTransform3DGroup,MILCMD_TRANSFORM3DGROUP,12,impl,—,MilCommandStructs.cs:MILCMD_TRANSFORM3DGROUP(3 字段)；MilCommandLayout.cs:FixedSize；HasVariablePayload=变长（长度为固定头）
+0x68,MilCmdTranslateTransform3D,MILCMD_TRANSLATETRANSFORM3D,44,impl,—,MilCommandStructs.cs:MILCMD_TRANSLATETRANSFORM3D(8 字段)；MilCommandLayout.cs:FixedSize
+0x69,MilCmdScaleTransform3D,MILCMD_SCALETRANSFORM3D,80,impl,—,MilCommandStructs.cs:MILCMD_SCALETRANSFORM3D(14 字段)；MilCommandLayout.cs:FixedSize
+0x6a,MilCmdRotateTransform3D,MILCMD_ROTATETRANSFORM3D,48,impl,—,MilCommandStructs.cs:MILCMD_ROTATETRANSFORM3D(9 字段)；MilCommandLayout.cs:FixedSize
+0x6b,MilCmdMatrixTransform3D,MILCMD_MATRIXTRANSFORM3D,72,impl,—,MilCommandStructs.cs:MILCMD_MATRIXTRANSFORM3D(3 字段)；MilCommandLayout.cs:FixedSize
+0x6c,MilCmdPixelShader,,20,impl,—,无参数结构体；MilCommandLayout.cs:FixedSize；HasVariablePayload=变长（长度为固定头）；参数结构体待对拍确认
+0x6d,MilCmdImplicitInputBrush,MILCMD_IMPLICITINPUTBRUSH,28,impl,—,MilCommandStructs.cs:MILCMD_IMPLICITINPUTBRUSH(6 字段)；MilCommandLayout.cs:FixedSize
+0x6e,MilCmdBlurEffect,MILCMD_BLUREFFECT,28,impl,—,MilCommandStructs.cs:MILCMD_BLUREFFECT(6 字段)；MilCommandLayout.cs:FixedSize
+0x6f,MilCmdDropShadowEffect,MILCMD_DROPSHADOWEFFECT,80,impl,—,MilCommandStructs.cs:MILCMD_DROPSHADOWEFFECT(13 字段)；MilCommandLayout.cs:FixedSize
+0x70,MilCmdShaderEffect,,80,impl,—,无参数结构体；MilCommandLayout.cs:FixedSize；HasVariablePayload=变长（长度为固定头）；参数结构体待对拍确认
+0x71,MilCmdDrawingImage,MILCMD_DRAWINGIMAGE,12,impl,—,MilCommandStructs.cs:MILCMD_DRAWINGIMAGE(3 字段)；MilCommandLayout.cs:FixedSize
+0x72,MilCmdTransformGroup,MILCMD_TRANSFORMGROUP,12,impl,—,MilCommandStructs.cs:MILCMD_TRANSFORMGROUP(3 字段)；MilCommandLayout.cs:FixedSize；HasVariablePayload=变长（长度为固定头）
+0x73,MilCmdTranslateTransform,MILCMD_TRANSLATETRANSFORM,32,impl,—,MilCommandStructs.cs:MILCMD_TRANSLATETRANSFORM(6 字段)；MilCommandLayout.cs:FixedSize
+0x74,MilCmdScaleTransform,MILCMD_SCALETRANSFORM,56,impl,—,MilCommandStructs.cs:MILCMD_SCALETRANSFORM(10 字段)；MilCommandLayout.cs:FixedSize
+0x75,MilCmdSkewTransform,MILCMD_SKEWTRANSFORM,56,impl,—,MilCommandStructs.cs:MILCMD_SKEWTRANSFORM(10 字段)；MilCommandLayout.cs:FixedSize
+0x76,MilCmdRotateTransform,MILCMD_ROTATETRANSFORM,44,impl,—,MilCommandStructs.cs:MILCMD_ROTATETRANSFORM(8 字段)；MilCommandLayout.cs:FixedSize
+0x77,MilCmdMatrixTransform,MILCMD_MATRIXTRANSFORM,60,impl,—,MilCommandStructs.cs:MILCMD_MATRIXTRANSFORM(4 字段)；MilCommandLayout.cs:FixedSize
+0x78,MilCmdLineGeometry,MILCMD_LINEGEOMETRY,52,impl,—,MilCommandStructs.cs:MILCMD_LINEGEOMETRY(7 字段)；MilCommandLayout.cs:FixedSize
+0x79,MilCmdRectangleGeometry,MILCMD_RECTANGLEGEOMETRY,72,impl,—,MilCommandStructs.cs:MILCMD_RECTANGLEGEOMETRY(9 字段)；MilCommandLayout.cs:FixedSize
+0x7a,MilCmdEllipseGeometry,MILCMD_ELLIPSEGEOMETRY,56,impl,—,MilCommandStructs.cs:MILCMD_ELLIPSEGEOMETRY(9 字段)；MilCommandLayout.cs:FixedSize
+0x7b,MilCmdGeometryGroup,MILCMD_GEOMETRYGROUP,20,impl,—,MilCommandStructs.cs:MILCMD_GEOMETRYGROUP(5 字段)；MilCommandLayout.cs:FixedSize；HasVariablePayload=变长（长度为固定头）
+0x7c,MilCmdCombinedGeometry,MILCMD_COMBINEDGEOMETRY,24,impl,—,MilCommandStructs.cs:MILCMD_COMBINEDGEOMETRY(6 字段)；MilCommandLayout.cs:FixedSize
+0x7d,MilCmdPathGeometry,MILCMD_PATHGEOMETRY,20,impl,—,MilCommandStructs.cs:MILCMD_PATHGEOMETRY(5 字段)；MilCommandLayout.cs:FixedSize；HasVariablePayload=变长（长度为固定头）
+0x7e,MilCmdSolidColorBrush,MILCMD_SOLIDCOLORBRUSH,48,impl,—,MilCommandStructs.cs:MILCMD_SOLIDCOLORBRUSH(8 字段)；MilCommandLayout.cs:FixedSize
+0x7f,MilCmdLinearGradientBrush,MILCMD_LINEARGRADIENTBRUSH,84,impl,—,MilCommandStructs.cs:MILCMD_LINEARGRADIENTBRUSH(14 字段)；MilCommandLayout.cs:FixedSize；HasVariablePayload=变长（长度为固定头）
+0x80,MilCmdRadialGradientBrush,MILCMD_RADIALGRADIENTBRUSH,108,impl,—,MilCommandStructs.cs:MILCMD_RADIALGRADIENTBRUSH(18 字段)；MilCommandLayout.cs:FixedSize；HasVariablePayload=变长（长度为固定头）
+0x81,MilCmdImageBrush,MILCMD_IMAGEBRUSH,148,impl,—,MilCommandStructs.cs:MILCMD_IMAGEBRUSH(20 字段)；MilCommandLayout.cs:FixedSize
+0x82,MilCmdDrawingBrush,MILCMD_DRAWINGBRUSH,148,impl,—,MilCommandStructs.cs:MILCMD_DRAWINGBRUSH(20 字段)；MilCommandLayout.cs:FixedSize
+0x83,MilCmdVisualBrush,MILCMD_VISUALBRUSH,148,impl,—,MilCommandStructs.cs:MILCMD_VISUALBRUSH(20 字段)；MilCommandLayout.cs:FixedSize
+0x84,MilCmdBitmapCacheBrush,MILCMD_BITMAPCACHEBRUSH,36,impl,—,MilCommandStructs.cs:MILCMD_BITMAPCACHEBRUSH(8 字段)；MilCommandLayout.cs:FixedSize
+0x85,MilCmdDashStyle,MILCMD_DASHSTYLE,24,impl,—,MilCommandStructs.cs:MILCMD_DASHSTYLE(5 字段)；MilCommandLayout.cs:FixedSize；HasVariablePayload=变长（长度为固定头）
+0x86,MilCmdPen,MILCMD_PEN,52,impl,—,MilCommandStructs.cs:MILCMD_PEN(11 字段)；MilCommandLayout.cs:FixedSize
+0x87,MilCmdGeometryDrawing,MILCMD_GEOMETRYDRAWING,20,impl,—,MilCommandStructs.cs:MILCMD_GEOMETRYDRAWING(5 字段)；MilCommandLayout.cs:FixedSize
+0x88,MilCmdGlyphRunDrawing,MILCMD_GLYPHRUNDRAWING,16,impl,—,MilCommandStructs.cs:MILCMD_GLYPHRUNDRAWING(4 字段)；MilCommandLayout.cs:FixedSize
+0x89,MilCmdImageDrawing,MILCMD_IMAGEDRAWING,48,impl,—,MilCommandStructs.cs:MILCMD_IMAGEDRAWING(5 字段)；MilCommandLayout.cs:FixedSize
+0x8a,MilCmdVideoDrawing,MILCMD_VIDEODRAWING,48,impl,—,MilCommandStructs.cs:MILCMD_VIDEODRAWING(5 字段)；MilCommandLayout.cs:FixedSize
+0x8b,MilCmdDrawingGroup,MILCMD_DRAWINGGROUP,52,impl,—,MilCommandStructs.cs:MILCMD_DRAWINGGROUP(12 字段)；MilCommandLayout.cs:FixedSize；HasVariablePayload=变长（长度为固定头）
+0x8c,MilCmdGuidelineSet,MILCMD_GUIDELINESET,20,impl,—,MilCommandStructs.cs:MILCMD_GUIDELINESET(5 字段)；MilCommandLayout.cs:FixedSize；HasVariablePayload=变长（长度为固定头）
+0x8d,MilCmdBitmapCache,MILCMD_BITMAPCACHE,28,impl,—,MilCommandStructs.cs:MILCMD_BITMAPCACHE(6 字段)；MilCommandLayout.cs:FixedSize
+0x8e,MilCmdValidateStructureOrder,,4,impl,—,无参数结构体；MilCommandLayout.cs:FixedSize；参数结构体待对拍确认

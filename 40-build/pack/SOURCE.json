@@ -1,0 +1,31 @@
+{
+  "generated_by": "50-verify/contract/scan-must-stub.mjs",
+  "package": "Microsoft.WindowsDesktop.App.Ref",
+  "version": "10.0.11",
+  "source_path": "~/.nuget/packages/microsoft.windowsdesktop.app.ref/10.0.11/data/FrameworkList.xml",
+  "copy_command": "cp \"~/.nuget/packages/microsoft.windowsdesktop.app.ref/10.0.11/data/FrameworkList.xml\" 40-build/pack/FrameworkList.xml",
+  "copy_policy": "原样复制，不改内容、不改编码、不改行尾；差异由 --check 判红",
+  "stats": {
+    "file_entries": 55,
+    "managed_entries": 50,
+    "analyzer_entries": 5,
+    "by_profile": {
+      "(无 Profile)": 1,
+      "WPF": 21,
+      "WindowsForms": 14,
+      "WindowsForms;WPF": 19
+    },
+    "no_profile_files": [
+      "WindowsFormsIntegration"
+    ],
+    "ref_dlls_in_package": 50
+  },
+  "framework_identity": {
+    "framework_name": "Microsoft.WindowsDesktop.App",
+    "target_framework": ".NETCoreApp,Version=10.0"
+  },
+  "open_questions": [
+    "FrameworkList 的 Profile 只有 WPF / WindowsForms / \"WindowsForms;WPF\" 三种取值，没有单独的\"共享\"标记：05 §3.7 的「共享 16 件」需按 20-spec §6 名单反查，不能靠 Profile 属性分组",
+    "原生件（.so）不在 FrameworkList 里：TBL-007 的「原生件标记」列在本包里无从取值，待 pack 组装侧另立清单"
+  ]
+}

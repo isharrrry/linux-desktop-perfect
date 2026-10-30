@@ -1,0 +1,11 @@
+{
+  "source": "WPFOnLinux/src/WpfGfx.Linux.Native（C shim：Win32/GDI/GDI+/kernel32 子集）",
+  "commit": "535a794ad803278fb057487e54e45e33d86e4836",
+  "commit_short": "535a794ad",
+  "extract_command": "git -C <WPFOnLinux> archive HEAD src/WpfGfx.Linux.Native | tar -x -C 40-build/native-shim --strip-components=2",
+  "files": 57,
+  "bytes": 2688929,
+  "abi_contract": "src/win32_abi.h（契约文件之一，TBL-002 的来源）",
+  "export_source": "src/win32_exports.c（exports.txt 的生成输入）",
+  "status": "源码已迁入；编译属 S1（TG-001 对拍），当前待实现"
+}

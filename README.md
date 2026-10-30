@@ -1,10 +1,12 @@
-# LinuxDesktopPerfect — 让 WPF 在 Linux 上源码级完整运行
+# LinuxDesktopPerfect — 让 WindowsDesktop 在 Linux 上源码级完整运行
 
 **中文**（英文版待补）
 
-> 这个仓不是又一个 UI 框架，也不重新发明 XAML。它把 `dotnet/wpf` 的托管层原样保留，把 Windows 专有的原生面（PresentationNative、wpfgfx、Win32/GDI+、DirectWrite/WIC、DWM、UIA、打印、Media、Ink）逐个换成 Linux 实现，并用自产的 `Microsoft.WindowsDesktop.App` 框架包把这条栈接回标准 `dotnet build`。
+> 这个仓不是又一个 UI 框架，也不重新发明 XAML。它把 `Microsoft.WindowsDesktop.App` 的托管层原样保留（`dotnet/wpf` 全量 + `dotnet/winforms` 兼容层），把 Windows 专有的原生面（PresentationNative、wpfgfx、Win32/GDI+、DirectWrite/WIC、DWM、UIA、打印、Media、Ink、MSAA）逐个换成 Linux 实现，并用自产的 `Microsoft.WindowsDesktop.App` 框架包把这条栈接回标准 `dotnet build`。
 
 **平台与基线**：Linux x64 / X11 首发；.NET 10 LTS（10.0.x release 分支）；上游 `dotnet/wpf` 只读快照 + 补丁式 applier；MIT。
+
+**验收口径**：**判据先行 + 无障碍优先**。每个模块先写失败判据、跑出红读数，再写实现转绿（ADR-014）；界面成立与否先看 AT-SPI 无障碍树（角色/名称/状态/动作），像素只作第二判据（ADR-015）。这条口径让「界面是否真的跑起来了」变成可机读、可复算的结构比对，而不是看图说话。
 
 ---
 
@@ -15,17 +17,18 @@ WPF 的托管代码是 MIT 开源的，但它的运行时有一半不在托管�
 - `PresentationNative_cor3.dll` 没有源码，PTS/LineServices、文本分析、147 个入口只在二进制里；
 - `wpfgfx_cor3.dll` 有源码，但绑定 D3D/DirectWrite；
 - `gdiplus.dll`、`user32.dll`、`dwrite.dll`、`WindowsCodecs.dll`、`UIAutomationCore.dll` 是 Windows OS 组件；
-- `Microsoft.WindowsDesktop.App` 的 Ref/Runtime pack 只发 `win-*` RID，Linux 上 `UseWPF=true` 直接不可用。
+- `Microsoft.WindowsDesktop.App` 的 Ref/Runtime pack 只发 `win-*` RID，Linux 上 `UseWPF=true` / `UseWindowsForms=true` 直接不可用；
+- `dotnet/winforms` 的托管层同样开源，但控件几乎都是 USER32/GDI 包装，`System.Drawing.Common` 在非 Windows 上默认抛 `PlatformNotSupportedException`。
 
 结果就是：WPF 应用源码能在 Linux 上编过一部分，但「开窗、画字、输入、打印、无障碍」每一条都断在某个 Windows 原生件上。
 
-LinuxDesktopPerfect 把这条链拆成**四个可独立验收的子系统**，用契约（ABI、DUCE 字节流、pack 清单）把它们接起来。
+LinuxDesktopPerfect 把这条链拆成**八个子系统**（见[《概要设计》](30-design/概要设计.md) §4），用契约（ABI、DUCE 字节流、pack 清单）把它们接起来；每条契约都能独立版本化与对拍。
 
 ### 产品定义
 
-**一句话**：LinuxDesktopPerfect 是 **WPF 在 Linux 上的完整替代运行时**——源码级重编即可运行，WPF 的每一条 Windows 专有路径都有一个 Linux 落点或一条明确记录的降级。
+**一句话**：LinuxDesktopPerfect 是 **WindowsDesktop 在 Linux 上的完整替代运行时**——源码级重编即可运行；范围是 WPF 全量、WinForms 到兼容层（ADR-011），WindowsDesktop 的每一条 Windows 专有路径都有一个 Linux 落点或一条明确记录的降级。
 
-**给谁用**：手上有一份 WPF 源码、想在 Linux 上编译并完整运行的个人开发者与小团队；需要把 WPF 应用迁到国产/信创 Linux 桌面，但不愿意重写 UI 的团队。
+**给谁用**：手上有一份 WindowsDesktop 应用源码（以 WPF 为主，WinForms 可用）、想在 Linux 上编译并完整运行的个人开发者与小团队；需要把这类应用迁到国产/信创 Linux 桌面，但不愿意重写 UI 的团队。
 
 **核心闭环**：
 
@@ -65,12 +68,13 @@ WPF 源码 → 自产 Ref pack 编译 → 自产 Runtime pack 加载
 00-admin/        项目章程、决策记录、命名与编号纪律
 10-input/        原始需求输入（聊天记录、参考资料、上游快照清单）
 20-spec/         需求与验收判据（REQ/ACC/NF/XIF/DQ 的唯一事实源）
-30-design/       概要设计与设计文档包（ADR/MOD/SM/IF/R 的唯一事实源）
+30-design/       概要设计（ADR/MOD/SYS/R）与设计文档包（SM/IF/TBL/SAFE/SCR/GAP/TG）+ checks + model
 40-build/        实现：wpf-port / native-shim / milcore / text / wic / pack / winforms
 50-verify/       测试用例、执行记录、对照基准
 60-deliver/      打包、安装、部署、回滚
 70-operate/      已知坑、故障模板、诊断开关
 80-derived/      SBOM、派生制品
+本体/            运行时本体（24 类/26 关系/40 规则/11 动作/18 术语）+ 校验器 + 交互模型页
 90-archive/      旧版本与归档
 ```
 
@@ -84,7 +88,12 @@ WPF 源码 → 自产 Ref pack 编译 → 自产 Runtime pack 加载
 |---|---|
 | 需求文档 | V0.1 草案（[《需求与验收判据文档》](20-spec/需求与验收判据文档.md)） |
 | 概要设计 | V0.1 草案（[《概要设计》](30-design/概要设计.md)），**待签署** |
-| 设计文档包 | 未开始（概要设计签署后补齐 01–07 + 界面 + checks + model） |
+| 设计文档包 | V0.1 草案（[《00-文档包总览与评审检查单》](30-design/设计文档包/00-文档包总览与评审检查单.md)：00–08 + 界面 + 界面图 + checks + model），**待签署** |
+| 文档门禁 | 5 条检查器（链接/文档包/编号/覆盖/自检）全 `rc=0` |
+| 本体 | V0.1：[《本体说明》](本体/本体说明.md)，24 类/26 关系/40 规则/11 动作/18 术语；校验器与模型页就绪 |
+| 开工前置 | **5/6 满足**（[《09-开工前置与切片计划》](30-design/设计文档包/09-开工前置与切片计划.md) §2.4：B1~B5、B7~B10 已关闭，B6 六件桩件完成三件） |
+| 实现骨架 | 已起：上游快照（整仓 7,380 文件，可用 `SNAPSHOT.json` 复算）+ milcore 71 个 `.cs` + native-shim 56 件 + wpf-port 341 件 + 四个契约文件 + 7 个样本工程 + 3 个桩件 + 环境探头 |
+| S1 进度 | ①`libwpfwin32.so` 编译通过（191 KB，ABI 断言全过，488 导出）；②符号对拍首份**红**（清单 impl 483 中 103 未导出、`.so` 多 105）；③派生树生成通过（7,026 文件，`apply --check` 绿）；④派生编译**已跑通**：`WindowsBase.dll` 1,023,488 B（离线桩包 + 4 个构建属性 + 系统 perl，降级 D-002）；⑤界面结构 diff 通路跑通（fake 源 11/11 节点 0 差异，判 **DEGRADED**；真桥 `SKIP`）；⑥30 条判据脚本全部落地（索引表 30/30），过程类 ACC-029/030 PASS、缺对象的如实 FAIL；⑦首错台账：14 件中 7 件编过（含 `WindowsBase`、`System.Xaml`、UIAutomation 两件），8 件的三类首错见 [build-matrix.json](40-build/build-matrix.json)；⑧pack 与首帧待 PBT 还原后继续 |
 | 代码 | 未开始（迁移方案见概要设计 §2.5） |
 
 ---
@@ -94,12 +103,20 @@ WPF 源码 → 自产 Ref pack 编译 → 自产 Runtime pack 加载
 改任何文档前先读 [AGENTS.md](AGENTS.md)（Agent 硬约束）与 [CONTRIBUTING.md](CONTRIBUTING.md)（简版）；名称以 [《术语表》](00-admin/术语表.md) 为准，引用规则以 [《引用与名称规范》](00-admin/引用与名称规范.md) 为准。改完必须跑：
 
 ```bash
+# 文档门禁
 node 30-design/checks/check-links.mjs
 node 30-design/checks/check-package.mjs
+node 30-design/checks/check-design-ids.mjs
+node 30-design/checks/check-coverage.mjs
 node 30-design/checks/selftest.mjs        # 改规则/改检查器后必跑
+
+# 生成物与本体
+node 30-design/设计文档包/界面图/build-wireframe.mjs --check
+python3 本体/本体校验.py
+node 本体/渲染校验.mjs
 ```
 
-两条 `rc=0` 才算完成；先修文档，不许放宽脚本。
+五条文档门禁 + 三条生成物/本体校验全 `rc=0` 才算完成；先修文档，不许放宽脚本。
 
 ## 许可
 

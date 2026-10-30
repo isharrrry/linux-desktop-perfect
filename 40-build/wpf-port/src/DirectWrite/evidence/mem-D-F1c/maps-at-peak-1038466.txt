@@ -1,0 +1,645 @@
+608ea7c6e000-608ea7c72000 r--p 00000000 08:02 4865442                    /home/links-dev/.dotnet/dotnet
+608ea7c72000-608ea7c88000 r-xp 00004000 08:02 4865442                    /home/links-dev/.dotnet/dotnet
+608ea7c88000-608ea7c90000 r--p 0001a000 08:02 4865442                    /home/links-dev/.dotnet/dotnet
+608ea7c90000-608ea7c91000 r--p 00021000 08:02 4865442                    /home/links-dev/.dotnet/dotnet
+608ea7c91000-608ea7c92000 rw-p 00022000 08:02 4865442                    /home/links-dev/.dotnet/dotnet
+608ee6b10000-608ee70fa000 rw-p 00000000 00:00 0                          [heap]
+7b3230000000-7b3230021000 rw-p 00000000 00:00 0 
+7b3230021000-7b3234000000 ---p 00000000 00:00 0 
+7b3236000000-7b3237296000 r--p 00000000 08:02 3551647                    /usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc
+7b3237400000-7b3238696000 r--p 00000000 08:02 3551647                    /usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc
+7b3238800000-7b3239a96000 r--p 00000000 08:02 3551647                    /usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc
+7b3239c00000-7b323ae96000 r--p 00000000 08:02 3551647                    /usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc
+7b323b000000-7b323c296000 r--p 00000000 08:02 3551647                    /usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc
+7b323c400000-7b323d696000 r--p 00000000 08:02 3551647                    /usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc
+7b323d800000-7b323ea96000 r--p 00000000 08:02 3551647                    /usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc
+7b323ec00000-7b323fe96000 r--p 00000000 08:02 3551647                    /usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc
+7b3240000000-7b3240021000 rw-p 00000000 00:00 0 
+7b3240021000-7b3244000000 ---p 00000000 00:00 0 
+7b32441d4000-7b32441d5000 ---p 00000000 00:00 0 
+7b32441d5000-7b32449d5000 rw-p 00000000 00:00 0 
+7b32449d5000-7b32449df000 rw-p 00000000 00:00 0 
+7b32449df000-7b3245191000 ---p 00000000 00:00 0 
+7b3245191000-7b324519c000 rw-p 00000000 00:00 0 
+7b324519c000-7b324594e000 ---p 00000000 00:00 0 
+7b324594e000-7b3245955000 rw-p 00000000 00:00 0 
+7b3245955000-7b3245d2e000 ---p 00000000 00:00 0 
+7b3245d2e000-7b3245d30000 rw-p 00000000 00:00 0 
+7b3245d30000-7b324dc00000 ---p 00000000 00:00 0 
+7b324dc00000-7b324dc11000 rw-p 00000000 00:00 0 
+7b324dc11000-7b324fc00000 ---p 00000000 00:00 0 
+7b324fc00000-7b324fc01000 rw-p 00000000 00:00 0 
+7b324fc01000-7b3250000000 ---p 00000000 00:00 0 
+7b3250000000-7b3250001000 rw-p 00000000 00:00 0 
+7b3250001000-7b3250400000 ---p 00000000 00:00 0 
+7b3250400000-7b3250421000 rw-p 00000000 00:00 0 
+7b3250421000-7b3250800000 ---p 00000000 00:00 0 
+7b3250800000-7b3250801000 rw-p 00000000 00:00 0 
+7b3250801000-7b362c000000 ---p 00000000 00:00 0 
+7b362c000000-7b362c021000 rw-p 00000000 00:00 0 
+7b362c021000-7b3630000000 ---p 00000000 00:00 0 
+7b3630400000-7b3631696000 r--p 00000000 08:02 3551647                    /usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc
+7b3631800000-7b3632a96000 r--p 00000000 08:02 3551647                    /usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc
+7b3632c00000-7b3633e96000 r--p 00000000 08:02 3551647                    /usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc
+7b3634000000-7b3634334000 rw-p 00000000 00:00 0 
+7b3634334000-7b3638000000 ---p 00000000 00:00 0 
+7b36385ff000-7b3638600000 ---p 00000000 00:00 0 
+7b3638600000-7b3638e00000 rw-p 00000000 00:00 0 
+7b3638e00000-7b363969e000 r-xp 00000000 08:02 4981231                    /home/links-dev/netTest/wpf-linux-20260906/wpf-linux/build/MilBridge/.artifacts/publish/MilBridge.Linux/release_linux-x64/libSkiaSharp.so
+7b363969e000-7b363989d000 ---p 0089e000 08:02 4981231                    /home/links-dev/netTest/wpf-linux-20260906/wpf-linux/build/MilBridge/.artifacts/publish/MilBridge.Linux/release_linux-x64/libSkiaSharp.so
+7b363989d000-7b36398c7000 r--p 0089d000 08:02 4981231                    /home/links-dev/netTest/wpf-linux-20260906/wpf-linux/build/MilBridge/.artifacts/publish/MilBridge.Linux/release_linux-x64/libSkiaSharp.so
+7b36398c7000-7b36398d1000 rw-p 008c7000 08:02 4981231                    /home/links-dev/netTest/wpf-linux-20260906/wpf-linux/build/MilBridge/.artifacts/publish/MilBridge.Linux/release_linux-x64/libSkiaSharp.so
+7b36398d1000-7b36398d7000 rw-p 00000000 00:00 0 
+7b36398f2000-7b363996c000 r--s 00000000 08:02 4886085                    /home/links-dev/.dotnet/shared/Microsoft.NETCore.App/10.0.11/System.Diagnostics.DiagnosticSource.dll
+7b363996c000-7b3639a00000 r--s 00000000 08:02 4886161                    /home/links-dev/.dotnet/shared/Microsoft.NETCore.App/10.0.11/System.Net.Sockets.dll
+7b3639a00000-7b3639a10000 rw-p 00000000 00:00 0 
+7b3639a10000-7b3639e00000 ---p 00000000 00:00 0 
+7b3639e4b000-7b3639e6f000 r--s 00000000 08:02 3972470                    /usr/share/zoneinfo-icu/44/le/zoneinfo64.res
+7b3639e6f000-7b3639ea4000 r--s 00000000 08:02 4886213                    /home/links-dev/.dotnet/shared/Microsoft.NETCore.App/10.0.11/System.Net.Primitives.dll
+7b3639ea4000-7b3639ec4000 r--s 00000000 08:02 4886099                    /home/links-dev/.dotnet/shared/Microsoft.NETCore.App/10.0.11/System.IO.Pipes.dll
+7b3639ec4000-7b3639ee1000 r--p 00000000 08:02 3408277                    /usr/lib/x86_64-linux-gnu/libglib-2.0.so.0.7200.4
+7b3639ee1000-7b3639f71000 r-xp 0001d000 08:02 3408277                    /usr/lib/x86_64-linux-gnu/libglib-2.0.so.0.7200.4
+7b3639f71000-7b3639ffb000 r--p 000ad000 08:02 3408277                    /usr/lib/x86_64-linux-gnu/libglib-2.0.so.0.7200.4
+7b3639ffb000-7b3639ffc000 ---p 00137000 08:02 3408277                    /usr/lib/x86_64-linux-gnu/libglib-2.0.so.0.7200.4
+7b3639ffc000-7b3639ffd000 r--p 00137000 08:02 3408277                    /usr/lib/x86_64-linux-gnu/libglib-2.0.so.0.7200.4
+7b3639ffd000-7b3639ffe000 rw-p 00138000 08:02 3408277                    /usr/lib/x86_64-linux-gnu/libglib-2.0.so.0.7200.4
+7b3639ffe000-7b3639fff000 rw-p 00000000 00:00 0 
+7b3639fff000-7b363a000000 ---p 00000000 00:00 0 
+7b363a000000-7b363a800000 rw-p 00000000 00:00 0 
+7b363a800000-7b363b09e000 r-xp 00000000 08:02 5017721                    /home/links-dev/netTest/wpf-linux-20260906/wpf-linux/build/DirectWrite.Linux/FallbackCriteria/bin/Debug/runtimes/linux-x64/native/libSkiaSharp.so
+7b363b09e000-7b363b29d000 ---p 0089e000 08:02 5017721                    /home/links-dev/netTest/wpf-linux-20260906/wpf-linux/build/DirectWrite.Linux/FallbackCriteria/bin/Debug/runtimes/linux-x64/native/libSkiaSharp.so
+7b363b29d000-7b363b2c7000 r--p 0089d000 08:02 5017721                    /home/links-dev/netTest/wpf-linux-20260906/wpf-linux/build/DirectWrite.Linux/FallbackCriteria/bin/Debug/runtimes/linux-x64/native/libSkiaSharp.so
+7b363b2c7000-7b363b2d1000 rw-p 008c7000 08:02 5017721                    /home/links-dev/netTest/wpf-linux-20260906/wpf-linux/build/DirectWrite.Linux/FallbackCriteria/bin/Debug/runtimes/linux-x64/native/libSkiaSharp.so
+7b363b2d1000-7b363b2d7000 rw-p 00000000 00:00 0 
+7b363b2e9000-7b363b395000 r--s 00000000 08:02 5017752                    /home/links-dev/netTest/wpf-linux-20260906/wpf-linux/build/DirectWrite.Linux/FallbackCriteria/bin/Debug/System.Xaml.dll
+7b363b395000-7b363b3ff000 r--p 00000000 08:02 4851326                    /home/links-dev/netTest/wpf-linux-20260906/wpf-linux/build/fonts/NotoSans-Regular.ttf
+7b363b3ff000-7b363b400000 ---p 00000000 00:00 0 
+7b363b400000-7b363bc00000 rw-p 00000000 00:00 0 
+7b363bc00000-7b363bce7000 r--p 00000000 08:02 3436327                    /usr/lib/x86_64-linux-gnu/libicui18n.so.70.1
+7b363bce7000-7b363be8a000 r-xp 000e7000 08:02 3436327                    /usr/lib/x86_64-linux-gnu/libicui18n.so.70.1
+7b363be8a000-7b363bf1c000 r--p 0028a000 08:02 3436327                    /usr/lib/x86_64-linux-gnu/libicui18n.so.70.1
+7b363bf1c000-7b363bf2d000 r--p 0031b000 08:02 3436327                    /usr/lib/x86_64-linux-gnu/libicui18n.so.70.1
+7b363bf2d000-7b363bf2e000 rw-p 0032c000 08:02 3436327                    /usr/lib/x86_64-linux-gnu/libicui18n.so.70.1
+7b363bf2e000-7b363bf2f000 rw-p 00000000 00:00 0 
+7b363bf31000-7b363bf3a000 r--p 00000000 08:02 3408251                    /usr/lib/x86_64-linux-gnu/libharfbuzz.so.0.20704.0
+7b363bf3a000-7b363bfcb000 r-xp 00009000 08:02 3408251                    /usr/lib/x86_64-linux-gnu/libharfbuzz.so.0.20704.0
+7b363bfcb000-7b363bffd000 r--p 0009a000 08:02 3408251                    /usr/lib/x86_64-linux-gnu/libharfbuzz.so.0.20704.0
+7b363bffd000-7b363bffe000 ---p 000cc000 08:02 3408251                    /usr/lib/x86_64-linux-gnu/libharfbuzz.so.0.20704.0
+7b363bffe000-7b363bfff000 r--p 000cc000 08:02 3408251                    /usr/lib/x86_64-linux-gnu/libharfbuzz.so.0.20704.0
+7b363bfff000-7b363c000000 rw-p 000cd000 08:02 3408251                    /usr/lib/x86_64-linux-gnu/libharfbuzz.so.0.20704.0
+7b363c000000-7b363c021000 rw-p 00000000 00:00 0 
+7b363c021000-7b3640000000 ---p 00000000 00:00 0 
+7b3640006000-7b364004a000 r--s 00000000 08:02 4886074                    /home/links-dev/.dotnet/shared/Microsoft.NETCore.App/10.0.11/System.Diagnostics.Process.dll
+7b364004a000-7b364004c000 r--p 00000000 08:02 3436642                    /usr/lib/x86_64-linux-gnu/libpcre.so.3.13.3
+7b364004c000-7b36400a1000 r-xp 00002000 08:02 3436642                    /usr/lib/x86_64-linux-gnu/libpcre.so.3.13.3
+7b36400a1000-7b36400be000 r--p 00057000 08:02 3436642                    /usr/lib/x86_64-linux-gnu/libpcre.so.3.13.3
+7b36400be000-7b36400bf000 r--p 00073000 08:02 3436642                    /usr/lib/x86_64-linux-gnu/libpcre.so.3.13.3
+7b36400bf000-7b36400c0000 rw-p 00074000 08:02 3436642                    /usr/lib/x86_64-linux-gnu/libpcre.so.3.13.3
+7b36400c0000-7b36400d9000 r--p 00000000 08:02 3435486                    /usr/lib/x86_64-linux-gnu/libX11.so.6.4.0
+7b36400d9000-7b3640165000 r-xp 00019000 08:02 3435486                    /usr/lib/x86_64-linux-gnu/libX11.so.6.4.0
+7b3640165000-7b36401fa000 r--p 000a5000 08:02 3435486                    /usr/lib/x86_64-linux-gnu/libX11.so.6.4.0
+7b36401fa000-7b36401fb000 ---p 0013a000 08:02 3435486                    /usr/lib/x86_64-linux-gnu/libX11.so.6.4.0
+7b36401fb000-7b36401fc000 r--p 0013a000 08:02 3435486                    /usr/lib/x86_64-linux-gnu/libX11.so.6.4.0
+7b36401fc000-7b3640200000 rw-p 0013b000 08:02 3435486                    /usr/lib/x86_64-linux-gnu/libX11.so.6.4.0
+7b3640200000-7b3640201000 r--p 00000000 08:02 3436325                    /usr/lib/x86_64-linux-gnu/libicudata.so.70.1
+7b3640201000-7b3640202000 r-xp 00001000 08:02 3436325                    /usr/lib/x86_64-linux-gnu/libicudata.so.70.1
+7b3640202000-7b3641e1c000 r--p 00002000 08:02 3436325                    /usr/lib/x86_64-linux-gnu/libicudata.so.70.1
+7b3641e1c000-7b3641e1d000 r--p 01c1b000 08:02 3436325                    /usr/lib/x86_64-linux-gnu/libicudata.so.70.1
+7b3641e1d000-7b3641e1e000 rw-p 01c1c000 08:02 3436325                    /usr/lib/x86_64-linux-gnu/libicudata.so.70.1
+7b3641e22000-7b3641e2d000 r--s 00000000 08:02 3972467                    /usr/share/zoneinfo-icu/44/le/metaZones.res
+7b3641e2d000-7b3641e54000 r--s 00000000 08:02 5017704                    /home/links-dev/netTest/wpf-linux-20260906/wpf-linux/build/DirectWrite.Linux/FallbackCriteria/bin/Debug/System.IO.Packaging.dll
+7b3641e54000-7b3641e57000 r--p 00000000 08:02 3408130                    /usr/lib/x86_64-linux-gnu/libgraphite2.so.3.2.1
+7b3641e57000-7b3641e75000 r-xp 00003000 08:02 3408130                    /usr/lib/x86_64-linux-gnu/libgraphite2.so.3.2.1
+7b3641e75000-7b3641e79000 r--p 00021000 08:02 3408130                    /usr/lib/x86_64-linux-gnu/libgraphite2.so.3.2.1
+7b3641e79000-7b3641e7b000 r--p 00024000 08:02 3408130                    /usr/lib/x86_64-linux-gnu/libgraphite2.so.3.2.1
+7b3641e7b000-7b3641e7c000 rw-p 00026000 08:02 3408130                    /usr/lib/x86_64-linux-gnu/libgraphite2.so.3.2.1
+7b3641e7c000-7b3641fab000 r--s 00000000 08:02 5017751                    /home/links-dev/netTest/wpf-linux-20260906/wpf-linux/build/DirectWrite.Linux/FallbackCriteria/bin/Debug/WindowsBase.dll
+7b3641fab000-7b3642000000 rw-p 00000000 00:00 0 
+7b3642000000-7b364200c000 r--p 00000000 08:02 4981207                    /home/links-dev/netTest/wpf-linux-20260906/wpf-linux/build/MilBridge/.artifacts/publish/MilBridge.Linux/release_linux-x64/wpfgfx_cor3.so
+7b364200c000-7b36421ef000 r-xp 0000c000 08:02 4981207                    /home/links-dev/netTest/wpf-linux-20260906/wpf-linux/build/MilBridge/.artifacts/publish/MilBridge.Linux/release_linux-x64/wpfgfx_cor3.so
+7b36421ef000-7b3642412000 r--p 001ef000 08:02 4981207                    /home/links-dev/netTest/wpf-linux-20260906/wpf-linux/build/MilBridge/.artifacts/publish/MilBridge.Linux/release_linux-x64/wpfgfx_cor3.so
+7b3642412000-7b3642413000 r--p 00412000 08:02 4981207                    /home/links-dev/netTest/wpf-linux-20260906/wpf-linux/build/MilBridge/.artifacts/publish/MilBridge.Linux/release_linux-x64/wpfgfx_cor3.so
+7b3642413000-7b36424af000 r--p 00413000 08:02 4981207                    /home/links-dev/netTest/wpf-linux-20260906/wpf-linux/build/MilBridge/.artifacts/publish/MilBridge.Linux/release_linux-x64/wpfgfx_cor3.so
+7b36424af000-7b36424b1000 r--p 004ae000 08:02 4981207                    /home/links-dev/netTest/wpf-linux-20260906/wpf-linux/build/MilBridge/.artifacts/publish/MilBridge.Linux/release_linux-x64/wpfgfx_cor3.so
+7b36424b1000-7b36424b9000 rw-p 004b0000 08:02 4981207                    /home/links-dev/netTest/wpf-linux-20260906/wpf-linux/build/MilBridge/.artifacts/publish/MilBridge.Linux/release_linux-x64/wpfgfx_cor3.so
+7b36424b9000-7b364255c000 rw-p 00000000 00:00 0 
+7b3642560000-7b3642566000 r--s 00000000 08:02 3972469                    /usr/share/zoneinfo-icu/44/le/windowsZones.res
+7b3642566000-7b364256c000 r--s 00000000 08:02 3972468                    /usr/share/zoneinfo-icu/44/le/timezoneTypes.res
+7b364256c000-7b3642570000 r--p 00000000 08:02 3435783                    /usr/lib/x86_64-linux-gnu/libbsd.so.0.11.5
+7b3642570000-7b364257d000 r-xp 00004000 08:02 3435783                    /usr/lib/x86_64-linux-gnu/libbsd.so.0.11.5
+7b364257d000-7b3642580000 r--p 00011000 08:02 3435783                    /usr/lib/x86_64-linux-gnu/libbsd.so.0.11.5
+7b3642580000-7b3642581000 ---p 00014000 08:02 3435783                    /usr/lib/x86_64-linux-gnu/libbsd.so.0.11.5
+7b3642581000-7b3642582000 r--p 00014000 08:02 3435783                    /usr/lib/x86_64-linux-gnu/libbsd.so.0.11.5
+7b3642582000-7b3642583000 rw-p 00015000 08:02 3435783                    /usr/lib/x86_64-linux-gnu/libbsd.so.0.11.5
+7b3642583000-7b3642584000 rw-p 00000000 00:00 0 
+7b3642584000-7b364258f000 r--p 00000000 08:02 3437107                    /usr/lib/x86_64-linux-gnu/libxcb.so.1.1.0
+7b364258f000-7b36425a3000 r-xp 0000b000 08:02 3437107                    /usr/lib/x86_64-linux-gnu/libxcb.so.1.1.0
+7b36425a3000-7b36425ac000 r--p 0001f000 08:02 3437107                    /usr/lib/x86_64-linux-gnu/libxcb.so.1.1.0
+7b36425ac000-7b36425ad000 r--p 00027000 08:02 3437107                    /usr/lib/x86_64-linux-gnu/libxcb.so.1.1.0
+7b36425ad000-7b36425ae000 rw-p 00028000 08:02 3437107                    /usr/lib/x86_64-linux-gnu/libxcb.so.1.1.0
+7b36425ae000-7b3642600000 rw-p 00000000 00:00 0 
+7b3642600000-7b36429ff000 r--s 00000000 08:02 5017750                    /home/links-dev/netTest/wpf-linux-20260906/wpf-linux/build/DirectWrite.Linux/FallbackCriteria/bin/Debug/PresentationCore.dll
+7b3642a00000-7b3642ab1000 r--p 00000000 08:02 4886215                    /home/links-dev/.dotnet/shared/Microsoft.NETCore.App/10.0.11/libclrjit.so
+7b3642ab1000-7b3642e76000 r-xp 000b0000 08:02 4886215                    /home/links-dev/.dotnet/shared/Microsoft.NETCore.App/10.0.11/libclrjit.so
+7b3642e76000-7b3642e89000 r--p 00474000 08:02 4886215                    /home/links-dev/.dotnet/shared/Microsoft.NETCore.App/10.0.11/libclrjit.so
+7b3642e89000-7b3642e8a000 rw-p 00486000 08:02 4886215                    /home/links-dev/.dotnet/shared/Microsoft.NETCore.App/10.0.11/libclrjit.so
+7b3642e8a000-7b3642ecf000 rw-p 00000000 00:00 0 
+7b3642ed1000-7b3642ed2000 ---p 00000000 00:00 0 
+7b3642ed2000-7b3642ed5000 rw-p 00000000 00:00 0 
+7b3642ed5000-7b3642ed7000 r--p 00000000 08:02 3436449                    /usr/lib/x86_64-linux-gnu/libmd.so.0.0.5
+7b3642ed7000-7b3642ede000 r-xp 00002000 08:02 3436449                    /usr/lib/x86_64-linux-gnu/libmd.so.0.0.5
+7b3642ede000-7b3642ee0000 r--p 00009000 08:02 3436449                    /usr/lib/x86_64-linux-gnu/libmd.so.0.0.5
+7b3642ee0000-7b3642ee1000 r--p 0000a000 08:02 3436449                    /usr/lib/x86_64-linux-gnu/libmd.so.0.0.5
+7b3642ee1000-7b3642ee2000 rw-p 0000b000 08:02 3436449                    /usr/lib/x86_64-linux-gnu/libmd.so.0.0.5
+7b3642ee2000-7b3642ee4000 r--p 00000000 08:02 3435501                    /usr/lib/x86_64-linux-gnu/libXdmcp.so.6.0.0
+7b3642ee4000-7b3642ee6000 r-xp 00002000 08:02 3435501                    /usr/lib/x86_64-linux-gnu/libXdmcp.so.6.0.0
+7b3642ee6000-7b3642ee8000 r--p 00004000 08:02 3435501                    /usr/lib/x86_64-linux-gnu/libXdmcp.so.6.0.0
+7b3642ee8000-7b3642ee9000 r--p 00005000 08:02 3435501                    /usr/lib/x86_64-linux-gnu/libXdmcp.so.6.0.0
+7b3642ee9000-7b3642eea000 rw-p 00006000 08:02 3435501                    /usr/lib/x86_64-linux-gnu/libXdmcp.so.6.0.0
+7b3642eeb000-7b3642eef000 r--s 00000000 08:02 4886140                    /home/links-dev/.dotnet/shared/Microsoft.NETCore.App/10.0.11/System.Diagnostics.Tracing.dll
+7b3642eef000-7b3642ef0000 ---p 00000000 00:00 0 
+7b3642ef0000-7b3642ef3000 rw-p 00000000 00:00 0 
+7b3642ef3000-7b3642ef7000 r--s 00000000 08:02 4886077                    /home/links-dev/.dotnet/shared/Microsoft.NETCore.App/10.0.11/System.Numerics.Vectors.dll
+7b3642ef7000-7b3642ef8000 ---p 00000000 00:00 0 
+7b3642ef8000-7b3642efb000 rw-p 00000000 00:00 0 
+7b3642efb000-7b3642f06000 r--s 00000000 08:02 1835137                    /var/cache/fontconfig/8ab0d672-942b-4957-8da7-1ec88ef6891e-le64.cache-7
+7b3642f06000-7b3642f0c000 r--s 00000000 08:02 1835126                    /var/cache/fontconfig/670f5b90-3c15-47a9-8702-3752b0855b43-le64.cache-7
+7b3642f0c000-7b3642f0d000 r--s 00000000 08:02 1835165                    /var/cache/fontconfig/f8c8e58c-bbe9-4085-bda6-65f142f945be-le64.cache-7
+7b3642f0d000-7b3642f23000 r--s 00000000 08:02 1835117                    /var/cache/fontconfig/516e5c1b-3ab4-46eb-aa0c-53528176c2a1-le64.cache-7
+7b3642f23000-7b3642f24000 r--s 00000000 08:02 1835106                    /var/cache/fontconfig/346bce4a-c92c-4be3-90d5-3f61ec689532-le64.cache-7
+7b3642f24000-7b3642f2c000 r--s 00000000 08:02 1835145                    /var/cache/fontconfig/adddffdf-fd2e-4245-b33f-2c31e3546000-le64.cache-7
+7b3642f2c000-7b3642f2d000 r--s 00000000 08:02 1835131                    /var/cache/fontconfig/6e5bfcf1-45b5-415b-af0c-59ecf87991f7-le64.cache-7
+7b3642f2d000-7b3642f2f000 r--s 00000000 08:02 1835108                    /var/cache/fontconfig/3b1f6fec-e630-4fb7-ad23-b3c648bf43ee-le64.cache-7
+7b3642f2f000-7b3642f30000 r--s 00000000 08:02 1835107                    /var/cache/fontconfig/3726240a-963a-479d-a6b6-a05adecf2026-le64.cache-7
+7b3642f30000-7b3642f32000 r--s 00000000 08:02 1838887                    /var/cache/fontconfig/d2de7edb-9ba7-4fc3-8b68-b5d8af7c642c-le64.cache-7
+7b3642f32000-7b3642f34000 r--s 00000000 08:02 1835102                    /var/cache/fontconfig/27e19385-931c-4948-8845-950de5603ff2-le64.cache-7
+7b3642f34000-7b3642f36000 r--s 00000000 08:02 1835100                    /var/cache/fontconfig/1e238067-0fef-4cc5-98b0-b43cced84f28-le64.cache-7
+7b3642f36000-7b3642f39000 r--s 00000000 08:02 1835157                    /var/cache/fontconfig/e6f4ebae-de13-44d4-a430-a4f0e5a136fc-le64.cache-7
+7b3642f39000-7b3642f3e000 r--s 00000000 08:02 1835130                    /var/cache/fontconfig/6d31270b-2100-4172-a16e-4ea8150b9f9b-le64.cache-7
+7b3642f3e000-7b3642f3f000 r--s 00000000 08:02 1835143                    /var/cache/fontconfig/a2fa333e-de4e-4b6a-a2ce-9bf91f278f50-le64.cache-7
+7b3642f3f000-7b3642f40000 r--s 00000000 08:02 1835116                    /var/cache/fontconfig/5138cf27-b7e6-47c6-b13c-6bd9e474f39b-le64.cache-7
+7b3642f40000-7b3642f41000 r--s 00000000 08:02 1835160                    /var/cache/fontconfig/ef287150-7929-41bc-9dd7-b338f36a7d3d-le64.cache-7
+7b3642f41000-7b3642f42000 r--s 00000000 08:02 1835148                    /var/cache/fontconfig/c48cbc92-619f-44c7-a592-78c50966e74e-le64.cache-7
+7b3642f42000-7b3642f43000 r--s 00000000 08:02 1835118                    /var/cache/fontconfig/51d147b2-33e9-4bed-a241-85caa831737e-le64.cache-7
+7b3642f43000-7b3642f44000 r--s 00000000 08:02 1835101                    /var/cache/fontconfig/1fd31886-07ee-4de1-98c1-fea2b31a4e7f-le64.cache-7
+7b3642f44000-7b3642f45000 r--s 00000000 08:02 1835115                    /var/cache/fontconfig/49d8055f-0df6-4f46-833a-5b53a3b35b7a-le64.cache-7
+7b3642f45000-7b3642f46000 r--s 00000000 08:02 1835113                    /var/cache/fontconfig/40c8a420-3efa-4f4e-a14b-3458d499ecce-le64.cache-7
+7b3642f46000-7b3642f47000 r--s 00000000 08:02 1835156                    /var/cache/fontconfig/def9a4f5-f213-4daf-aa9c-167ab9eb3abc-le64.cache-7
+7b3642f47000-7b3642f48000 r--s 00000000 08:02 1835135                    /var/cache/fontconfig/85251f89-4526-47f0-b3f9-48f31fe3cb3a-le64.cache-7
+7b3642f48000-7b3642f49000 r--s 00000000 08:02 1835125                    /var/cache/fontconfig/66505cf1-6a33-415a-bc47-643ffc4aec26-le64.cache-7
+7b3642f49000-7b3642f4a000 r--s 00000000 08:02 1836271                    /var/cache/fontconfig/2e24604e-a2fd-4885-8489-f378ee38b03a-le64.cache-7
+7b3642f4a000-7b3642f50000 r--s 00000000 08:02 1835114                    /var/cache/fontconfig/4552186e-8cdb-40cc-80a0-04badd365a26-le64.cache-7
+7b3642f50000-7b3642f57000 r--s 00000000 08:02 1835120                    /var/cache/fontconfig/54ea4156-415b-46fd-b4fa-81f16797b1b6-le64.cache-7
+7b3642f57000-7b3642f58000 r--s 00000000 08:02 1835096                    /var/cache/fontconfig/011aaf7f-b821-4f45-9672-5eaa13d8b594-le64.cache-7
+7b3642f58000-7b3642f59000 r--s 00000000 08:02 1835122                    /var/cache/fontconfig/57f6505f-22ef-43a4-a5bd-e984afce828f-le64.cache-7
+7b3642f59000-7b3642f5f000 r--s 00000000 08:02 1835119                    /var/cache/fontconfig/545d1855-ea79-40e6-8901-751a2f18a925-le64.cache-7
+7b3642f5f000-7b3642f72000 r--s 00000000 08:02 1835159                    /var/cache/fontconfig/ecc26c15-90d6-4f3a-9460-8474094eaadb-le64.cache-7
+7b3642f72000-7b3642f78000 r--s 00000000 08:02 1835161                    /var/cache/fontconfig/f0c12d7f-1b3c-4168-9e80-c0b826bebc83-le64.cache-7
+7b3642f78000-7b3642f79000 r--s 00000000 08:02 1835103                    /var/cache/fontconfig/28c451ce-882c-450f-9b38-8c0cd2052896-le64.cache-7
+7b3642f79000-7b3642f7a000 r--s 00000000 08:02 1835128                    /var/cache/fontconfig/67ba35b0-e503-4af4-9704-cb355c59462f-le64.cache-7
+7b3642f7a000-7b3642f7d000 r--s 00000000 08:02 1835163                    /var/cache/fontconfig/f53d837d-22e1-4ea4-9ee3-c1ff4cc11a10-le64.cache-7
+7b3642f7d000-7b3642fa2000 r--s 00000000 08:02 1842241                    /var/cache/fontconfig/3bcb00eb-c902-41d6-86dc-798aaecdc95b-le64.cache-7
+7b3642fa2000-7b3642fa3000 r--p 00000000 08:02 3435777                    /usr/lib/x86_64-linux-gnu/libbrotlicommon.so.1.0.9
+7b3642fa3000-7b3642fa4000 r-xp 00001000 08:02 3435777                    /usr/lib/x86_64-linux-gnu/libbrotlicommon.so.1.0.9
+7b3642fa4000-7b3642fc3000 r--p 00002000 08:02 3435777                    /usr/lib/x86_64-linux-gnu/libbrotlicommon.so.1.0.9
+7b3642fc3000-7b3642fc4000 r--p 00020000 08:02 3435777                    /usr/lib/x86_64-linux-gnu/libbrotlicommon.so.1.0.9
+7b3642fc4000-7b3642fc5000 rw-p 00021000 08:02 3435777                    /usr/lib/x86_64-linux-gnu/libbrotlicommon.so.1.0.9
+7b3642fc5000-7b3642fca000 r--p 00000000 08:02 3412316                    /usr/lib/x86_64-linux-gnu/libpng16.so.16.37.0
+7b3642fca000-7b3642ff3000 r-xp 00005000 08:02 3412316                    /usr/lib/x86_64-linux-gnu/libpng16.so.16.37.0
+7b3642ff3000-7b3642ffe000 r--p 0002e000 08:02 3412316                    /usr/lib/x86_64-linux-gnu/libpng16.so.16.37.0
+7b3642ffe000-7b3642fff000 r--p 00038000 08:02 3412316                    /usr/lib/x86_64-linux-gnu/libpng16.so.16.37.0
+7b3642fff000-7b3643000000 rw-p 00039000 08:02 3412316                    /usr/lib/x86_64-linux-gnu/libpng16.so.16.37.0
+7b3643000000-7b3643edb000 r--s 00000000 08:02 4886195                    /home/links-dev/.dotnet/shared/Microsoft.NETCore.App/10.0.11/System.Private.CoreLib.dll
+7b3643edb000-7b3643edd000 r--s 00000000 08:02 1835110                    /var/cache/fontconfig/3c22a138-58fe-42cf-8404-d1e5fe322615-le64.cache-7
+7b3643edd000-7b3643ede000 r--p 00000000 08:02 3435779                    /usr/lib/x86_64-linux-gnu/libbrotlidec.so.1.0.9
+7b3643ede000-7b3643ee6000 r-xp 00001000 08:02 3435779                    /usr/lib/x86_64-linux-gnu/libbrotlidec.so.1.0.9
+7b3643ee6000-7b3643ee9000 r--p 00009000 08:02 3435779                    /usr/lib/x86_64-linux-gnu/libbrotlidec.so.1.0.9
+7b3643ee9000-7b3643eea000 r--p 0000b000 08:02 3435779                    /usr/lib/x86_64-linux-gnu/libbrotlidec.so.1.0.9
+7b3643eea000-7b3643eeb000 rw-p 0000c000 08:02 3435779                    /usr/lib/x86_64-linux-gnu/libbrotlidec.so.1.0.9
+7b3643eeb000-7b3643eed000 r--p 00000000 08:02 3437143                    /usr/lib/x86_64-linux-gnu/libz.so.1.2.11
+7b3643eed000-7b3643efe000 r-xp 00002000 08:02 3437143                    /usr/lib/x86_64-linux-gnu/libz.so.1.2.11
+7b3643efe000-7b3643f04000 r--p 00013000 08:02 3437143                    /usr/lib/x86_64-linux-gnu/libz.so.1.2.11
+7b3643f04000-7b3643f05000 ---p 00019000 08:02 3437143                    /usr/lib/x86_64-linux-gnu/libz.so.1.2.11
+7b3643f05000-7b3643f06000 r--p 00019000 08:02 3437143                    /usr/lib/x86_64-linux-gnu/libz.so.1.2.11
+7b3643f06000-7b3643f07000 rw-p 0001a000 08:02 3437143                    /usr/lib/x86_64-linux-gnu/libz.so.1.2.11
+7b3643f07000-7b3643f0b000 r--p 00000000 08:02 3436036                    /usr/lib/x86_64-linux-gnu/libexpat.so.1.8.7
+7b3643f0b000-7b3643f2a000 r-xp 00004000 08:02 3436036                    /usr/lib/x86_64-linux-gnu/libexpat.so.1.8.7
+7b3643f2a000-7b3643f34000 r--p 00023000 08:02 3436036                    /usr/lib/x86_64-linux-gnu/libexpat.so.1.8.7
+7b3643f34000-7b3643f35000 ---p 0002d000 08:02 3436036                    /usr/lib/x86_64-linux-gnu/libexpat.so.1.8.7
+7b3643f35000-7b3643f37000 r--p 0002d000 08:02 3436036                    /usr/lib/x86_64-linux-gnu/libexpat.so.1.8.7
+7b3643f37000-7b3643f38000 rw-p 0002f000 08:02 3436036                    /usr/lib/x86_64-linux-gnu/libexpat.so.1.8.7
+7b3643f38000-7b3643f45000 r--p 00000000 08:02 3408985                    /usr/lib/x86_64-linux-gnu/libfreetype.so.6.18.1
+7b3643f45000-7b3643fce000 r-xp 0000d000 08:02 3408985                    /usr/lib/x86_64-linux-gnu/libfreetype.so.6.18.1
+7b3643fce000-7b3643ff7000 r--p 00096000 08:02 3408985                    /usr/lib/x86_64-linux-gnu/libfreetype.so.6.18.1
+7b3643ff7000-7b3643ff8000 ---p 000bf000 08:02 3408985                    /usr/lib/x86_64-linux-gnu/libfreetype.so.6.18.1
+7b3643ff8000-7b3643fff000 r--p 000bf000 08:02 3408985                    /usr/lib/x86_64-linux-gnu/libfreetype.so.6.18.1
+7b3643fff000-7b3644000000 rw-p 000c6000 08:02 3408985                    /usr/lib/x86_64-linux-gnu/libfreetype.so.6.18.1
+7b3644000000-7b3644011000 rw-p 00000000 00:00 0 
+7b3644011000-7b3646000000 ---p 00000000 00:00 0 
+7b3646000000-7b3646031000 rw-p 00000000 00:00 0 
+7b3646031000-7b3646400000 ---p 00000000 00:00 0 
+7b3646400000-7b3646401000 rw-p 00000000 00:00 0 
+7b3646401000-7b3646800000 ---p 00000000 00:00 0 
+7b3646800000-7b36468e1000 rw-p 00000000 00:00 0 
+7b36468e1000-7b3646c00000 ---p 00000000 00:00 0 
+7b3646c00000-7b3648363000 rw-p 00000000 00:00 0 
+7b3648363000-7b3648c00000 ---p 00000000 00:00 0 
+7b3648c00000-7b3648c01000 rw-p 00000000 00:00 0 
+7b3648c01000-7b3649000000 ---p 00000000 00:00 0 
+7b3649000000-7b364ad7d000 rw-p 00000000 00:00 0 
+7b364ad7d000-7b364b000000 ---p 00000000 00:00 0 
+7b364b000000-7b364cd7d000 rw-p 00000000 00:00 0 
+7b364cd7d000-7b364d000000 ---p 00000000 00:00 0 
+7b364d000000-7b364dedf000 rw-p 00000000 00:00 0 
+7b364dedf000-7b364f000000 ---p 00000000 00:00 0 
+7b364f000000-7b3650d7d000 rw-p 00000000 00:00 0 
+7b3650d7d000-7b3651000000 ---p 00000000 00:00 0 
+7b3651000000-7b3652d7d000 rw-p 00000000 00:00 0 
+7b3652d7d000-7b3694000000 ---p 00000000 00:00 0 
+7b3694000000-7b3694021000 rw-p 00000000 00:00 0 
+7b3694021000-7b3698000000 ---p 00000000 00:00 0 
+7b3698000000-7b3698021000 rw-p 00000000 00:00 0 
+7b3698021000-7b369c000000 ---p 00000000 00:00 0 
+7b369c000000-7b369c021000 rw-p 00000000 00:00 0 
+7b369c021000-7b36a0000000 ---p 00000000 00:00 0 
+7b36a0000000-7b36a0021000 rw-p 00000000 00:00 0 
+7b36a0021000-7b36a4000000 ---p 00000000 00:00 0 
+7b36a4000000-7b36a4021000 rw-p 00000000 00:00 0 
+7b36a4021000-7b36a8000000 ---p 00000000 00:00 0 
+7b36a8000000-7b36a8001000 r--s 00000000 08:02 1835154                    /var/cache/fontconfig/d464d3cd-efb6-48a3-b84f-dd65e7f21cdb-le64.cache-7
+7b36a8001000-7b36a800d000 r--s 00000000 08:02 1835132                    /var/cache/fontconfig/74b1e63a-b138-460d-86a0-3009b0f64533-le64.cache-7
+7b36a800d000-7b36a8014000 r--p 00000000 08:02 3436035                    /usr/lib/x86_64-linux-gnu/libfontconfig.so.1.12.0
+7b36a8014000-7b36a803d000 r-xp 00007000 08:02 3436035                    /usr/lib/x86_64-linux-gnu/libfontconfig.so.1.12.0
+7b36a803d000-7b36a8053000 r--p 00030000 08:02 3436035                    /usr/lib/x86_64-linux-gnu/libfontconfig.so.1.12.0
+7b36a8053000-7b36a8054000 ---p 00046000 08:02 3436035                    /usr/lib/x86_64-linux-gnu/libfontconfig.so.1.12.0
+7b36a8054000-7b36a8056000 r--p 00046000 08:02 3436035                    /usr/lib/x86_64-linux-gnu/libfontconfig.so.1.12.0
+7b36a8056000-7b36a8057000 rw-p 00048000 08:02 3436035                    /usr/lib/x86_64-linux-gnu/libfontconfig.so.1.12.0
+7b36a8057000-7b36a805a000 r--s 00000000 08:02 1835144                    /var/cache/fontconfig/a6ed1057-94ee-46b8-9004-6a5d4a623885-le64.cache-7
+7b36a805a000-7b36a8068000 r--s 00000000 08:02 1835152                    /var/cache/fontconfig/ce5af653-ba6c-4a0f-a508-0db36e8552ac-le64.cache-7
+7b36a8068000-7b36a80d3000 r--s 00000000 08:02 5017690                    /home/links-dev/netTest/wpf-linux-20260906/wpf-linux/build/DirectWrite.Linux/FallbackCriteria/bin/Debug/SkiaSharp.dll
+7b36a80d3000-7b36a8139000 r--p 00000000 08:02 3436335                    /usr/lib/x86_64-linux-gnu/libicuuc.so.70.1
+7b36a8139000-7b36a822c000 r-xp 00066000 08:02 3436335                    /usr/lib/x86_64-linux-gnu/libicuuc.so.70.1
+7b36a822c000-7b36a82b8000 r--p 00159000 08:02 3436335                    /usr/lib/x86_64-linux-gnu/libicuuc.so.70.1
+7b36a82b8000-7b36a82cb000 r--p 001e4000 08:02 3436335                    /usr/lib/x86_64-linux-gnu/libicuuc.so.70.1
+7b36a82cb000-7b36a82cc000 rw-p 001f7000 08:02 3436335                    /usr/lib/x86_64-linux-gnu/libicuuc.so.70.1
+7b36a82cc000-7b36a82ce000 rw-p 00000000 00:00 0 
+7b36a82ce000-7b36a82cf000 r--s 00000000 08:02 1835133                    /var/cache/fontconfig/78a96d83-08ca-4bbc-badf-06c1b534e220-le64.cache-7
+7b36a82cf000-7b36a82d0000 r--s 00000000 08:02 1835134                    /var/cache/fontconfig/7c212338-7ef8-4c2f-87da-8780d667c32d-le64.cache-7
+7b36a82d0000-7b36a82d4000 r--s 00000000 08:02 1835123                    /var/cache/fontconfig/5af0d971-eb03-43ed-a76e-dbd85bb713aa-le64.cache-7
+7b36a82d4000-7b36a82d5000 r--s 00000000 08:02 1835166                    /var/cache/fontconfig/fc8ce84f-925b-41ff-a5b4-41e1894125be-le64.cache-7
+7b36a82d5000-7b36a82df000 r--s 00000000 08:02 5017749                    /home/links-dev/netTest/wpf-linux-20260906/wpf-linux/build/DirectWrite.Linux/FallbackCriteria/bin/Debug/DirectWriteForwarder.dll
+7b36a82df000-7b36a8305000 r--s 00000000 08:02 4886082                    /home/links-dev/.dotnet/shared/Microsoft.NETCore.App/10.0.11/System.Memory.dll
+7b36a8305000-7b36a8341000 r--s 00000000 08:02 4886212                    /home/links-dev/.dotnet/shared/Microsoft.NETCore.App/10.0.11/System.Private.Uri.dll
+7b36a8341000-7b36a8354000 r--s 00000000 08:02 4886047                    /home/links-dev/.dotnet/shared/Microsoft.NETCore.App/10.0.11/System.Threading.dll
+7b36a8354000-7b36a83ff000 r--s 00000000 08:02 4886096                    /home/links-dev/.dotnet/shared/Microsoft.NETCore.App/10.0.11/System.Linq.dll
+7b36a83ff000-7b36a8400000 ---p 00000000 00:00 0 
+7b36a8400000-7b36a8c00000 rw-p 00000000 00:00 0 
+7b36a8c00000-7b36a8c10000 rw-p 00000000 00:00 0 
+7b36a8c10000-7b36a9000000 ---p 00000000 00:00 0 
+7b36a9000000-7b36a9038000 r--s 00000000 08:02 4886093                    /home/links-dev/.dotnet/shared/Microsoft.NETCore.App/10.0.11/System.Collections.Concurrent.dll
+7b36a9038000-7b36a9053000 r--s 00000000 08:02 5017754                    /home/links-dev/netTest/wpf-linux-20260906/wpf-linux/build/DirectWrite.Linux/FallbackCriteria/bin/Debug/DirectWrite.Linux.Provider.dll
+7b36a9053000-7b36a906d000 r--s 00000000 08:02 4886103                    /home/links-dev/.dotnet/shared/Microsoft.NETCore.App/10.0.11/System.Runtime.InteropServices.dll
+7b36a906d000-7b36a906e000 ---p 00000000 00:00 0 
+7b36a906e000-7b36a986e000 rw-p 00000000 00:00 0 
+7b36a986e000-7b36a9895000 rw-p 00000000 00:00 0 
+7b36a9895000-7b36a990e000 ---p 00000000 00:00 0 
+7b36a990e000-7b36a9935000 rw-p 00000000 00:00 0 
+7b36a9935000-7b36a99ae000 ---p 00000000 00:00 0 
+7b36a99ae000-7b36a99c2000 rw-p 00000000 00:00 0 
+7b36a99c2000-7b36a99fe000 ---p 00000000 00:00 0 
+7b36a99fe000-7b36a9a02000 rw-p 00000000 00:00 0 
+7b36a9a02000-7b36a9a0c000 ---p 00000000 00:00 0 
+7b36a9a0c000-7b36a9a5c000 rw-p 00000000 00:00 0 
+7b36a9a5c000-7b36a9bec000 rw-p 00000000 00:00 0 
+7b36a9bec000-7b36aa40c000 ---p 00000000 00:00 0 
+7b36aa40c000-7b36aa40d000 ---p 00000000 00:00 0 
+7b36aa40d000-7b36aac0d000 rw-p 00000000 00:00 0 
+7b36aac0d000-7b36aac0e000 ---p 00000000 00:00 0 
+7b36aac0e000-7b36ab40e000 rw-p 00000000 00:00 0 
+7b36ab40e000-7b36ab40f000 ---p 00000000 00:00 0 
+7b36ab40f000-7b36abc0f000 rw-p 00000000 00:00 0 
+7b36abc0f000-7b36abc10000 ---p 00000000 00:00 0 
+7b36abc10000-7b36ac410000 rw-p 00000000 00:00 0 
+7b36ac410000-7b36ac450000 ---p 00000000 00:00 0 
+7b36ac450000-7b36ac451000 r-xs 00000000 00:01 725                        /memfd:doublemapper (deleted)
+7b36ac451000-7b36ac460000 ---p 00000000 00:00 0 
+7b36ac460000-7b36ac463000 rw-s 00001000 00:01 725                        /memfd:doublemapper (deleted)
+7b36ac463000-7b36ac464000 ---s 00004000 00:01 725                        /memfd:doublemapper (deleted)
+7b36ac464000-7b36ac46c000 rw-s 00005000 00:01 725                        /memfd:doublemapper (deleted)
+7b36ac46c000-7b36ac46d000 ---s 0000d000 00:01 725                        /memfd:doublemapper (deleted)
+7b36ac46d000-7b36ac46e000 r-xs 0000e000 00:01 725                        /memfd:doublemapper (deleted)
+7b36ac46e000-7b36ac470000 ---s 0000f000 00:01 725                        /memfd:doublemapper (deleted)
+7b36ac470000-7b36ac471000 rw-s 00011000 00:01 725                        /memfd:doublemapper (deleted)
+7b36ac471000-7b36ac476000 ---s 00012000 00:01 725                        /memfd:doublemapper (deleted)
+7b36ac476000-7b36ac477000 rw-s 00017000 00:01 725                        /memfd:doublemapper (deleted)
+7b36ac477000-7b36ac480000 ---s 00018000 00:01 725                        /memfd:doublemapper (deleted)
+7b36ac480000-7b36ac481000 r--p 00000000 08:02 4886195                    /home/links-dev/.dotnet/shared/Microsoft.NETCore.App/10.0.11/System.Private.CoreLib.dll
+7b36ac481000-7b36ac490000 ---p 00000000 00:00 0 
+7b36ac490000-7b36acfdc000 r-xp 00000000 08:02 4886195                    /home/links-dev/.dotnet/shared/Microsoft.NETCore.App/10.0.11/System.Private.CoreLib.dll
+7b36acfdc000-7b36acffc000 ---p 00000000 00:00 0 
+7b36acffc000-7b36ad37e000 rw-p 00b4c000 08:02 4886195                    /home/links-dev/.dotnet/shared/Microsoft.NETCore.App/10.0.11/System.Private.CoreLib.dll
+7b36ad37e000-7b36ad39d000 ---p 00000000 00:00 0 
+7b36ad39d000-7b36ad3a9000 r--p 00ecd000 08:02 4886195                    /home/links-dev/.dotnet/shared/Microsoft.NETCore.App/10.0.11/System.Private.CoreLib.dll
+7b36ad3a9000-7b36ad3b0000 ---p 00000000 00:00 0 
+7b36ad3b0000-7b36ad43f000 rw-s 00021000 00:01 725                        /memfd:doublemapper (deleted)
+7b36ad43f000-7b36ad440000 ---s 000b0000 00:01 725                        /memfd:doublemapper (deleted)
+7b36ad440000-7b36ad444000 r-xs 000b1000 00:01 725                        /memfd:doublemapper (deleted)
+7b36ad444000-7b36ad448000 rw-s 000b5000 00:01 725                        /memfd:doublemapper (deleted)
+7b36ad448000-7b36ad44c000 r-xs 000b9000 00:01 725                        /memfd:doublemapper (deleted)
+7b36ad44c000-7b36ad450000 rw-s 000bd000 00:01 725                        /memfd:doublemapper (deleted)
+7b36ad450000-7b36ad454000 r-xs 000c1000 00:01 725                        /memfd:doublemapper (deleted)
+7b36ad454000-7b36ad458000 rw-s 000c5000 00:01 725                        /memfd:doublemapper (deleted)
+7b36ad458000-7b36ad45c000 r-xs 000c9000 00:01 725                        /memfd:doublemapper (deleted)
+7b36ad45c000-7b36ad4a0000 rw-s 000cd000 00:01 725                        /memfd:doublemapper (deleted)
+7b36ad4a0000-7b36ad4da000 r-xs 00111000 00:01 725                        /memfd:doublemapper (deleted)
+7b36ad4da000-7b36ad520000 ---s 0014b000 00:01 725                        /memfd:doublemapper (deleted)
+7b36ad520000-7b36ad56b000 rw-s 00191000 00:01 725                        /memfd:doublemapper (deleted)
+7b36ad56b000-7b36ad570000 ---s 001dc000 00:01 725                        /memfd:doublemapper (deleted)
+7b36ad570000-7b36ad571000 r--p 00000000 08:02 4886115                    /home/links-dev/.dotnet/shared/Microsoft.NETCore.App/10.0.11/System.Collections.dll
+7b36ad571000-7b36ad580000 ---p 00000000 00:00 0 
+7b36ad580000-7b36ad5b3000 r-xp 00000000 08:02 4886115                    /home/links-dev/.dotnet/shared/Microsoft.NETCore.App/10.0.11/System.Collections.dll
+7b36ad5b3000-7b36ad5d2000 ---p 00000000 00:00 0 
+7b36ad5d2000-7b36ad5e4000 rw-p 00032000 08:02 4886115                    /home/links-dev/.dotnet/shared/Microsoft.NETCore.App/10.0.11/System.Collections.dll
+7b36ad5e4000-7b36ad603000 ---p 00000000 00:00 0 
+7b36ad603000-7b36ad605000 r--p 00043000 08:02 4886115                    /home/links-dev/.dotnet/shared/Microsoft.NETCore.App/10.0.11/System.Collections.dll
+7b36ad605000-7b36ad610000 ---p 00000000 00:00 0 
+7b36ad610000-7b36ad67a000 rw-s 001e1000 00:01 725                        /memfd:doublemapper (deleted)
+7b36ad67a000-7b36ad680000 ---s 0024b000 00:01 725                        /memfd:doublemapper (deleted)
+7b36ad680000-7b36ad68e000 rw-s 00251000 00:01 725                        /memfd:doublemapper (deleted)
+7b36ad68e000-7b36ad690000 ---s 0025f000 00:01 725                        /memfd:doublemapper (deleted)
+7b36ad690000-7b36ad691000 r--p 00000000 08:02 4886231                    /home/links-dev/.dotnet/shared/Microsoft.NETCore.App/10.0.11/System.ComponentModel.Primitives.dll
+7b36ad691000-7b36ad6a0000 ---p 00000000 00:00 0 
+7b36ad6a0000-7b36ad6ac000 r-xp 00000000 08:02 4886231                    /home/links-dev/.dotnet/shared/Microsoft.NETCore.App/10.0.11/System.ComponentModel.Primitives.dll
+7b36ad6ac000-7b36ad6cc000 ---p 00000000 00:00 0 
+7b36ad6cc000-7b36ad6cf000 rw-p 0000c000 08:02 4886231                    /home/links-dev/.dotnet/shared/Microsoft.NETCore.App/10.0.11/System.ComponentModel.Primitives.dll
+7b36ad6cf000-7b36ad6ee000 ---p 00000000 00:00 0 
+7b36ad6ee000-7b36ad6ef000 r--p 0000e000 08:02 4886231                    /home/links-dev/.dotnet/shared/Microsoft.NETCore.App/10.0.11/System.ComponentModel.Primitives.dll
+7b36ad6ef000-7b36ad6f0000 ---p 00000000 00:00 0 
+7b36ad6f0000-7b36ad6f1000 r--p 00000000 08:02 4886079                    /home/links-dev/.dotnet/shared/Microsoft.NETCore.App/10.0.11/System.Console.dll
+7b36ad6f1000-7b36ad700000 ---p 00000000 00:00 0 
+7b36ad700000-7b36ad726000 r-xp 00000000 08:02 4886079                    /home/links-dev/.dotnet/shared/Microsoft.NETCore.App/10.0.11/System.Console.dll
+7b36ad726000-7b36ad745000 ---p 00000000 00:00 0 
+7b36ad745000-7b36ad74e000 rw-p 00025000 08:02 4886079                    /home/links-dev/.dotnet/shared/Microsoft.NETCore.App/10.0.11/System.Console.dll
+7b36ad74e000-7b36ad76d000 ---p 00000000 00:00 0 
+7b36ad76d000-7b36ad76f000 r--p 0002d000 08:02 4886079                    /home/links-dev/.dotnet/shared/Microsoft.NETCore.App/10.0.11/System.Console.dll
+7b36ad76f000-7b36ad770000 ---p 00000000 00:00 0 
+7b36ad770000-7b36ad780000 rw-s 00261000 00:01 725                        /memfd:doublemapper (deleted)
+7b36ad780000-7b36ad781000 r--p 00000000 08:02 4886096                    /home/links-dev/.dotnet/shared/Microsoft.NETCore.App/10.0.11/System.Linq.dll
+7b36ad781000-7b36ad790000 ---p 00000000 00:00 0 
+7b36ad790000-7b36ad807000 r-xp 00000000 08:02 4886096                    /home/links-dev/.dotnet/shared/Microsoft.NETCore.App/10.0.11/System.Linq.dll
+7b36ad807000-7b36ad826000 ---p 00000000 00:00 0 
+7b36ad826000-7b36ad857000 rw-p 00076000 08:02 4886096                    /home/links-dev/.dotnet/shared/Microsoft.NETCore.App/10.0.11/System.Linq.dll
+7b36ad857000-7b36ad876000 ---p 00000000 00:00 0 
+7b36ad876000-7b36ad878000 r--p 000a6000 08:02 4886096                    /home/links-dev/.dotnet/shared/Microsoft.NETCore.App/10.0.11/System.Linq.dll
+7b36ad878000-7b36ad880000 ---p 00000000 00:00 0 
+7b36ad880000-7b36ad8a0000 rw-s 00271000 00:01 725                        /memfd:doublemapper (deleted)
+7b36ad8a0000-7b36ad8a1000 r--p 00000000 08:02 4886103                    /home/links-dev/.dotnet/shared/Microsoft.NETCore.App/10.0.11/System.Runtime.InteropServices.dll
+7b36ad8a1000-7b36ad8b0000 ---p 00000000 00:00 0 
+7b36ad8b0000-7b36ad8c3000 r-xp 00000000 08:02 4886103                    /home/links-dev/.dotnet/shared/Microsoft.NETCore.App/10.0.11/System.Runtime.InteropServices.dll
+7b36ad8c3000-7b36ad8e2000 ---p 00000000 00:00 0 
+7b36ad8e2000-7b36ad8e7000 rw-p 00012000 08:02 4886103                    /home/links-dev/.dotnet/shared/Microsoft.NETCore.App/10.0.11/System.Runtime.InteropServices.dll
+7b36ad8e7000-7b36ad906000 ---p 00000000 00:00 0 
+7b36ad906000-7b36ad907000 r--p 00016000 08:02 4886103                    /home/links-dev/.dotnet/shared/Microsoft.NETCore.App/10.0.11/System.Runtime.InteropServices.dll
+7b36ad907000-7b36ad910000 ---p 00000000 00:00 0 
+7b36ad910000-7b36ad911000 r--p 00000000 08:02 4886093                    /home/links-dev/.dotnet/shared/Microsoft.NETCore.App/10.0.11/System.Collections.Concurrent.dll
+7b36ad911000-7b36ad920000 ---p 00000000 00:00 0 
+7b36ad920000-7b36ad947000 r-xp 00000000 08:02 4886093                    /home/links-dev/.dotnet/shared/Microsoft.NETCore.App/10.0.11/System.Collections.Concurrent.dll
+7b36ad947000-7b36ad967000 ---p 00000000 00:00 0 
+7b36ad967000-7b36ad975000 rw-p 00027000 08:02 4886093                    /home/links-dev/.dotnet/shared/Microsoft.NETCore.App/10.0.11/System.Collections.Concurrent.dll
+7b36ad975000-7b36ad994000 ---p 00000000 00:00 0 
+7b36ad994000-7b36ad996000 r--p 00034000 08:02 4886093                    /home/links-dev/.dotnet/shared/Microsoft.NETCore.App/10.0.11/System.Collections.Concurrent.dll
+7b36ad996000-7b36ad9a0000 ---p 00000000 00:00 0 
+7b36ad9a0000-7b36ad9d0000 rw-s 00291000 00:01 725                        /memfd:doublemapper (deleted)
+7b36ad9d0000-7b36ad9d1000 r--p 00000000 08:02 4886047                    /home/links-dev/.dotnet/shared/Microsoft.NETCore.App/10.0.11/System.Threading.dll
+7b36ad9d1000-7b36ad9e0000 ---p 00000000 00:00 0 
+7b36ad9e0000-7b36ad9ed000 r-xp 00000000 08:02 4886047                    /home/links-dev/.dotnet/shared/Microsoft.NETCore.App/10.0.11/System.Threading.dll
+7b36ad9ed000-7b36ada0c000 ---p 00000000 00:00 0 
+7b36ada0c000-7b36ada10000 rw-p 0000c000 08:02 4886047                    /home/links-dev/.dotnet/shared/Microsoft.NETCore.App/10.0.11/System.Threading.dll
+7b36ada10000-7b36ada2f000 ---p 00000000 00:00 0 
+7b36ada2f000-7b36ada30000 r--p 0000f000 08:02 4886047                    /home/links-dev/.dotnet/shared/Microsoft.NETCore.App/10.0.11/System.Threading.dll
+7b36ada30000-7b36ada31000 r--p 00000000 08:02 4886212                    /home/links-dev/.dotnet/shared/Microsoft.NETCore.App/10.0.11/System.Private.Uri.dll
+7b36ada31000-7b36ada40000 ---p 00000000 00:00 0 
+7b36ada40000-7b36ada6e000 r-xp 00000000 08:02 4886212                    /home/links-dev/.dotnet/shared/Microsoft.NETCore.App/10.0.11/System.Private.Uri.dll
+7b36ada6e000-7b36ada8e000 ---p 00000000 00:00 0 
+7b36ada8e000-7b36ada9a000 rw-p 0002e000 08:02 4886212                    /home/links-dev/.dotnet/shared/Microsoft.NETCore.App/10.0.11/System.Private.Uri.dll
+7b36ada9a000-7b36adab9000 ---p 00000000 00:00 0 
+7b36adab9000-7b36adaba000 r--p 00039000 08:02 4886212                    /home/links-dev/.dotnet/shared/Microsoft.NETCore.App/10.0.11/System.Private.Uri.dll
+7b36adaba000-7b36adac0000 ---p 00000000 00:00 0 
+7b36adac0000-7b36adad0000 rw-s 002c1000 00:01 725                        /memfd:doublemapper (deleted)
+7b36adad0000-7b36adad1000 r--p 00000000 08:02 4886082                    /home/links-dev/.dotnet/shared/Microsoft.NETCore.App/10.0.11/System.Memory.dll
+7b36adad1000-7b36adae0000 ---p 00000000 00:00 0 
+7b36adae0000-7b36adafb000 r-xp 00000000 08:02 4886082                    /home/links-dev/.dotnet/shared/Microsoft.NETCore.App/10.0.11/System.Memory.dll
+7b36adafb000-7b36adb1a000 ---p 00000000 00:00 0 
+7b36adb1a000-7b36adb23000 rw-p 0001a000 08:02 4886082                    /home/links-dev/.dotnet/shared/Microsoft.NETCore.App/10.0.11/System.Memory.dll
+7b36adb23000-7b36adb42000 ---p 00000000 00:00 0 
+7b36adb42000-7b36adb43000 r--p 00022000 08:02 4886082                    /home/links-dev/.dotnet/shared/Microsoft.NETCore.App/10.0.11/System.Memory.dll
+7b36adb43000-7b36adb50000 ---p 00000000 00:00 0 
+7b36adb50000-7b36adb5f000 rw-s 002d1000 00:01 725                        /memfd:doublemapper (deleted)
+7b36adb5f000-7b36adb60000 ---s 002e0000 00:01 725                        /memfd:doublemapper (deleted)
+7b36adb60000-7b36adb70000 rw-s 002e1000 00:01 725                        /memfd:doublemapper (deleted)
+7b36adb70000-7b36adb74000 r-xs 002f1000 00:01 725                        /memfd:doublemapper (deleted)
+7b36adb74000-7b36adb78000 rw-s 002f5000 00:01 725                        /memfd:doublemapper (deleted)
+7b36adb78000-7b36adb7c000 r-xs 002f9000 00:01 725                        /memfd:doublemapper (deleted)
+7b36adb7c000-7b36adc06000 rw-s 002fd000 00:01 725                        /memfd:doublemapper (deleted)
+7b36adc06000-7b36adc10000 ---s 00387000 00:01 725                        /memfd:doublemapper (deleted)
+7b36adc10000-7b36adc20000 rw-s 00391000 00:01 725                        /memfd:doublemapper (deleted)
+7b36adc20000-7b36adc24000 r-xs 003a1000 00:01 725                        /memfd:doublemapper (deleted)
+7b36adc24000-7b36adc28000 rw-s 003a5000 00:01 725                        /memfd:doublemapper (deleted)
+7b36adc28000-7b36adc2c000 r-xs 003a9000 00:01 725                        /memfd:doublemapper (deleted)
+7b36adc2c000-7b36adcaf000 rw-s 003ad000 00:01 725                        /memfd:doublemapper (deleted)
+7b36adcaf000-7b36adcb0000 ---s 00430000 00:01 725                        /memfd:doublemapper (deleted)
+7b36adcb0000-7b36adcd0000 rw-s 00431000 00:01 725                        /memfd:doublemapper (deleted)
+7b36adcd0000-7b36adcd4000 r-xs 00451000 00:01 725                        /memfd:doublemapper (deleted)
+7b36adcd4000-7b36adcd8000 rw-s 00455000 00:01 725                        /memfd:doublemapper (deleted)
+7b36adcd8000-7b36adcdc000 r-xs 00459000 00:01 725                        /memfd:doublemapper (deleted)
+7b36adcdc000-7b36add20000 rw-s 0045d000 00:01 725                        /memfd:doublemapper (deleted)
+7b36add20000-7b36add24000 r-xs 004a1000 00:01 725                        /memfd:doublemapper (deleted)
+7b36add24000-7b36add28000 rw-s 004a5000 00:01 725                        /memfd:doublemapper (deleted)
+7b36add28000-7b36add30000 ---s 004a9000 00:01 725                        /memfd:doublemapper (deleted)
+7b36add30000-7b36add4f000 rw-s 004b1000 00:01 725                        /memfd:doublemapper (deleted)
+7b36add4f000-7b36add50000 ---s 004d0000 00:01 725                        /memfd:doublemapper (deleted)
+7b36add50000-7b36add9f000 rw-s 004d1000 00:01 725                        /memfd:doublemapper (deleted)
+7b36add9f000-7b36adda0000 ---s 00520000 00:01 725                        /memfd:doublemapper (deleted)
+7b36adda0000-7b36addb0000 rw-s 00521000 00:01 725                        /memfd:doublemapper (deleted)
+7b36addb0000-7b36addb1000 r--p 00000000 08:02 4886074                    /home/links-dev/.dotnet/shared/Microsoft.NETCore.App/10.0.11/System.Diagnostics.Process.dll
+7b36addb1000-7b36addc0000 ---p 00000000 00:00 0 
+7b36addc0000-7b36addf3000 r-xp 00000000 08:02 4886074                    /home/links-dev/.dotnet/shared/Microsoft.NETCore.App/10.0.11/System.Diagnostics.Process.dll
+7b36addf3000-7b36ade12000 ---p 00000000 00:00 0 
+7b36ade12000-7b36ade21000 rw-p 00032000 08:02 4886074                    /home/links-dev/.dotnet/shared/Microsoft.NETCore.App/10.0.11/System.Diagnostics.Process.dll
+7b36ade21000-7b36ade40000 ---p 00000000 00:00 0 
+7b36ade40000-7b36ade41000 r--p 00040000 08:02 4886074                    /home/links-dev/.dotnet/shared/Microsoft.NETCore.App/10.0.11/System.Diagnostics.Process.dll
+7b36ade41000-7b36ade50000 ---p 00000000 00:00 0 
+7b36ade50000-7b36ade60000 rw-s 00531000 00:01 725                        /memfd:doublemapper (deleted)
+7b36ade60000-7b36ade61000 r--p 00000000 08:02 4886099                    /home/links-dev/.dotnet/shared/Microsoft.NETCore.App/10.0.11/System.IO.Pipes.dll
+7b36ade61000-7b36ade70000 ---p 00000000 00:00 0 
+7b36ade70000-7b36ade87000 r-xp 00000000 08:02 4886099                    /home/links-dev/.dotnet/shared/Microsoft.NETCore.App/10.0.11/System.IO.Pipes.dll
+7b36ade87000-7b36adea6000 ---p 00000000 00:00 0 
+7b36adea6000-7b36adead000 rw-p 00016000 08:02 4886099                    /home/links-dev/.dotnet/shared/Microsoft.NETCore.App/10.0.11/System.IO.Pipes.dll
+7b36adead000-7b36adecc000 ---p 00000000 00:00 0 
+7b36adecc000-7b36adecd000 r--p 0001c000 08:02 4886099                    /home/links-dev/.dotnet/shared/Microsoft.NETCore.App/10.0.11/System.IO.Pipes.dll
+7b36adecd000-7b36aded0000 ---p 00000000 00:00 0 
+7b36aded0000-7b36aded4000 r-xs 00541000 00:01 725                        /memfd:doublemapper (deleted)
+7b36aded4000-7b36aded8000 rw-s 00545000 00:01 725                        /memfd:doublemapper (deleted)
+7b36aded8000-7b36adedc000 r-xs 00549000 00:01 725                        /memfd:doublemapper (deleted)
+7b36adedc000-7b36adee0000 rw-s 0054d000 00:01 725                        /memfd:doublemapper (deleted)
+7b36adee0000-7b36adee1000 r--p 00000000 08:02 4886213                    /home/links-dev/.dotnet/shared/Microsoft.NETCore.App/10.0.11/System.Net.Primitives.dll
+7b36adee1000-7b36adef0000 ---p 00000000 00:00 0 
+7b36adef0000-7b36adf19000 r-xp 00000000 08:02 4886213                    /home/links-dev/.dotnet/shared/Microsoft.NETCore.App/10.0.11/System.Net.Primitives.dll
+7b36adf19000-7b36adf38000 ---p 00000000 00:00 0 
+7b36adf38000-7b36adf42000 rw-p 00028000 08:02 4886213                    /home/links-dev/.dotnet/shared/Microsoft.NETCore.App/10.0.11/System.Net.Primitives.dll
+7b36adf42000-7b36adf61000 ---p 00000000 00:00 0 
+7b36adf61000-7b36adf62000 r--p 00031000 08:02 4886213                    /home/links-dev/.dotnet/shared/Microsoft.NETCore.App/10.0.11/System.Net.Primitives.dll
+7b36adf62000-7b36adf70000 ---p 00000000 00:00 0 
+7b36adf70000-7b36adf80000 rw-s 00551000 00:01 725                        /memfd:doublemapper (deleted)
+7b36adf80000-7b36adf81000 r--p 00000000 08:02 4886161                    /home/links-dev/.dotnet/shared/Microsoft.NETCore.App/10.0.11/System.Net.Sockets.dll
+7b36adf81000-7b36adf90000 ---p 00000000 00:00 0 
+7b36adf90000-7b36ae002000 r-xp 00000000 08:02 4886161                    /home/links-dev/.dotnet/shared/Microsoft.NETCore.App/10.0.11/System.Net.Sockets.dll
+7b36ae002000-7b36ae021000 ---p 00000000 00:00 0 
+7b36ae021000-7b36ae041000 rw-p 00071000 08:02 4886161                    /home/links-dev/.dotnet/shared/Microsoft.NETCore.App/10.0.11/System.Net.Sockets.dll
+7b36ae041000-7b36ae060000 ---p 00000000 00:00 0 
+7b36ae060000-7b36ae061000 r--p 00090000 08:02 4886161                    /home/links-dev/.dotnet/shared/Microsoft.NETCore.App/10.0.11/System.Net.Sockets.dll
+7b36ae061000-7b36ae070000 ---p 00000000 00:00 0 
+7b36ae070000-7b36ae08c000 rw-s 00561000 00:01 725                        /memfd:doublemapper (deleted)
+7b36ae08c000-7b36ae090000 ---s 0057d000 00:01 725                        /memfd:doublemapper (deleted)
+7b36ae090000-7b36ae091000 r--p 00000000 08:02 4886085                    /home/links-dev/.dotnet/shared/Microsoft.NETCore.App/10.0.11/System.Diagnostics.DiagnosticSource.dll
+7b36ae091000-7b36ae0a0000 ---p 00000000 00:00 0 
+7b36ae0a0000-7b36ae0fd000 r-xp 00000000 08:02 4886085                    /home/links-dev/.dotnet/shared/Microsoft.NETCore.App/10.0.11/System.Diagnostics.DiagnosticSource.dll
+7b36ae0fd000-7b36ae11c000 ---p 00000000 00:00 0 
+7b36ae11c000-7b36ae137000 rw-p 0005c000 08:02 4886085                    /home/links-dev/.dotnet/shared/Microsoft.NETCore.App/10.0.11/System.Diagnostics.DiagnosticSource.dll
+7b36ae137000-7b36ae156000 ---p 00000000 00:00 0 
+7b36ae156000-7b36ae158000 r--p 00076000 08:02 4886085                    /home/links-dev/.dotnet/shared/Microsoft.NETCore.App/10.0.11/System.Diagnostics.DiagnosticSource.dll
+7b36ae158000-7b36ae160000 ---p 00000000 00:00 0 
+7b36ae160000-7b36ae180000 rw-s 00581000 00:01 725                        /memfd:doublemapper (deleted)
+7b36ae180000-7b36ae181000 r-xs 005a1000 00:01 725                        /memfd:doublemapper (deleted)
+7b36ae181000-7b36ae190000 ---s 005a2000 00:01 725                        /memfd:doublemapper (deleted)
+7b36ae190000-7b36ae194000 rw-s 005b1000 00:01 725                        /memfd:doublemapper (deleted)
+7b36ae194000-7b36ae1a0000 ---s 005b5000 00:01 725                        /memfd:doublemapper (deleted)
+7b36ae1a0000-7b372b400000 ---p 00000000 00:00 0 
+7b372b400000-7b372b4bd000 r--p 00000000 08:02 4886048                    /home/links-dev/.dotnet/shared/Microsoft.NETCore.App/10.0.11/libcoreclr.so
+7b372b4bd000-7b372b4be000 r--p 000bd000 08:02 4886048                    /home/links-dev/.dotnet/shared/Microsoft.NETCore.App/10.0.11/libcoreclr.so
+7b372b4be000-7b372b5c9000 r--p 000be000 08:02 4886048                    /home/links-dev/.dotnet/shared/Microsoft.NETCore.App/10.0.11/libcoreclr.so
+7b372b5c9000-7b372ba7a000 r-xp 001c8000 08:02 4886048                    /home/links-dev/.dotnet/shared/Microsoft.NETCore.App/10.0.11/libcoreclr.so
+7b372ba7a000-7b372baa2000 r--p 00678000 08:02 4886048                    /home/links-dev/.dotnet/shared/Microsoft.NETCore.App/10.0.11/libcoreclr.so
+7b372baa2000-7b372bacb000 rw-p 0069f000 08:02 4886048                    /home/links-dev/.dotnet/shared/Microsoft.NETCore.App/10.0.11/libcoreclr.so
+7b372bacb000-7b372bb20000 rw-p 00000000 00:00 0 
+7b372bb20000-7b372bb22000 r--p 00000000 08:02 3410969                    /usr/lib/x86_64-linux-gnu/libuuid.so.1.3.0
+7b372bb22000-7b372bb26000 r-xp 00002000 08:02 3410969                    /usr/lib/x86_64-linux-gnu/libuuid.so.1.3.0
+7b372bb26000-7b372bb27000 r--p 00006000 08:02 3410969                    /usr/lib/x86_64-linux-gnu/libuuid.so.1.3.0
+7b372bb27000-7b372bb28000 r--p 00006000 08:02 3410969                    /usr/lib/x86_64-linux-gnu/libuuid.so.1.3.0
+7b372bb28000-7b372bb29000 rw-p 00007000 08:02 3410969                    /usr/lib/x86_64-linux-gnu/libuuid.so.1.3.0
+7b372bb29000-7b372bb5a000 r--s 00000000 08:02 4886079                    /home/links-dev/.dotnet/shared/Microsoft.NETCore.App/10.0.11/System.Console.dll
+7b372bb5a000-7b372bb6c000 r--s 00000000 08:02 4886231                    /home/links-dev/.dotnet/shared/Microsoft.NETCore.App/10.0.11/System.ComponentModel.Primitives.dll
+7b372bb6c000-7b372bbb3000 r--s 00000000 08:02 4886115                    /home/links-dev/.dotnet/shared/Microsoft.NETCore.App/10.0.11/System.Collections.dll
+7b372bbb3000-7b372bbbe000 r--s 00000000 08:02 4886138                    /home/links-dev/.dotnet/shared/Microsoft.NETCore.App/10.0.11/System.Runtime.dll
+7b372bbbe000-7b372bbd6000 r--s 00000000 08:02 5017781                    /home/links-dev/netTest/wpf-linux-20260906/wpf-linux/build/DirectWrite.Linux/FallbackCriteria/bin/Debug/FallbackCriteria.dll
+7b372bbd6000-7b372bbe2000 r--p 00000000 08:02 4886204                    /home/links-dev/.dotnet/shared/Microsoft.NETCore.App/10.0.11/libSystem.Native.so
+7b372bbe2000-7b372bbee000 r-xp 0000b000 08:02 4886204                    /home/links-dev/.dotnet/shared/Microsoft.NETCore.App/10.0.11/libSystem.Native.so
+7b372bbee000-7b372bbef000 r--p 00016000 08:02 4886204                    /home/links-dev/.dotnet/shared/Microsoft.NETCore.App/10.0.11/libSystem.Native.so
+7b372bbef000-7b372bbf0000 rw-p 00016000 08:02 4886204                    /home/links-dev/.dotnet/shared/Microsoft.NETCore.App/10.0.11/libSystem.Native.so
+7b372bbf0000-7b372bc00000 rw-p 00000000 00:00 0 
+7b372bc00000-7b372bc28000 r--p 00000000 08:02 3410033                    /usr/lib/x86_64-linux-gnu/libc.so.6
+7b372bc28000-7b372bdbd000 r-xp 00028000 08:02 3410033                    /usr/lib/x86_64-linux-gnu/libc.so.6
+7b372bdbd000-7b372be15000 r--p 001bd000 08:02 3410033                    /usr/lib/x86_64-linux-gnu/libc.so.6
+7b372be15000-7b372be16000 ---p 00215000 08:02 3410033                    /usr/lib/x86_64-linux-gnu/libc.so.6
+7b372be16000-7b372be1a000 r--p 00215000 08:02 3410033                    /usr/lib/x86_64-linux-gnu/libc.so.6
+7b372be1a000-7b372be1c000 rw-p 00219000 08:02 3410033                    /usr/lib/x86_64-linux-gnu/libc.so.6
+7b372be1c000-7b372be29000 rw-p 00000000 00:00 0 
+7b372be29000-7b372be2a000 r--s 00000000 08:02 1835098                    /var/cache/fontconfig/0a7e56e2-b81e-4880-a3bb-bf7fb34906d6-le64.cache-7
+7b372be2a000-7b372be2b000 r--s 00000000 08:02 1835111                    /var/cache/fontconfig/3e1dc2e5-0510-4234-89da-f6c1b62baaa1-le64.cache-7
+7b372be2b000-7b372be2c000 r--s 00000000 08:02 1835112                    /var/cache/fontconfig/405c1d8a-685e-4f43-a05b-1c5c2ee38b37-le64.cache-7
+7b372be2c000-7b372be2f000 r--s 00000000 08:02 1835150                    /var/cache/fontconfig/cc3b7228-0fd4-4db8-b18f-20bdf0d3090d-le64.cache-7
+7b372be2f000-7b372be32000 r--s 00000000 08:02 1835140                    /var/cache/fontconfig/97f2fbba-5bfa-4fe6-bf20-a50f6df244d5-le64.cache-7
+7b372be32000-7b372be57000 rw-p 00000000 00:00 0 
+7b372be57000-7b372be62000 r--p 00000000 08:02 4981394                    /home/links-dev/netTest/wpf-linux-20260906/wpf-linux/src/WpfGfx.Linux.Native/bin/libwpfwin32.so
+7b372be62000-7b372be70000 r-xp 0000b000 08:02 4981394                    /home/links-dev/netTest/wpf-linux-20260906/wpf-linux/src/WpfGfx.Linux.Native/bin/libwpfwin32.so
+7b372be70000-7b372be8a000 r--p 00019000 08:02 4981394                    /home/links-dev/netTest/wpf-linux-20260906/wpf-linux/src/WpfGfx.Linux.Native/bin/libwpfwin32.so
+7b372be8a000-7b372be94000 r--p 00032000 08:02 4981394                    /home/links-dev/netTest/wpf-linux-20260906/wpf-linux/src/WpfGfx.Linux.Native/bin/libwpfwin32.so
+7b372be94000-7b372be95000 rw-p 0003c000 08:02 4981394                    /home/links-dev/netTest/wpf-linux-20260906/wpf-linux/src/WpfGfx.Linux.Native/bin/libwpfwin32.so
+7b372be95000-7b372be96000 rw-p 00000000 00:00 0 
+7b372be96000-7b372bf00000 r--p 00000000 08:02 4851326                    /home/links-dev/netTest/wpf-linux-20260906/wpf-linux/build/fonts/NotoSans-Regular.ttf
+7b372bf00000-7b372bf02000 rw-p 00000000 00:00 0 
+7b372bf02000-7b372bf10000 ---p 00000000 00:00 0 
+7b372bf10000-7b372bf14000 r--s 00000000 08:02 4886202                    /home/links-dev/.dotnet/shared/Microsoft.NETCore.App/10.0.11/System.Threading.Thread.dll
+7b372bf15000-7b372bf16000 rw-s 00149000 00:01 725                        /memfd:doublemapper (deleted)
+7b372bf16000-7b372bf17000 r--p 00000000 08:02 3435490                    /usr/lib/x86_64-linux-gnu/libXau.so.6.0.0
+7b372bf17000-7b372bf19000 r-xp 00001000 08:02 3435490                    /usr/lib/x86_64-linux-gnu/libXau.so.6.0.0
+7b372bf19000-7b372bf1a000 r--p 00003000 08:02 3435490                    /usr/lib/x86_64-linux-gnu/libXau.so.6.0.0
+7b372bf1a000-7b372bf1b000 r--p 00003000 08:02 3435490                    /usr/lib/x86_64-linux-gnu/libXau.so.6.0.0
+7b372bf1b000-7b372bf1c000 rw-p 00004000 08:02 3435490                    /usr/lib/x86_64-linux-gnu/libXau.so.6.0.0
+7b372bf1c000-7b372bf20000 r--s 00000000 08:02 4886066                    /home/links-dev/.dotnet/shared/Microsoft.NETCore.App/10.0.11/System.Threading.ThreadPool.dll
+7b372bf20000-7b372bf22000 rw-p 00000000 00:00 0 
+7b372bf22000-7b372bf30000 ---p 00000000 00:00 0 
+7b372bf30000-7b372bf31000 r--s 00000000 08:02 1835149                    /var/cache/fontconfig/cc039901-865d-4a52-9ed6-e1086a473dce-le64.cache-7
+7b372bf32000-7b372bf33000 rw-p 00000000 00:00 0 
+7b372bf33000-7b372bf34000 r--s 00000000 08:02 1835155                    /var/cache/fontconfig/daba86dd-2f03-4399-bc14-2f86693f8871-le64.cache-7
+7b372bf34000-7b372bf35000 r--s 00000000 08:02 1835136                    /var/cache/fontconfig/89528c57-6890-4a50-9b6f-b7fcbf2930dd-le64.cache-7
+7b372bf35000-7b372bf39000 r--s 00000000 08:02 4886145                    /home/links-dev/.dotnet/shared/Microsoft.NETCore.App/10.0.11/Microsoft.Win32.Primitives.dll
+7b372bf39000-7b372bf3a000 ---p 00000000 00:00 0 
+7b372bf3a000-7b372bf3d000 rw-p 00000000 00:00 0 
+7b372bf3d000-7b372bf4f000 r--p 00000000 08:02 4886056                    /home/links-dev/.dotnet/shared/Microsoft.NETCore.App/10.0.11/libhostpolicy.so
+7b372bf4f000-7b372bf8a000 r-xp 00011000 08:02 4886056                    /home/links-dev/.dotnet/shared/Microsoft.NETCore.App/10.0.11/libhostpolicy.so
+7b372bf8a000-7b372bf8b000 r--p 0004b000 08:02 4886056                    /home/links-dev/.dotnet/shared/Microsoft.NETCore.App/10.0.11/libhostpolicy.so
+7b372bf8b000-7b372bf8c000 rw-p 0004b000 08:02 4886056                    /home/links-dev/.dotnet/shared/Microsoft.NETCore.App/10.0.11/libhostpolicy.so
+7b372bf8c000-7b372bf8d000 rw-p 00000000 00:00 0 
+7b372bf8d000-7b372bfa0000 r--p 00000000 08:02 4880455                    /home/links-dev/.dotnet/host/fxr/10.0.11/libhostfxr.so
+7b372bfa0000-7b372bfdd000 r-xp 00012000 08:02 4880455                    /home/links-dev/.dotnet/host/fxr/10.0.11/libhostfxr.so
+7b372bfdd000-7b372bfdf000 r--p 0004e000 08:02 4880455                    /home/links-dev/.dotnet/host/fxr/10.0.11/libhostfxr.so
+7b372bfdf000-7b372bfe0000 rw-p 0004f000 08:02 4880455                    /home/links-dev/.dotnet/host/fxr/10.0.11/libhostfxr.so
+7b372bfe0000-7b372bfe3000 r--p 00000000 08:02 3415898                    /usr/lib/x86_64-linux-gnu/libgcc_s.so.1
+7b372bfe3000-7b372bffa000 r-xp 00003000 08:02 3415898                    /usr/lib/x86_64-linux-gnu/libgcc_s.so.1
+7b372bffa000-7b372bffe000 r--p 0001a000 08:02 3415898                    /usr/lib/x86_64-linux-gnu/libgcc_s.so.1
+7b372bffe000-7b372bfff000 r--p 0001d000 08:02 3415898                    /usr/lib/x86_64-linux-gnu/libgcc_s.so.1
+7b372bfff000-7b372c000000 rw-p 0001e000 08:02 3415898                    /usr/lib/x86_64-linux-gnu/libgcc_s.so.1
+7b372c000000-7b372c09a000 r--p 00000000 08:02 3415932                    /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.30
+7b372c09a000-7b372c1ab000 r-xp 0009a000 08:02 3415932                    /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.30
+7b372c1ab000-7b372c21a000 r--p 001ab000 08:02 3415932                    /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.30
+7b372c21a000-7b372c21b000 ---p 0021a000 08:02 3415932                    /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.30
+7b372c21b000-7b372c226000 r--p 0021a000 08:02 3415932                    /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.30
+7b372c226000-7b372c229000 rw-p 00225000 08:02 3415932                    /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.30
+7b372c229000-7b372c22c000 rw-p 00000000 00:00 0 
+7b372c22c000-7b372c22d000 ---p 00000000 00:00 0 
+7b372c22d000-7b372c230000 rw-p 00000000 00:00 0 
+7b372c230000-7b372c231000 ---p 00000000 00:00 0 
+7b372c231000-7b372c234000 rw-p 00000000 00:00 0 
+7b372c234000-7b372c235000 ---p 00000000 00:00 0 
+7b372c235000-7b372c238000 rw-p 00000000 00:00 0 
+7b372c238000-7b372c239000 ---p 00000000 00:00 0 
+7b372c239000-7b372c23c000 rw-p 00000000 00:00 0 
+7b372c23c000-7b372c23d000 r--p 00000000 08:02 3410067                    /usr/lib/x86_64-linux-gnu/librt.so.1
+7b372c23d000-7b372c23e000 r-xp 00001000 08:02 3410067                    /usr/lib/x86_64-linux-gnu/librt.so.1
+7b372c23e000-7b372c23f000 r--p 00002000 08:02 3410067                    /usr/lib/x86_64-linux-gnu/librt.so.1
+7b372c23f000-7b372c240000 r--p 00002000 08:02 3410067                    /usr/lib/x86_64-linux-gnu/librt.so.1
+7b372c240000-7b372c241000 rw-p 00003000 08:02 3410067                    /usr/lib/x86_64-linux-gnu/librt.so.1
+7b372c241000-7b372c246000 rw-p 00000000 00:00 0 
+7b372c246000-7b372c254000 r--p 00000000 08:02 3410043                    /usr/lib/x86_64-linux-gnu/libm.so.6
+7b372c254000-7b372c2d0000 r-xp 0000e000 08:02 3410043                    /usr/lib/x86_64-linux-gnu/libm.so.6
+7b372c2d0000-7b372c32b000 r--p 0008a000 08:02 3410043                    /usr/lib/x86_64-linux-gnu/libm.so.6
+7b372c32b000-7b372c32c000 r--p 000e4000 08:02 3410043                    /usr/lib/x86_64-linux-gnu/libm.so.6
+7b372c32c000-7b372c32d000 rw-p 000e5000 08:02 3410043                    /usr/lib/x86_64-linux-gnu/libm.so.6
+7b372c32d000-7b372c32e000 r--p 00000000 08:02 3410039                    /usr/lib/x86_64-linux-gnu/libdl.so.2
+7b372c32e000-7b372c32f000 r-xp 00001000 08:02 3410039                    /usr/lib/x86_64-linux-gnu/libdl.so.2
+7b372c32f000-7b372c330000 r--p 00002000 08:02 3410039                    /usr/lib/x86_64-linux-gnu/libdl.so.2
+7b372c330000-7b372c331000 r--p 00002000 08:02 3410039                    /usr/lib/x86_64-linux-gnu/libdl.so.2
+7b372c331000-7b372c332000 rw-p 00003000 08:02 3410039                    /usr/lib/x86_64-linux-gnu/libdl.so.2
+7b372c332000-7b372c333000 r--p 00000000 08:02 3410064                    /usr/lib/x86_64-linux-gnu/libpthread.so.0
+7b372c333000-7b372c334000 r-xp 00001000 08:02 3410064                    /usr/lib/x86_64-linux-gnu/libpthread.so.0
+7b372c334000-7b372c335000 r--p 00002000 08:02 3410064                    /usr/lib/x86_64-linux-gnu/libpthread.so.0
+7b372c335000-7b372c336000 r--p 00002000 08:02 3410064                    /usr/lib/x86_64-linux-gnu/libpthread.so.0
+7b372c336000-7b372c337000 rw-p 00003000 08:02 3410064                    /usr/lib/x86_64-linux-gnu/libpthread.so.0
+7b372c337000-7b372c338000 rw-s 005a1000 00:01 725                        /memfd:doublemapper (deleted)
+7b372c338000-7b372c339000 ---p 00000000 00:01 726                        /memfd:dotnet_ipc_created (deleted)
+7b372c339000-7b372c33a000 ---p 00000000 00:00 0 
+7b372c33a000-7b372c344000 rw-p 00000000 00:00 0 
+7b372c344000-7b372c345000 ---p 00000000 00:00 0 
+7b372c345000-7b372c348000 rw-p 00000000 00:00 0 
+7b372c348000-7b372c34a000 rw-p 00000000 00:00 0 
+7b372c34a000-7b372c34c000 r--p 00000000 08:02 3410028                    /usr/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2
+7b372c34c000-7b372c376000 r-xp 00002000 08:02 3410028                    /usr/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2
+7b372c376000-7b372c381000 r--p 0002c000 08:02 3410028                    /usr/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2
+7b372c381000-7b372c382000 rw-s 0014a000 00:01 725                        /memfd:doublemapper (deleted)
+7b372c382000-7b372c384000 r--p 00037000 08:02 3410028                    /usr/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2
+7b372c384000-7b372c386000 rw-p 00039000 08:02 3410028                    /usr/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2
+7fff9b04b000-7fff9b06c000 rw-p 00000000 00:00 0                          [stack]
+7fff9b1d4000-7fff9b1d8000 r--p 00000000 00:00 0                          [vvar]
+7fff9b1d8000-7fff9b1da000 r-xp 00000000 00:00 0                          [vdso]
+ffffffffff600000-ffffffffff601000 --xp 00000000 00:00 0                  [vsyscall]

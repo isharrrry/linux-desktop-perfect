@@ -1,0 +1,34 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('BuildHygiene.props'))" />
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <!--
+      annotations 而不是 disable：Contracts/ 里的可空注解（MilVisual?、IMilRenderData?
+      等 4 处）在 disable 上下文里会报 CS8632。改成 annotations 后注解语法合法、
+      警告照旧关闭，对既有代码的语义零影响。
+    -->
+    <Nullable>annotations</Nullable>
+    <AssemblyName>WpfGfx.Linux</AssemblyName>
+    <RootNamespace>WpfGfx.Linux</RootNamespace>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <!--
+      `CA2255`（`[ModuleInitializer]` 仅建议用于应用程序代码／源生成器）：本件**有意**在库形态下
+      用 `ModuleInitializer` 接管 SkiaSharp 解析（见 `Interop/MilNative.Misc.cs:1192` 的注释）⇒
+      这是**既有的**、经裁定的用法；`integration-wave.sh` 的「0 错 0 警」闸在全量重建时会点名它，
+      故按卫生口径显式登记（结构上游化·合并波）。
+    -->
+    <NoWarn>$(NoWarn);CS0649;CS0169;CA2255</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- 版本由 T0 锁定：SkiaSharp 4.x 有破坏性 API 变更，禁止升级 -->
+    <PackageReference Include="SkiaSharp" Version="2.88.9" />
+    <PackageReference Include="SkiaSharp.NativeAssets.Linux" Version="2.88.9" />
+  </ItemGroup>
+
+</Project>

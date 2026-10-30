@@ -1,0 +1,82 @@
+<Project>
+  <!--
+    ==========================================================================
+    CycleStub.PresentationFramework —— PresentationFramework 的**编译期最小 API 替身**
+    ==========================================================================
+    为什么存在（结构性理由）：
+      上游有两个 CycleBreakers 工程给「下游但被反向依赖」的消费方提供 PresentationFramework
+      侧类型，用来打破编译期循环：
+        · CycleBreakers/PresentationFramework/PresentationFramework-System.Printing-api-cycle.csproj
+          （供 System.Printing 的 API 面使用）
+        · CycleBreakers/PresentationFramework/PresentationFramework-ReachFramework-impl-cycle.csproj
+          （供 ReachFramework 使用）
+      而**本仓库的上游快照里没有 CycleBreakers/ 目录**（实测 find/grep 均为空）→ 不可移植。
+      本工程是这两个替身的**合并版**（两个消费方需要的 PF 类型集合高度重合，且必须同为一个
+      AssemblyName=PresentationFramework 的程序集才能保证类型身份统一）。
+
+    本替身包含两类内容：
+      ① **上游真源码**（零改写）：Documents/Serialization 下的 4 个 API 文件
+         （SerializerWriter / SerializerWriterCollator / SerializerWriterEventHandlers /
+           ISerializerFactory）—— 它们是纯抽象 API，RF 直接继承/实现它们，
+         用真文件可保证抽象成员签名与上游逐个一致（避免手抄出错）。
+      ② **手写最小声明**（ApiSubset.cs）：RF/System.Printing 用到的
+         FixedPage / FixedDocument / FixedDocumentSequence / PageContentCollection /
+         DocumentReferenceCollection；成员逐个来自真源码签名，出处写在文件里。
+
+    身份与运行期语义：
+      · AssemblyName = **PresentationFramework**、AssemblyVersion 4.0.0.1、WCP 公开签名
+        → 与真 PresentationFramework.dll 身份一致；本替身只参与 System.Printing / ReachFramework
+        的**编译**，运行期由真 PresentationFramework.dll 顶替（同名同版本同公钥）。
+      · 参考方一律 <Private>false</Private>，绝不进输出目录（**绝不允许两个同名程序集同时出现**）。
+      · **保真度验证**：ReachFramework 会在真 PresentationFramework.dll 产出后**再编译一遍**
+        （pass 2），由编译器逐条验证 RF 对本替身的全部使用在真 PF 上依然成立 ——
+        任何成员/继承差异都会变成编译错误，不会留到运行期。
+
+    恢复条件：拿到上游 CycleBreakers 目录后，用真工程替换本替身（身份相同，直接替换 Reference）。
+    ==========================================================================
+  -->
+  <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk" />
+  <Import Project="$(MSBuildThisFileDirectory)../../../Linux/build/Directory.Upstream.props" />
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <AssemblyName>PresentationFramework</AssemblyName>
+    <RootNamespace>MS.Internal</RootNamespace>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <EnableDefaultEmbeddedResourceItems>false</EnableDefaultEmbeddedResourceItems>
+    <NoWarn>$(NoWarn);0618;CS1591;CS8002;CA1416;CA1420;WPF0001</NoWarn>
+    <DefineConstants>FRAMEWORK_NATIVEMETHODS;COMMONDPS;PRESENTATIONFRAMEWORK_ONLY;PRESENTATIONFRAMEWORK;RIBBON_IN_FRAMEWORK</DefineConstants>
+    <LangVersion>latest</LangVersion>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <ProduceReferenceAssembly>false</ProduceReferenceAssembly>
+    <SignAssembly>true</SignAssembly>
+    <PublicSign>true</PublicSign>
+    <AssemblyOriginatorKeyFile>$(WpfLinuxRoot)src/Linux/build/keys/WcpPublicKey.snk</AssemblyOriginatorKeyFile>
+  </PropertyGroup>
+
+  <!-- System.Printing.PrintTicket 等：由 ReachFramework 替身提供（真源码出处见该工程注释） -->
+  <ItemGroup Condition="Exists('$(WpfLinuxRoot)src/Microsoft.DotNet.Wpf.Linux/src/CycleStub.ReachFramework/bin/$(WpfLinuxSelfBuiltConfiguration)/ReachFramework.dll')">
+    <Reference Include="ReachFramework"><HintPath>$(WpfLinuxRoot)src/Microsoft.DotNet.Wpf.Linux/src/CycleStub.ReachFramework/bin/$(WpfLinuxSelfBuiltConfiguration)/ReachFramework.dll</HintPath><Private>false</Private></Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="PresentationCore"><HintPath>$(WpfLinuxRoot)src/Microsoft.DotNet.Wpf.Linux/src/PresentationCore/bin/$(WpfLinuxSelfBuiltConfiguration)/PresentationCore.dll</HintPath><Private>true</Private></Reference>
+    <Reference Include="System.Xaml"><HintPath>$(WpfLinuxRoot)src/Microsoft.DotNet.Wpf.Linux/src/System.Xaml/bin/$(WpfLinuxSelfBuiltConfiguration)/System.Xaml.dll</HintPath><Private>true</Private></Reference>
+    <Reference Include="WindowsBase"><HintPath>$(WpfLinuxRoot)src/Microsoft.DotNet.Wpf.Linux/src/WindowsBase/bin/$(WpfLinuxSelfBuiltConfiguration)/WindowsBase.dll</HintPath><Private>true</Private></Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="ApiSubset.cs" />
+    <!-- ① 上游真源码：纯 API 抽象类/接口/事件参数（零改写） -->
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/PresentationFramework/System/Windows/Documents/Serialization/SerializerWriter.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/PresentationFramework/System/Windows/Documents/Serialization/SerializerWriterCollator.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/PresentationFramework/System/Windows/Documents/Serialization/SerializerWriterEventHandlers.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/PresentationFramework/System/Windows/Documents/Serialization/ISerializerFactory.cs" />
+    <Compile Include="$(WpfLinuxRoot)src/Microsoft.DotNet.Wpf.Linux/src/shims/LinuxAssemblyIdentity.cs" />
+  </ItemGroup>
+
+  <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
+</Project>

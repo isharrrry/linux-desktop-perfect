@@ -1,0 +1,30 @@
+# PresentationCore.dll 实际资源清单快照（M4 资源审计）
+# 生成命令：cd /tmp/m4/resprobe && dotnet run --project resprobe.csproj -- /home/links-dev/netTest/wpf-linux-20260906/wpf-linux/build/PresentationCore.Linux/bin/Debug/PresentationCore.dll
+# 生成时间：2026-09-10 14:52:56
+# 上游对照：PresentationCore.csproj 的 Resource/EmbeddedResource 共 4 项（4 复合字体 + Strings.resx + ColorProfiles.resx + ILLinkTrim.xml）
+
+# 程序集: PresentationCore v4.0.0.1
+# 路径:   /home/links-dev/netTest/wpf-linux-20260906/wpf-linux/build/PresentationCore.Linux/bin/Debug/PresentationCore.dll  (4056576 bytes)
+
+## GetManifestResourceNames(): 共 4 项
+   ColorProfiles.resources
+   PresentationCore.Resources.Strings.resources
+   PresentationCore.g.resources
+   PresentationCore.xml
+
+## WPF .g.resources 流 `PresentationCore.g.resources` 的条目（运行期 pack:// 与 fonts/ 走这里）:
+   fonts/globalserif.compositefont  [29021 bytes]
+   fonts/globaluserinterface.compositefont  [259500 bytes]
+   fonts/globalmonospace.compositefont  [25313 bytes]
+   fonts/globalsansserif.compositefont  [25749 bytes]
+   -- 共 4 条
+
+## 端到端复刻 PC 运行期取法: new ResourceManager("PresentationCore.g", asm).GetStream("fonts/...")
+   [OK  ] fonts/globaluserinterface.compositefont → Stream 259500 bytes
+   [OK  ] fonts/globalmonospace.compositefont → Stream 25313 bytes
+   [OK  ] fonts/globalsansserif.compositefont → Stream 25749 bytes
+   [OK  ] fonts/globalserif.compositefont → Stream 29021 bytes
+
+## SR 资源表（SR.g.cs 期望基名 PresentationCore.Resources.Strings）
+   [OK  ] AccessKeyManager_NotAUnicodeCharacter → '{0}' is not a single Unicode character.…
+   [OK  ] CompositeFontUnknownElement → '{0}' element in XML namespace '{1}' not recogni…

@@ -1,6 +1,6 @@
 # 参与 LinuxDesktopPerfect
 
-本仓是 WPF 在 Linux 上的完整替代运行时。主干只保留最小共识；范围与非目标见 [README.md](README.md)。
+本仓是 WindowsDesktop 在 Linux 上的完整替代运行时（WPF 全量、WinForms 到兼容层）。主干只保留最小共识；范围与非目标见 [README.md](README.md)。
 
 ## 先读
 

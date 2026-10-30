@@ -1,0 +1,21 @@
+<Window x:Class="LinuxDesktopPerfect.Samples.WpfMediaInk.MediaWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="WpfMediaInk" Height="760" Width="900"
+        AutomationProperties.Name="WpfMediaInk">
+    <!-- 对应 SCR-06 元素属性表：0/0 ~ 0/7；不支持格式提示默认 Collapsed（!visible） -->
+    <StackPanel Margin="12">
+        <TextBlock x:Name="TitleText" Text="WpfMediaInk" AutomationProperties.Name="WpfMediaInk" FontSize="20" />
+        <Button Content="播放" AutomationProperties.Name="播放" Margin="0,8,0,0" />
+        <Button Content="暂停" AutomationProperties.Name="暂停" Margin="0,8,0,0" />
+        <Slider AutomationProperties.Name="进度" Minimum="0" Maximum="100" Value="0" Margin="0,8,0,0" />
+        <TextBlock AutomationProperties.Name="state=READY" Text="state=READY" Margin="0,8,0,0" />
+        <!-- 缺陷编号未分配：占位文案用 D-xxx，分配后替换（不得借用 D-001） -->
+        <TextBlock AutomationProperties.Name="不支持此格式（缺陷编号待分配 D-xxx）"
+                   Text="不支持此格式（缺陷编号待分配 D-xxx）" Visibility="Collapsed" Margin="0,8,0,0" />
+        <InkCanvas AutomationProperties.Name="墨迹" Height="160" Background="#FFF7F7F7" Margin="0,8,0,0" />
+        <TextBlock AutomationProperties.Name="points=0" Text="points=0" Margin="0,8,0,0" />
+        <TextBlock AutomationProperties.Name="pen=off" Text="pen=off" Margin="0,8,0,0" />
+    </StackPanel>
+
+</Window>

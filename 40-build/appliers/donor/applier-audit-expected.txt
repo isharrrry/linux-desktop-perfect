@@ -1,0 +1,49 @@
+# 必须被 src/Linux/build/integration-wave.sh 的 APPLIERS_EXPLICIT 登记的应用器（**独立于那份脚本**）
+# 来源：本清单在债务 #13 审计时从 wave 抽出，并**人工补上"必须有"的三条**（它们一旦掉出登记，
+#        对应生成物就会被 port-lib 重生成后**静默**不再编译）：
+#   · patch-shared-hwndwrapper-diag   （名字不带 presentation ⇒ 兜底 glob 抓不到）
+#   · patch-uiautomationtypes-reservedvalue（同上）
+#   · patch-windowsbase-* 三个（同上）
+# 维护：新增/退役应用器时**改这里**，而不是只改 wave —— 这样"被摘掉"才会红。
+patch-presentationcore-apartment
+patch-presentationcore-fontcache
+patch-presentationcore-registry
+patch-presentationcore-olecontext
+patch-presentationcore-compositefont
+patch-presentationcore-textservices
+patch-presentationcore-securityzone
+patch-presentationcore-mimetype
+patch-presentationcore-textline-fallback
+patch-presentationframework-xamlaccess
+patch-uiautomationtypes-reservedvalue
+patch-shared-invariant-failfast
+patch-shared-hwndwrapper-diag
+patch-presentationcore-inputtrace
+patch-windowsbase-msgflow
+patch-presentationcore-inputsite-trace
+patch-presentationframework-texteditor-trace
+patch-presentationframework-textbox-textdp-trace
+patch-windowsbase-dpvalue-trace
+patch-windowsbase-entry-flatten-trace
+patch-windowsbase-focus-wait
+patch-presentationframework-mirror-trace
+# 2026-09-16（W17C）：`hbtextline_shim_stale` 的等号化接线（shim 内容 sha256 进程序集元数据）。
+# 事故背景：该接线本来是**手改**生成物 csproj，被波第 1 步 `port-lib.py PresentationCore`
+# 整份重写后**静默**抹掉（权威 pc 失去元数据、读侧变 NOINFO）。现在它由应用器产出 ⇒
+# 登记在这里，任何"从 APPLIERS_EXPLICIT 摘掉/漏登记"都会被 applier-audit 判红。
+patch-presentationcore-hbtextline-shimsha
+patch-presentationcore-lineheight-trace
+patch-presentationcore-hwndtarget-trace
+patch-swe-linux
+patch-presentationcore-mousecapture-release
+patch-presentationframework-window-minmax-notify
+patch-presentationframework-messagebox
+#   ↑ 任务 E：`MessageBox.Show` 不再走 `user32!MessageBox`（上游 `MessageBox.cs:414`）⇒ 改走自产
+#     `WpfLinuxMessageBox.Show`（`Window.ShowDialog()` 真模态 + 真阻塞；无 `DISPLAY`/构造失败仍降级不阻塞）。
+#     登记两处：`src/Linux/build/integration-wave.sh` 的 `APPLIERS_EXPLICIT+=` ＋ 本表（同 `window-minmax-notify`）。
+#   ↑ `#51` W106A：`D-G88` 的 `P3`（托管侧通知 ⇒ 幂等发布尺寸提示到 X）。**主控落登记**（两处：
+#     `src/Linux/build/integration-wave.sh` 的 `APPLIERS_EXPLICIT+=` ＋ 本表）；它虽在 `patch-presentation*`
+#     通配里会被兜底执行，但**不显式登记就进不了本清单** ⇒ 漏登记会被本审计判红。
+#   ↑ `#38` 接通（`#36` 曾回退）：官方 `System.Windows.Extensions` 包 → Linux 原生替身。
+#   两条根因 = ① HintPath 写死 `bin/Release/`（波建的是 Debug）⇒ 引用落空、RAR 回落到**包** ⇒ CS0012；
+#   ② `System.Security.Permissions 9.0.0` 传递依赖 SWE ⇒ 必须留"排除 compile/runtime 资产"的占位包引用。
