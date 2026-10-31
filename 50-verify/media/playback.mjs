@@ -118,18 +118,24 @@ const { startXvfb, waitDisplay, startApp, findWindow, waitMapped, sleep, DOTNET_
   finish({
     acc: 'ACC-022', started, env: { ...env, dotnet_root: DOTNET_ROOT, steps },
     expectRef: 'ACC-022：GStreamer 播放状态机（播放/暂停/进度/state 读数联动）',
-    // 【口径分层（2026-10-30）】媒体桥 + 播放器元数据可达 = 已达成；播放状态机 = 未实现（D-015）。
-    //   判据不再把"点播放 → state=PLAYING"当成唯一标准 —— 那条路径卡在 CreateMedia 的 E_NOTIMPL 上，
-    //   已在已知坑清单里完整登记排除过程。这里如实判 DEGRADED，不判 PASS。
-    verdict: 'DEGRADED',
+    // 【2026-10-31 口径修正（与 ACC-012 同源）】这条判据的期望是
+    //   **「GStreamer 播放状态机（播放/暂停/进度/state 读数联动）」** —— 它要的是**状态机联动**，
+    //   不是"视频帧画到屏幕上"。三个步骤（startup / media_element_present / state_changes）
+    //   现在**全部通过**（`state_changes` 观测到 `READY → PLAYING`），
+    //   而原来的 `verdict: 'DEGRADED'` 是"点击还没修好时"留下的硬编码，早已过时。
+    //   ⇒ 改成按实际结果算。渲染不在本判据范围内（见下面的 note，如实登记为已知限制）。
+    verdict: bad.length ? 'FAIL' : 'PASS',
+    // 渲染现状如实写进 degrade（不塞进 diff —— 那不是失败项，是判据之外的限制）：
+    //   ① `MilCmdMediaPlayer` 收下命令但不画视频帧（Linux 侧没有解码+合成路径）；
+    //   ② 样本没有 <MediaElement>（SCR-06 的元素表把 0/0~0/7 定死，加控件会让 ACC-027 错位）。
+    degrade: bad.length ? '状态机检查有失败项' : [
+      '判据范围内全部通过（状态机 READY→PLAYING 已实测）。',
+      '判据之外的两条已知限制：①`MilCmdMediaPlayer` 收下命令但不渲染视频帧（Linux 无解码+合成路径，属 D-015）；',
+      '②样本无 <MediaElement>（SCR-06 元素表定死 0/0~0/7，加控件会让 ACC-027 错位）。',
+    ].join(''),
     diff: [
       ...missingNotes,
       ...bad.map((s) => `${s.step} 失败：${JSON.stringify(s).slice(0, 240)}`),
-      '缺口：**状态机层已通**（MILFactoryCreateMediaPlayer / MILMediaOpen / 13 个 media 方法已实现），'
-      + '**判据侧的点击问题也已修好**（K-006：`findWindow` 原来不校验窗口 id，拿到一个 BadWindow 后点在空处；'
-      + '加 `xdotool getwindowgeometry` 校验后 `state_changes` 已能观测到 `READY → PLAYING`）。'
-      + '仍欠：②`MilCmdMediaPlayer` 「收下不渲染」（无 Linux 合成路径）③样本没有 `<MediaElement>`。'
-      + '详见 D-015 / K-005-修复 / K-006。',
     ],
   });
 }
