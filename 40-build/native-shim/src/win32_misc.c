@@ -258,9 +258,22 @@ BOOL BeginPaint(HWND h, WPF_PAINTSTRUCT *ps)
                             else wbuf[wn++] = (uint16_t)cp;
                         }
                         if (wn > 0) {
-                            // 垂直居中、左侧留 4px
-                            int32_t ty = (pw2->height + 16) / 2;
-                            wpf_draw_text(ps->hdc, 4, ty, wbuf, wn);
+                            // 【ACC-028 / K-166】去掉 WinForms 的助记符标记：
+                            //   Button/Label 的 Text 里 `&X` 表示「X 带下划线」，`&&` 表示字面 `&`。
+                            //   shim 不会画下划线，直接照原样画会出现 `&&`、`c&e&&ScaMe&` 这种乱码
+                            //   （K-165 的截图就是这个症状）。这里做最小处理：`&&` → `&`，单个 `&` 丢弃。
+                            uint16_t clean[128]; int cn = 0;
+                            for (int i = 0; i < wn && cn < 127; ++i) {
+                                if (wbuf[i] == '&') {
+                                    if (i + 1 < wn && wbuf[i + 1] == '&') { clean[cn++] = '&'; ++i; }
+                                    // 单个 & ⇒ 助记符，丢弃
+                                } else clean[cn++] = wbuf[i];
+                            }
+                            if (cn > 0) {
+                                // 垂直居中、左侧留 4px
+                                int32_t ty = (pw2->height + 16) / 2;
+                                wpf_draw_text(ps->hdc, 4, ty, clean, cn);
+                            }
                         }
                     }
                 }
