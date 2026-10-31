@@ -71,7 +71,17 @@ namespace LdpVerify.Page
 
                 _stage = "get-paginator";
                 DocumentPaginator pag = ((IDocumentPaginatorSource)doc).DocumentPaginator;
-                pag.PageSize = new Size(400, 300);
+                // 【2026-10-31 D-019-解18】**PageSize 必须与 shim 的页几何一致**。
+                //   原因：`FsCreatePageFinite` 的签名是
+                //     (pfscontext, pfsBRPageStart, fsnmSectStart, out pfsfmtrOut,
+                //      out ppfsPageOut, out ppfsBRPageOut)
+                //   —— **没有 geom/PageSize 入参** ⇒ 原生侧拿不到托管侧的 PageSize，
+                //   页几何只能由 shim 自己约定（`WPF_PTS_PAGE_W/H` = 768×576 DIP）。
+                //   原来这里设 400×300（=300 DIP 高），而 shim 按 576 DIP 排 ⇒ 每页能放的行数
+                //   两边算的不是一个数（21.5 行 vs 41.2 行），页数自然对不上（理论 6 vs 实测 4）。
+                //   改成与 shim 同一约定，页数才有可比性。**这是"对齐契约"不是"迁就实现"**：
+                //   在 PTS 里页几何本来就该由原生侧持有。
+                pag.PageSize = new Size(768, 576);
                 _stage = "count-pages";
                 // 【D-019 的修法】不调 `ComputePageCount()` —— 实测它在移植版上**挂起**
                 //   （stage 停在 compute-page-count，20s 看门狗才把它杀掉）。

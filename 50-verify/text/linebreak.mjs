@@ -127,7 +127,10 @@ finish({
   started,
   expectRef: 'ACC-015：换行机会点与双向级别与基准一致（分页由宿主集成，未覆盖）',
   env: { ...env, cases: rows, pagination },
-  verdict: diff.length ? 'FAIL' : 'DEGRADED',
-  degrade: diff.length ? 'none' : degradeReason,
+  // 【2026-10-31 判据补全】原实现只有 `diff.length ? 'FAIL' : 'DEGRADED'` —— **没有 PASS 分支**，
+  //   即使换行/双向全过、分页也跑通，也只能是 DEGRADED。补成三态：
+  //     diff 非空 ⇒ FAIL；换行过但分页没过 ⇒ DEGRADED；两者都过 ⇒ PASS。
+  verdict: diff.length ? 'FAIL' : (paginationOk ? 'PASS' : 'DEGRADED'),
+  degrade: (diff.length || paginationOk) ? 'none' : degradeReason,
   diff: diff.length ? diff.slice(0, 8) : (paginationOk ? [] : [`未覆盖项：${degradeReason}`]),
 });
