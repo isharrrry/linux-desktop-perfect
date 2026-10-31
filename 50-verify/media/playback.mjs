@@ -96,7 +96,9 @@ const { startXvfb, waitDisplay, startApp, findWindow, waitMapped, sleep, DOTNET_
             const clickRes = spawnSync('sh', ['-c', `DISPLAY=${xvfb.display} ${mouseCmd}`], { encoding: 'utf8', timeout: 20000 });
             lastClickDiag = { cmd: mouseCmd, status: clickRes.status, signal: clickRes.signal,
                               stderr: (clickRes.stderr || '').slice(0, 200), error: clickRes.error ? String(clickRes.error) : null };
-            await sleep(1500);
+            // 【K-011】1500ms 在偶发情况下不够（Play() 到 state=PLAYING 之间还要几步）；
+            //   实测 3 次里有 1 次 8 轮重试全部读到 READY。加长单次等待。
+            await sleep(2200);
             const tree2 = JSON.parse(fs.readFileSync(treePath, 'utf8'));
             state1 = ((tree2.nodes || []).find((n) => /^state=/.test(String(n.name || ''))) || {}).name || null;
             if (state1 !== state0) break;
