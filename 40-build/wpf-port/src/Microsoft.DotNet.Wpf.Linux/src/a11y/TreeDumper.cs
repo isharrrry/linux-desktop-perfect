@@ -171,8 +171,12 @@ namespace Ldp.A11y
                             if (win.IsVisible) Dump(win, outPath, scr, app);
                         }), DispatcherPriority.Background);
                     }
-                    catch
+                    catch (Exception ex)
                     {
+                        // 【K-011 诊断】原来这里静默 return：只要第一次 d.Invoke 抛异常，
+                        //   重复导出线程就**永久退出**，而判据侧只会看到"树一直不更新"、
+                        //   进而把"state 没变"误读成"点击没生效"。
+                        try { Console.Error.WriteLine("[A11Y-REPEAT] 停止：" + ex.GetType().Name + " " + ex.Message); Console.Error.Flush(); } catch { }
                         return; // 应用在退出：停止重复
                     }
                 }

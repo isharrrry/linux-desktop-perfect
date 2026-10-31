@@ -102,7 +102,13 @@ const { startXvfb, waitDisplay, startApp, findWindow, waitMapped, sleep, DOTNET_
             await sleep(2200);
             const tree2 = JSON.parse(fs.readFileSync(treePath, 'utf8'));
             state1 = ((tree2.nodes || []).find((n) => /^state=/.test(String(n.name || ''))) || {}).name || null;
-            attempts.push({ attempt, state0, state1, click_status: clickRes.status, clicked: mouseCmd });
+            // 【K-011-解】树文件 mtime 是关键区分手段：
+            //   mtime 不涨 ⇒ LdpA11y 的重复导出停了（观测层问题，不是点击问题）；
+            //   mtime 在涨但 state 仍是 READY ⇒ 才是真的没点到。
+            let treeMtime = null;
+            try { treeMtime = fs.statSync(treePath).mtimeMs; } catch { /* ignore */ }
+            attempts.push({ attempt, state0, state1, click_status: clickRes.status, clicked: mouseCmd,
+                            tree_mtime: treeMtime });
             if (state1 !== state0) break;
           }
           steps.push({ step: 'state_changes', ok: state0 !== state1, before: state0, after: state1,
