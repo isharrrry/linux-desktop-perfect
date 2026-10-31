@@ -247,6 +247,17 @@ namespace MS.Win32
 
         private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
         {
+            // 【P25】这是**真正生效的** WndProc（上游 Shared/MS/Win32/HwndWrapper.cs 在
+            //   WindowsBase.Linux.csproj:431 被 Compile Remove，换成了本文件）。
+            //   之前的 P21/P24 加在被 Remove 的那份上 ⇒ 从来没被编译 ⇒ 读数 0 次是构建问题。
+            //   这里必须重新放一条，才能看到 WM_DROPFILES 到底有没有进 WndProc、_hooks 有几条。
+            if (msg == 0x0233 /* WM_DROPFILES */)
+            {
+                Console.Error.WriteLine("[P25] HwndWrapper.Linux.WndProc 收到 WM_DROPFILES hwnd=0x"
+                    + hwnd.ToInt64().ToString("x") + " hooksNull=" + (_hooks == null));
+                Console.Error.Flush();
+            }
+
             // The default result for messages we handle is 0.
             IntPtr result = IntPtr.Zero;
             WindowMessage message = (WindowMessage)msg;
