@@ -264,6 +264,18 @@ int wpf_draw_text(HDC dc, int32_t x, int32_t y, const uint16_t *s, int32_t len)
     return 1;
 }
 
+int wpf_draw_select_object(HDC dc, HGDIOBJ obj, int kind)
+{
+    wpf_hdc *d = wpf_hdc_of(dc);
+    if (!d) return 0;
+    if (kind == 1)      d->cur_brush = (HBRUSH)obj;
+    else if (kind == 2) d->cur_pen   = (HPEN)obj;
+    else if (kind == 3) d->cur_font  = (HFONT)obj;
+    return 1;
+}
+
+int wpf_gdi_kind(HGDIOBJ o) { wpf_gdi_obj *p = wpf_gdi_of(o); return p ? p->kind : 0; }
+
 int wpf_draw_text_bg(HDC dc, const WPF_RECT *rc)
 {
     wpf_hdc *d = wpf_hdc_of(dc);

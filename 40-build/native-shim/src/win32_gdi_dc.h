@@ -25,6 +25,8 @@ int      wpf_draw_set_text_color(HDC dc, uint32_t colorref);   // 返回 1=成�
 int      wpf_draw_set_bk_color(HDC dc, uint32_t colorref);
 int      wpf_draw_set_bk_mode(HDC dc, int mode);
 int      wpf_draw_flush(HDC dc);
+int      wpf_draw_select_object(HDC dc, HGDIOBJ obj, int kind);   // 1=brush 2=pen 3=font
+int      wpf_gdi_kind(HGDIOBJ o);
 
 uint32_t wpf_colorref_to_x(uint32_t colorref);                 // 0x00BBGGRR → 0xRRGGBB
 int      wpf_utf16_to_utf8(const uint16_t *s, int32_t len, char *out, int outsz);

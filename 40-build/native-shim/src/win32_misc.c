@@ -85,13 +85,7 @@ HBITMAP CreateDIBSection(HDC dc, const void *bmi, UINT usage, void **bits, HANDL
 // 【ACC-028 / K-144】SelectObject 记录到 HDC 状态（brush/pen/font 分别存）
 HGDIOBJ SelectObject(HDC dc, HGDIOBJ obj)
 {
-    wpf_hdc *d = wpf_hdc_of(dc);
-    wpf_gdi_obj *o = wpf_gdi_of(obj);
-    if (d && o) {
-        if (o->kind == 1)      d->cur_brush = (HBRUSH)obj;
-        else if (o->kind == 2) d->cur_pen   = (HPEN)obj;
-        else if (o->kind == 3) d->cur_font  = (HFONT)obj;
-    }
+    wpf_draw_select_object(dc, obj, wpf_gdi_kind(obj));
     return obj;
 }
 BOOL DeleteObject(HGDIOBJ o) { (void)o; return 1; }
@@ -158,16 +152,10 @@ int ExtEscape(HDC dc, int esc, int in_n, const char *in, int out_n, char *out)
 //   这是 WinForms 控件背景（Button 底、Label 底、Form 底）最核心的一条。
 int FillRect(HDC dc, const WPF_RECT *rc, HBRUSH br)
 {
-    wpf_hdc *d = wpf_hdc_of(dc);
-    if (!d || !rc || !g_wpf.dpy) return 1;
-    wpf_gdi_obj *o = wpf_gdi_of((HGDIOBJ)br);
-    uint32_t color = o ? o->color : 0xFFFFFF;
-    if (color == 0xFFFFFFFFu) return 1;          // CLR_INVALID ⇒ 不画（相当于 NULL_BRUSH）
-    int x = rc->left, y = rc->top;
-    int w = rc->right - rc->left, h = rc->bottom - rc->top;
-    if (w <= 0 || h <= 0) return 1;
-    XSetForeground(g_wpf.dpy, d->gc, wpf_colorref_to_x(color));
-    XFillRectangle(g_wpf.dpy, d->drawable, d->gc, x, y, (unsigned)w, (unsigned)h);
+    // 【ACC-028 / K-144】真画：取 brush 颜色，XFillRectangle（封装在 win32_gdi_dc.c）
+    uint32_t color = wpf_gdi_color((HGDIOBJ)br, 0xFFFFFF);
+    if (color == 0xFFFFFFFFu) return 1;          // CLR_INVALID ⇒ 不画
+    wpf_draw_fill_rect(dc, rc, color);
     return 1;
 }
 int StartDocW(HDC dc, const void *di) { (void)dc; (void)di; return 0; }
@@ -200,6 +188,20 @@ BOOL BeginPaint(HWND h, WPF_PAINTSTRUCT *ps)
         if (w) {
             ps->rcPaint.left = 0; ps->rcPaint.top = 0;
             ps->rcPaint.right = w->width; ps->rcPaint.bottom = w->height;
+        }
+        // 【ACC-028 / K-152】诊断：`WmPaint` 里 `if (doubleBuffered && clip 为 0) return;`
+        //   而 `clip = paintScope.PaintRectangle` 正是这个 `rcPaint` —— 若窗口尺寸还是 0，
+        //   整条绘制链会被这一句直接 return 掉（K-151 之后仍未画出画面的嫌疑点）。
+        if (getenv("WPF_LINUX_KEY_DIAG")) {
+            static int rp = 0;
+            if (rp++ < 8) {
+                fprintf(stderr, "[PAINT] rcPaint hwnd=%p w=%s -> %d,%d %dx%d\n",
+                    (void *)h, w ? "found" : "NULL",
+                    (int)ps->rcPaint.left, (int)ps->rcPaint.top,
+                    (int)(ps->rcPaint.right - ps->rcPaint.left),
+                    (int)(ps->rcPaint.bottom - ps->rcPaint.top));
+                fflush(stderr);
+            }
         }
         pthread_mutex_unlock(&g_wpf.lock);
     }
@@ -1320,7 +1322,7 @@ int CombineRgn(HRGN dst, HRGN a, HRGN b, int mode)
 // 【ACC-028 / K-144】brush 现在**记住颜色**（原来是同一个哨兵，颜色全丢）
 HBRUSH CreateSolidBrush(uint32_t color)
 {
-    wpf_gdi_obj *o = wpf_gdi_alloc(1, color, 0, 0);
+    HGDIOBJ o = wpf_gdi_new_brush(color);
     return o ? (HBRUSH)o : (HBRUSH)(uintptr_t)0x5002;
 }
 HDC CreateDCW(const uint16_t *driver, const uint16_t *device, const uint16_t *port, const void *initData)

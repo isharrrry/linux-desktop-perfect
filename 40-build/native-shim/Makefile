@@ -34,17 +34,10 @@ TARGET   = $(BINDIR)/libwpfwin32.so
 #   托管侧 `PresentationCore/MS/internal/Classification` 的静态构造直接调它，是任何文本测量的必经之路。
 #   两个 .c 缺一份，PresentationNative 面就少一组入口（实测缺 classification 时 TypeEntryPointNotFound
 #   → 布局在 render pass 里抛 → 退出码 134）。
-SRCS     = $(SRCDIR)/win32_core.c $(SRCDIR)/win32_msg.c $(SRCDIR)/win32_x11.c \
-           $(SRCDIR)/win32_imm.c \
-           $(SRCDIR)/win32_misc.c $(SRCDIR)/win32_exports.c \
-           $(SRCDIR)/win32_classification.c $(SRCDIR)/win32_unicode_tables.c \
-           $(SRCDIR)/win32_oem.c $(SRCDIR)/win32_gdiplus.c \
-	$(SRCDIR)/win32_gdi_text.c $(SRCDIR)/win32_pts.c \
-           $(SRCDIR)/win32_clipboard.c \
-	$(SRCDIR)/win32_winspool.c \
-	$(SRCDIR)/win32_ibus.c \
-	$(SRCDIR)/win32_uxtheme.c \
-	$(SRCDIR)/win32_gdi_dc.c
+# 【主代理 / K-153】改成 wildcard：新实现的 .c（win32_kernel32.c / win32_ole32.c /
+#   win32_user32x.c / win32_wic_ext.c / win32_atspi.c）**落地即自动参与编译**，
+#   不需要每次手工往列表里加一行（原来是显式列表，17 个文件逐条列出）。
+SRCS     = $(wildcard $(SRCDIR)/win32_*.c)
 OBJS     = $(patsubst $(SRCDIR)/%.c,$(OBJDIR)/%.o,$(SRCS))
 DEPS     = $(SRCDIR)/win32_abi.h $(SRCDIR)/win32_internal.h
 
