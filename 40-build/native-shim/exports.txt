@@ -1181,3 +1181,5 @@ libwpfwin32.so	mmioDescend	gap	MOD-83	10.0.11	无实现（winmm）
 libwpfwin32.so	mmioOpenW	gap	MOD-83	10.0.11	无实现（winmm）
 libwpfwin32.so	mmioRead	gap	MOD-83	10.0.11	无实现（winmm）
 libwpfwin32.so	mouse_event	impl	MOD-11	10.0.11
+SaveDC
+RestoreDC

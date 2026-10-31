@@ -1328,3 +1328,23 @@ BOOL BeginPanningFeedbackW(HWND hwnd) { return BeginPanningFeedback(hwnd); }
 BOOL UpdatePanningFeedbackW(HWND hwnd, int x, int y, BOOL overpan)
 { return UpdatePanningFeedback(hwnd, x, y, overpan); }
 BOOL EndPanningFeedbackW(HWND hwnd, BOOL animate) { return EndPanningFeedback(hwnd, animate); }
+
+// 【ACC-028 / K-065】`DeviceContextHdcScope..ctor` 在 `saveHdcState=true` 时会调
+// `PInvokeCore.SaveDC(HDC)` / `RestoreDC(HDC, int)`。这两个是 **GDI32** 的函数，
+// `libgdiplus` 一个都没有（nm 实测 0），本 shim 之前也没有。
+// 我们这里是"假 HDC"（libgdiplus 的 Graphics* 指针），没有真实的 DC 状态栈，
+// 所以用**计数式**桩：SaveDC 返回一个递增的 token，RestoreDC 直接成功。
+// 口径：不假装有状态保存能力，只是让调用方拿到合法返回值（且诊断可见）。
+static int g_dc_state_token = 1;
+int SaveDC(void *hdc)
+{
+    (void)hdc;
+    if (getenv("WPF_LINUX_KEY_DIAG")) { fprintf(stderr, "[SHIM] SaveDC -> %d\n", g_dc_state_token); fflush(stderr); }
+    return g_dc_state_token++;
+}
+int RestoreDC(void *hdc, int nSavedDC)
+{
+    (void)hdc; (void)nSavedDC;
+    if (getenv("WPF_LINUX_KEY_DIAG")) { fprintf(stderr, "[SHIM] RestoreDC(%d)\n", nSavedDC); fflush(stderr); }
+    return 1;
+}
