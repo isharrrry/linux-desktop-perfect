@@ -57,6 +57,171 @@ const POINT_PATCHES = [
     why: 'PBT 工程的 TargetFrameworks 是 net472;net10.0，而 Pbt.props 写死 net6.0 → NETSDK1005（补丁项 16）',
   },
   {
+    patch: 'P21',
+    file: 'src/Microsoft.DotNet.Wpf/src/ReachFramework/Packaging/XpsDocument.cs',
+    find: `        #endregion Public Events
+    }
+}`,
+    replace: `        #endregion Public Events
+    }
+
+    // 【ACC-024 / K-123】**托管版 XpsDocumentWriter**。
+    // 为什么需要：官方 'System.Printing.dll' 里的 'XpsDocumentWriter.Write(...)' 全是 1 字节 'ret'
+    //   （空方法，K-117），因为它真正的实现在 C++/CLI 里（'CPP/inc/XPSDocumentWriter.hpp'，K-118），
+    //   Linux 上编不了。所以这里在托管侧直接按 **XPS 公开规范** 往 OPC 包里写三个 part：
+    //     /FixedDocumentSequence.fdseq  → 指向文档
+    //     /Documents/1/FixedDocument.fdoc → 指向页面
+    //     /Documents/1/Pages/1.fpage     → 页面本身（就是 XAML）
+    //   '.fpage' 的格式就是 XAML（公开标准），所以用 'XamlWriter.Save' 即可。
+    internal sealed class ManagedXpsDocumentWriter : XpsDocumentWriter
+    {
+        private readonly XpsDocument _xpsDocument;
+
+        internal ManagedXpsDocumentWriter(XpsDocument xpsDocument)
+        {
+            ArgumentNullException.ThrowIfNull(xpsDocument);
+            _xpsDocument = xpsDocument;
+        }
+
+        public override void Write(FixedDocument fixedDocument)
+        {
+            ArgumentNullException.ThrowIfNull(fixedDocument);
+            WriteDocument(fixedDocument);
+        }
+
+        public override void Write(DocumentPaginator documentPaginator)
+        {
+            ArgumentNullException.ThrowIfNull(documentPaginator);
+            // 把 paginator 的页装进一个 FixedDocument（够判据用）
+            FixedDocument fd = new FixedDocument();
+            documentPaginator.ComputePageCount();
+            for (int i = 0; i < documentPaginator.PageCount; i++)
+            {
+                DocumentPage dp = documentPaginator.GetPage(i);
+                if (dp == null) continue;
+                FixedPage fp = new FixedPage();
+                if (dp.Visual != null) fp.Children.Add(dp.Visual);
+                PageContent pc = new PageContent();
+                ((IAddChild)pc).AddChild(fp);
+                fd.Pages.Add(pc);
+            }
+            WriteDocument(fd);
+        }
+
+        private void WriteDocument(FixedDocument fixedDocument)
+        {
+            Package package = _xpsDocument.OpcPackage;
+            if (package == null) throw new InvalidOperationException("XpsDocument has no OPC package");
+
+            const string nsXps = "http://schemas.microsoft.com/xps/2005/06";
+            Uri uriFdseq = PackUriHelper.CreatePartUri(new Uri("/FixedDocumentSequence.fdseq", UriKind.Relative));
+            Uri uriFdocRoot = PackUriHelper.CreatePartUri(new Uri("/Documents/1/FixedDocument.fdoc", UriKind.Relative));
+            Uri uriFpageRoot = PackUriHelper.CreatePartUri(new Uri("/Documents/1/Pages/1.fpage", UriKind.Relative));
+
+            PackagePart partFdseq = GetOrCreatePart(package, uriFdseq,
+                "application/vnd.ms-package.xps-fixeddocumentsequence+xml");
+            PackagePart partFdoc = GetOrCreatePart(package, uriFdocRoot,
+                "application/vnd.ms-package.xps-fixeddocument+xml");
+
+            int pageCount = fixedDocument.Pages.Count;
+            int pageNo = 0;
+            foreach (PageContent pageContent in fixedDocument.Pages)
+            {
+                pageNo++;
+                Uri uriFpage = pageNo == 1 ? uriFpageRoot
+                    : PackUriHelper.CreatePartUri(new Uri($"/Documents/1/Pages/{pageNo}.fpage", UriKind.Relative));
+                PackagePart partFpage = GetOrCreatePart(package, uriFpage,
+                    "application/vnd.ms-package.xps-fixedpage+xml");
+
+                // 页面本体：XPS 的 .fpage 就是 XAML
+                using (Stream s = partFpage.GetStream(FileMode.Create, FileAccess.Write))
+                using (XmlWriter xw = XmlWriter.Create(s, new XmlWriterSettings { Encoding = new UTF8Encoding(false) }))
+                {
+                    XamlWriter.Save(pageContent.Child, xw);
+                }
+            }
+
+            // 文档 part：指向每一页
+            using (Stream s = partFdoc.GetStream(FileMode.Create, FileAccess.Write))
+            using (XmlWriter xw = XmlWriter.Create(s, new XmlWriterSettings { Encoding = new UTF8Encoding(false) }))
+            {
+                xw.WriteStartElement("FixedDocument", nsXps);
+                for (int n = 1; n <= pageCount; n++)
+                {
+                    Uri uriFpage = n == 1 ? uriFpageRoot
+                        : PackUriHelper.CreatePartUri(new Uri($"/Documents/1/Pages/{n}.fpage", UriKind.Relative));
+                    PackagePart partFpage = package.GetPart(uriFpage);
+                    PackageRelationship rel = partFdoc.CreateRelationship(
+                        PackUriHelper.GetRelativeUri(uriFdocRoot, uriFpage),
+                        TargetMode.Internal,
+                        nsXps + "/fixedpage");
+                    xw.WriteStartElement("PageContent", nsXps);
+                    xw.WriteAttributeString("Source", rel.TargetUri.OriginalString);
+                    xw.WriteEndElement();
+                }
+                xw.WriteEndElement();
+                xw.Flush();
+                partFdoc.CreateRelationship(
+                    PackUriHelper.GetRelativeUri(uriFdocRoot, uriFpageRoot),
+                    TargetMode.Internal,
+                    nsXps + "/discardable");
+            }
+
+            // 序列 part：指向文档
+            using (Stream s = partFdseq.GetStream(FileMode.Create, FileAccess.Write))
+            using (XmlWriter xw = XmlWriter.Create(s, new XmlWriterSettings { Encoding = new UTF8Encoding(false) }))
+            {
+                xw.WriteStartElement("FixedDocumentSequence", nsXps);
+                PackageRelationship rel = partFdseq.CreateRelationship(
+                    PackUriHelper.GetRelativeUri(uriFdseq, uriFdocRoot),
+                    TargetMode.Internal,
+                    nsXps + "/fixedrepresentation");
+                xw.WriteStartElement("DocumentReference", nsXps);
+                xw.WriteAttributeString("Source", rel.TargetUri.OriginalString);
+                xw.WriteEndElement();
+                xw.WriteEndElement();
+                xw.Flush();
+            }
+
+            // 包级关系：指向根序列
+            PackageRelationship rootRel = package.CreateRelationship(
+                uriFdseq, TargetMode.Internal, "http://schemas.microsoft.com/xps/2005/06/fixedrepresentation");
+        }
+
+        private static PackagePart GetOrCreatePart(Package package, Uri partUri, string contentType)
+        {
+            if (package.PartExists(partUri)) return package.GetPart(partUri);
+            return package.CreatePart(partUri, contentType, CompressionOption.Normal);
+        }
+    }
+
+`,
+    why: 'ACC-024：新增 ManagedXpsDocumentWriter（托管版 XPS 写入，按公开规范写 3 个 part）（K-123）',
+  },
+  {
+    patch: 'P22',
+    file: 'src/Microsoft.DotNet.Wpf/src/ReachFramework/Packaging/XpsDocument.cs',
+    find: `        private Package        _opcPackage;`,
+    replace: `        private Package        _opcPackage;
+
+        // 【ACC-024 / K-124】给同程序集的 ManagedXpsDocumentWriter 一个访问底层 OPC 包的入口。
+        //   上游把它藏成 private（只在构造函数里用），而托管版 writer 需要直接往包里写 part。
+        internal Package OpcPackage { get { return _opcPackage; } }`,
+    why: 'ACC-024：暴露 XpsDocument._opcPackage 给同程序集的 ManagedXpsDocumentWriter 用（K-124）',
+  },
+  {
+    patch: 'P20',
+    file: 'src/Microsoft.DotNet.Wpf/src/ReachFramework/Packaging/XpsDocument.cs',
+    find: `            XpsDocumentWriter   writer  = new XpsDocumentWriter(xpsDocument);`,
+    replace: `            // 【ACC-024 / K-123】上游这里 new 的是 C++/CLI 的 XpsDocumentWriter，
+            //   而官方二进制的 System.Printing.dll 里它的所有 Write(...) 都是 **1 字节 ret**（空方法，K-117）
+            //   ⇒ 拿到 writer 也写不进任何页面 ⇒ XPS 恒 22 字节（K-058）。
+            //   Linux 上那部分 C++/CLI 根本编不了（K-118），所以在托管侧用
+            //   ManagedXpsDocumentWriter 替换：按 XPS 公开规范直接往 OPC 包里写 part。
+            XpsDocumentWriter   writer  = new ManagedXpsDocumentWriter(xpsDocument);`,
+    why: 'ACC-024：C++/CLI 的 XpsDocumentWriter.Write 全为空 ret（K-117），改用托管实现 ManagedXpsDocumentWriter（K-123）',
+  },
+  {
     patch: 'P19',
     file: 'src/Microsoft.DotNet.Wpf/src/PresentationCore/System/Windows/Input/Stylus/Common/DynamicRendererThreadManager.cs',
     find: `                inkingThread.SetApartmentState(ApartmentState.STA);`,
