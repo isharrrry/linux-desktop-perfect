@@ -156,8 +156,9 @@ namespace Ldp.A11y
         // 用途 = 事件回放判据（ACC-010）：输入前取一次、输入后再取一次，比 value 字段。
         private static void StartRepeat(Window win, string outPath, string scr, Application app)
         {
-            if (g_repeatStarted) return;
+            if (g_repeatStarted) { Console.Error.WriteLine("[A11Y-REPEAT] StartRepeat 重复调用，已跳过"); Console.Error.Flush(); return; }
             g_repeatStarted = true;
+            Console.Error.WriteLine("[A11Y-REPEAT] StartRepeat 开始（400ms 周期）"); Console.Error.Flush();
             Dispatcher d = app.Dispatcher;
             var t = new Thread(() =>
             {
@@ -166,9 +167,18 @@ namespace Ldp.A11y
                     Thread.Sleep(400);
                     try
                     {
+                        // 【K-011-解3】原来用 DispatcherPriority.Background —— 最低优先级。
+                        //   实测 FAIL 那次 8 次重试（17.6 s）里树文件 mtime **一次没涨**，
+                        //   而点击本身是有效的（同一坐标手工一次命中）。
+                        //   最合理的解释：UI 线程持续有输入/渲染事件时，Background 的 dump
+                        //   永远排不上队 ⇒ 判据一直读到同一份旧树 ⇒ 误判成"状态没变"。
+                        //   【2026-10-31 负面结果，别重复踩】改成 Send 试过一轮：失败率反而从 2/5
+                        //   升到 3/6，且失败那次 tree_mtime **仍然一次没涨** ⇒ **不是优先级问题**，已回滚。
                         d.Invoke(new Action(() =>
                         {
-                            if (win.IsVisible) Dump(win, outPath, scr, app);
+                            if (win.IsVisible) { Dump(win, outPath, scr, app); Console.Error.WriteLine("[A11Y-REPEAT] dumped"); }
+                            else { Console.Error.WriteLine("[A11Y-REPEAT] skip: not visible"); }
+                            Console.Error.Flush();
                         }), DispatcherPriority.Background);
                     }
                     catch (Exception ex)
