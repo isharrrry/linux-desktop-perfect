@@ -249,7 +249,7 @@ namespace WpfLinux.Shims.PresentationCore
         ///   ⇒ "路径 + 面下标"合起来才是**一份面**；只传路径就等于偷偷钉死 face0，
         ///   而渲染侧按 `GlyphTypeface`（它自带面下标）取面 ⇒ 两边一旦不同就是"数对了、字错了"。
         /// </summary>
-        private static readonly Dictionary<(string, int, double, string, string), HbShapedRun> s_shapeCache = new();
+        private static readonly System.Collections.Concurrent.ConcurrentDictionary<(string, int, double, string, string), HbShapedRun> s_shapeCache = new();
         private static readonly object s_shapeGate = new();
         private const int MaxShapeCache = 8192;
         internal static int ShapeHits => s_shapeHits;
@@ -267,13 +267,10 @@ namespace WpfLinux.Shims.PresentationCore
             //   与 v1/v3 那两次段错误无关），所以是安全的。key 含 fontPath/faceIndex/text/em/language。
             // 用 ValueTuple 做 key：避免每次（约 5 万次）都拼一个长字符串。
             var shapeKey = (fontPath, faceIndex, emSize, language ?? "zh-cn", text);
-            lock (s_shapeGate)
+            if (s_shapeCache.TryGetValue(shapeKey, out HbShapedRun cachedRun))
             {
-                if (s_shapeCache.TryGetValue(shapeKey, out HbShapedRun cachedRun))
-                {
-                    System.Threading.Interlocked.Increment(ref s_shapeHits);
-                    return cachedRun;
-                }
+                System.Threading.Interlocked.Increment(ref s_shapeHits);
+                return cachedRun;
             }
             System.Threading.Interlocked.Increment(ref s_shapeMisses);
 
@@ -389,11 +386,8 @@ namespace WpfLinux.Shims.PresentationCore
 
                 ApplyTabStops(r, text, font, 0, 4.0 * r.EmSize);   // 先用框架默认填；`FormatLine` 会用真实 tabInterval/Indent 覆盖（幂等）
                 // 写缓存（结果不可变；超上限就整体清空，与 s_coverCache 同策略）
-                lock (s_shapeGate)
-                {
-                    if (s_shapeCache.Count >= MaxShapeCache) s_shapeCache.Clear();
-                    s_shapeCache[shapeKey] = r;
-                }
+                if (s_shapeCache.Count >= MaxShapeCache) s_shapeCache.Clear();
+                s_shapeCache[shapeKey] = r;
                 return r;
             }
             finally
@@ -1225,8 +1219,12 @@ namespace WpfLinux.Shims.PresentationCore
         /// **不按名字挑** —— 名字只用于诊断输出。
         /// </summary>
         /// <summary>D-F1c/B2：每面 Unicode 覆盖集合（**不持句柄**）。上限 32 个面，超出即整体清空（有界内存）。</summary>
-        private static readonly Dictionary<string, HashSet<int>> s_coverCache =
-            new Dictionary<string, HashSet<int>>(StringComparer.Ordinal);
+        // 【2026-10-31 D-019 提速】原来是 Dictionary + `lock (s_gate)`。
+        //   trace 显示 `Monitor.Enter_Slowpath` **7797 ms** —— 这把大锁同时保护
+        //   s_faces/s_sharedBlobTable/s_coverCache，而 CoversCpByBitmap 每个字符每个 face 都要进
+        //   ⇒ 锁竞争成了新瓶颈。改 ConcurrentDictionary 后这条路径不再进大锁。
+        private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, HashSet<int>> s_coverCache =
+            new(StringComparer.Ordinal);
         // 【2026-10-31 D-019 自旋修复】原来是 32：本机字体目录里有几百个 face，
         //   每个 face 的 collect_unicodes 要建 2–3 万码点的 HashSet；缓存一超 32 就整体
         //   Clear() ⇒ 反复重算。dotnet-trace 显示 CPU 全烧在 CoversCpByBitmap（6203ms，
@@ -1236,11 +1234,7 @@ namespace WpfLinux.Shims.PresentationCore
         private static bool CoversCpByBitmap(string path, int faceIndex, int cp)
         {
             string key = path + "\u0000" + faceIndex;
-            lock (s_gate)
-            {
-                HashSet<int> hit;
-                if (s_coverCache.TryGetValue(key, out hit)) return hit.Contains(cp);
-            }
+            if (s_coverCache.TryGetValue(key, out HashSet<int> hit)) return hit.Contains(cp);
             // 【2026-10-31】预分配：一个 CJK face 常有 2–3 万码点，默认容量会反复 Resize
             //   （trace 里 Resize 821ms + Memmove 1026ms 都是这块）。
             HashSet<int> set = new HashSet<int>(1 << 16);
@@ -1266,11 +1260,8 @@ namespace WpfLinux.Shims.PresentationCore
                 if (face != IntPtr.Zero) HbShaper.hb_face_destroy(face);
                 if (blob != IntPtr.Zero) HbFaceCache.ReleaseSharedBlob(path); // 窗口 10：归还共享引用（不是销毁映射）
             }
-            lock (s_gate)
-            {
-                if (s_coverCache.Count >= MaxCoverCache) s_coverCache.Clear();
-                s_coverCache[key] = set;
-            }
+            if (s_coverCache.Count >= MaxCoverCache) s_coverCache.Clear();
+            s_coverCache[key] = set;
             return set.Contains(cp);
         }
 
