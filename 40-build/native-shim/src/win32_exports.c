@@ -79,7 +79,13 @@ FARPROC GetProcAddressW(HMODULE module, const char *name)
         else if (name && strcmp(name, "DefWindowProcA") == 0) p = (void *)&DefWindowProcA;
         else if (name && strcmp(name, "DefWindowProc") == 0) p = (void *)&DefWindowProcW;
     }
-    if (!p) wpf_set_last_error(127);   // ERROR_PROC_NOT_FOUND
+    if (!p) {
+        if (getenv("WPF_LINUX_KEY_DIAG")) {
+            fprintf(stderr, "[GetProcAddress] NOT FOUND: %s\n", name ? name : "(null)");
+            fflush(stderr);
+        }
+        wpf_set_last_error(127);   // ERROR_PROC_NOT_FOUND
+    }
     return (FARPROC)p;
 }
 FARPROC GetProcAddressA(HMODULE m, const char *n) { return GetProcAddressW(m, n); }

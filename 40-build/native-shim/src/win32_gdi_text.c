@@ -273,3 +273,17 @@ void GetStartupInfoA(void *si) { GetStartupInfoW((WPF_STARTUPINFOW *)si); }
 //   被 `ThreadException` 接住后弹出「Unhandled exception…」对话框（标题里带这条消息，见 K-025）。
 int32_t OleInitialize(void *reserved) { (void)reserved; return 0; }   // S_OK
 int32_t OleUninitialize(void) { return 0; }
+
+// ── `GetHdc` / `ReleaseHdc`（GDI32 的"设备上下文内容"转换）─────────────────────
+//   WinForms 的 `IHdcContext.GetHdc()`（CsWin32）走的是 **GDI32 的 `GetHdc`**，
+//   **不是** `user32` 的 `GetDC` —— 两者名字像但不是一个 DLL。
+//   本 shim 一直只有 `GetDC`/`ReleaseDC`，所以 `ButtonBaseAdapter.ColorOptions.Calculate()`
+//   → `DeviceContextExtensions.ToHdcScope` → `IHdcContext.GetHdc()` 就抛
+//   `EntryPointNotFoundException`（消息里**不带函数名**，因此极难定位，见 K-026）。
+//   语义：`GetHdc(hdc)` 返回该 DC 的内容句柄；我们本来就是同一个不透明句柄，原样返回。
+void *GetHdc(void *hdc) { return hdc; }
+void *GetHdcA(void *hdc) { return hdc; }
+void *GetHdcW(void *hdc) { return hdc; }
+int  ReleaseHdc(void *hdc) { (void)hdc; return 1; }
+int  ReleaseHdcA(void *hdc) { (void)hdc; return 1; }
+int  ReleaseHdcW(void *hdc) { (void)hdc; return 1; }
