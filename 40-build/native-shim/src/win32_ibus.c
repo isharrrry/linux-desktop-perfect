@@ -153,7 +153,25 @@ int wpf_ibus_init(void)
     }
     dbus_connection_add_filter(g_conn, ibus_filter, NULL, NULL);
     if (!ibus_call_create_ic()) { ibus_diag("[IBUS] 建 IC 失败"); return 0; }
+    // 【ACC-017 / K-093】**照抄 im-ibus.so 的初始化序列**（用 LD_PRELOAD wrapper 观察 zenity 得到）：
+    //   ① SetCapabilities(0x29) —— 0x29 = SURROUNDING_TEXT(0x20) | FOCUS(0x8) | PREEDIT_TEXT(0x1)
+    //      不调它 ibus 就不知道客户端支持什么，`ProcessKeyEvent` 一律回 handled=0（K-092 的现象）。
+    //   ② FocusIn
+    //   ③ SetCursorLocation（每次都更新，让候选窗跟随光标）
+    {
+        DBusMessage *m = dbus_message_new_method_call(IBUS_SERVICE, g_ic_path, IBUS_IC_IFACE, "SetCapabilities");
+        if (m) {
+            dbus_uint32_t caps = 0x29u;
+            DBusMessageIter it;
+            dbus_message_iter_init_append(m, &it);
+            dbus_message_iter_append_basic(&it, DBUS_TYPE_UINT32, &caps);
+            dbus_connection_send(g_conn, m, NULL);
+            dbus_message_unref(m);
+            ibus_diag("[IBUS] SetCapabilities(0x29)");
+        }
+    }
     ibus_simple_call(IBUS_IC_IFACE, "FocusIn");
+    ibus_diag("[IBUS] FocusIn");
     dbus_connection_flush(g_conn);
     g_ibus_ok = 1;
     ibus_diag("[IBUS] 就绪：ic=%s", g_ic_path);
@@ -167,9 +185,56 @@ int wpf_ibus_init(void)
 static DBusHandlerResult ibus_filter(DBusConnection *conn, DBusMessage *msg, void *ud)
 {
     (void)conn; (void)ud;
+    // 【ACC-017 / K-094】**打印必须放在最前面**：原来放在 CommitText 分支之后，
+    //   所以 CommitText 一旦命中就 return HANDLED，日志里根本看不到它 —— 差点因此误判"ibus 不发 CommitText"。
+    if (getenv("WPF_LINUX_KEY_DIAG")) {
+        const char *iface = dbus_message_get_interface(msg);
+        const char *member = dbus_message_get_member(msg);
+        if (member) { fprintf(stderr, "[IBUS] recv %s.%s\n", iface ? iface : "?", member); fflush(stderr); }
+    }
+
     if (dbus_message_is_signal(msg, IBUS_IC_IFACE, "CommitText")) {
+        // 【ACC-017 / K-094】ibus 的 `CommitText` 参数**不是**裸 STRING（实测 `get_args(STRING)` 失败）。
+        //   类型可能是 VARIANT（`IBusText` 对象）或 STRUCT。这里把实际签名打出来，一次看清。
+        if (getenv("WPF_LINUX_KEY_DIAG")) {
+            DBusMessageIter it;
+            if (dbus_message_iter_init(msg, &it)) {
+                int t = dbus_message_iter_get_arg_type(&it);
+                fprintf(stderr, "[IBUS] CommitText 参数类型='%c' (%d)\n", t ? t : '?', t); fflush(stderr);
+                if (t == DBUS_TYPE_VARIANT) {
+                    DBusMessageIter sub; dbus_message_iter_recurse(&it, &sub);
+                    int st2 = dbus_message_iter_get_arg_type(&sub);
+                    fprintf(stderr, "[IBUS]   variant 内层类型='%c' (%d)\n", st2 ? st2 : '?', st2); fflush(stderr);
+                    if (st2 == DBUS_TYPE_STRING) {
+                        const char *sv = NULL; dbus_message_iter_get_basic(&sub, &sv);
+                        fprintf(stderr, "[IBUS]   variant string = \"%s\"\n", sv ? sv : "(null)"); fflush(stderr);
+                    }
+                } else if (t == DBUS_TYPE_STRING) {
+                    const char *sv = NULL; dbus_message_iter_get_basic(&it, &sv);
+                    fprintf(stderr, "[IBUS]   string = \"%s\"\n", sv ? sv : "(null)"); fflush(stderr);
+                }
+            } else {
+                fprintf(stderr, "[IBUS] CommitText 无参数\n"); fflush(stderr);
+            }
+        }
+        // 【ACC-017 / K-095】**参数是 VARIANT{STRUCT{string, ...}}（IBusText 对象）**，不是裸 STRING。
+        //   实测：`get_args(STRING)` 失败，`iter` 显示 'v' → 'r'(STRUCT)。这里递归取第一个 string。
         const char *utf8 = NULL;
-        if (dbus_message_get_args(msg, NULL, DBUS_TYPE_STRING, &utf8, DBUS_TYPE_INVALID) && utf8) {
+        {
+            DBusMessageIter it, var, st2;
+            if (dbus_message_iter_init(msg, &it) && dbus_message_iter_get_arg_type(&it) == DBUS_TYPE_VARIANT) {
+                dbus_message_iter_recurse(&it, &var);
+                if (dbus_message_iter_get_arg_type(&var) == DBUS_TYPE_STRUCT) {
+                    dbus_message_iter_recurse(&var, &st2);
+                    if (dbus_message_iter_get_arg_type(&st2) == DBUS_TYPE_STRING) {
+                        dbus_message_iter_get_basic(&st2, &utf8);
+                    }
+                } else if (dbus_message_iter_get_arg_type(&var) == DBUS_TYPE_STRING) {
+                    dbus_message_iter_get_basic(&var, &utf8);
+                }
+            }
+        }
+        if (utf8) {
             if (getenv("WPF_LINUX_KEY_DIAG")) {
                 fprintf(stderr, "[IBUS] CommitText = \"%s\"\n", utf8); fflush(stderr);
             }
@@ -189,12 +254,6 @@ static DBusHandlerResult ibus_filter(DBusConnection *conn, DBusMessage *msg, voi
             if (posted) ibus_diag("[IBUS] 已投 %d 个码元到 WPF", posted);
         }
         return DBUS_HANDLER_RESULT_HANDLED;
-    }
-    // 【诊断】把收到的**所有**消息名打出来（一次判据跑下来就知道 ibus 回了什么）
-    if (getenv("WPF_LINUX_KEY_DIAG")) {
-        const char *iface = dbus_message_get_interface(msg);
-        const char *member = dbus_message_get_member(msg);
-        if (member) { fprintf(stderr, "[IBUS] recv %s.%s\n", iface ? iface : "?", member); fflush(stderr); }
     }
     return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
 }
