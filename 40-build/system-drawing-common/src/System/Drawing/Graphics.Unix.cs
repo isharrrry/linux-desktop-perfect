@@ -1608,6 +1608,10 @@ namespace System.Drawing
             if (Gdip.UseX11Drawable)
             {
                 IntPtr hwndOfShim = WpfWin32Bridge.HwndOf(hdc);
+                if (Environment.GetEnvironmentVariable("WPF_LINUX_KEY_DIAG") != null)
+                {
+                    try { Console.Error.WriteLine("[SDC] FromHdc hdc=0x" + hdc.ToInt64().ToString("x") + " hwndOfShim=0x" + hwndOfShim.ToInt64().ToString("x")); Console.Error.Flush(); } catch { }
+                }
                 if (hwndOfShim != IntPtr.Zero)
                     return FromHwnd(hwndOfShim);
             }
@@ -1627,8 +1631,13 @@ namespace System.Drawing
         [EditorBrowsable(EditorBrowsableState.Advanced)]
         public static Graphics FromHdcInternal(IntPtr hdc)
         {
-            Gdip.Display = hdc;
-            return null;
+            // 【ACC-028 / K-148】诊断 + 修复：原来直接 `return null`（什么都不画）。
+            //   WinForms 的默认控件绘制（`Control.WmPaint` → `OnPaint`）走的正是这个入口。
+            if (Environment.GetEnvironmentVariable("WPF_LINUX_KEY_DIAG") != null)
+            {
+                try { Console.Error.WriteLine("[SDC] FromHdcInternal hdc=0x" + hdc.ToInt64().ToString("x")); Console.Error.Flush(); } catch { }
+            }
+            try { return FromHdc(hdc); } catch { return null; }
         }
 
         [EditorBrowsable(EditorBrowsableState.Advanced)]
@@ -1666,6 +1675,10 @@ namespace System.Drawing
         [EditorBrowsable(EditorBrowsableState.Advanced)]
         public static Graphics FromHwndInternal(IntPtr hwnd)
         {
+            if (Environment.GetEnvironmentVariable("WPF_LINUX_KEY_DIAG") != null)
+            {
+                try { Console.Error.WriteLine("[SDC] FromHwndInternal hwnd=0x" + hwnd.ToInt64().ToString("x")); Console.Error.Flush(); } catch { }
+            }
             return FromHwnd(hwnd);
         }
 
