@@ -42,7 +42,11 @@
     -->
 <!-- 【ACC-024】编译期用 api-cycle（只含声明），运行期仍是真 System.Printing。
          两者 AssemblyName 都是 System.Printing、同一公钥 ⇒ 类型不冲突（不会再 CS0433）。 -->
-    <Reference Include="System.Printing"><HintPath>$(WpfLinuxRoot)src/Microsoft.DotNet.Wpf.Linux/src/SystemPrinting.ApiCycle/bin/$(WpfLinuxSelfBuiltConfiguration)/System.Printing.dll</HintPath><Private>false</Private></Reference>
+    <!-- 【ACC-024 修正】这里必须引用**真的** System.Printing（仓库自编的完整实现），不是 api-cycle：
+         运行时的 System.Printing.dll（48 KB）里有 XpsPrintStream / ILegacyDevice / PrintQueue，
+         而 api-cycle 只有声明、没有这些内部类型 ⇒ ReachFramework 会 CS0246。
+         api-cycle 只用于给 **PresentationFramework**（impl-cycle）打破循环依赖。 -->
+    <Reference Include="System.Printing"><HintPath>$(WpfLinuxRoot)src/Microsoft.DotNet.Wpf.Linux/src/System.Printing/bin/$(WpfLinuxSelfBuiltConfiguration)/System.Printing.dll</HintPath><Private>false</Private></Reference>
     <!-- 【ACC-024】ReachFramework 用到 PresentationFramework 的类型（FixedDocument/FixedPage/
          SerializerWriter 等），而真 PF 又依赖 ReachFramework（循环）。
          上游解法：引用 impl-cycle —— 一个 AssemblyName=PresentationFramework 的**非 shipping** 程序集，
