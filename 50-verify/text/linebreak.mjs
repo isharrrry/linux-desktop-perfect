@@ -112,10 +112,14 @@ let pagination = null;
 //   `{"ok":true,page_count:...,page_size:...}` 也照旧说"卡住"（D-019）。
 //   分页修通后再这么写就成了"判据与实现不同步" ⇒ 改成按实际读数分三态。
 const paginationOk = !!(pagination && pagination.ok === true);
+// 【2026-10-31 口径说明】分页现在能**跑完**（page_count 有值、首页非空），但
+//   **页数没有独立校验** —— 整段约 1690 DIP、page-app 设的页高 300 ⇒ 理论约 6 页，
+//   实测 4 页。没有独立依据能说 4 是对的，所以**不判 PASS**，只记"能完成、页数待校验"。
 const degradeReason = paginationOk
-    ? '换行与双向已双路径验；分页面已由 `page-app` 实测通过'
+    ? '换行与双向已双路径验；**分页面已能跑完**'
       + `（page_count=${pagination.page_count}，page_size=${JSON.stringify(pagination.page_size)}，`
       + `first_page_blank=${pagination.first_page_blank}）`
+      + '，但**页数未独立校验**（整段≈1690 DIP ÷ 页高 300 理论约 6 页，实测 4 页）⇒ 不判 PASS'
     : ('换行与双向已双路径验；**分页面**未通过'
       + `（${pagination ? (pagination.type || 'unknown') + '：' + (pagination.error || '') : '无读数'}）`);
 finish({

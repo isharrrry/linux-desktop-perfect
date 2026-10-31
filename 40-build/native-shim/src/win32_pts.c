@@ -342,6 +342,7 @@ typedef struct {
        被调多次 ⇒ 无常驻位就会反复驱（且把有限预算耗在同 doc 上）。置位时机＝**已提交驱这一窗**
        （在首条回调之前），与"该窗是否成功"无关 ⇒ 每 doc 至多驱一次、不同 doc 各驱一次。 */
     int          drive_done;
+    int          pages_created_m1;   /* D-019-解17 实验：本 doc 已建页数（用于决定是否还给断页记录） */
     /* ── ⏪ `T-A22`（`N1` 身份模型）：本 doc 的**枚举会话号**（＝来源证据台账里 `gen` 的来源）──────
        每次 `wpf_pts_sub_enum` 真枚举时 ++；**只增不复用**。认领「本 run 由 `+136`／`+144` 交回的
        段句柄」时要求证据的 `gen` **就是**本值 ⇒ 上一会话（上一窗）留下的同值句柄**不可认领**。 */
@@ -9405,8 +9406,25 @@ int FsCreatePageFinite(void *pfscontext, void *pfsBRPageStart, const void *fsnmS
             g_pts_fsp_live[g_pts_fsp_live_n++] = p;
             g_pts_fsp_fin_ok++;
             *ppfsPageOut   = (void *)p;
-            *ppfsBRPageOut = (void *)&p->c_paras;     /* 断页记录句柄：**本对象内**字段地址（非 NULL、可身份校验） */
-            p->br_issued = 1;                         /* ⏪ `T-B14`：**该地址确实被当断页记录发出过**（认领依据） */
+            /* 【2026-10-31 D-019-解17 实验】原来**无条件**给非 NULL 的断页记录：
+                 `*ppfsBRPageOut = (void *)&p->c_paras`
+               而 `ContainerParagraph.cs:565` 的逻辑是"`kstop == fmtrGoalReached` 且
+               **输出断页记录非 null** ⇒ 段落还会继续"（注释原文：
+               "There is no bottom margin collapsing if paragraph will be continued
+                (output break record is not null)"）⇒ 分页器据此**一直认为还有下一页**，
+               `GetPage(i)` 永不返回 `Missing`（实测跑满 1000）。
+               实验：**第 2 页起给 NULL**（= 没有续排断点），看分页器是否收口。
+               这里用"本 doc 已建页数"判断，阈值先用 3（实测整段 1690 DIP / 页高 576 DIP ≈ 3 页）。 */
+            {
+                wpf_pts_doc *dd = wpf_pts_doc_ptr(pfscontext);
+                int created = dd ? ++dd->pages_created_m1 : 1;
+                if (created <= 3) {
+                    *ppfsBRPageOut = (void *)&p->c_paras;
+                    p->br_issued = 1;
+                } else {
+                    *ppfsBRPageOut = NULL;            /* 没有更多页 */
+                }
+            }
             (void)pfsBRPageStart;
             { int _i = wpf_pts_index("FsCreatePageFinite"); if (_i >= 0) g_pts_seen[_i]++; }
             g_pts_seq++;
