@@ -190,6 +190,12 @@ static DBusHandlerResult ibus_filter(DBusConnection *conn, DBusMessage *msg, voi
         }
         return DBUS_HANDLER_RESULT_HANDLED;
     }
+    // 【诊断】把收到的**所有**消息名打出来（一次判据跑下来就知道 ibus 回了什么）
+    if (getenv("WPF_LINUX_KEY_DIAG")) {
+        const char *iface = dbus_message_get_interface(msg);
+        const char *member = dbus_message_get_member(msg);
+        if (member) { fprintf(stderr, "[IBUS] recv %s.%s\n", iface ? iface : "?", member); fflush(stderr); }
+    }
     return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
 }
 
@@ -199,7 +205,7 @@ static DBusHandlerResult ibus_filter(DBusConnection *conn, DBusMessage *msg, voi
 // 返回 1 表示 ibus **消费**了这个键（调用方不要再翻译成 WM_KEYDOWN）。
 int wpf_ibus_process_key(unsigned int keyval, unsigned int keycode, unsigned int state, unsigned int *out_keyval)
 {
-    if (!g_ibus_ok || !g_conn || !g_ic_path[0]) return 0;
+    if (!g_ibus_ok || !g_conn || !g_ic_path[0]) { ibus_diag("[IBUS] process_key 跳过：ok=%d conn=%p ic=%s", g_ibus_ok, (void*)g_conn, g_ic_path); return 0; }
     DBusMessage *m = dbus_message_new_method_call(IBUS_SERVICE, g_ic_path, IBUS_IC_IFACE, "ProcessKeyEvent");
     if (!m) return 0;
     dbus_uint32_t kv = keyval, kc = keycode, st = state;
@@ -221,6 +227,10 @@ int wpf_ibus_process_key(unsigned int keyval, unsigned int keycode, unsigned int
         if (out_keyval) *out_keyval = got;
     } else { dbus_error_free(&err); }
     dbus_message_unref(r);
+    if (getenv("WPF_LINUX_KEY_DIAG")) {
+        fprintf(stderr, "[IBUS] ProcessKeyEvent(kv=0x%x kc=%u st=0x%x) -> handled=%d out=0x%x\n",
+                keyval, keycode, state, handled, (unsigned)got); fflush(stderr);
+    }
     return handled;
 }
 
@@ -240,6 +250,10 @@ void wpf_ibus_pump(void)
     for (int i = 0; i < 4; ++i) {
         if (!dbus_connection_read_write(g_conn, 0)) return;   // 0ms = 非阻塞
         while (dbus_connection_dispatch(g_conn) == DBUS_DISPATCH_DATA_REMAINS) { }
-        if (!dbus_connection_get_dispatch_status(g_conn)) break;
+        int st2 = dbus_connection_get_dispatch_status(g_conn);
+        if (getenv("WPF_LINUX_KEY_DIAG") && st2 != DBUS_DISPATCH_COMPLETE) {
+            fprintf(stderr, "[IBUS] pump dispatch_status=%d\n", st2); fflush(stderr);
+        }
+        if (st2 == DBUS_DISPATCH_COMPLETE) break;
     }
 }

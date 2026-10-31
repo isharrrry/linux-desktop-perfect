@@ -1623,6 +1623,13 @@ int wpf_x11_pump_into_queue(wpf_thread *t)
             //   只有在 KeyPress 且 ibus 已就绪时才问（KeyRelease 不参与 IME）。
             //   ibus 回 TRUE 表示它吃了这个键（正在组词），我们就不再翻译成 WM_KEYDOWN；
             //   它同时会通过 `CommitText` 信号把最终字符串送来（由 wpf_ibus_pump 收）。
+            if (ev.type == KeyPress) {
+                static int kb = 0;
+                if (getenv("WPF_LINUX_KEY_DIAG") && kb++ < 30) {
+                    fprintf(stderr, "[IBUS] KeyPress kv=0x%lx avail=%d\n", (unsigned long)ks, wpf_ibus_available());
+                    fflush(stderr);
+                }
+            }
             if (ev.type == KeyPress && wpf_ibus_available()) {
                 unsigned int kout = 0;
                 if (wpf_ibus_process_key((unsigned int)ks, (unsigned int)ev.xkey.keycode,
