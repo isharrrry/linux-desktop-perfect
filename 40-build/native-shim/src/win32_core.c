@@ -370,10 +370,19 @@ ATOM RegisterClassExW(const WPF_WNDCLASSEX_D *wc)
     if (!wc) { wpf_set_last_error(87); return 0; }
 
     char *name = wpf_utf16_to_utf8_dup(wc->lpszClassName);
+    if (getenv("WPF_LINUX_KEY_DIAG")) {
+        fprintf(stderr, "[RegisterClassW] lpszClassName=%p name=%s style=0x%x proc=%p\n",
+                (void *)wc->lpszClassName, name ? name : "(null)", wc->style, (void *)wc->lpfnWndProc);
+        fflush(stderr);
+    }
     if (!name || name[0] == 0) { free(name); wpf_set_last_error(87); return 0; }
 
     wpf_lock();
     if (wpf_class_find_name(name)) {
+        if (getenv("WPF_LINUX_KEY_DIAG")) {
+            fprintf(stderr, "[RegisterClassW] 重复类名 -> 返回 0 (ERROR_CLASS_ALREADY_EXISTS) name=%s\n", name);
+            fflush(stderr);
+        }
         // Win32 里同名类重复注册返回 0 + ERROR_CLASS_ALREADY_EXISTS(1410)。
         // 托管侧 HwndWrapper 用 GUID 做类名，正常不会撞；撞了就是真错误。
         pthread_mutex_unlock(&g_wpf.lock);
@@ -392,6 +401,10 @@ ATOM RegisterClassExW(const WPF_WNDCLASSEX_D *wc)
     g_wpf.classes = c;
     ATOM atom = c->atom;
     pthread_mutex_unlock(&g_wpf.lock);
+    if (getenv("WPF_LINUX_KEY_DIAG")) {
+        fprintf(stderr, "[RegisterClassW] ok atom=%u name=%s\n", (unsigned)atom, name);
+        fflush(stderr);
+    }
     return atom;
 }
 // 【ACC-028】`RegisterClassW`（旧版，WinForms 的 `NativeWindow.WindowClass.RegisterClass` 用它）。

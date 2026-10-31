@@ -44,27 +44,27 @@ namespace System.Drawing
         private const int Question_ = 4;
         private const int Shield_ = 5;
 
+        // 【ACC-028】corefx 3.1 的 Unix 版这里引用了 `placeholder.ico` / `Mono.ico`，
+        //   而**这两个文件在 corefx 仓库里根本不存在**（是从 Mono 抄代码时的遗留引用）⇒
+        //   `SystemIcons..cctor` 抛 `FileNotFoundException: Resource 'Mono.ico' was not found`。
+        //   本仓改为**内嵌一个 16x16 的空白 ICO**（下面这串 base64 由 tools/gen-blank-ico.py 生成），
+        //   保证 6 个索引都有非 null 的 Icon（调用方在异常路径上，null 会二次崩）。
+        private const string BlankIcoBase64 = "AAABAAEAEBAAAAEACABoBQAAFgAAACgAAAAQAAAAIAAAAAEACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACApUAAwOUAAUFlgAAAKsAAACtAAAAswAICJYACAiXAAkJmAADA7EACwuWAAwMmwAODpoAEhKdABUVnwA2NC4AOTcxADw6NAA9OzYAPTw2AB8fogBAPjkAIyOkAEREQABHRkAAR0dBAEhJRABISkUASUtIAEZJewBKTXkAU1dVAFRYVgBVWFYAVVlXAFpaVQBWWlgAV1pZAFdbWQBaXFgAWFxZAFhcWgBbXVoAWV1bAFtfXQBbYF0AXmFgAF9jYQBgY2IAQUHgAGBkYgBFReUAZGhmAGVoZgBkaGgAZGhpAGVpZwBmaWcARkbpAGVpaQBFRe0AbW5oAGpubABrbmwAam9rAG1xbwBwcm0AbXJvAHF1cwBydnQAc3d1AHN4dAB2eHMAdHh2AHp/fAB8f34AfIB+AH2CfwB+gn8AfoKAAH6DgAB/g4EAgIOCAH+EgQCCh4QAhomHAIaJiACHiokAh4uJAImNiwCLjowAjZGOAI6SkACPkpAAjZOPAI+TkQCRlJIAlJiWAJaYlwCJic4Al5qYAJebmQCbnZwAnqCfAJyingCbm9UAnZ3WAKetqQCtsq0Ara3cALO6tQC1u7YAtLu4ALW8uQC2vboAvcK9AL7FwQDJz8sAzNLNAM7T0QDP1NIA0tnTANPa1QDV3NcA197ZAOLk5ADk5uYAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAfyAkJCQkJCQkJCQkJCQifzBKU05QUFBPT09PTU1QUCRFWEEkJCQkJCQkJCQkOVwyV10tdXx8cxhIe3x8eiRkRGdaQ258bxUbFyN2fHQ1ZVZ/T0tobBMcHx8aGXNrSVhmf0lVVEIREh8fFQ89XlFMf38+XEB8fA8gHxB5fEdZRn9/L2EkenwqODgneXssYD5/fyZbQSYrNXFwNCgpP18uf39iIiQkJThycjQhJCQkUn9/f39/f384cnI0f39/f39/f2kUCAcKNnJyNAYHCBZtf38BBAUFCTd4dzQFBQUDDH9/ADM8PDo7fn00PDw8MQt/f2MNAgICHjQ0HQICAg5qf4ABAAAAAAAAAAAAAAAAAAAAAAAAgAAAAIABAACAAQAAgAEAAIABAACAAQAA/D8AAIABAACAAQAAgAEAAIABAAA=";
+
+        private static Icon CreateBlankIcon()
+        {
+            byte[] raw = Convert.FromBase64String(BlankIcoBase64);
+            using (var ms = new System.IO.MemoryStream(raw))
+            {
+                return new Icon(ms);
+            }
+        }
+
         static SystemIcons()
         {
             // we minimize the # of icons to load since most of them are duplicates
             icons = new Icon[6];
-            // we use an internal .ctor to ensure the SystemIcons can't de disposed
-#if NETCORE
-            // TODO: Decide which icons to use for this.
-            icons[Application_Winlogo] = new Icon("placeholder.ico", true);
-            icons[Asterisk_Information] = new Icon("placeholder.ico", true);
-            icons[Error_Hand] = new Icon("placeholder.ico", true);
-            icons[Exclamation_Warning] = new Icon("placeholder.ico", true);
-            icons[Question_] = new Icon("placeholder.ico", true);
-            icons[Shield_] = new Icon("placeholder.ico", true);
-#else
-            icons[Application_Winlogo] = new Icon("Mono.ico", true);
-            icons[Asterisk_Information] = new Icon("Information.ico", true);
-            icons[Error_Hand] = new Icon("Error.ico", true);
-            icons[Exclamation_Warning] = new Icon("Warning.ico", true);
-            icons[Question_] = new Icon("Question.ico", true);
-            icons[Shield_] = new Icon("Shield.ico", true);
-#endif
+            for (int i = 0; i < icons.Length; i++) icons[i] = CreateBlankIcon();
         }
 
         // note: same as WinLogo (for Mono)

@@ -635,7 +635,17 @@ namespace System.Drawing
                     ms.Position = 0;
 
                     // libgdiplus can now decode icons
-                    bitmap = (Bitmap)Image.LoadFromStream(ms, false);
+                    try
+                    {
+                        bitmap = (Bitmap)Image.LoadFromStream(ms, false);
+                    }
+                    catch (ArgumentException)
+                    {
+                        // 【ACC-028 / K-023】0x0 的空图标（InitFromStreamWithSize 宽容模式产生的）
+                        //   在这里 Save→Load 会失败。为了让**异常对话框**不至于二次崩掉、
+                        //   把真正的原始异常掩盖掉，这里退回一个 1x1 的空位图。
+                        bitmap = new Bitmap(1, 1);
+                    }
                 }
             }
             return bitmap;
@@ -733,6 +743,30 @@ namespace System.Drawing
 
             if (stream.Length == 0)
                 throw new ArgumentException(SR.Format(SR.InvalidPictureType, "picture", nameof(stream)));
+
+            // 【ACC-028 / K-023】宽容模式：WinForms（.NET 10）的内嵌 .ico 里有 corefx 3.1 这个解析器
+            //   不认识的形式（典型是 PNG 压缩的 ICO 条目）。原版在这里直接抛 ArgumentException，
+            //   后果是 `ThreadExceptionDialog..ctor` 自己崩掉 —— **把应用真正的原始异常掩盖了**，
+            //   排查时只能看到这个二次异常。
+            //   这里把整个解析包进 try/catch：解析不出来就留一个**空图标**（宽/高 0），
+            //   UI 上少一个图标，但异常对话框能正常显示 ⇒ 原始异常可见。
+            try
+            {
+                InitFromStreamWithSizeCore(stream, width, height);
+            }
+            catch (ArgumentException)
+            {
+                // 解析不出来 ⇒ 留一个 **0x0 的空图标**（不要抛，见上面的注释）。
+                //    的尺寸字段是 （Size），不是 width/height。
+                imageData = null;
+                iconDir.idEntries = null;
+                iconDir.idCount = 0;
+                iconSize = new Size(0, 0);
+            }
+        }
+
+        private void InitFromStreamWithSizeCore(Stream stream, int width, int height)
+        {
 
             bool sizeObtained = false;
             ushort dirEntryCount;

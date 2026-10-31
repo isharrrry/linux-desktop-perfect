@@ -101,6 +101,7 @@ namespace WpfLinux.Shims.UIAutomation
             //   全部走 [DllImport("imm32.dll")]。不加这一行，那 17 个 Imm* 导出在托管层不可达
             //   （只有 shim 里实现、没人调）。映射后由 libwpfwin32.so 提供实现。
             "imm32.dll",
+            "uiautomationcore.dll",
             "PresentationNative_cor3.dll",
             // M7c 实测新增：UxThemeWrapper（IsThemeActive）与 WTS 会话查询
             //   —— Linux 上分别是"无活动 Windows 主题"与"本地会话"的真话，

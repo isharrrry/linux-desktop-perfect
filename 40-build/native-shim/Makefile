@@ -37,7 +37,8 @@ SRCS     = $(SRCDIR)/win32_core.c $(SRCDIR)/win32_msg.c $(SRCDIR)/win32_x11.c \
            $(SRCDIR)/win32_imm.c \
            $(SRCDIR)/win32_misc.c $(SRCDIR)/win32_exports.c \
            $(SRCDIR)/win32_classification.c $(SRCDIR)/win32_unicode_tables.c \
-           $(SRCDIR)/win32_oem.c $(SRCDIR)/win32_gdiplus.c $(SRCDIR)/win32_pts.c \
+           $(SRCDIR)/win32_oem.c $(SRCDIR)/win32_gdiplus.c \
+	$(SRCDIR)/win32_gdi_text.c $(SRCDIR)/win32_pts.c \
            $(SRCDIR)/win32_clipboard.c
 OBJS     = $(patsubst $(SRCDIR)/%.c,$(OBJDIR)/%.o,$(SRCS))
 DEPS     = $(SRCDIR)/win32_abi.h $(SRCDIR)/win32_internal.h

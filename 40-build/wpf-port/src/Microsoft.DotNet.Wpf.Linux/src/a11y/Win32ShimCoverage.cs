@@ -27,7 +27,7 @@ namespace Ldp.A11y
         // 与 PresentationCore/WindowsBase 的 `Win32ShimResolver` 保持一致（大小写不敏感）
         private static readonly string[] MappedLibraries =
         {
-            "user32.dll", "gdi32.dll", "kernel32.dll", "imm32.dll",
+            "user32.dll", "gdi32.dll", "kernel32.dll", "imm32.dll", "uiautomationcore.dll",
             "comctl32.dll", "comdlg32.dll", "shell32.dll", "ole32.dll", "oleaut32.dll",
             "advapi32.dll", "shcore.dll", "uxtheme.dll", "dwmapi.dll", "winmm.dll",
             "version.dll", "psapi.dll", "dbghelp.dll", "powrprof.dll", "setupapi.dll",
