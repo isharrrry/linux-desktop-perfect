@@ -5,6 +5,7 @@
 
 #define _GNU_SOURCE
 #include "win32_internal.h"
+#include "win32_gdi_dc.h"
 
 #include <errno.h>
 #include <fcntl.h>
@@ -2004,7 +2005,28 @@ LRESULT DefWindowProcW(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                                 pin->ptMaxTrackSize.x, pin->ptMaxTrackSize.y);
             }
             return 0;
-        case WM_PAINT:     return 0;
+        // 【ACC-028 / K-149】**WM_PAINT 必须真画**。
+        //   为什么：WinForms 的标准控件（Form/Button/Label）在没有自定义 `OnPaint` 时，
+        //   绘制交给 `DefWindowProc(WM_PAINT)` —— Windows 上由 user32 画（背景刷 + 控件外观）。
+        //   我们这里原来是 `return 0`（K-148 实测：`Graphics` 的三个创建入口 0 次），
+        //   所以窗口 map 了、`BeginPaint` 跑了 20 次，**画面一片空白**。
+        //   最小实现：用窗口类的背景刷（`WNDCLASS.hbrBackground`）填满客户区。
+        case WM_PAINT:
+        {
+            wpf_window *pw = wpf_window_find(hwnd);
+            if (pw && pw->width > 0 && pw->height > 0)
+            {
+                wpf_class *pc = wpf_class_find_atom(pw->class_atom);
+                uint32_t bg = pc ? wpf_gdi_color(pc->background, 0xFFFFFF) : 0xFFFFFF;
+                HDC dc = GetDC(hwnd);
+                WPF_RECT rc;
+                rc.left = 0; rc.top = 0;
+                rc.right = pw->width; rc.bottom = pw->height;
+                wpf_draw_fill_rect(dc, &rc, bg);
+                ReleaseDC(hwnd, dc);
+            }
+            return 0;
+        }
         default:           return 0;
     }
 }
