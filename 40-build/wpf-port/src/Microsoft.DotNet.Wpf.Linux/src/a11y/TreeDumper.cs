@@ -174,12 +174,22 @@ namespace Ldp.A11y
                         //   永远排不上队 ⇒ 判据一直读到同一份旧树 ⇒ 误判成"状态没变"。
                         //   【2026-10-31 负面结果，别重复踩】改成 Send 试过一轮：失败率反而从 2/5
                         //   升到 3/6，且失败那次 tree_mtime **仍然一次没涨** ⇒ **不是优先级问题**，已回滚。
-                        d.Invoke(new Action(() =>
+                        // 【K-011-解5】实测：阻塞式 `d.Invoke` 在约 60% 的运行里**永不返回**
+                        //   （`dumped=0`、`skip=0`，连 IsVisible 判断都没跑到），
+                        //   导致判据侧一直读到同一份旧树、误判成"状态没变"。
+                        //   换成 `InvokeAsync` + 有界等待：卡住就**跳过这一轮**继续下一轮，
+                        //   而不是让观测线程永久死掉。
+                        var op = d.InvokeAsync(new Action(() =>
                         {
                             if (win.IsVisible) { Dump(win, outPath, scr, app); Console.Error.WriteLine("[A11Y-REPEAT] dumped"); }
                             else { Console.Error.WriteLine("[A11Y-REPEAT] skip: not visible"); }
                             Console.Error.Flush();
                         }), DispatcherPriority.Background);
+                        if (!op.Task.Wait(1500))
+                        {
+                            Console.Error.WriteLine("[A11Y-REPEAT] Invoke 超时（1.5s），跳过这一轮");
+                            Console.Error.Flush();
+                        }
                     }
                     catch (Exception ex)
                     {
