@@ -235,18 +235,28 @@ void wpf_xim_attach_ic(Window w)
     //        ⇒ `XFilterEvent` 不生效 ⇒ commit 永远拿不到。这是 ACC-017 一直不通的真因）。
     //     3. 而 `XIMPreeditNothing`(0x408) 下 **ibus 自己画浮动候选窗**，用户照样看得见候选词。
     //   Wine 的 `winex11.drv/xim.c` 也是这个思路：要 callbacks 拿不到就 `input_style = input_style_fallback`。
+    // 【ACC-017 / K-083】**改回优先 `XIMPreeditCallbacks`**。
+    //   理由（K-082 实测）：`XIMPreeditNothing`(0x408) 下 ibus 的 XIM 前端**把原始键原样透传**
+    //   （我们拿到的是 `n i h a o space`，不是「你好」）—— 它只在 callbacks 样式下才拦截按键做转换。
+    //   之前 0x402 建不起来很可能是 **gdm 用户的 ibus 抢占** 导致的（K-081 已实测：清掉后
+    //   `XOpenIM` 立刻从 NULL 变 ok），所以现在值得重试。
     int with_callbacks = 0;
     for (unsigned short i = 0; i < styles->count_styles; ++i) {
-        if (styles->supported_styles[i] == (XIMPreeditNothing | XIMStatusNothing)) { want = styles->supported_styles[i]; break; }
+        if (styles->supported_styles[i] == (XIMPreeditCallbacks | XIMStatusNothing)) { want = styles->supported_styles[i]; with_callbacks = 1; break; }
     }
-    if (want == 0) {   // 退一步：任何 PreeditNothing
-        for (unsigned short i = 0; i < styles->count_styles; ++i) {
-            if (styles->supported_styles[i] & XIMPreeditNothing) { want = styles->supported_styles[i]; break; }
-        }
-    }
-    if (want == 0) {   // 再退：才考虑 callbacks（有就比没有强）
+    if (want == 0) {   // 退一步：带 StatusCallbacks 的 callbacks
         for (unsigned short i = 0; i < styles->count_styles; ++i) {
             if (styles->supported_styles[i] & XIMPreeditCallbacks) { want = styles->supported_styles[i]; with_callbacks = 1; break; }
+        }
+    }
+    if (want == 0) {   // 再退：PreeditNothing（透传原始键，但至少能跑）
+        for (unsigned short i = 0; i < styles->count_styles; ++i) {
+            if (styles->supported_styles[i] == (XIMPreeditNothing | XIMStatusNothing)) { want = styles->supported_styles[i]; break; }
+        }
+    }
+    if (want == 0) {
+        for (unsigned short i = 0; i < styles->count_styles; ++i) {
+            if (styles->supported_styles[i] & XIMPreeditNothing) { want = styles->supported_styles[i]; break; }
         }
     }
     if (want == 0 && styles->count_styles > 0) want = styles->supported_styles[0];
