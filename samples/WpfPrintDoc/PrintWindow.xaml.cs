@@ -25,7 +25,9 @@ namespace LinuxDesktopPerfect.Samples.WpfPrintDoc
             try
             {
                 var server = new LocalPrintServer();
-                PrintQueue queue = server.DefaultPrintQueue;
+                // 【ACC-024 / K-055】不用 DefaultPrintQueue —— 它在我们的实现里是 null。
+                // 直接按名字取队列（SCR-05 的下拉框就是 "Fake CUPS 队列" 对应 shim 的 EnumPrinters 返回值）。
+                PrintQueue queue = server.GetPrintQueue("Fake CUPS Queue");
                 XpsDocumentWriter writer = PrintQueue.CreateXpsDocumentWriter(queue);
                 var doc = new FixedDocument();
                 var page = new FixedPage();
