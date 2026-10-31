@@ -1453,6 +1453,9 @@ int wpf_x11_pump_into_queue(wpf_thread *t)
         }
     }
 
+    // 【ACC-028 / K-141】把累积的 InvalidateRect 合并成一次 WM_PAINT（WinForms 全靠这条路）
+    { extern void wpf_paint_flush(void); wpf_paint_flush(); }
+
     // 【ACC-017 / K-091】先把 ibus 的 CommitText 信号收掉（非阻塞，最多 4 条）。
     //   放在 XNextEvent 之前，保证"按键 → ibus 处理 → CommitText → WM_CHAR"能在同一轮里走完。
     wpf_ibus_pump();

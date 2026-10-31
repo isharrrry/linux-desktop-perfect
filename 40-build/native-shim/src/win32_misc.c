@@ -157,9 +157,42 @@ BOOL EndPaint(HWND h, const WPF_PAINTSTRUCT *ps) { (void)h; (void)ps; return 1; 
 // 驱动（HwndTarget → DUCE → M1 Skia），WM_PAINT 只在窗口首次 expose 时出现。
 // 若在这里合成 WM_PAINT，会与 X11 的 Expose 事件形成重绘风暴。
 // 返回 TRUE 表示「脏区已登记」，这在语义上不假——脏区确实被登记了（只是没人读）。
-BOOL InvalidateRect(HWND h, const void *rc, BOOL erase) { (void)h; (void)rc; (void)erase; return 1; }
+// 【ACC-028 / K-141】**InvalidateRect 必须产生 WM_PAINT**。
+//   历史原因（K-140）：当年把它做成 no-op，理由是「WPF 的重绘走 MIL/DUCE/Skia，不依赖 WM_PAINT」——
+//   **这个理由对 WPF 是对的**，但 **WinForms 的重绘恰恰全靠**
+//   `Invalidate() -> InvalidateRect -> WM_PAINT -> BeginPaint/EndPaint`。
+//   => 结果：`/tmp/wfout/WfApp.dll`（标准 WinForms）启动、窗口 map、控件都建好了，**内容一片空白**。
+//   修法：**合并投递** —— 置一个 pending 标志，由事件泵每轮循环末尾统一投一次 WM_PAINT，
+//   多个 Invalidate 合并成一次，不会形成重绘风暴（K-140 担心的正是风暴）。
+static void *g_paint_hwnd = NULL;
+static int   g_paint_pending = 0;
+
+void wpf_paint_note(void *hwnd) { if (!g_paint_hwnd) g_paint_hwnd = hwnd; }
+void *wpf_paint_target(void) { return g_paint_hwnd; }
+
+void wpf_paint_flush(void)
+{
+    if (!g_paint_pending || !g_paint_hwnd) return;
+    g_paint_pending = 0;
+    PostMessageW(g_paint_hwnd, 0x000F /*WM_PAINT*/, 0, 0);
+}
+
+BOOL InvalidateRect(HWND h, const void *rc, BOOL erase)
+{
+    (void)rc; (void)erase;
+    if (!h) return 1;
+    wpf_paint_note(h);
+    g_paint_pending = 1;
+    return 1;
+}
+BOOL InvalidateRgn(HWND h, void *rgn, BOOL erase) { (void)rgn; (void)erase; return InvalidateRect(h, NULL, erase); }
 BOOL ValidateRect(HWND h, const void *rc) { (void)h; (void)rc; return 1; }
-BOOL UpdateWindow(HWND h) { (void)h; return 1; }
+BOOL UpdateWindow(HWND h)
+{
+    (void)h;
+    wpf_paint_flush();      // **UpdateWindow 是同步重绘**，直接刷一次
+    return 1;
+}
 BOOL RedrawWindow(HWND h, const void *rc, void *rgn, UINT flags)
 { (void)h; (void)rc; (void)rgn; (void)flags; return 1; }
 BOOL PrintWindow(HWND h, HDC dc, UINT flags) { (void)h; (void)dc; (void)flags; return 0; }
