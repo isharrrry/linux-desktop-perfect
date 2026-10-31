@@ -135,7 +135,11 @@ int SetEnhMetaFileBits(UINT cb, const uint8_t *bits) { (void)cb; (void)bits; ret
 // 这段包起来。返回 FALSE 会让 HwndTarget 在 layered window 路径上抛异常。
 BOOL BeginPaint(HWND h, WPF_PAINTSTRUCT *ps)
 {
-    (void)h;
+    // 【ACC-028 / K-142】诊断：确认 WinForms 的 WM_PAINT 路径有没有走到这里
+    if (getenv("WPF_LINUX_KEY_DIAG")) {
+        static int bp = 0;
+        if (bp++ < 20) { fprintf(stderr, "[PAINT] BeginPaint hwnd=%p (第 %d 次)\n", (void *)h, bp); fflush(stderr); }
+    }
     if (!ps) return 0;
     memset(ps, 0, sizeof(*ps));
     ps->hdc = WPF_FAKE_DC;
@@ -193,8 +197,9 @@ BOOL UpdateWindow(HWND h)
     wpf_paint_flush();      // **UpdateWindow 是同步重绘**，直接刷一次
     return 1;
 }
+// 【ACC-028 / K-142】RedrawWindow 也要触发重绘（WinForms 的 Control.Refresh 走它）
 BOOL RedrawWindow(HWND h, const void *rc, void *rgn, UINT flags)
-{ (void)h; (void)rc; (void)rgn; (void)flags; return 1; }
+{ (void)rc; (void)rgn; (void)flags; return InvalidateRect(h, NULL, 0); }
 BOOL PrintWindow(HWND h, HDC dc, UINT flags) { (void)h; (void)dc; (void)flags; return 0; }
 
 // ── 光标 / 图标 ────────────────────────────────────────────────────────────
