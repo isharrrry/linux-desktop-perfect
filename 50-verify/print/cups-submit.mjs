@@ -71,8 +71,15 @@ try {
     const t1 = readTree();
     const r1 = readouts(t1);
     const alive = app.proc.exitCode === null;
+    // 【ACC-024 / K-053】**必须区分 done 与 error**：
+    //   原断言只看"读数变化"，于是 `pending → state=error` 也算通过 —— 那是"绿灯但功能没通"。
+    //   按本仓「DEGRADED 不等于 PASS」的规矩，这里要求 job 读数里**出现 state=done**，
+    //   且 pages 至少变成 1（真的分了一页）。error 一律不算通过。
+    const jobDone = /state=done/.test(String(r1.job || ""));
+    const pagesPositive = /^pages=[1-9][0-9]*$/.test(String(r1.pages || ""));
     const changed = r0.job !== r1.job || r0.pages !== r1.pages;
-    steps.push({ step: 'print_changes_readout', ok: changed && alive, before: r0, after: r1, alive });
+    const ok = changed && jobDone && pagesPositive;
+    steps.push({ step: 'print_changes_readout', ok: ok && alive, before: r0, after: r1, alive, job_done: jobDone, pages_positive: pagesPositive });
   } else {
     steps.push({ step: 'print_changes_readout', ok: false, note: '「打印」按钮没有可点的 bounds' });
   }

@@ -15,7 +15,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "win32_abi.h"
+#include "win32_internal.h"
 
 static int g_fake_printer = 1;
 static int g_job_id = 1;
@@ -91,7 +91,11 @@ int EnumPrintersW(uint32_t flags, uint16_t *name, uint32_t level, uint8_t *buf,
     if (pcbNeeded) *pcbNeeded = need;
     if (!buf || cbBuf < need || level != 4) {
         if (pcReturned) *pcReturned = 0;
-        return need == 0 ? 0 : 0;   // 需要更大的缓冲时 Win32 返回 0 + last error=ERROR_INSUFFICIENT_BUFFER
+        // 【K-054】**缓冲区不足时必须设 last error = ERROR_INSUFFICIENT_BUFFER(122)**，
+        // 否则 System.Printing 会把"需要更大缓冲"误判成"没有打印机" ⇒
+        // LocalPrintServer.DefaultPrintQueue 为 null ⇒ 调用方 NullReferenceException。
+        if (need > 0 && (!buf || cbBuf < need)) wpf_set_last_error(122);
+        return 0;
     }
     // 铺一段 UTF-16 名字
     uint8_t *p = buf;
