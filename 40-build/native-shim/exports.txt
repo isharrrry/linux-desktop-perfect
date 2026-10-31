@@ -3,7 +3,7 @@
 # 列：lib	symbol	status	owner	since[	note]（note 为可选列；为空时省略，行尾不留制表符）
 # status 判定：impl=实现侧有该符号；stub=函数体仅常量返回；gap=声明有实现无（note 写替代路径）
 # lib 列：若实现将落在哪个自产 .so（概设 §2.4）；status=gap 表示当前无实现，不是没登记
-# 规模：1282 行（impl 789 / stub 85 / gap 408）
+# 规模：1282 行（impl 908 / stub 85 / gap 289）
 # 输入：上游 1534 条 DllImport 声明（另有 0 条属性块后无 extern 声明被跳过）、native-shim 792 个导出、milcore 109 个导出
 # 排除：wpf_*（shim 内部件）、WpfLinuxWin32_*（桥件，非 Win32 契约入口）
 libwpfgfx_linux.so	GetNextPerfElementId	impl	MOD-25	10.0.11
@@ -119,125 +119,125 @@ libwpfgfx_linux.so	WgxConnection_Disconnect	impl	MOD-25	10.0.11
 libwpfgfx_linux.so	WgxConnection_SameThreadPresent	impl	MOD-25	10.0.11
 libwpfgfx_linux.so	WgxConnection_ShouldForceSoftwareForGraphicsStreamClient	impl	MOD-25	10.0.11
 libwpfgfx_linux.so	WpfGfx_SetDisableBoundsCheckProtection	impl	MOD-25	10.0.11
-libwpfwic.so	CloseColorProfile	gap	MOD-42	10.0.11	无实现（mscms）
-libwpfwic.so	CreateMultiProfileTransform	gap	MOD-42	10.0.11	无实现（mscms）
-libwpfwic.so	DeleteColorTransform	gap	MOD-42	10.0.11	无实现（mscms）
-libwpfwic.so	GetColorDirectory	gap	MOD-42	10.0.11	无实现（mscms）
-libwpfwic.so	GetColorProfileFromHandle	gap	MOD-42	10.0.11	无实现（mscms）
-libwpfwic.so	GetColorProfileHeader	gap	MOD-42	10.0.11	无实现（mscms）
-libwpfwic.so	GetStandardColorSpaceProfile	gap	MOD-42	10.0.11	无实现（mscms）
-libwpfwic.so	IEnumString_Next_WIC_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
-libwpfwic.so	IEnumString_Reset_WIC_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
-libwpfwic.so	IPropertyBag2_Write_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
-libwpfwic.so	IWICBitmapClipper_Initialize_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
-libwpfwic.so	IWICBitmapCodecInfo_DoesSupportAnimation_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
-libwpfwic.so	IWICBitmapCodecInfo_DoesSupportLossless_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
-libwpfwic.so	IWICBitmapCodecInfo_DoesSupportMultiframe_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
-libwpfwic.so	IWICBitmapCodecInfo_GetContainerFormat_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
-libwpfwic.so	IWICBitmapCodecInfo_GetDeviceManufacturer_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
-libwpfwic.so	IWICBitmapCodecInfo_GetDeviceModels_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
-libwpfwic.so	IWICBitmapCodecInfo_GetFileExtensions_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
-libwpfwic.so	IWICBitmapCodecInfo_GetMimeTypes_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
-libwpfwic.so	IWICBitmapDecoder_CopyPalette_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
-libwpfwic.so	IWICBitmapDecoder_GetColorContexts_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
-libwpfwic.so	IWICBitmapDecoder_GetDecoderInfo_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
-libwpfwic.so	IWICBitmapDecoder_GetFrameCount_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
-libwpfwic.so	IWICBitmapDecoder_GetFrame_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
-libwpfwic.so	IWICBitmapDecoder_GetMetadataQueryReader_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
-libwpfwic.so	IWICBitmapDecoder_GetPreview_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
-libwpfwic.so	IWICBitmapDecoder_GetThumbnail_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
-libwpfwic.so	IWICBitmapEncoder_Commit_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
-libwpfwic.so	IWICBitmapEncoder_CreateNewFrame_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
-libwpfwic.so	IWICBitmapEncoder_GetEncoderInfo_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
-libwpfwic.so	IWICBitmapEncoder_GetMetadataQueryWriter_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
-libwpfwic.so	IWICBitmapEncoder_Initialize_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
-libwpfwic.so	IWICBitmapEncoder_SetPalette_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
-libwpfwic.so	IWICBitmapEncoder_SetThumbnail_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
-libwpfwic.so	IWICBitmapFlipRotator_Initialize_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
-libwpfwic.so	IWICBitmapFrameDecode_GetColorContexts_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
-libwpfwic.so	IWICBitmapFrameDecode_GetMetadataQueryReader_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
-libwpfwic.so	IWICBitmapFrameDecode_GetThumbnail_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
-libwpfwic.so	IWICBitmapFrameEncode_Commit_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
-libwpfwic.so	IWICBitmapFrameEncode_GetMetadataQueryWriter_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
-libwpfwic.so	IWICBitmapFrameEncode_Initialize_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
-libwpfwic.so	IWICBitmapFrameEncode_SetColorContexts_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
-libwpfwic.so	IWICBitmapFrameEncode_SetResolution_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
-libwpfwic.so	IWICBitmapFrameEncode_SetSize_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
-libwpfwic.so	IWICBitmapFrameEncode_SetThumbnail_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
-libwpfwic.so	IWICBitmapFrameEncode_WriteSource_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
-libwpfwic.so	IWICBitmapLock_GetDataPointer_STA_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
-libwpfwic.so	IWICBitmapLock_GetStride_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
-libwpfwic.so	IWICBitmapScaler_Initialize_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
-libwpfwic.so	IWICBitmapSource_CopyPalette_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
-libwpfwic.so	IWICBitmapSource_CopyPixels_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
-libwpfwic.so	IWICBitmapSource_GetPixelFormat_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
-libwpfwic.so	IWICBitmapSource_GetResolution_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
-libwpfwic.so	IWICBitmapSource_GetSize_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
-libwpfwic.so	IWICBitmap_Lock_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
-libwpfwic.so	IWICBitmap_SetPalette_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
-libwpfwic.so	IWICBitmap_SetResolution_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
-libwpfwic.so	IWICColorContext_InitializeFromMemory_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
-libwpfwic.so	IWICColorTransform_Initialize_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecsext）
-libwpfwic.so	IWICComponentFactory_CreateMetadataWriterFromReader_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
-libwpfwic.so	IWICComponentFactory_CreateQueryWriterFromBlockWriter_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
-libwpfwic.so	IWICComponentInfo_GetAuthor_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
-libwpfwic.so	IWICComponentInfo_GetCLSID_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
-libwpfwic.so	IWICComponentInfo_GetFriendlyName_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
-libwpfwic.so	IWICComponentInfo_GetSpecVersion_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
-libwpfwic.so	IWICComponentInfo_GetVersion_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
-libwpfwic.so	IWICFastMetadataEncoder_Commit_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
-libwpfwic.so	IWICFastMetadataEncoder_GetMetadataQueryWriter_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
-libwpfwic.so	IWICFormatConverter_Initialize_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
-libwpfwic.so	IWICImagingFactory_CreateBitmapClipper_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
-libwpfwic.so	IWICImagingFactory_CreateBitmapFlipRotator_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
-libwpfwic.so	IWICImagingFactory_CreateBitmapFromHBITMAP_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
-libwpfwic.so	IWICImagingFactory_CreateBitmapFromHICON_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
-libwpfwic.so	IWICImagingFactory_CreateBitmapFromMemory_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
-libwpfwic.so	IWICImagingFactory_CreateBitmapFromSource_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
-libwpfwic.so	IWICImagingFactory_CreateBitmapScaler_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
-libwpfwic.so	IWICImagingFactory_CreateBitmap_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
-libwpfwic.so	IWICImagingFactory_CreateComponentInfo_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
-libwpfwic.so	IWICImagingFactory_CreateDecoderFromFileHandle_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
-libwpfwic.so	IWICImagingFactory_CreateDecoderFromStream_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
-libwpfwic.so	IWICImagingFactory_CreateEncoder_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
-libwpfwic.so	IWICImagingFactory_CreateFastMetadataEncoderFromDecoder_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
-libwpfwic.so	IWICImagingFactory_CreateFastMetadataEncoderFromFrameDecode_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
-libwpfwic.so	IWICImagingFactory_CreateFormatConverter_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
-libwpfwic.so	IWICImagingFactory_CreatePalette_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
-libwpfwic.so	IWICImagingFactory_CreateQueryWriterFromReader_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
-libwpfwic.so	IWICImagingFactory_CreateQueryWriter_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
-libwpfwic.so	IWICImagingFactory_CreateStream_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
-libwpfwic.so	IWICMetadataBlockReader_GetCount_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
-libwpfwic.so	IWICMetadataBlockReader_GetReaderByIndex_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
-libwpfwic.so	IWICMetadataQueryReader_GetContainerFormat_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
-libwpfwic.so	IWICMetadataQueryReader_GetEnumerator_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
-libwpfwic.so	IWICMetadataQueryReader_GetLocation_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
-libwpfwic.so	IWICMetadataQueryReader_GetMetadataByName_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
-libwpfwic.so	IWICMetadataQueryWriter_RemoveMetadataByName_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
-libwpfwic.so	IWICMetadataQueryWriter_SetMetadataByName_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
-libwpfwic.so	IWICPalette_GetColorCount_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
-libwpfwic.so	IWICPalette_GetColors_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
-libwpfwic.so	IWICPalette_GetType_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
-libwpfwic.so	IWICPalette_HasAlpha_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
-libwpfwic.so	IWICPalette_InitializeCustom_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
-libwpfwic.so	IWICPalette_InitializeFromBitmap_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
-libwpfwic.so	IWICPalette_InitializeFromPalette_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
-libwpfwic.so	IWICPalette_InitializePredefined_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
-libwpfwic.so	IWICPixelFormatInfo_GetBitsPerPixel_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
-libwpfwic.so	IWICPixelFormatInfo_GetChannelCount_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
-libwpfwic.so	IWICPixelFormatInfo_GetChannelMask_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
-libwpfwic.so	IWICStream_InitializeFromIStream_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
-libwpfwic.so	IWICStream_InitializeFromMemory_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
-libwpfwic.so	OpenColorProfile	gap	MOD-42	10.0.11	无实现（mscms）
-libwpfwic.so	TranslateColors	gap	MOD-42	10.0.11	无实现（mscms）
-libwpfwic.so	WICConvertBitmapSource	gap	MOD-41	10.0.11	无实现（windowscodecs）
-libwpfwic.so	WICCreateBitmapFromSection	gap	MOD-41	10.0.11	无实现（windowscodecs）
-libwpfwic.so	WICCreateColorContext_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
-libwpfwic.so	WICCreateColorTransform_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecsext）
-libwpfwic.so	WICCreateImagingFactory_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
-libwpfwic.so	WICMapGuidToShortName	gap	MOD-41	10.0.11	无实现（windowscodecs）
-libwpfwic.so	WICMapShortNameToGuid	gap	MOD-41	10.0.11	无实现（windowscodecs）
-libwpfwic.so	WICSetEncoderFormat_Proxy	gap	MOD-41	10.0.11	无实现（windowscodecs）
+libwpfwic.so	CloseColorProfile	impl	MOD-42	10.0.11
+libwpfwic.so	CreateMultiProfileTransform	impl	MOD-42	10.0.11
+libwpfwic.so	DeleteColorTransform	impl	MOD-42	10.0.11
+libwpfwic.so	GetColorDirectory	impl	MOD-42	10.0.11
+libwpfwic.so	GetColorProfileFromHandle	impl	MOD-42	10.0.11
+libwpfwic.so	GetColorProfileHeader	impl	MOD-42	10.0.11
+libwpfwic.so	GetStandardColorSpaceProfile	impl	MOD-42	10.0.11
+libwpfwic.so	IEnumString_Next_WIC_Proxy	impl	MOD-41	10.0.11
+libwpfwic.so	IEnumString_Reset_WIC_Proxy	impl	MOD-41	10.0.11
+libwpfwic.so	IPropertyBag2_Write_Proxy	impl	MOD-41	10.0.11
+libwpfwic.so	IWICBitmapClipper_Initialize_Proxy	impl	MOD-41	10.0.11
+libwpfwic.so	IWICBitmapCodecInfo_DoesSupportAnimation_Proxy	impl	MOD-41	10.0.11
+libwpfwic.so	IWICBitmapCodecInfo_DoesSupportLossless_Proxy	impl	MOD-41	10.0.11
+libwpfwic.so	IWICBitmapCodecInfo_DoesSupportMultiframe_Proxy	impl	MOD-41	10.0.11
+libwpfwic.so	IWICBitmapCodecInfo_GetContainerFormat_Proxy	impl	MOD-41	10.0.11
+libwpfwic.so	IWICBitmapCodecInfo_GetDeviceManufacturer_Proxy	impl	MOD-41	10.0.11
+libwpfwic.so	IWICBitmapCodecInfo_GetDeviceModels_Proxy	impl	MOD-41	10.0.11
+libwpfwic.so	IWICBitmapCodecInfo_GetFileExtensions_Proxy	impl	MOD-41	10.0.11
+libwpfwic.so	IWICBitmapCodecInfo_GetMimeTypes_Proxy	impl	MOD-41	10.0.11
+libwpfwic.so	IWICBitmapDecoder_CopyPalette_Proxy	impl	MOD-41	10.0.11
+libwpfwic.so	IWICBitmapDecoder_GetColorContexts_Proxy	impl	MOD-41	10.0.11
+libwpfwic.so	IWICBitmapDecoder_GetDecoderInfo_Proxy	impl	MOD-41	10.0.11
+libwpfwic.so	IWICBitmapDecoder_GetFrameCount_Proxy	impl	MOD-41	10.0.11
+libwpfwic.so	IWICBitmapDecoder_GetFrame_Proxy	impl	MOD-41	10.0.11
+libwpfwic.so	IWICBitmapDecoder_GetMetadataQueryReader_Proxy	impl	MOD-41	10.0.11
+libwpfwic.so	IWICBitmapDecoder_GetPreview_Proxy	impl	MOD-41	10.0.11
+libwpfwic.so	IWICBitmapDecoder_GetThumbnail_Proxy	impl	MOD-41	10.0.11
+libwpfwic.so	IWICBitmapEncoder_Commit_Proxy	impl	MOD-41	10.0.11
+libwpfwic.so	IWICBitmapEncoder_CreateNewFrame_Proxy	impl	MOD-41	10.0.11
+libwpfwic.so	IWICBitmapEncoder_GetEncoderInfo_Proxy	impl	MOD-41	10.0.11
+libwpfwic.so	IWICBitmapEncoder_GetMetadataQueryWriter_Proxy	impl	MOD-41	10.0.11
+libwpfwic.so	IWICBitmapEncoder_Initialize_Proxy	impl	MOD-41	10.0.11
+libwpfwic.so	IWICBitmapEncoder_SetPalette_Proxy	impl	MOD-41	10.0.11
+libwpfwic.so	IWICBitmapEncoder_SetThumbnail_Proxy	impl	MOD-41	10.0.11
+libwpfwic.so	IWICBitmapFlipRotator_Initialize_Proxy	impl	MOD-41	10.0.11
+libwpfwic.so	IWICBitmapFrameDecode_GetColorContexts_Proxy	impl	MOD-41	10.0.11
+libwpfwic.so	IWICBitmapFrameDecode_GetMetadataQueryReader_Proxy	impl	MOD-41	10.0.11
+libwpfwic.so	IWICBitmapFrameDecode_GetThumbnail_Proxy	impl	MOD-41	10.0.11
+libwpfwic.so	IWICBitmapFrameEncode_Commit_Proxy	impl	MOD-41	10.0.11
+libwpfwic.so	IWICBitmapFrameEncode_GetMetadataQueryWriter_Proxy	impl	MOD-41	10.0.11
+libwpfwic.so	IWICBitmapFrameEncode_Initialize_Proxy	impl	MOD-41	10.0.11
+libwpfwic.so	IWICBitmapFrameEncode_SetColorContexts_Proxy	impl	MOD-41	10.0.11
+libwpfwic.so	IWICBitmapFrameEncode_SetResolution_Proxy	impl	MOD-41	10.0.11
+libwpfwic.so	IWICBitmapFrameEncode_SetSize_Proxy	impl	MOD-41	10.0.11
+libwpfwic.so	IWICBitmapFrameEncode_SetThumbnail_Proxy	impl	MOD-41	10.0.11
+libwpfwic.so	IWICBitmapFrameEncode_WriteSource_Proxy	impl	MOD-41	10.0.11
+libwpfwic.so	IWICBitmapLock_GetDataPointer_STA_Proxy	impl	MOD-41	10.0.11
+libwpfwic.so	IWICBitmapLock_GetStride_Proxy	impl	MOD-41	10.0.11
+libwpfwic.so	IWICBitmapScaler_Initialize_Proxy	impl	MOD-41	10.0.11
+libwpfwic.so	IWICBitmapSource_CopyPalette_Proxy	impl	MOD-41	10.0.11
+libwpfwic.so	IWICBitmapSource_CopyPixels_Proxy	impl	MOD-41	10.0.11
+libwpfwic.so	IWICBitmapSource_GetPixelFormat_Proxy	impl	MOD-41	10.0.11
+libwpfwic.so	IWICBitmapSource_GetResolution_Proxy	impl	MOD-41	10.0.11
+libwpfwic.so	IWICBitmapSource_GetSize_Proxy	impl	MOD-41	10.0.11
+libwpfwic.so	IWICBitmap_Lock_Proxy	impl	MOD-41	10.0.11
+libwpfwic.so	IWICBitmap_SetPalette_Proxy	impl	MOD-41	10.0.11
+libwpfwic.so	IWICBitmap_SetResolution_Proxy	impl	MOD-41	10.0.11
+libwpfwic.so	IWICColorContext_InitializeFromMemory_Proxy	impl	MOD-41	10.0.11
+libwpfwic.so	IWICColorTransform_Initialize_Proxy	impl	MOD-41	10.0.11
+libwpfwic.so	IWICComponentFactory_CreateMetadataWriterFromReader_Proxy	impl	MOD-41	10.0.11
+libwpfwic.so	IWICComponentFactory_CreateQueryWriterFromBlockWriter_Proxy	impl	MOD-41	10.0.11
+libwpfwic.so	IWICComponentInfo_GetAuthor_Proxy	impl	MOD-41	10.0.11
+libwpfwic.so	IWICComponentInfo_GetCLSID_Proxy	impl	MOD-41	10.0.11
+libwpfwic.so	IWICComponentInfo_GetFriendlyName_Proxy	impl	MOD-41	10.0.11
+libwpfwic.so	IWICComponentInfo_GetSpecVersion_Proxy	impl	MOD-41	10.0.11
+libwpfwic.so	IWICComponentInfo_GetVersion_Proxy	impl	MOD-41	10.0.11
+libwpfwic.so	IWICFastMetadataEncoder_Commit_Proxy	impl	MOD-41	10.0.11
+libwpfwic.so	IWICFastMetadataEncoder_GetMetadataQueryWriter_Proxy	impl	MOD-41	10.0.11
+libwpfwic.so	IWICFormatConverter_Initialize_Proxy	impl	MOD-41	10.0.11
+libwpfwic.so	IWICImagingFactory_CreateBitmapClipper_Proxy	impl	MOD-41	10.0.11
+libwpfwic.so	IWICImagingFactory_CreateBitmapFlipRotator_Proxy	impl	MOD-41	10.0.11
+libwpfwic.so	IWICImagingFactory_CreateBitmapFromHBITMAP_Proxy	impl	MOD-41	10.0.11
+libwpfwic.so	IWICImagingFactory_CreateBitmapFromHICON_Proxy	impl	MOD-41	10.0.11
+libwpfwic.so	IWICImagingFactory_CreateBitmapFromMemory_Proxy	impl	MOD-41	10.0.11
+libwpfwic.so	IWICImagingFactory_CreateBitmapFromSource_Proxy	impl	MOD-41	10.0.11
+libwpfwic.so	IWICImagingFactory_CreateBitmapScaler_Proxy	impl	MOD-41	10.0.11
+libwpfwic.so	IWICImagingFactory_CreateBitmap_Proxy	impl	MOD-41	10.0.11
+libwpfwic.so	IWICImagingFactory_CreateComponentInfo_Proxy	impl	MOD-41	10.0.11
+libwpfwic.so	IWICImagingFactory_CreateDecoderFromFileHandle_Proxy	impl	MOD-41	10.0.11
+libwpfwic.so	IWICImagingFactory_CreateDecoderFromStream_Proxy	impl	MOD-41	10.0.11
+libwpfwic.so	IWICImagingFactory_CreateEncoder_Proxy	impl	MOD-41	10.0.11
+libwpfwic.so	IWICImagingFactory_CreateFastMetadataEncoderFromDecoder_Proxy	impl	MOD-41	10.0.11
+libwpfwic.so	IWICImagingFactory_CreateFastMetadataEncoderFromFrameDecode_Proxy	impl	MOD-41	10.0.11
+libwpfwic.so	IWICImagingFactory_CreateFormatConverter_Proxy	impl	MOD-41	10.0.11
+libwpfwic.so	IWICImagingFactory_CreatePalette_Proxy	impl	MOD-41	10.0.11
+libwpfwic.so	IWICImagingFactory_CreateQueryWriterFromReader_Proxy	impl	MOD-41	10.0.11
+libwpfwic.so	IWICImagingFactory_CreateQueryWriter_Proxy	impl	MOD-41	10.0.11
+libwpfwic.so	IWICImagingFactory_CreateStream_Proxy	impl	MOD-41	10.0.11
+libwpfwic.so	IWICMetadataBlockReader_GetCount_Proxy	impl	MOD-41	10.0.11
+libwpfwic.so	IWICMetadataBlockReader_GetReaderByIndex_Proxy	impl	MOD-41	10.0.11
+libwpfwic.so	IWICMetadataQueryReader_GetContainerFormat_Proxy	impl	MOD-41	10.0.11
+libwpfwic.so	IWICMetadataQueryReader_GetEnumerator_Proxy	impl	MOD-41	10.0.11
+libwpfwic.so	IWICMetadataQueryReader_GetLocation_Proxy	impl	MOD-41	10.0.11
+libwpfwic.so	IWICMetadataQueryReader_GetMetadataByName_Proxy	impl	MOD-41	10.0.11
+libwpfwic.so	IWICMetadataQueryWriter_RemoveMetadataByName_Proxy	impl	MOD-41	10.0.11
+libwpfwic.so	IWICMetadataQueryWriter_SetMetadataByName_Proxy	impl	MOD-41	10.0.11
+libwpfwic.so	IWICPalette_GetColorCount_Proxy	impl	MOD-41	10.0.11
+libwpfwic.so	IWICPalette_GetColors_Proxy	impl	MOD-41	10.0.11
+libwpfwic.so	IWICPalette_GetType_Proxy	impl	MOD-41	10.0.11
+libwpfwic.so	IWICPalette_HasAlpha_Proxy	impl	MOD-41	10.0.11
+libwpfwic.so	IWICPalette_InitializeCustom_Proxy	impl	MOD-41	10.0.11
+libwpfwic.so	IWICPalette_InitializeFromBitmap_Proxy	impl	MOD-41	10.0.11
+libwpfwic.so	IWICPalette_InitializeFromPalette_Proxy	impl	MOD-41	10.0.11
+libwpfwic.so	IWICPalette_InitializePredefined_Proxy	impl	MOD-41	10.0.11
+libwpfwic.so	IWICPixelFormatInfo_GetBitsPerPixel_Proxy	impl	MOD-41	10.0.11
+libwpfwic.so	IWICPixelFormatInfo_GetChannelCount_Proxy	impl	MOD-41	10.0.11
+libwpfwic.so	IWICPixelFormatInfo_GetChannelMask_Proxy	impl	MOD-41	10.0.11
+libwpfwic.so	IWICStream_InitializeFromIStream_Proxy	impl	MOD-41	10.0.11
+libwpfwic.so	IWICStream_InitializeFromMemory_Proxy	impl	MOD-41	10.0.11
+libwpfwic.so	OpenColorProfile	impl	MOD-42	10.0.11
+libwpfwic.so	TranslateColors	impl	MOD-42	10.0.11
+libwpfwic.so	WICConvertBitmapSource	impl	MOD-41	10.0.11
+libwpfwic.so	WICCreateBitmapFromSection	impl	MOD-41	10.0.11
+libwpfwic.so	WICCreateColorContext_Proxy	impl	MOD-41	10.0.11
+libwpfwic.so	WICCreateColorTransform_Proxy	impl	MOD-41	10.0.11
+libwpfwic.so	WICCreateImagingFactory_Proxy	impl	MOD-41	10.0.11
+libwpfwic.so	WICMapGuidToShortName	impl	MOD-41	10.0.11
+libwpfwic.so	WICMapShortNameToGuid	impl	MOD-41	10.0.11
+libwpfwic.so	WICSetEncoderFormat_Proxy	impl	MOD-41	10.0.11
 libwpfwin32.so	AccessibleChildren	gap	MOD-63	10.0.11	无实现（oleacc）
 libwpfwin32.so	AccessibleObjectFromEvent	gap	MOD-63	10.0.11	无实现（oleacc）
 libwpfwin32.so	AccessibleObjectFromWindow	gap	MOD-63	10.0.11	无实现（oleacc）
