@@ -53,10 +53,17 @@ namespace Ldp.A11y
             if (asm == null || asm.IsDynamic) return;
             var n = asm.GetName().Name;
             if (n == null) return;
-            // 只接管 WinForms 家族；WPF 那几家已由自己的 ModuleInitializer 处理
-            if (!n.StartsWith("System.Windows.Forms", StringComparison.Ordinal) &&
-                !n.StartsWith("System.Windows.Forms.Primitives", StringComparison.Ordinal))
-                return;
+            // 接管：WinForms 家族 + System.Drawing 家族 + System.Private.Windows.*
+            //   【为什么必须抢在 System.Drawing.Common 自己的 cctor 之前】
+            //   它的 `PInvokeGdiPlus..cctor` 里会 `SetDllImportResolver(gdiplus.dll → 抛
+            //   PlatformNotSupportedException)`，而 `SetDllImportResolver` **每个程序集只能装一次**。
+            //   我们在 `AssemblyLoad` 事件里先装，它再装就抛 `InvalidOperationException`
+            //   （它自己会吞掉），于是走我们这条 ⇒ 由本仓的 `gdiplus` shim（29 个 Gdip* 导出）提供实现。
+            //   这就是绕开 "System.Drawing.Common is not supported on non-Windows platforms" 的路径。
+            bool cover = n.StartsWith("System.Windows.Forms", StringComparison.Ordinal)
+                      || n.StartsWith("System.Drawing", StringComparison.Ordinal)
+                      || n.StartsWith("System.Private.Windows", StringComparison.Ordinal);
+            if (!cover) return;
             try
             {
                 NativeLibrary.SetDllImportResolver(asm, Resolve);
