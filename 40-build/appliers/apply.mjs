@@ -154,7 +154,7 @@ const POINT_PATCHES = [
                     Uri uriFpage = n == 1 ? uriFpageRoot
                         : PackUriHelper.CreatePartUri(new Uri($"/Documents/1/Pages/{n}.fpage", UriKind.Relative));
                     PackagePart partFpage = package.GetPart(uriFpage);
-                    PackageRelationship rel = partFdoc.CreateRelationship(
+                    var rel = partFdoc.CreateRelationship(
                         PackUriHelper.GetRelativeUri(uriFdocRoot, uriFpage),
                         TargetMode.Internal,
                         nsXps + "/fixedpage");
@@ -175,7 +175,7 @@ const POINT_PATCHES = [
             using (XmlWriter xw = XmlWriter.Create(s, new XmlWriterSettings { Encoding = new UTF8Encoding(false) }))
             {
                 xw.WriteStartElement("FixedDocumentSequence", nsXps);
-                PackageRelationship rel = partFdseq.CreateRelationship(
+                var rel = partFdseq.CreateRelationship(
                     PackUriHelper.GetRelativeUri(uriFdseq, uriFdocRoot),
                     TargetMode.Internal,
                     nsXps + "/fixedrepresentation");
@@ -187,7 +187,7 @@ const POINT_PATCHES = [
             }
 
             // 包级关系：指向根序列
-            PackageRelationship rootRel = package.CreateRelationship(
+            var rootRel = package.CreateRelationship(
                 uriFdseq, TargetMode.Internal, "http://schemas.microsoft.com/xps/2005/06/fixedrepresentation");
         }
 
