@@ -1596,9 +1596,22 @@ namespace System.Drawing
 
         private void FlushCore() => maccontext?.Synchronize();
 
+        // 【ACC-028 / K-146】**shim 的真 HDC 要走 X11 drawable**。
+        //   背景：本仓的 `libwpfwin32.so` 把 `GetDC`/`BeginPaint` 的 HDC 做成了
+        //   "绑定 X11 Window + GC 的结构指针"（K-144），但 `libgdiplus` 的
+        //   `GdipCreateFromHDC` **不认识它**（它要的是 Win32 GDI 语义的 HDC）——
+        //   所以标准 WinForms 控件的 `Graphics.FromHdc` 会失败 ⇒ `WfApp` 一片空白（K-145）。
+        //   修法：先问 shim 这个 HDC 是不是它的；是就转 `FromHwnd`（走 `GdipCreateFromXDrawable_linux`）。
         [EditorBrowsable(EditorBrowsableState.Advanced)]
         public static Graphics FromHdc(IntPtr hdc)
         {
+            if (Gdip.UseX11Drawable)
+            {
+                IntPtr hwndOfShim = WpfWin32Bridge.HwndOf(hdc);
+                if (hwndOfShim != IntPtr.Zero)
+                    return FromHwnd(hwndOfShim);
+            }
+
             IntPtr graphics;
             int status = Gdip.GdipCreateFromHDC(hdc, out graphics);
             Gdip.CheckStatus(status);
@@ -1890,4 +1903,20 @@ namespace System.Drawing
             throw new NotImplementedException();
         }
     }
+
+    // 【ACC-028 / K-146】到本仓 `libwpfwin32.so` 的桥：判断一个 HDC 是不是 shim 给的真 HDC。
+    //   库不存在（纯 SDC 场景）时静默返回 0，走原有 libgdiplus 路径。
+    internal static class WpfWin32Bridge
+    {
+        [System.Runtime.InteropServices.DllImport("libwpfwin32.so", EntryPoint = "wpf_hdc_hwnd")]
+        private static extern IntPtr NativeHdcHwnd(IntPtr hdc);
+
+        internal static IntPtr HwndOf(IntPtr hdc)
+        {
+            if (hdc == IntPtr.Zero) return IntPtr.Zero;
+            try { return NativeHdcHwnd(hdc); }
+            catch { return IntPtr.Zero; }
+        }
+    }
+
 }

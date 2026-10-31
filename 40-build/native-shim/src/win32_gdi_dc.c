@@ -271,6 +271,23 @@ int wpf_draw_text_bg(HDC dc, const WPF_RECT *rc)
     return wpf_draw_fill_rect(dc, rc, d->bk_color);
 }
 
+// 【ACC-028 / K-146】给托管侧（自编 System.Drawing.Common）的查询入口：
+//   `Graphics.FromHdc(hdc)` 拿到的是我们 shim 的真 HDC（绑 X11 Window+GC），
+//   但 libgdiplus 的 `GdipCreateFromHDC` **不认识它** ⇒ 要转成 `FromXDrawable(hwnd, display)`。
+//   本函数返回该 HDC 绑定的 hwnd（X11 Window），不是我们的 HDC 就返回 0。
+void *wpf_hdc_hwnd(void *hdc)
+{
+    wpf_hdc *d = wpf_hdc_of((HDC)hdc);
+    return d ? (void *)(uintptr_t)d->hwnd : NULL;
+}
+
+// 同理：返回该 HDC 的 X11 Drawable（离屏 DC 时是 Pixmap）
+void *wpf_hdc_drawable(void *hdc)
+{
+    wpf_hdc *d = wpf_hdc_of((HDC)hdc);
+    return d ? (void *)(uintptr_t)d->drawable : NULL;
+}
+
 HGDIOBJ wpf_gdi_new_brush(uint32_t colorref) { return (HGDIOBJ)wpf_gdi_alloc(1, colorref, 0, 0); }
 HGDIOBJ wpf_gdi_new_pen(uint32_t colorref, int32_t width, int style) { return (HGDIOBJ)wpf_gdi_alloc(2, colorref, width, style); }
 uint32_t wpf_gdi_color(HGDIOBJ o, uint32_t dflt) { wpf_gdi_obj *p = wpf_gdi_of(o); return p ? p->color : dflt; }
