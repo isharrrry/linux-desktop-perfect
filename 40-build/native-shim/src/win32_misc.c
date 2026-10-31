@@ -37,13 +37,27 @@ int wpf_legacy_dpi(void);   // 诊断开关（见 GetDeviceCaps 里那段说明�
 HDC GetDC(HWND h)
 {
     wpf_hdc *d = wpf_hdc_get(h);
-    return d ? (HDC)d : WPF_FAKE_DC;
+    HDC r = d ? (HDC)d : WPF_FAKE_DC;
+    // 【ACC-028 / K-158】诊断：托管侧收到的 dc 出现了 `0xffffffffa792b4a0` 这种
+    //   「32 位截断后再符号扩展」的形态 ⇒ 需要确认 shim 这一侧返回的是不是完整 8 字节指针。
+    if (getenv("WPF_LINUX_KEY_DIAG")) {
+        static int n1 = 0;
+        if (n1++ < 12) { fprintf(stderr, "[HDCPTR] GetDC(hwnd=%p) -> %p (sizeof(HDC)=%zu)\n",
+            (void *)h, (void *)r, sizeof(HDC)); fflush(stderr); }
+    }
+    return r;
 }
 HDC GetWindowDC(HWND h) { return GetDC(h); }
 HDC CreateCompatibleDC(HDC hdc)
 {
     wpf_hdc *d = wpf_hdc_compat(hdc);
-    return d ? (HDC)d : WPF_FAKE_DC;
+    HDC r = d ? (HDC)d : WPF_FAKE_DC;
+    if (getenv("WPF_LINUX_KEY_DIAG")) {
+        static int n2 = 0;
+        if (n2++ < 12) { fprintf(stderr, "[HDCPTR] CreateCompatibleDC(src=%p) -> %p\n",
+            (void *)hdc, (void *)r); fflush(stderr); }
+    }
+    return r;
 }
 int ReleaseDC(HWND h, HDC dc)
 {
