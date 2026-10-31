@@ -1610,6 +1610,10 @@ namespace System.Windows.Interop
                     try
                     {
                         string[] paths = WpfLinuxDroppedFiles(wParam);
+                        Console.Error.WriteLine("[P20] paths=" + (paths == null ? "null" : paths.Length + ":" + string.Join("|", paths))
+                            + " rootVisual=" + (hwndTarget?.RootVisual == null ? "null" : hwndTarget.RootVisual.GetType().FullName)
+                            + " isUIElement=" + (hwndTarget?.RootVisual is UIElement));
+                        Console.Error.Flush();
                         if (paths != null && paths.Length > 0 && hwndTarget != null && hwndTarget.RootVisual != null)
                         {
                             DataObject data = new DataObject(DataFormats.FileDrop, paths);
@@ -1618,7 +1622,25 @@ namespace System.Windows.Interop
                                 hwndTarget.RootVisual, new Point(0, 0));
                             dropArgs.RoutedEvent = DragDrop.DropEvent;
                             // RaiseEvent 在 UIElement 上（Visual 没有）
-                            if (hwndTarget.RootVisual is UIElement uiRoot) uiRoot.RaiseEvent(dropArgs);
+                            if (hwndTarget.RootVisual is UIElement uiRoot)
+                            {
+                                // 【修正】Drop 事件是**冒泡**的：从 RootVisual（MainWindow）发起只会往上冒，
+                                //   永远到不了挂在**子元素**（样例里的 StackPanel）上的 Drop 处理器 ——
+                                //   实测就是这样：RaiseEvent 执行了但 handled=False，OnFileDrop 一次没进。
+                                //   正确做法与 WPF 自己的命中测试一致：先找鼠标位置下的元素，
+                                //   在**那个元素**上 RaiseEvent，让事件沿它的祖先链冒泡（会经过 StackPanel）。
+                                UIElement targetEl = uiRoot;
+                                try
+                                {
+                                    if (uiRoot.InputHitTest(new Point(0, 0)) is UIElement hit) targetEl = hit;
+                                }
+                                catch (Exception) { /* 命中测试失败就用 root */ }
+                                targetEl.RaiseEvent(dropArgs);
+                                Console.Error.WriteLine("[P20] RaiseEvent on " + targetEl.GetType().Name
+                                    + " 完成 handled=" + dropArgs.Handled);
+                                Console.Error.Flush();
+                            }
+                            else Console.Error.WriteLine("[P20] RootVisual 不是 UIElement，跳过 RaiseEvent");
                             handled = true;
                         }
                     }

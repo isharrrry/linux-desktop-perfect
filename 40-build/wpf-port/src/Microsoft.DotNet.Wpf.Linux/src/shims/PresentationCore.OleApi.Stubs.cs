@@ -132,28 +132,41 @@ namespace System.Windows
         public static readonly RoutedEvent PastingEvent;
         public static readonly RoutedEvent SettingDataEvent;
 
-        public DataObject() => OleNotSupported.Throw(nameof(DataObject));
-        public DataObject(object data) => OleNotSupported.Throw(nameof(DataObject));
-        public DataObject(string format, object data) => OleNotSupported.Throw(nameof(DataObject));
-        public DataObject(string format, object data, bool autoConvert) => OleNotSupported.Throw(nameof(DataObject));
-        public DataObject(Type format, object data) => OleNotSupported.Throw(nameof(DataObject));
+        // 【2026-10-31 K-010-解9】原来这里**全部抛 OleNotSupported**，导致 P20（WM_DROPFILES → Drop 事件）
+        //   在 `new DataObject(DataFormats.FileDrop, paths)` 处抛 PlatformNotSupportedException ——
+        //   于是拖放链路虽然一路通到 WndProc，仍然到不了应用的 `Drop` 事件。
+        //   这里实现**最小可用的内存版**：一个按格式名索引的字典，够 P20 与 OnFileDrop 用。
+        //   真正的跨进程剪贴板/DnD 传输仍不在范围内（那是 U13 的另一半）。
+        private readonly Dictionary<string, object> _store = new(StringComparer.Ordinal);
+
+        public DataObject() { }
+        public DataObject(object data) { SetData(data); }
+        public DataObject(string format, object data) { SetData(format, data); }
+        public DataObject(string format, object data, bool autoConvert) { SetData(format, data); }
+        public DataObject(Type format, object data) { SetData(format.FullName, data); }
 
         /// <summary>DragDrop.cs 内部构造用（上游从 COM IDataObject 包装）。</summary>
         internal DataObject(ComTypes.IDataObject data) => OleNotSupported.Throw(nameof(DataObject));
 
         // ---- System.Windows.IDataObject ----
-        public object GetData(string format) => OleNotSupported.Throw<object>(nameof(GetData));
-        public object GetData(string format, bool autoConvert) => OleNotSupported.Throw<object>(nameof(GetData));
-        public object GetData(Type format) => OleNotSupported.Throw<object>(nameof(GetData));
-        public bool GetDataPresent(string format) => OleNotSupported.Throw<bool>(nameof(GetDataPresent));
-        public bool GetDataPresent(string format, bool autoConvert) => OleNotSupported.Throw<bool>(nameof(GetDataPresent));
-        public bool GetDataPresent(Type format) => OleNotSupported.Throw<bool>(nameof(GetDataPresent));
-        public string[] GetFormats() => OleNotSupported.Throw<string[]>(nameof(GetFormats));
-        public string[] GetFormats(bool autoConvert) => OleNotSupported.Throw<string[]>(nameof(GetFormats));
-        public void SetData(object data) => OleNotSupported.Throw(nameof(SetData));
-        public void SetData(string format, object data) => OleNotSupported.Throw(nameof(SetData));
-        public void SetData(string format, object data, bool autoConvert) => OleNotSupported.Throw(nameof(SetData));
-        public void SetData(Type format, object data) => OleNotSupported.Throw(nameof(SetData));
+        public object GetData(string format) => (format != null && _store.TryGetValue(format, out var v)) ? v : null;
+        public object GetData(string format, bool autoConvert) => GetData(format);
+        public object GetData(Type format) => GetData(format?.FullName);
+        public bool GetDataPresent(string format) => format != null && _store.ContainsKey(format);
+        public bool GetDataPresent(string format, bool autoConvert) => GetDataPresent(format);
+        public bool GetDataPresent(Type format) => GetDataPresent(format?.FullName);
+        public string[] GetFormats() { var ks = new string[_store.Count]; _store.Keys.CopyTo(ks, 0); return ks; }
+        public string[] GetFormats(bool autoConvert) => GetFormats();
+        public void SetData(object data)
+        {
+            // 与上游一致：没有显式 format 时按数据类型推断（FileDrop 是 string[]）
+            if (data is string[] files) { SetData(DataFormats.FileDrop, files); return; }
+            if (data is string text) { SetData(DataFormats.Text, text); return; }
+            if (data != null) SetData(data.GetType().FullName, data);
+        }
+        public void SetData(string format, object data) { if (format != null) _store[format] = data; }
+        public void SetData(string format, object data, bool autoConvert) => SetData(format, data);
+        public void SetData(Type format, object data) => SetData(format?.FullName, data);
 
         // ---- System.Windows.ITypedDataObject ----
         public bool TryGetData<T>(out T data) { data = default; OleNotSupported.Throw(nameof(TryGetData)); return false; }
@@ -164,20 +177,26 @@ namespace System.Windows
 
         // ---- 富数据便捷 API（上游公开面）----
         public bool ContainsAudio() => OleNotSupported.Throw<bool>(nameof(ContainsAudio));
-        public bool ContainsFileDropList() => OleNotSupported.Throw<bool>(nameof(ContainsFileDropList));
+        public bool ContainsFileDropList() => GetDataPresent(DataFormats.FileDrop);
         public bool ContainsImage() => OleNotSupported.Throw<bool>(nameof(ContainsImage));
-        public bool ContainsText() => OleNotSupported.Throw<bool>(nameof(ContainsText));
+        public bool ContainsText() => GetDataPresent(DataFormats.UnicodeText) || GetDataPresent(DataFormats.Text);
         public bool ContainsText(TextDataFormat format) => OleNotSupported.Throw<bool>(nameof(ContainsText));
         public Stream GetAudioStream() => OleNotSupported.Throw<Stream>(nameof(GetAudioStream));
-        public StringCollection GetFileDropList() => OleNotSupported.Throw<StringCollection>(nameof(GetFileDropList));
+        public StringCollection GetFileDropList()
+        {
+            var sc = new StringCollection();
+            if (GetData(DataFormats.FileDrop) is string[] files)
+                foreach (var f in files) sc.Add(f);
+            return sc;
+        }
         public BitmapSource GetImage() => OleNotSupported.Throw<BitmapSource>(nameof(GetImage));
-        public string GetText() => OleNotSupported.Throw<string>(nameof(GetText));
+        public string GetText() => (GetData(DataFormats.UnicodeText) as string) ?? (GetData(DataFormats.Text) as string);
         public string GetText(TextDataFormat format) => OleNotSupported.Throw<string>(nameof(GetText));
         public void SetAudio(byte[] audioBytes) => OleNotSupported.Throw(nameof(SetAudio));
         public void SetAudio(Stream audioStream) => OleNotSupported.Throw(nameof(SetAudio));
         public void SetFileDropList(StringCollection fileDropList) => OleNotSupported.Throw(nameof(SetFileDropList));
         public void SetImage(BitmapSource image) => OleNotSupported.Throw(nameof(SetImage));
-        public void SetText(string textData) => OleNotSupported.Throw(nameof(SetText));
+        public void SetText(string textData) => SetData(DataFormats.UnicodeText, textData);
         public void SetText(string textData, TextDataFormat format) => OleNotSupported.Throw(nameof(SetText));
         public void SetDataAsJson<T>(T data) => OleNotSupported.Throw(nameof(SetDataAsJson));
         public void SetDataAsJson<T>(string format, T data) => OleNotSupported.Throw(nameof(SetDataAsJson));
