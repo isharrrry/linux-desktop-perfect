@@ -394,6 +394,46 @@ ATOM RegisterClassExW(const WPF_WNDCLASSEX_D *wc)
     pthread_mutex_unlock(&g_wpf.lock);
     return atom;
 }
+// 【ACC-028】`RegisterClassW`（旧版，WinForms 的 `NativeWindow.WindowClass.RegisterClass` 用它）。
+//   `WNDCLASSW` 就是 `WNDCLASSEXW` **去掉首部的 cbSize、去掉尾部的 hIconSm** ——
+//   所以这里就地转成 `WPF_WNDCLASSEX_D` 再复用 `RegisterClassExW`，语义完全一致。
+//   实测：不补它，WinForms 在 `NativeWindow.CreateHandle` → `RegisterClass` 就抛
+//   `EntryPointNotFoundException: RegisterClassW`。
+typedef struct {
+    uint32_t  style;
+    WNDPROC   lpfnWndProc;
+    int32_t   cbClsExtra;
+    int32_t   cbWndExtra;
+    HINSTANCE hInstance;
+    HICON     hIcon;
+    HCURSOR   hCursor;
+    HBRUSH    hbrBackground;
+    uint16_t *lpszMenuName;
+    uint16_t *lpszClassName;
+} WPF_WNDCLASS_D;
+
+ATOM RegisterClassW(const WPF_WNDCLASS_D *wc)
+{
+    if (!wc) { wpf_set_last_error(87); return 0; }
+    WPF_WNDCLASSEX_D ex;
+    memset(&ex, 0, sizeof(ex));
+    ex.cbSize        = (int32_t)sizeof(ex);
+    ex.style         = (int32_t)wc->style;
+    ex.lpfnWndProc   = wc->lpfnWndProc;
+    ex.cbClsExtra    = wc->cbClsExtra;
+    ex.cbWndExtra    = wc->cbWndExtra;
+    ex.hInstance     = wc->hInstance;
+    ex.hIcon         = wc->hIcon;
+    ex.hCursor       = wc->hCursor;
+    ex.hbrBackground = wc->hbrBackground;
+    ex.lpszMenuName  = wc->lpszMenuName;
+    ex.lpszClassName = wc->lpszClassName;
+    ex.hIconSm       = NULL;
+    return RegisterClassExW(&ex);
+}
+ATOM RegisterClassA(const WPF_WNDCLASS_D *wc) { return RegisterClassW(wc); }
+ATOM RegisterClass(const WPF_WNDCLASS_D *wc)  { return RegisterClassW(wc); }
+
 ATOM RegisterClassExA(const WPF_WNDCLASSEX_D *wc) { return RegisterClassExW(wc); }
 ATOM RegisterClassEx(const WPF_WNDCLASSEX_D *wc) { return RegisterClassExW(wc); }
 

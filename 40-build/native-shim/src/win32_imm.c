@@ -231,3 +231,12 @@ int ActivateActCtx(void *hActCtx, uintptr_t *lpCookie)
 // 注： 已在 win32_misc.c:1276 实现（此处不重复定义，否则链接重复符号）
 void ReleaseActCtx(void *hActCtx) { (void)hActCtx; }
 int  AddRefActCtx(void *hActCtx)  { (void)hActCtx; return 1; }
+
+// 【ACC-028】`GetCurrentActCtx`：返回当前激活上下文。Linux 无 SxS ⇒ 返回"成功 + 假句柄"。
+//   WinForms 的 `ThemingScope..ctor` 在 `Control.CreateHandle()` 里调它，缺了就抛
+//   `EntryPointNotFoundException: GetCurrentActCtx`（实测）。
+int GetCurrentActCtx(void **lphActCtx)
+{
+    if (lphActCtx) *lphActCtx = (void *)&g_fake_actctx;
+    return 1;
+}

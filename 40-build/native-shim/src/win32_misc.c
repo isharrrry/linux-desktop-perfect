@@ -363,6 +363,11 @@ BOOL FreeLibrary(HMODULE m)
 
 // ── 进程 / 线程 / 同步 ─────────────────────────────────────────────────────
 HANDLE GetCurrentProcess(void) { return (HANDLE)(uintptr_t)-1; }
+// 【ACC-028】`GetCurrentThread` 返回**伪句柄** `(HANDLE)-2`（Windows 语义，不需要真实句柄）。
+//   WinForms 的 `Application.ThreadContext..ctor` 在启动早期就调它，
+//   缺了会 `EntryPointNotFoundException`（实测：补这个之前，WinForms 连第一个 Form 都建不起来）。
+HANDLE GetCurrentThread(void) { return (HANDLE)(intptr_t)-2; }
+
 DWORD GetCurrentThreadId(void)
 {
     // 与 wpf_thread_id_of_window 用同一个口径（低 31 位），保证
