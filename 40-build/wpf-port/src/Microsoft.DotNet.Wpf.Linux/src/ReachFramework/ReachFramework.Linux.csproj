@@ -30,6 +30,16 @@
     <Reference Include="DirectWriteForwarder"><HintPath>$(WpfLinuxRoot)src/Microsoft.DotNet.Wpf.Linux/src/DirectWriteForwarder/bin/$(WpfLinuxSelfBuiltConfiguration)/DirectWriteForwarder.dll</HintPath><Private>true</Private></Reference>
         <Reference Include="UIAutomationTypes"><HintPath>$(WpfLinuxRoot)src/Microsoft.DotNet.Wpf.Linux/src/UIAutomationTypes/bin/$(WpfLinuxSelfBuiltConfiguration)/UIAutomationTypes.dll</HintPath><Private>true</Private></Reference>
     <Reference Include="UIAutomationProvider"><HintPath>$(WpfLinuxRoot)src/Microsoft.DotNet.Wpf.Linux/src/UIAutomationProvider/bin/$(WpfLinuxSelfBuiltConfiguration)/UIAutomationProvider.dll</HintPath><Private>true</Private></Reference>
+    <!-- 【2026-10-31 D-026-解2：暂不引用 impl-cycle】
+         impl-cycle 已编成（513024 B），但直接引用会撞上 **CS0433 类型歧义**：
+         `cycle-breakers/ReachFramework/System.Printing.PrintTicket.cs` 声明的是
+         `public sealed partial class PrintTicket`，而 ReachFramework 自己也有一个 public 的
+         `PrintTicket`（`PrintConfig/PrtTicket_Public_Simple.cs`）⇒ 两边都 public ⇒ 24 个 CS0433
+         （另连带 38 CS0115 / 48 CS0534）。
+         要真正集成需要 **extern alias**：给 impl-cycle 起别名，把 ReachFramework 里引用 PF 类型的
+         源码改成 `pfi::System.Windows.Documents.FixedDocument` 这种形式 —— 而那些是**上游源码**
+         （`switch` 大面积替换会失去与上游的可对照性）。⇒ 先不引，保持 ReachFramework 的现状。
+    -->
 <Reference Include="System.Printing"><HintPath>$(WpfLinuxRoot)src/Microsoft.DotNet.Wpf.Linux/src/System.Printing/bin/$(WpfLinuxSelfBuiltConfiguration)/System.Printing.dll</HintPath><Private>false</Private></Reference>
     <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/ReachFramework/Serialization/manager/IXpsSerializationManager.cs" />
     <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/ReachFramework/Serialization/manager/IXpsSerializationManagerAsync.cs" />
