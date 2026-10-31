@@ -201,6 +201,14 @@ const POINT_PATCHES = [
     why: 'ACC-024：新增 ManagedXpsDocumentWriter（托管版 XPS 写入，按公开规范写 3 个 part）（K-123）',
   },
   {
+    patch: 'P26',
+    file: 'src/Microsoft.DotNet.Wpf/src/ReachFramework/Packaging/XpsDocument.cs',
+    find: `using System.IO.Packaging;`,
+    replace: `using System.IO.Packaging;
+using System.Text;    // 【ACC-024 / K-130】ManagedXpsDocumentWriter 用 UTF8Encoding`,
+    why: 'ACC-024：补 using System.Text（UTF8Encoding 需要）（K-130）',
+  },
+  {
     patch: 'P25',
     file: 'src/Microsoft.DotNet.Wpf/src/ReachFramework/Packaging/XpsDocument.cs',
     find: `        internal
