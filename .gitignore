@@ -79,3 +79,7 @@ node_modules/
 # --- 上游源码快照（体积大，按需拉取，不入库）---
 40-build/upstream/winforms/
 40-build/upstream/wpf-gitee/
+
+# 上游源码快照：体积大（161 MB / 7370 个文件），不入库。
+# 复现方式见 40-build/upstream/wpf-10.0.11 的来源命令（gitee v10.0.11 tag，浅 clone）。
+40-build/upstream/wpf-10.0.11/
