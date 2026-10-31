@@ -2017,11 +2017,26 @@ LRESULT DefWindowProcW(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
             if (pw && pw->width > 0 && pw->height > 0)
             {
                 wpf_class *pc = wpf_class_find_atom(pw->class_atom);
-                uint32_t bg = pc ? wpf_gdi_color(pc->background, 0xFFFFFF) : 0xFFFFFF;
+                // 【ACC-028 / K-162】默认背景色从纯白改成 Win32 的"控件面"灰（COLOR_BTNFACE = #F0F0F0）。
+                //   理由：白控件画在白 Form 上完全看不出来（K-160 的教训）。
+                //   真正的 BackColor 在托管侧，shim 拿不到；用灰至少能让控件边界可见，
+                //   也符合 Windows 上 Button/ComboBox 的默认外观。
+                uint32_t bg = pc ? wpf_gdi_color(pc->background, 0x00F0F0F0) : 0x00F0F0F0;
                 HDC dc = GetDC(hwnd);
                 WPF_RECT rc;
                 rc.left = 0; rc.top = 0;
                 rc.right = pw->width; rc.bottom = pw->height;
+                // 【ACC-028 / K-162】诊断：控件的 WM_PAINT 到底有没有走到 DefWindowProc？
+                //   如果走到了，这里就会打印它的 hwnd —— 用于区分「UserPaint=false 走 DefWndProc」
+                //   和「paintBackground=false 但仍在 WmPaint 里」两种情况。
+                if (getenv("WPF_LINUX_KEY_DIAG")) {
+                    static int ndp = 0;
+                    if (ndp++ < 20) {
+                        fprintf(stderr, "[DEFPAINT] hwnd=%p size=%dx%d bg=0x%06x dc=%p\n",
+                            (void *)hwnd, (int)pw->width, (int)pw->height, bg, (void *)dc);
+                        fflush(stderr);
+                    }
+                }
                 wpf_draw_fill_rect(dc, &rc, bg);
                 ReleaseDC(hwnd, dc);
             }
