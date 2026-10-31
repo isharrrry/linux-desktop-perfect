@@ -24,9 +24,19 @@ namespace LdpVerify.Page
             // 看门狗：分页测量在字体回退缺口下可能**卡住**（D-019，实测 40 s 不返回）。
             //   卡住比失败更难查 —— 所以这里主动在 20 s 后写一份"超时"读数并退出，
             //   让判据拿到的是**读数**而不是"进程被 kill、什么都没有"。
+            // 【2026-10-31】看门狗时长改为可配置（缺省仍是 20000）：
+            //   修完字体覆盖/整形缓存后，分页已经能**排完**（dcpLim=6015），
+            //   只是耗时压在 20 s 边缘 —— 需要一个能在不改判据口径的前提下
+            //   量出"真实完成时间"的口子。
+            int watchdogMs = 20000;
+            {
+                string env = Environment.GetEnvironmentVariable("LDP_PAGE_WATCHDOG_MS");
+                int v;
+                if (!string.IsNullOrEmpty(env) && int.TryParse(env, out v) && v > 0) watchdogMs = v;
+            }
             var watchdog = new Thread(() =>
             {
-                Thread.Sleep(20000);
+                Thread.Sleep(watchdogMs);
                 try
                 {
                     // 把**卡在哪个阶段**也写出来：比单说"卡住"更能指路（D-019）

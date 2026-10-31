@@ -762,7 +762,11 @@ namespace WpfLinux.Shims.PresentationCore
 
         private const int MaxFaces = 512;
         private const int MaxCoverEntries = 262144;
-        private static readonly Dictionary<string, Entry> s_faces = new Dictionary<string, Entry>(StringComparer.Ordinal);
+        // 【2026-10-31 D-019 提速】原为 Dictionary + 全锁。trace 里 `Monitor.Enter_Slowpath`
+        //   的父帧就是这里（HbFaceCache.Get，被 HbFontPlanner.Build 每行调上百次）
+        //   ⇒ 改成 ConcurrentDictionary + 无锁快路径（命中不进锁）。
+        private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, Entry> s_faces =
+            new(StringComparer.Ordinal);
         private static readonly Dictionary<string, int> s_faceCounts = new Dictionary<string, int>(StringComparer.Ordinal);
         private static readonly object s_gate = new object();
         private static long s_coverEntries;
@@ -883,7 +887,7 @@ namespace WpfLinux.Shims.PresentationCore
                 string key = path + "\u0000" + faceIndex;
                 Entry e;
                 if (!s_faces.TryGetValue(key, out e)) return;
-                s_faces.Remove(key);
+                s_faces.TryRemove(key, out _);
                 System.Threading.Interlocked.Increment(ref ReleaseCalls);
                 if (e != null)
                 {
@@ -898,14 +902,15 @@ namespace WpfLinux.Shims.PresentationCore
         internal static Entry Get(string path, int faceIndex)
         {
             if (string.IsNullOrEmpty(path) || faceIndex < 0) return null;
+            string fkey = path + "\u0000" + faceIndex;
+            if (s_faces.TryGetValue(fkey, out Entry fast)) return fast;   // 无锁快路径（绝大多数走这里）
             lock (s_gate)
             {
-                Entry hit;
-                if (s_faces.TryGetValue(path + "\u0000" + faceIndex, out hit)) return hit;
+                if (s_faces.TryGetValue(fkey, out Entry hit)) return hit;  // 双检：可能在等锁期间被别线程填入
                 if (s_faces.Count >= MaxFaces) EvictLocked();
                 Entry e = Load(path, faceIndex);
                 if (e == null) { ++FaceLoadFailures; return null; }
-                s_faces[path + "\u0000" + faceIndex] = e;
+                s_faces[fkey] = e;
                 ++FaceLoads;
                 return e;
             }
