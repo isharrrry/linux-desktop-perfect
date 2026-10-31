@@ -70,6 +70,7 @@ probes: $(TARGET)
 	$(CC) $(CSTD) $(OPT) $(WARN) -o $(BINDIR)/fake-compositor tools/fake-compositor.c -lX11
 	$(CC) $(CSTD) $(OPT) $(WARN) -o $(BINDIR)/dwm-probe tools/dwm-probe.c -L$(BINDIR) -lwpfwin32 -Wl,-rpath,'$$ORIGIN'
 	$(CC) $(CSTD) $(OPT) $(WARN) -o $(BINDIR)/clip-probe tools/clip-probe.c -L$(BINDIR) -lwpfwin32 -Wl,-rpath,'$$ORIGIN' -lX11
+	$(CC) $(CSTD) $(OPT) $(WARN) -o $(BINDIR)/xdnd-probe tools/xdnd-probe.c -lX11
 	@echo "== 探针就绪：$(BINDIR)/fake-compositor、$(BINDIR)/dwm-probe"
 
 symbols: $(TARGET)
