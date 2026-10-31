@@ -168,6 +168,17 @@ int FillRect(HDC dc, const WPF_RECT *rc, HBRUSH br)
 {
     // 【ACC-028 / K-144】真画：取 brush 颜色，XFillRectangle（封装在 win32_gdi_dc.c）
     uint32_t color = wpf_gdi_color((HGDIOBJ)br, 0xFFFFFF);
+    // 【ACC-028 / K-159】诊断：`br` 到底是什么值？为什么 `wpf_gdi_of` 匹配不上。
+    if (getenv("WPF_LINUX_KEY_DIAG")) {
+        static int nb = 0;
+        if (nb++ < 8) {
+            fprintf(stderr, "[GDI] FillRect br=%p color=0x%06x rect=(%d,%d,%dx%d)\n",
+                (void *)br, color,
+                rc ? (int)rc->left : -1, rc ? (int)rc->top : -1,
+                rc ? (int)(rc->right - rc->left) : -1, rc ? (int)(rc->bottom - rc->top) : -1);
+            fflush(stderr);
+        }
+    }
     if (color == 0xFFFFFFFFu) return 1;          // CLR_INVALID ⇒ 不画
     wpf_draw_fill_rect(dc, rc, color);
     return 1;

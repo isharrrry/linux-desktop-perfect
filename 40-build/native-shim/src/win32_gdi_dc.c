@@ -82,7 +82,23 @@ wpf_gdi_obj *wpf_gdi_alloc(int kind, uint32_t color, int32_t width, int style)
 wpf_gdi_obj *wpf_gdi_of(HGDIOBJ o)
 {
     if (!o) return NULL;
-    for (wpf_gdi_obj *p = g_objs; p; p = p->next) if (p == (wpf_gdi_obj *)o) return p;
+    // ① 精确匹配
+    for (wpf_gdi_obj *p = g_objs; p; p = p->next)
+        if (p == (wpf_gdi_obj *)o) return p;
+
+    // 【ACC-028 / K-159】**同样的低 32 位兜底**。
+    //   `HBRUSH`/`HPEN` 也是 `void*`，过托管边界时同样被 `(int)` 截断（K-158）。
+    //   实测证据：修好 HDC 之后 `[GDI] FillRect` 的 `color` 仍是 0xffffff（默认值），
+    //   说明 `wpf_gdi_of(br)` 返回 NULL ⇒ brush 没匹配上。
+    //   安全约束：命中多于一个返回 NULL。
+    {
+        uint32_t lo = (uint32_t)(uintptr_t)o;
+        wpf_gdi_obj *hit = NULL; int n = 0;
+        for (wpf_gdi_obj *p = g_objs; p; p = p->next) {
+            if ((uint32_t)(uintptr_t)p == lo) { hit = p; ++n; }
+        }
+        if (n == 1) return hit;
+    }
     return NULL;
 }
 
@@ -173,7 +189,38 @@ wpf_hdc *wpf_hdc_compat(HDC src)
 wpf_hdc *wpf_hdc_of(HDC dc)
 {
     if (!dc) return NULL;
-    for (wpf_hdc *h = g_hdcs; h; h = h->next) if (h == (wpf_hdc *)dc) return h;
+    // ① 精确匹配（正常路径）
+    for (wpf_hdc *h = g_hdcs; h; h = h->next)
+        if (h == (wpf_hdc *)dc) return h;
+
+    // 【ACC-028 / K-159】**兜底：按低 32 位再匹配一次**。
+    //   依据（K-158 实测）：
+    //     shim 的 GetDC 返回 0x55cdeb86b690，
+    //     托管侧传给 FillRect 的却是 0xffffffffeb86b690 ——
+    //   这是 `(int)` 截断 + 符号扩展，**低 32 位完全一致**。
+    //   ⇒ 高 32 位已经丢了、找不回来；但低 32 位足以在链表里唯一定位。
+    //   安全约束：**命中多于一个就返回 NULL**（宁可 no-op，也不要画错窗口）。
+    {
+        uint32_t lo = (uint32_t)(uintptr_t)dc;
+        wpf_hdc *hit = NULL; int n = 0;
+        for (wpf_hdc *h = g_hdcs; h; h = h->next) {
+            if ((uint32_t)(uintptr_t)h == lo) { hit = h; ++n; }
+        }
+        if (n == 1) {
+            if (getenv("WPF_LINUX_KEY_DIAG")) {
+                static int logged = 0;
+                if (logged++ < 6) {
+                    fprintf(stderr, "[HDC] 低32位兜底命中 dc=%p -> %p\n", (void *)dc, (void *)hit);
+                    fflush(stderr);
+                }
+            }
+            return hit;
+        }
+        if (n > 1 && getenv("WPF_LINUX_KEY_DIAG")) {
+            fprintf(stderr, "[HDC] 低32位歧义 dc=%p（命中 %d 个）-> 返回 NULL\n", (void *)dc, n);
+            fflush(stderr);
+        }
+    }
     return NULL;
 }
 
