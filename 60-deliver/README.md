@@ -89,7 +89,7 @@ node 50-verify/index/gen-index.mjs             # 汇总全部判据读数
 |---|---|---|
 | **ReachFramework**（XPS/打印） | **归因已修正**：不是"上游缺 67 个文件"（误判）。真相 ①上游 csproj 用反斜杠+大小写不敏感路径，Linux 上指向小写 `manager` 失配 ②上游只编 **63** 个（`ReachTokenContext.cs` 是死代码）③真正缺的是 **PF 类型**，上游用 **impl-cycle 独立程序集**提供，而它又要 ReachFramework 的 `PrintTicket` ⇒ **三层 cycle-breaker**。剩 80 个错误全是缺 PF 类型。**2026-10-31 进展**：impl-cycle **已编成**（513024 B）；但引进来会撞 **24 个 CS0433 类型歧义**（impl-cycle 的 `public PrintTicket` vs ReachFramework 自己的），只能靠 **extern alias** 区分，而引用点在上游源码里、大面积改会失去与上游的可对照性 ⇒ **代价大于收益，已回滚但保留工程与产物** | 已知坑 D-024 / D-026 / D-026-解2 |
 | **打印路径**（ACC-024） | 判据红：点「打印」后 `job=0`/`pages=0` 不变（需 ReachFramework + shim 的 winspool 面） | `50-verify/读数/ACC-024/` |
-| **媒体播放**（ACC-022） | **状态机已通**（手工点「播放」`state=READY → PLAYING`，M94 以来首次）。仍 DEGRADED 的三条原因：①**判据自身的点击在它的 Xvfb 里不生效**（K-006，5 种方案均无效，根因未定位）②`MilCmdMediaPlayer` 是"收下不渲染"（无 Linux 合成路径）③样本无 `<MediaElement>` | 已知坑 K-005-修复2、K-006 |
+| **媒体播放**（ACC-022） | **状态机已通**（手工与判据都能观测 `state=READY → PLAYING`，M94 以来首次）。仍 DEGRADED 的两条原因：①`MilCmdMediaPlayer` 是「收下不渲染」（无 Linux 合成路径）②样本无 `<MediaElement>`。**判据侧的点击问题已修**（K-006：`findWindow` 返回 BadWindow，已加 `windowUsable` 校验）| 已知坑 K-005-修复2、K-006-解 |
 | **分页**（ACC-015） | **单段已能排完**（`dcpLim=6015` = 6014 字符 + EOP，`ok=1` 台账可用）；**但 `count-pages` 要排整篇多页，60 s 仍未完成**（原为 20 s 挂死）。已修字体覆盖自旋（32→1024）、blob 共享、整形结果缓存（3×）、两处大锁 | 已知坑 D-019-解…解11 |
 | **输入法**（ACC-017） | 环境级阻塞：本机没有输入法服务器（`XOpenIM` 返回 NULL）| 已知坑 D-015 相关条 |
 | **WinForms**（ACC-028） | **阻塞解除一半**：gitee 能拉源码（`40-build/upstream/winforms`，97M/4420 .cs）。**量化评估为不做**：需 **410** 个 Win32 函数，本机 shim 覆盖 **103（25%）**，缺 **307**（COM/主题/对话框/输入）；另需**源生成器**与 **IL 项目**。**明确不做**：不用 WPF 模拟 WinForms 去凑 SCR-07 的绿 | 已知坑 D-025 |

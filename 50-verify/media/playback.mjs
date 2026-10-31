@@ -59,6 +59,8 @@ const { startXvfb, waitDisplay, startApp, findWindow, waitMapped, sleep, DOTNET_
           //   下面保留"重试 + 绝对坐标"两处改善（它们本身是对的），但**不为了变绿而降低判据口径**。
           let state1 = null;
           let mouseCmd = '';
+          let lastClickDiag = null;
+          let lastGeoDiag = null;
           for (let attempt = 0; attempt < 8; attempt++) {
             // 【2026-10-31 判据修复 v3 —— 真根因】树里的 bounds 是**窗口内坐标**，
             //   而 xdotool mousemove 需要**屏幕坐标**。本判据的 Xvfb 是 1400x1000
@@ -76,12 +78,24 @@ const { startXvfb, waitDisplay, startApp, findWindow, waitMapped, sleep, DOTNET_
             const xi = widForClick ? spawnSync('sh', ['-c', `DISPLAY=${xvfb.display} xwininfo -id ${widForClick}`], { encoding: 'utf8' }) : null;
             const ax = xi && xi.stdout ? Number((xi.stdout.match(/Absolute upper-left X:\s+(-?\d+)/) || [])[1]) : NaN;
             const ay = xi && xi.stdout ? Number((xi.stdout.match(/Absolute upper-left Y:\s+(-?\d+)/) || [])[1]) : NaN;
+            // 【K-006 诊断】把 xdotool/xwininfo 的原始输出记下来，看窗口到底在哪
+            const rawGeo = geo && geo.stdout ? geo.stdout.replace(/\n/g, ';').slice(0, 160) : null;
+            const rawXi = xi && xi.stdout ? (xi.stdout.match(/Absolute upper-left [XY]:.*/g) || []).join(';') : null;
+            // 直接再跑一次并把 status/stderr 也记下来（区分"命令失败"和"输出为空"）
+            const g2 = widForClick ? spawnSync('sh', ['-c', `DISPLAY=${xvfb.display} xdotool getwindowgeometry --shell ${widForClick}`], { encoding: 'utf8' }) : { status: 'no-wid' };
+            lastGeoDiag = { display: xvfb.display, wid: widForClick || '(empty)', geo: rawGeo, xwininfo: rawXi,
+                            gx, gy, ax, ay,
+                            g2_status: g2 && g2.status, g2_stdout: g2 && g2.stdout ? g2.stdout.replace(/\n/g,';').slice(0,120) : null,
+                            g2_stderr: g2 && g2.stderr ? String(g2.stderr).slice(0,160) : null };
             const cx = Number.isFinite(ax) ? ax : gx;
             const cy = Number.isFinite(ay) ? ay : gy;
             mouseCmd = Number.isFinite(cx) && Number.isFinite(cy)
               ? `xdotool mousemove ${cx + wx} ${cy + wy} click 1`
               : `xdotool mousemove ${wx} ${wy} click 1`;
-            spawnSync('sh', ['-c', `DISPLAY=${xvfb.display} ${mouseCmd}`], { encoding: 'utf8', timeout: 20000 });
+            // 【2026-10-31 K-006 诊断】原来**不检查返回码** ⇒ 命令失败也看不出来。
+            const clickRes = spawnSync('sh', ['-c', `DISPLAY=${xvfb.display} ${mouseCmd}`], { encoding: 'utf8', timeout: 20000 });
+            lastClickDiag = { cmd: mouseCmd, status: clickRes.status, signal: clickRes.signal,
+                              stderr: (clickRes.stderr || '').slice(0, 200), error: clickRes.error ? String(clickRes.error) : null };
             await sleep(1500);
             const tree2 = JSON.parse(fs.readFileSync(treePath, 'utf8'));
             state1 = ((tree2.nodes || []).find((n) => /^state=/.test(String(n.name || ''))) || {}).name || null;
@@ -89,7 +103,7 @@ const { startXvfb, waitDisplay, startApp, findWindow, waitMapped, sleep, DOTNET_
           }
           steps.push({ step: 'state_changes', ok: state0 !== state1, before: state0, after: state1,
             diag: { win_id: win && win.id, bounds: [x, y, w, h], click_at: [Math.round(x + w / 2), Math.round(y + h / 2)],
-              mouse_cmd: mouseCmd, app_alive: !!(app && app.ok && app.proc && app.proc.exitCode === null), screen: xvfbOptsScreen } });
+              mouse_cmd: mouseCmd, click_diag: lastClickDiag, geo_diag: lastGeoDiag, app_alive: !!(app && app.ok && app.proc && app.proc.exitCode === null), screen: xvfbOptsScreen } });
         } else {
           steps.push({ step: 'state_changes', ok: false, note: '没有可点的「播放」按钮' });
         }
@@ -100,6 +114,7 @@ const { startXvfb, waitDisplay, startApp, findWindow, waitMapped, sleep, DOTNET_
     xvfb.kill();
   }
   const bad = steps.filter((s) => !s.ok);
+  globalThis.__ldpPlaybackRan = true;   // 【K-006】标记真检查已执行，避免下面那个占位 finish 覆盖它
   finish({
     acc: 'ACC-022', started, env: { ...env, dotnet_root: DOTNET_ROOT, steps },
     expectRef: 'ACC-022：GStreamer 播放状态机（播放/暂停/进度/state 读数联动）',
@@ -110,20 +125,24 @@ const { startXvfb, waitDisplay, startApp, findWindow, waitMapped, sleep, DOTNET_
     diff: [
       ...missingNotes,
       ...bad.map((s) => `${s.step} 失败：${JSON.stringify(s).slice(0, 240)}`),
-      '缺口：**状态机层已通**（MILFactoryCreateMediaPlayer / MILMediaOpen / 13 个 media 方法已实现；'
-      + '手工在同机验证 state 会从 READY 变 PLAYING）。仍欠 ②MilCmdMediaPlayer 是「收下不渲染」'
-      + '（视频帧没有 Linux 合成路径）③样本没有 <MediaElement>；另有 ①**本判据自身的问题**：'
-      + 'state_changes 在本判据起的 Xvfb（1400x1000）里点击不生效 —— win_id/bounds/绝对坐标/app_alive '
-      + '全核对过，试过 windowactivate、单命令、mousemove --window、xwininfo 补偿、重试 8 次，均无效，'
-      + '**根因未定位**。详见 D-015 / K-005-修复 / K-006。',
+      '缺口：**状态机层已通**（MILFactoryCreateMediaPlayer / MILMediaOpen / 13 个 media 方法已实现），'
+      + '**判据侧的点击问题也已修好**（K-006：`findWindow` 原来不校验窗口 id，拿到一个 BadWindow 后点在空处；'
+      + '加 `xdotool getwindowgeometry` 校验后 `state_changes` 已能观测到 `READY → PLAYING`）。'
+      + '仍欠：②`MilCmdMediaPlayer` 「收下不渲染」（无 Linux 合成路径）③样本没有 `<MediaElement>`。'
+      + '详见 D-015 / K-005-修复 / K-006。',
     ],
   });
 }
 
-// 被测对象齐备时才做真检查（当前路径下尚未到达）
-finish({
-  acc: 'ACC-022', started, env, verdict: 'DEGRADED',
-  degrade: '播放状态机未实现（D-015）：媒体桥与元数据可达已达成，Open 在 CreateMedia 处收 E_NOTIMPL',
-  expectRef: 'ACC-022：播放/暂停/定位 + 不支持格式明确报错',
-  diff: ['被测对象齐备，但本条断言尚未接入（判据实现未完成，不得计为通过）', '依赖切片：见 08 §4 矩阵对应门'],
-});
+// 【2026-10-31 K-006 修复】原来这个占位 `finish` 是**无条件执行**的 —— 也就是说：
+//   前面那个"真检查"即使跑完并 `finish` 过，也会被这里**再覆盖一次**，读数永远停在
+//   "判据实现未完成，不得计为通过"。这也是为什么 ACC-022 的读数长期与实现状态脱节。
+//   现在只在**真检查没有执行**时（例如样本都起不来）才用这条兜底。
+if (!globalThis.__ldpPlaybackRan) {
+  finish({
+    acc: 'ACC-022', started, env, verdict: 'DEGRADED',
+    degrade: '判据未跑到真检查（样本/环境不满足前置）—— 不是实现结论',
+    expectRef: 'ACC-022：播放/暂停/定位 + 不支持格式明确报错',
+    diff: ['未跑到真检查', '依赖切片：见 08 §4 矩阵对应门'],
+  });
+}

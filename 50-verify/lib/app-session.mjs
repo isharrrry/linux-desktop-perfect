@@ -112,6 +112,18 @@ export async function startApp({ sample = 'WpfFirstWindow', scr = 'SCR-01', disp
 }
 
 // 找窗口（按标题前缀），返回 { id, title, w, h }
+// 【2026-10-31 K-006 修复】`findWindow` 原来只从 `wmctrl -l` / `xwininfo -root -tree` 的文本里
+//   解析出窗口 id 就直接返回，**不验证这个 id 是否真的可用**。实测过：判据拿到
+//   `0x200005`，但 `xdotool getwindowgeometry 0x200005` 报
+//   `BadWindow (invalid Window parameter)` —— 那是个**已经不存在/不属于本 display 的窗口**，
+//   于是后续 `mousemove X Y click 1` 点在空处，"命令成功但按钮没反应"（K-006 真正的原因）。
+//   这里加一道有效性校验：只有 `xdotool getwindowgeometry` 成功返回的 id 才算找到。
+function windowUsable(display, id) {
+  if (!id) return false;
+  const r = spawnSync('sh', ['-c', `DISPLAY=${display} xdotool getwindowgeometry --shell ${id} 2>/dev/null`], { encoding: 'utf8', timeout: 5000 });
+  return !!(r && r.status === 0 && r.stdout && /^X=-?\d+/m.test(r.stdout));
+}
+
 export async function findWindow(display, titlePrefix, timeoutMs = 25000) {
   return waitFor(() => {
     const r = spawnSync('sh', ['-c', `DISPLAY=${display} wmctrl -l 2>/dev/null`], { encoding: 'utf8' });
@@ -119,7 +131,8 @@ export async function findWindow(display, titlePrefix, timeoutMs = 25000) {
       for (const line of r.stdout.split('\n')) {
         if (!line.includes(titlePrefix)) continue;
         const parts = line.trim().split(/\s+/);
-        return { id: parts[0], title: parts.slice(3).join(' '), w: 0, h: 0 };
+        if (windowUsable(display, parts[0]))
+          return { id: parts[0], title: parts.slice(3).join(' '), w: 0, h: 0 };
       }
     }
     // 没有 wmctrl：用 xwininfo 的树（含未映射窗口）
@@ -128,7 +141,8 @@ export async function findWindow(display, titlePrefix, timeoutMs = 25000) {
       for (const line of x.stdout.split('\n')) {
         if (!line.includes(titlePrefix)) continue;
         const m = line.match(/(0x[0-9a-f]+)\s+"([^"]*)".*?(\d+)x(\d+)\+/);
-        if (m) return { id: m[1], title: m[2], w: Number(m[3]), h: Number(m[4]) };
+        if (m && windowUsable(display, m[1]))
+          return { id: m[1], title: m[2], w: Number(m[3]), h: Number(m[4]) };
       }
     }
     return null;
