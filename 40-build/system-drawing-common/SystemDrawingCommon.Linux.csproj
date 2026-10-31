@@ -1,0 +1,255 @@
+<!--
+  System.Drawing.Common 的 **Unix 后端**，编成同名同强名称的程序集。
+  源码来自 corefx release/3.1（见 SOURCE.md）—— .NET 6 之后上游删掉了 Unix 分支，
+  而 WinForms 依赖它，所以必须自己编一份来替换运行时里的"只支持 Windows"的原版。
+  强名称：PublicKey 取自原版 dll 的 AssemblyDef（.NET 的公钥，token=cc7b13ffcd2ddd51），
+  用 PublicSign 重签 ⇒ 程序集身份与 System.Windows.Forms 的引用一致。
+-->
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <AssemblyName>System.Drawing.Common</AssemblyName>
+    <RootNamespace>System.Drawing</RootNamespace>
+    <LangVersion>latest</LangVersion>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <ProduceReferenceAssembly>false</ProduceReferenceAssembly>
+    <SignAssembly>true</SignAssembly>
+    <PublicSign>true</PublicSign>
+    <AssemblyOriginatorKeyFile>/tmp/msft-drawing.snk</AssemblyOriginatorKeyFile>
+    <NoWarn>$(NoWarn);CS0618;CS0809;CS0169;CS0414;CS0649;CS1591;CS8632;CS0219;CS8981;CA1416;CA1420;SYSLIB0003;CS8002</NoWarn>
+    <DefineConstants>$(DefineConstants);Unix;NETCOREAPP;NETCOREAPP3_0_OR_GREATER;DRAWING_NAMESPACE</DefineConstants>
+    <EnablePInvokeAnalyzer>false</EnablePInvokeAnalyzer>
+    <EnableSingleFileAnalyzer>false</EnableSingleFileAnalyzer>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- 显式列出（通配符 + Exclude/Remove 在本仓实测都不可靠） -->
+    <Compile Include="src/CommonInterop/ConstsStub.cs" />
+    <Compile Include="src/CommonInterop/SR.Generated.cs" />
+    <Compile Include="src/CommonInterop/FontConverterStub.cs" />
+    <Compile Include="src/CommonInterop/Interop.HRESULT.cs" />
+    <Compile Include="src/CommonInterop/Interop.IStream.cs" />
+    <Compile Include="src/CommonInterop/Interop.STATFLAG.cs" />
+    <Compile Include="src/CommonInterop/Interop.STATSTG.cs" />
+    <Compile Include="src/CommonInterop/Interop.STGM.cs" />
+    <Compile Include="src/CommonInterop/Interop.STGTY.cs" />
+    <Compile Include="src/CommonInterop/UITypeEditorStub.cs" />
+    <Compile Include="src/CommonInterop/UserPreferenceStub.cs" />
+    <Compile Include="src/System/Drawing/Bitmap.Unix.cs" />
+    <Compile Include="src/System/Drawing/Bitmap.cs" />
+    <Compile Include="src/System/Drawing/BitmapSelector.cs" />
+    <Compile Include="src/System/Drawing/BitmapSuffixInSameAssemblyAttribute.cs" />
+    <Compile Include="src/System/Drawing/BitmapSuffixInSatelliteAssemblyAttribute.cs" />
+    <Compile Include="src/System/Drawing/Brush.cs" />
+    <Compile Include="src/System/Drawing/Brushes.cs" />
+    <Compile Include="src/System/Drawing/BufferedGraphics.Unix.cs" />
+    <Compile Include="src/System/Drawing/BufferedGraphics.cs" />
+    <Compile Include="src/System/Drawing/BufferedGraphicsContext.Unix.cs" />
+    <Compile Include="src/System/Drawing/BufferedGraphicsContext.cs" />
+    <Compile Include="src/System/Drawing/BufferedGraphicsManager.Unix.cs" />
+    <Compile Include="src/System/Drawing/CharacterRange.cs" />
+    <Compile Include="src/System/Drawing/ClientUtils.cs" />
+    <Compile Include="src/System/Drawing/ColorConverter.cs" />
+    <Compile Include="src/System/Drawing/ContentAlignment.cs" />
+    <Compile Include="src/System/Drawing/CopyPixelOperation.cs" />
+    <Compile Include="src/System/Drawing/DashCap.cs" />
+    <Compile Include="src/System/Drawing/Design/CategoryNameCollection.cs" />
+    <Compile Include="src/System/Drawing/Drawing2D/AdjustableArrowCap.Unix.cs" />
+    <Compile Include="src/System/Drawing/Drawing2D/Blend.cs" />
+    <Compile Include="src/System/Drawing/Drawing2D/BrushType.cs" />
+    <Compile Include="src/System/Drawing/Drawing2D/ColorBlend.cs" />
+    <Compile Include="src/System/Drawing/Drawing2D/CombineMode.cs" />
+    <Compile Include="src/System/Drawing/Drawing2D/CompositingMode.cs" />
+    <Compile Include="src/System/Drawing/Drawing2D/CompositingQuality.cs" />
+    <Compile Include="src/System/Drawing/Drawing2D/CoordinateSpace.cs" />
+    <Compile Include="src/System/Drawing/Drawing2D/CustomLineCap.Unix.cs" />
+    <Compile Include="src/System/Drawing/Drawing2D/CustomLineCap.cs" />
+    <Compile Include="src/System/Drawing/Drawing2D/CustomLineCapType.cs" />
+    <Compile Include="src/System/Drawing/Drawing2D/DashStyle.cs" />
+    <Compile Include="src/System/Drawing/Drawing2D/FillMode.cs" />
+    <Compile Include="src/System/Drawing/Drawing2D/FlushIntention.cs" />
+    <Compile Include="src/System/Drawing/Drawing2D/GraphicsContainer.cs" />
+    <Compile Include="src/System/Drawing/Drawing2D/GraphicsPath.Unix.cs" />
+    <Compile Include="src/System/Drawing/Drawing2D/GraphicsPathIterator.cs" />
+    <Compile Include="src/System/Drawing/Drawing2D/GraphicsState.cs" />
+    <Compile Include="src/System/Drawing/Drawing2D/HatchBrush.cs" />
+    <Compile Include="src/System/Drawing/Drawing2D/HatchStyle.cs" />
+    <Compile Include="src/System/Drawing/Drawing2D/InterpolationMode.cs" />
+    <Compile Include="src/System/Drawing/Drawing2D/LineCap.cs" />
+    <Compile Include="src/System/Drawing/Drawing2D/LineJoin.cs" />
+    <Compile Include="src/System/Drawing/Drawing2D/LinearGradientBrush.cs" />
+    <Compile Include="src/System/Drawing/Drawing2D/LinearGradientMode.cs" />
+    <Compile Include="src/System/Drawing/Drawing2D/Matrix.cs" />
+    <Compile Include="src/System/Drawing/Drawing2D/MatrixOrder.cs" />
+    <Compile Include="src/System/Drawing/Drawing2D/PathData.cs" />
+    <Compile Include="src/System/Drawing/Drawing2D/PathGradientBrush.cs" />
+    <Compile Include="src/System/Drawing/Drawing2D/PathPointType.cs" />
+    <Compile Include="src/System/Drawing/Drawing2D/PenAlignment.cs" />
+    <Compile Include="src/System/Drawing/Drawing2D/PenType.cs" />
+    <Compile Include="src/System/Drawing/Drawing2D/PixelOffsetMode.cs" />
+    <Compile Include="src/System/Drawing/Drawing2D/QualityMode.cs" />
+    <Compile Include="src/System/Drawing/Drawing2D/RegionData.cs" />
+    <Compile Include="src/System/Drawing/Drawing2D/SafeCustomLineCapHandle.cs" />
+    <Compile Include="src/System/Drawing/Drawing2D/SmoothingMode.cs" />
+    <Compile Include="src/System/Drawing/Drawing2D/WarpMode.cs" />
+    <Compile Include="src/System/Drawing/Drawing2D/WrapMode.cs" />
+    <Compile Include="src/System/Drawing/Font.Unix.cs" />
+    <Compile Include="src/System/Drawing/Font.cs" />
+    <Compile Include="src/System/Drawing/FontFamily.Unix.cs" />
+    <Compile Include="src/System/Drawing/FontFamily.cs" />
+    <Compile Include="src/System/Drawing/FontStyle.cs" />
+    <Compile Include="src/System/Drawing/GdiPlusStreamHelper.Unix.cs" />
+    <Compile Include="src/System/Drawing/Gdiplus.cs" />
+    <Compile Include="src/System/Drawing/GdiplusNative.Unix.cs" />
+    <Compile Include="src/System/Drawing/GdiplusNative.cs" />
+    <Compile Include="src/System/Drawing/Graphics.Unix.cs" />
+    <Compile Include="src/System/Drawing/Graphics.cs" />
+    <Compile Include="src/System/Drawing/GraphicsContext.cs" />
+    <Compile Include="src/System/Drawing/GraphicsUnit.cs" />
+    <Compile Include="src/System/Drawing/IDeviceContext.cs" />
+    <Compile Include="src/System/Drawing/Icon.Unix.cs" />
+    <Compile Include="src/System/Drawing/Image.Unix.cs" />
+    <Compile Include="src/System/Drawing/Image.cs" />
+    <Compile Include="src/System/Drawing/ImageAnimator.Unix.cs" />
+    <Compile Include="src/System/Drawing/ImageInfo.cs" />
+    <Compile Include="src/System/Drawing/ImageType.cs" />
+    <Compile Include="src/System/Drawing/Imaging/BitmapData.Unix.cs" />
+    <Compile Include="src/System/Drawing/Imaging/BitmapData.cs" />
+    <Compile Include="src/System/Drawing/Imaging/ColorAdjustType.cs" />
+    <Compile Include="src/System/Drawing/Imaging/ColorChannelFlags.cs" />
+    <Compile Include="src/System/Drawing/Imaging/ColorMap.cs" />
+    <Compile Include="src/System/Drawing/Imaging/ColorMapType.cs" />
+    <Compile Include="src/System/Drawing/Imaging/ColorMatrix.cs" />
+    <Compile Include="src/System/Drawing/Imaging/ColorMatrixFlags.cs" />
+    <Compile Include="src/System/Drawing/Imaging/ColorMode.cs" />
+    <Compile Include="src/System/Drawing/Imaging/ColorPalette.cs" />
+    <Compile Include="src/System/Drawing/Imaging/EmfPlusFlags.cs" />
+    <Compile Include="src/System/Drawing/Imaging/EmfPlusRecordType.cs" />
+    <Compile Include="src/System/Drawing/Imaging/EmfType.cs" />
+    <Compile Include="src/System/Drawing/Imaging/Encoder.cs" />
+    <Compile Include="src/System/Drawing/Imaging/EncoderParameter.cs" />
+    <Compile Include="src/System/Drawing/Imaging/EncoderParameterValueType.cs" />
+    <Compile Include="src/System/Drawing/Imaging/EncoderParameters.cs" />
+    <Compile Include="src/System/Drawing/Imaging/EncoderValue.cs" />
+    <Compile Include="src/System/Drawing/Imaging/FrameDimension.cs" />
+    <Compile Include="src/System/Drawing/Imaging/ImageAttributes.cs" />
+    <Compile Include="src/System/Drawing/Imaging/ImageCodecFlags.cs" />
+    <Compile Include="src/System/Drawing/Imaging/ImageCodecInfo.cs" />
+    <Compile Include="src/System/Drawing/Imaging/ImageCodecInfoPrivate.cs" />
+    <Compile Include="src/System/Drawing/Imaging/ImageFlags.cs" />
+    <Compile Include="src/System/Drawing/Imaging/ImageFormat.cs" />
+    <Compile Include="src/System/Drawing/Imaging/ImageLockMode.cs" />
+    <Compile Include="src/System/Drawing/Imaging/MetaHeader.Unix.cs" />
+    <Compile Include="src/System/Drawing/Imaging/Metafile.Unix.cs" />
+    <Compile Include="src/System/Drawing/Imaging/MetafileFrameUnit.cs" />
+    <Compile Include="src/System/Drawing/Imaging/MetafileHeader.Unix.cs" />
+    <Compile Include="src/System/Drawing/Imaging/MetafileHeaderEmf.cs" />
+    <Compile Include="src/System/Drawing/Imaging/MetafileHeaderWmf.cs" />
+    <Compile Include="src/System/Drawing/Imaging/MetafileType.cs" />
+    <Compile Include="src/System/Drawing/Imaging/PaletteFlags.cs" />
+    <Compile Include="src/System/Drawing/Imaging/PixelFormat.cs" />
+    <Compile Include="src/System/Drawing/Imaging/PlayRecordCallback.cs" />
+    <Compile Include="src/System/Drawing/Imaging/PropertyItem.cs" />
+    <Compile Include="src/System/Drawing/Imaging/WmfPlaceableFileHeader.cs" />
+    <Compile Include="src/System/Drawing/Internal/GPStream.cs" />
+    <Compile Include="src/System/Drawing/Internal/GpPathData.cs" />
+    <Compile Include="src/System/Drawing/Internal/ISystemEventTracker.cs" />
+    <Compile Include="src/System/Drawing/Internal/SystemColorTracker.cs" />
+    <Compile Include="src/System/Drawing/LibX11Functions.cs" />
+    <Compile Include="src/System/Drawing/LibraryResolver.cs" />
+    <Compile Include="src/System/Drawing/LocalAppContextSwitches.cs" />
+    <Compile Include="src/System/Drawing/MarshallingHelpers.cs" />
+    <Compile Include="src/System/Drawing/NativeMethods.cs" />
+    <Compile Include="src/System/Drawing/NativeStructs.Unix.cs" />
+    <Compile Include="src/System/Drawing/Pen.Unix.cs" />
+    <Compile Include="src/System/Drawing/Pen.cs" />
+    <Compile Include="src/System/Drawing/Pens.cs" />
+    <Compile Include="src/System/Drawing/PointConverter.cs" />
+    <Compile Include="src/System/Drawing/Printing/Duplex.cs" />
+    <Compile Include="src/System/Drawing/Printing/InvalidPrinterException.cs" />
+    <Compile Include="src/System/Drawing/Printing/LibcupsNative.cs" />
+    <Compile Include="src/System/Drawing/Printing/Margins.Serializable.cs" />
+    <Compile Include="src/System/Drawing/Printing/Margins.cs" />
+    <Compile Include="src/System/Drawing/Printing/ModeField.cs" />
+    <Compile Include="src/System/Drawing/Printing/PageSettings.Serializable.cs" />
+    <Compile Include="src/System/Drawing/Printing/PageSettings.Unix.cs" />
+    <Compile Include="src/System/Drawing/Printing/PaperKinds.cs" />
+    <Compile Include="src/System/Drawing/Printing/PaperSize.Serializable.cs" />
+    <Compile Include="src/System/Drawing/Printing/PaperSize.cs" />
+    <Compile Include="src/System/Drawing/Printing/PaperSource.Serializable.cs" />
+    <Compile Include="src/System/Drawing/Printing/PaperSource.cs" />
+    <Compile Include="src/System/Drawing/Printing/PaperSourceKind.cs" />
+    <Compile Include="src/System/Drawing/Printing/PreviewPageInfo.cs" />
+    <Compile Include="src/System/Drawing/Printing/PreviewPrintController.Unix.cs" />
+    <Compile Include="src/System/Drawing/Printing/PrintAction.cs" />
+    <Compile Include="src/System/Drawing/Printing/PrintController.Unix.cs" />
+    <Compile Include="src/System/Drawing/Printing/PrintDocument.Unix.cs" />
+    <Compile Include="src/System/Drawing/Printing/PrintEventArgs.Unix.cs" />
+    <Compile Include="src/System/Drawing/Printing/PrintEventHandler.cs" />
+    <Compile Include="src/System/Drawing/Printing/PrintPageEventArgs.Unix.cs" />
+    <Compile Include="src/System/Drawing/Printing/PrintPageEventHandler.cs" />
+    <Compile Include="src/System/Drawing/Printing/PrintPreviewGraphics.cs" />
+    <Compile Include="src/System/Drawing/Printing/PrintRange.cs" />
+    <Compile Include="src/System/Drawing/Printing/PrinterResolution.Serializable.cs" />
+    <Compile Include="src/System/Drawing/Printing/PrinterResolution.cs" />
+    <Compile Include="src/System/Drawing/Printing/PrinterResolutionKind.cs" />
+    <Compile Include="src/System/Drawing/Printing/PrinterSettings.Unix.cs" />
+    <Compile Include="src/System/Drawing/Printing/PrinterUnit.cs" />
+    <Compile Include="src/System/Drawing/Printing/PrinterUnitConvert.cs" />
+    <Compile Include="src/System/Drawing/Printing/PrintingServices.Unix.cs" />
+    <Compile Include="src/System/Drawing/Printing/QueryPageSettingsEventArgs.cs" />
+    <Compile Include="src/System/Drawing/Printing/QueryPageSettingsEventHandler.cs" />
+    <Compile Include="src/System/Drawing/Printing/StandardPrintController.Unix.cs" />
+    <Compile Include="src/System/Drawing/Printing/TriState.cs" />
+    <Compile Include="src/System/Drawing/PropertyItemInternal.cs" />
+    <Compile Include="src/System/Drawing/RectangleConverter.cs" />
+    <Compile Include="src/System/Drawing/Region.Unix.cs" />
+    <Compile Include="src/System/Drawing/Region.cs" />
+    <Compile Include="src/System/Drawing/RotateFlipType.cs" />
+    <Compile Include="src/System/Drawing/SRDescriptionAttribute.cs" />
+    <Compile Include="src/System/Drawing/ScreenDC.cs" />
+    <Compile Include="src/System/Drawing/SizeConverter.cs" />
+    <Compile Include="src/System/Drawing/SolidBrush.cs" />
+    <Compile Include="src/System/Drawing/StringAlignment.cs" />
+    <Compile Include="src/System/Drawing/StringDigitSubstitute.cs" />
+    <Compile Include="src/System/Drawing/StringFormat.cs" />
+    <Compile Include="src/System/Drawing/StringFormatFlags.cs" />
+    <Compile Include="src/System/Drawing/StringTrimming.cs" />
+    <Compile Include="src/System/Drawing/StringUnit.cs" />
+    <Compile Include="src/System/Drawing/SystemBrushes.cs" />
+    <Compile Include="src/System/Drawing/SystemFonts.Unix.cs" />
+    <Compile Include="src/System/Drawing/SystemFonts.cs" />
+    <Compile Include="src/System/Drawing/SystemIcons.Unix.cs" />
+    <Compile Include="src/System/Drawing/SystemPens.cs" />
+    <Compile Include="src/System/Drawing/Text/FontCollection.cs" />
+    <Compile Include="src/System/Drawing/Text/GenericFontFamilies.cs" />
+    <Compile Include="src/System/Drawing/Text/HotkeyPrefix.cs" />
+    <Compile Include="src/System/Drawing/Text/InstalledFontCollection.cs" />
+    <Compile Include="src/System/Drawing/Text/PrivateFontCollection.Unix.cs" />
+    <Compile Include="src/System/Drawing/Text/PrivateFontCollection.cs" />
+    <Compile Include="src/System/Drawing/Text/TextRenderingHint.cs" />
+    <Compile Include="src/System/Drawing/TextureBrush.cs" />
+    <Compile Include="src/System/Drawing/ToolboxBitmapAttribute.Unix.cs" />
+    <Compile Include="src/System/Drawing/UnsafeNativeMethods.cs" />
+    <Compile Include="src/System/Drawing/macFunctions.cs" />
+    <Compile Include="src/misc/CompModSwitches.cs" />
+    <Compile Include="src/misc/DbgUtil.cs" />
+    <Compile Include="src/misc/DpiHelper.cs" />
+    <Compile Include="src/misc/ExternDll.Unix.cs" />
+    <Compile Include="src/misc/GDI/ApplyGraphicsProperties.cs" />
+    <Compile Include="src/misc/GDI/DeviceContext.cs" />
+    <Compile Include="src/misc/GDI/DeviceContextType.cs" />
+    <Compile Include="src/misc/GDI/DeviceContexts.cs" />
+    <Compile Include="src/misc/GDI/NativeMethods.cs" />
+    <Compile Include="src/misc/GDI/SafeNativeMethods.cs" />
+    <Compile Include="src/misc/GDI/UnsafeNativeMethods.cs" />
+    <Compile Include="src/misc/GDI/WindowsGraphics.cs" />
+    <Compile Include="src/misc/GDI/WindowsRegion.cs" />
+    <Compile Include="src/misc/GDI/WindowsRegionCombineMode.cs" />
+  </ItemGroup>
+</Project>
