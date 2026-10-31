@@ -25,6 +25,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="SR.Generated.cs" />
+    <Compile Include="SR.Generated.MSInternal.cs" />
     <Reference Include="System.Xaml"><HintPath>$(WpfLinuxRoot)src/Microsoft.DotNet.Wpf.Linux/src/System.Xaml/bin/$(WpfLinuxSelfBuiltConfiguration)/System.Xaml.dll</HintPath><Private>true</Private></Reference>
     <Reference Include="WindowsBase"><HintPath>$(WpfLinuxRoot)src/Microsoft.DotNet.Wpf.Linux/src/WindowsBase/bin/$(WpfLinuxSelfBuiltConfiguration)/WindowsBase.dll</HintPath><Private>true</Private></Reference>
     <Reference Include="PresentationCore"><HintPath>$(WpfLinuxRoot)src/Microsoft.DotNet.Wpf.Linux/src/PresentationCore/bin/$(WpfLinuxSelfBuiltConfiguration)/PresentationCore.dll</HintPath><Private>true</Private></Reference>
@@ -128,7 +129,7 @@
     <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/ReachFramework/Packaging/XpsDigitalSignature.cs" />
     <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/ReachFramework/PrintConfig/PTManager.cs" />
     <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/ReachFramework/PrintConfig/PrtTicket_Base.cs" />
-    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/ReachFramework/SerializerFactory/XpsSerializerWriterCollator.cs" />
+    <!-- 上游不编它、也没人用它（死代码）；留着它会报 14 个 CS0534/CS0115 -->
   </ItemGroup>
   <ItemGroup>
     <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/Shared/RefAssemblyAttrs.cs" />
