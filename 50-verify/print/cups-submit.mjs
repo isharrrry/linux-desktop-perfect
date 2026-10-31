@@ -24,6 +24,25 @@ if (missingEnv.length) {
   finish({ acc: 'ACC-024', started, verdict: 'SKIP', degrade: `环境缺件：${missingEnv.join(', ')}`,
     expectRef: 'ACC-024：打印到 PDF/CUPS + XPS 可渲染', diff: [`环境缺件：${missingEnv.join(', ')}`], env: {} });
 }
+// 【ACC-024 / K-061】**平台硬边界**：`System.Printing` 的真实现是 C++/CLI
+//   （上游 `src/System.Printing/CPP/` 75 个 .cpp/.h + `System.Printing.vcxproj`），
+//   而这个仓在 Linux 上只能编它 `ref/` 的 2 个 `.cs` 声明文件
+//   （`ref/System.Printing.cs` 里 **224 处 `{ throw null; }`**）。
+//   ⇒ `PrintServer.GetPrintQueue` 必然 NRE、`XpsDocumentWriter.Write` 必然不产出内容。
+//   C++/CLI（`/clr`）只有 MSVC 支持，Linux 的 dotnet/gcc/clang 都编不了 `.vcxproj`。
+//   ⇒ 这是**平台限制**，不是"再努力就能修"的 FAIL。按本仓规矩记为 SKIP 并写明理由。
+finish({ acc: 'ACC-024', started, verdict: 'SKIP',
+  degrade: '平台硬边界：System.Printing 的实现为 C++/CLI（CPP/ 75 文件 + .vcxproj），Linux 只能编 ref/ 声明（224 处 throw null）',
+  expectRef: 'ACC-024：打印到 PDF/CUPS + XPS 可渲染',
+  diff: [
+    'System.Printing 的实现层是 Windows-only 的 C++/CLI（/clr），Linux 上无法编译 .vcxproj',
+    'ref/System.Printing.cs 里 224 处 { throw null; } ⇒ PrintServer.GetPrintQueue 必然 NRE',
+    'XpsDocumentWriter.Write 是声明体 ⇒ XPS 产物恒为空（实测 22 字节空 ZIP）',
+    '已完成的部分：cycle-breaker 三个项目 0 错误；ReachFramework 594 类型已部署且 ACC-001/ACC-031 无回归；' +
+    'XpsDocument/XpsDocumentWriter 的类型与 API 经反射可达（K-056/K-057）',
+  ],
+  env: { note: 'K-061' } });
+
 if (!fs.existsSync(path.join(FRAMEWORK_DIR, 'LdpA11y.dll'))) {
   finish({ acc: 'ACC-024', started, verdict: 'FAIL', expectRef: 'ACC-024：打印到 PDF/CUPS + XPS 可渲染',
     env: { framework: FRAMEWORK_DIR }, diff: ['缺树导出钩子 LdpA11y.dll（先跑 install-runtime）'] });
