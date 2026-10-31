@@ -315,7 +315,21 @@ namespace System.Drawing
         public IntPtr GetHdc()
         {
             IntPtr hdc = IntPtr.Zero;
-            Gdip.CheckStatus(Gdip.GdipGetDC(new HandleRef(this, NativeGraphics), out hdc));
+            // 【ACC-028 / K-026 诊断】确认真的走到 GdipGetDC（下一轮可删）
+            Console.Error.WriteLine("[Graphics.GetHdc] 调 GdipGetDC, nativeGraphics=" + NativeGraphics.ToString("x"));
+            Console.Error.Flush();
+            try
+            {
+                Gdip.CheckStatus(Gdip.GdipGetDC(new HandleRef(this, NativeGraphics), out hdc));
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine("[Graphics.GetHdc] GdipGetDC 抛 " + ex.GetType().Name + ": " + ex.Message);
+                Console.Error.Flush();
+                throw;
+            }
+            Console.Error.WriteLine("[Graphics.GetHdc] 返回 hdc=" + hdc.ToString("x"));
+            Console.Error.Flush();
 
             _nativeHdc = hdc; // need to cache the hdc to be able to release with a call to IDeviceContext.ReleaseHdc().
             return _nativeHdc;
