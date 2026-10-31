@@ -1,0 +1,56 @@
+<!--
+  impl-cycle：只供 **编译期引用** 的精简 PresentationFramework。
+  ReachFramework 用到 FixedDocument/FixedPage/SerializerWriter 等 PF 类型，
+  但真 PresentationFramework 又依赖 ReachFramework（互相依赖）。上游的解法是
+  单独出一个 AssemblyName=PresentationFramework 的非 shipping 程序集，
+  在里面放**类型声明**（cycle-breakers/PresentationFramework/PresentationFramework.cs 打桩实现）。
+  另外它还需要 System.Printing 的 PrintTicket 等 —— 那些也是声明，
+  在 cycle-breakers/ReachFramework/*.cs 里（对 System.Printing 而言是 cycle-breaker，
+  对 impl-cycle 而言是依赖）。**全部以源码形式编入**，不引任何工程 ⇒ 不循环。
+-->
+<Project>
+  <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk" />
+  <Import Project="$(MSBuildThisFileDirectory)../../../Linux/build/Directory.Upstream.props" />
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <AssemblyName>PresentationFramework</AssemblyName>
+    <RootNamespace>System.Windows</RootNamespace>
+    <LangVersion>latest</LangVersion>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <NoWarn>$(NoWarn);CS0618;CS0809;CS0169;CS0414;CS0649;CS1591;CS8632;CS0219;CS8981;CA1416;CA1420;WPF0001;CS8002;CS3016;CS0067</NoWarn>
+    <Nullable>disable</Nullable>
+    <!-- RefAssemblyAttrs.cs 用 #if WINDOWS_BASE / PRESENTATION_CORE / PRESENTATIONFRAMEWORK / REACHFRAMEWORK
+         切换 namespace。cycle-breaker 里要的是 MS.Internal.ReachFramework.BuildInfo（SystemPrinting 常量），
+         所以必须定义 REACHFRAMEWORK。 -->
+    <DefineConstants>$(DefineConstants);REACHFRAMEWORK</DefineConstants>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <EnablePInvokeAnalyzer>false</EnablePInvokeAnalyzer>
+    <ProduceReferenceAssembly>false</ProduceReferenceAssembly>
+    <GenerateDependencyFile>false</GenerateDependencyFile>
+    <SignAssembly>true</SignAssembly>
+    <PublicSign>true</PublicSign>
+    <AssemblyOriginatorKeyFile>$(WpfLinuxRoot)src/Linux/build/keys/WcpPublicKey.snk</AssemblyOriginatorKeyFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/cycle-breakers/PresentationFramework/PresentationFramework.cs" />
+    <!-- System.Printing 的声明（PrintTicket/PrintCapabilities/ValidationResult/PrintTicketScope 等） -->
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/cycle-breakers/ReachFramework/System.Printing.*.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/cycle-breakers/ReachFramework/System.Windows.Xps.Packaging.*.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/cycle-breakers/ReachFramework/System.Windows.Xps.Serialization.*.cs" />
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/cycle-breakers/System.Printing/System.Printing.PrintQueue.cs" />
+    <!-- BuildInfo：cycle-breaker 里的 [assembly:InternalsVisibleTo(MS.Internal.ReachFramework.BuildInfo.SystemPrinting)] 要用它 -->
+    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/Shared/RefAssemblyAttrs.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="WindowsBase"><HintPath>$(WpfLinuxRoot)src/Microsoft.DotNet.Wpf.Linux/src/WindowsBase/bin/$(WpfLinuxSelfBuiltConfiguration)/WindowsBase.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="System.Xaml"><HintPath>$(WpfLinuxRoot)src/Microsoft.DotNet.Wpf.Linux/src/System.Xaml/bin/$(WpfLinuxSelfBuiltConfiguration)/System.Xaml.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="PresentationCore"><HintPath>$(WpfLinuxRoot)src/Microsoft.DotNet.Wpf.Linux/src/PresentationCore/bin/$(WpfLinuxSelfBuiltConfiguration)/PresentationCore.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="UIAutomationTypes"><HintPath>$(WpfLinuxRoot)src/Microsoft.DotNet.Wpf.Linux/src/UIAutomationTypes/bin/$(WpfLinuxSelfBuiltConfiguration)/UIAutomationTypes.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="UIAutomationProvider"><HintPath>$(WpfLinuxRoot)src/Microsoft.DotNet.Wpf.Linux/src/UIAutomationProvider/bin/$(WpfLinuxSelfBuiltConfiguration)/UIAutomationProvider.dll</HintPath><Private>false</Private></Reference>
+  </ItemGroup>
+  <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
+</Project>
