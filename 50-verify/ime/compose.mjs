@@ -23,6 +23,8 @@ const missingNotes = missing.map((m) => `缺被测对象：${m.path}（${m.why}�
 //   · WPF 侧的 `Ime`/`TextComposition` 路径要求 `WM_IME_*` 消息，而 shim 从不产生；
 //   ⇒ 预编辑/提交/取消/候选窗四条路径都没有承载面。这里如实判红并写明缺口。
 const { startXvfb, waitDisplay, startApp, findWindow, waitMapped, sleep, DOTNET_ROOT } = await import('../lib/app-session.mjs');
+// 【ACC-017 / K-104】自带的 XTest 注入器（见同目录 tools/xtype.c）
+const XTYPE_BIN = new URL('../tools/xtype', import.meta.url).pathname;
 {
   const { spawnSync } = await import('node:child_process');
   // 用 node 自己数（shell 里的引号/awk 转义很容易数成 0 —— 实测踩过）
@@ -157,13 +159,16 @@ const { startXvfb, waitDisplay, startApp, findWindow, waitMapped, sleep, DOTNET_
           // 【ACC-017 / K-103】打字前再确认 keymap 就绪（K-102 的 keycode=0 就是没 keymap）
           const kmNow = String(sp2('sh', ['-c', `DISPLAY=${disp} xmodmap -pke 2>/dev/null | grep -c "keycode"`]).stdout || '').trim();
           steps.push({ step: 'keymap_before_typing', ok: Number(kmNow) > 20, informational: true, keycodes: Number(kmNow) || 0 });
-          // 逐键发（比 `type nihao` 更可控，也便于在日志里对上每一个 keycode）
-          for (const ch of ['n', 'i', 'h', 'a', 'o']) {
-            sp2('sh', ['-c', `DISPLAY=${disp} xdotool key --clearmodifiers ${ch}`]);
-            await sleep(260);
-          }
-          await sleep(2000);
-          sp2('sh', ['-c', `DISPLAY=${disp} xdotool key space`]);
+          // 【ACC-017 / K-104】**不用 xdotool，改用自带的 XTest 注入器**。
+          //   实测（K-103）：`xdotool key --clearmodifiers n` 发出来的事件 `keycode=0`
+          //   （而 space 的 keycode=65 正常）。xdotool 3.20160805.1 太老，怀疑是它的问题。
+          //   `50-verify/tools/xtype.c` 直接 `XStringToKeysym → XKeysymToKeycode → XTestFakeKeyEvent`，
+          //   每一步都能在 stderr 打出来（`[XTYPE] n keysym=0x6e keycode=57`），完全可控。
+          const xtypeBin = XTYPE_BIN;
+          const xtypeRes = sp2(xtypeBin, [disp, 'n', 'i', 'h', 'a', 'o', 'space']);
+          steps.push({ step: 'xtype_inject', ok: xtypeRes.status === 0, informational: true,
+                       bin: xtypeBin, rc: xtypeRes.status,
+                       out: String(xtypeRes.stderr || '').split('\n').slice(0, 7).join(' | ') });
           await sleep(3000);
           await sleep(3000);
           steps.push({ step: 'input_method', ok: true, informational: true,
