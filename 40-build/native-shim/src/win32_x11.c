@@ -1466,7 +1466,12 @@ int wpf_x11_pump_into_queue(wpf_thread *t)
         // 【D-014】输入法过滤器：被 IM 消费的键事件（预编辑期间的按键）不再翻译成 WM_KEYDOWN/WM_CHAR。
         //   没有输入法服务器时 g_xim == NULL，这一段是 no-op（行为与修前完全一致）。
         //   ⚠️ 必须放在**放锁之后**：XFilterEvent 是 Xlib 调用，且 `continue` 会跳回循环条件（那边要持锁）。
-        if (g_xim != NULL) {
+        // 【ACC-017 / K-105】**XIM 已停用** —— 它和 IBus D-Bus 路线抢键（K-104 实测）。
+        //   `XFilterEvent` 对字母键返回 True ⇒ 事件被 `continue` 掉，根本到不了 `case KeyPress`，
+        //   于是 `ProcessKeyEvent` 收不到真实键（`[XKEYS]` 里 `n/i/h/a/o` 一条都没有）。
+        //   现在 IME 全走 IBus D-Bus（K-089~K-097），XIM 这条路只保留代码不启用：
+        //   `WPF_LINUX_XIM=1` 时才开，默认关。
+        if (g_xim != NULL && getenv("WPF_LINUX_XIM") != NULL) {
             XEvent filtered = ev;
             XLOCK();
             int consumed = XFilterEvent(&filtered, None);
