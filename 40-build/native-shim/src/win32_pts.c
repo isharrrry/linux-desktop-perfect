@@ -1666,6 +1666,11 @@ const char *WpfLinuxWin32_PtsFsParaListParaLastSrc(void) { return g_pts_fsp_pl_p
    ⏪ `T-B15`：`32 → 64` —— 浮动绕排把含浮动的段**再断行**（行宽收缩 ⇒ 行数成倍）⇒ 旧上界会让
    该段 `fl_truncated=1`（`fl_ok=0`）⇒ 连带把 `T-B3`／`T-B4` 的段高链打成 `-1`。上界只增不减。 */
 #define WPF_PTS_FL_MAXLINE 64
+/* 【2026-10-31 实测结论，保留 64】试过放大到 128 / 4096：
+     · 64 行时 truncated=1（撞界）⇒ 台账不可用 ⇒ FsQueryTextDetails 恒拒（no-text-line-model）；
+     · 放大后**必然 WatchdogTimeout**（20 s 看门狗）：64 行本身就要约 19 s ⇒ 单行排版 ≈ 0.3 s。
+   即：撞界不是上界太小，而是**每行排版太慢**。放大上界只是把截断换成超时，
+   不是修复。真正的瓶颈在单行造型速度（下一步该查 pfnFormatLine 的单行耗时）。 */
 /* ⏪ `T-A36`：每段**附属对象**（`Figure`/`Floater`）台账上界（有界 ⇒ 撞界即停止记账并具名留痕）。 */
 #define WPF_PTS_FL_ATT_MAX 8
 /* ⏪ `T-A28`：窗内被驱的段数上界（每窗最多驱这么多 `TextParagraph`；防异常调用失控）。 */

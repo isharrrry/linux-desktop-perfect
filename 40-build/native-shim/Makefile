@@ -17,7 +17,12 @@ CC      ?= gcc
 CSTD    ?= -std=gnu11
 OPT     ?= -O2
 WARN     = -Wall -Wextra -Wno-unused-parameter -Wno-cast-function-type
-CFLAGS  ?= $(CSTD) $(OPT) $(WARN) -fPIC -fvisibility=default
+# 排版模型开关（2026-10-31）：
+#   WPF_PTS_FSP_PL_M1/M2 默认 0，只有显式 -D 才编进去。早先靠 `make CFLAGS="…"` 手传，
+#   于是每次默认 `make` 都会把 M1/M2 丢掉（产物 597872 vs 602208 字节，功能静默降级）。
+#   这里固化成 DEFS，`make` 与 `make CFLAGS=…` 都不会丢。
+DEFS    ?= -DWPF_PTS_FSP_PL_M1=1 -DWPF_PTS_FSP_PL_M2=1
+CFLAGS  ?= $(CSTD) $(OPT) $(WARN) -fPIC -fvisibility=default $(DEFS)
 LDLIBS   = -lX11 -ldl -lpthread
 
 SRCDIR   = src
