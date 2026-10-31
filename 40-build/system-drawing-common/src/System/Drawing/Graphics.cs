@@ -316,6 +316,7 @@ namespace System.Drawing
         {
             IntPtr hdc = IntPtr.Zero;
             // 【ACC-028 / K-026 诊断】确认真的走到 GdipGetDC（下一轮可删）
+            try { System.IO.File.AppendAllText("/tmp/getHdc.log", "[Graphics.GetHdc] native=" + NativeGraphics.ToString("x") + "\n"); } catch { }
             Console.Error.WriteLine("[Graphics.GetHdc] 调 GdipGetDC, nativeGraphics=" + NativeGraphics.ToString("x"));
             Console.Error.Flush();
             try
