@@ -253,13 +253,25 @@ namespace WpfLinux.Shims.PresentationCore
         {
             if (string.IsNullOrEmpty(text)) return HbShapedRun.Empty(emSize);   // 空行：不发 HB 调用
 
-            byte[] pathZ = Encoding.UTF8.GetBytes(fontPath + "\0");
             byte[] langZ = Encoding.UTF8.GetBytes((language ?? "zh-cn") + "\0");
 
             IntPtr blob = IntPtr.Zero, face = IntPtr.Zero, font = IntPtr.Zero, buf = IntPtr.Zero;
+            bool blobShared = false;
             try
             {
-                fixed (byte* p = pathZ) blob = CreateBlobFromFile(p);
+                // 【2026-10-31 D-019 单行慢的修复（v2，稳的路径）】原来每行 `CreateBlobFromFile`
+                //   —— dotnet-trace 显示 HbShaper.Shape 自耗 8618 ms（≈135 ms/行）。
+                //   v1 试过缓存 hb_font ⇒ **段错误**（hb_font 多线程并发不安全，见 D-019-解3）。
+                //   v2 只复用**已存在的共享 blob 表**（`HbFaceCache.AcquireSharedBlob`，
+                //   `CoversCpByBitmap` 已经在用它）：文件只读一次，`hb_face`/`hb_font` 仍按行新建
+                //   （纯内存操作，不碰 IO），生命周期不变 ⇒ 不引入跨线程共享的 hb_font。
+                blob = HbFaceCache.AcquireSharedBlob(fontPath);
+                if (blob != IntPtr.Zero) blobShared = true;
+                else
+                {
+                    byte[] pathZ = Encoding.UTF8.GetBytes(fontPath + "\0");
+                    fixed (byte* p = pathZ) blob = CreateBlobFromFile(p);
+                }
                 if (blob == IntPtr.Zero || hb_blob_get_length(blob) == 0)
                     throw new InvalidOperationException("HarfBuzz 读不到字体：" + fontPath);
 
@@ -341,7 +353,11 @@ namespace WpfLinux.Shims.PresentationCore
                 if (buf != IntPtr.Zero) hb_buffer_destroy(buf);
                 if (font != IntPtr.Zero) hb_font_destroy(font);
                 if (face != IntPtr.Zero) hb_face_destroy(face);
-                if (blob != IntPtr.Zero) DestroyBlob(blob);
+                if (blob != IntPtr.Zero)
+                {
+                    if (blobShared) HbFaceCache.ReleaseSharedBlob(fontPath);   // 归还共享引用，**不销毁**映射
+                    else DestroyBlob(blob);
+                }
             }
         }
 
