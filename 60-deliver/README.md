@@ -82,15 +82,25 @@ node 50-verify/index/gen-index.mjs             # 汇总全部判据读数
 
 ## 5. 未交付的部分（如实登记，不是"待办清单"）
 
-| 缺口 | 现状 | 证据 |
+> **2026-10-31 大幅重写**：多条缺口的**原因被推翻或重新界定**。
+> 判定（FAIL/DEGRADED）没变，但"为什么"跟初版不同 —— 照初版读会得出错误结论。
+
+| 缺口 | 现状（2026-10-31 界定） | 证据 |
 |---|---|---|
-| **ReachFramework**（XPS/打印） | 未自产：上游 67 个 `Serialization/Manager/*.cs` 在源码树与 GitHub 上都不存在（D-017） | `40-build/wpf-port/build-report.json` |
+| **ReachFramework**（XPS/打印） | **归因已修正**：不是"上游缺 67 个文件"（误判）。真相 ①上游 csproj 用反斜杠+大小写不敏感路径，Linux 上指向小写 `manager` 失配 ②上游只编 **63** 个（`ReachTokenContext.cs` 是死代码）③真正缺的是 **PF 类型**，上游用 **impl-cycle 独立程序集**提供，而它又要 ReachFramework 的 `PrintTicket` ⇒ **三层 cycle-breaker**。剩 80 个错误全是缺 PF 类型 | 已知坑 D-024 |
 | **打印路径**（ACC-024） | 判据红：点「打印」后 `job=0`/`pages=0` 不变（需 ReachFramework + shim 的 winspool 面） | `50-verify/读数/ACC-024/` |
-| **媒体播放状态机**（ACC-022） | 降级为 DEGRADED：媒体桥能解第一帧与元数据、播放器对象已建，但 `MediaPlayer.Open` 在 `CreateMedia` 收到 `E_NOTIMPL` | `70-operate/已知坑清单.md` D-015 |
-| **输入法**（ACC-017） | 环境级阻塞：本机没有输入法服务器（`XOpenIM` 返回 NULL），预编辑/提交路径无法真验 | 同上 |
-| **WinForms**（ACC-028） | 需上游 winforms 源码 + 自产 ~50 万行 Forms；**实测本机访问不了 GitHub**（`git ls-remote` 超时），源码拿不到 ⇒ 环境级阻塞。SCR-07 的树因此无法导出，ACC-008 与 ACC-027 的 SCR-07 一并受阻 | `50-verify/读数/ACC-027/`、已知坑 D-021 |
-| **段落角色** | SCR-02 的段落以 `label` 暴露而非 `paragraph`（设计取舍，理由见《界面设计说明》§2.3） | 同上 |
+| **媒体播放**（ACC-022） | **状态机已通**（手工点「播放」`state=READY → PLAYING`，M94 以来首次）。仍 DEGRADED 的三条原因：①**判据自身的点击在它的 Xvfb 里不生效**（K-006，5 种方案均无效，根因未定位）②`MilCmdMediaPlayer` 是"收下不渲染"（无 Linux 合成路径）③样本无 `<MediaElement>` | 已知坑 K-005-修复2、K-006 |
+| **分页**（ACC-015） | **单段已能排完**（`dcpLim=6015` = 6014 字符 + EOP，`ok=1` 台账可用）；**但 `count-pages` 要排整篇多页，60 s 仍未完成**（原为 20 s 挂死）。已修字体覆盖自旋（32→1024）、blob 共享、整形结果缓存（3×）、两处大锁 | 已知坑 D-019-解…解11 |
+| **输入法**（ACC-017） | 环境级阻塞：本机没有输入法服务器（`XOpenIM` 返回 NULL）| 已知坑 D-015 相关条 |
+| **WinForms**（ACC-028） | **阻塞解除一半**：gitee 能拉源码（`40-build/upstream/winforms`，97M/4420 .cs）。**量化评估为不做**：需 **410** 个 Win32 函数，本机 shim 覆盖 **103（25%）**，缺 **307**（COM/主题/对话框/输入）；另需**源生成器**与 **IL 项目**。**明确不做**：不用 WPF 模拟 WinForms 去凑 SCR-07 的绿 | 已知坑 D-025 |
+| **段落角色** | SCR-02 的段落以 `label` 暴露而非 `paragraph`（设计取舍，理由见《界面设计说明》§2.3） | — |
 | **AT-SPI 总线** | UIA 树为**自建投影**（`LdpA11y`），未走真实 AT-SPI 总线 | `40-build/wpf-port/.../a11y/TreeDumper.cs` |
+
+### 5.1 如果只看一件事
+
+**这 7 条里没有一条是"没试"**：有的已量化评估（ACC-028）、有的已推翻归因（ACC-024）、
+有的实现已做好卡在判据自身（ACC-022）、有的从"挂死"推进到"能跑但慢"（ACC-015）。
+**逐条的证据都指向 `70-operate/已知坑清单.md` 的具体编号**，不是一句"环境限制"。
 
 ## 7. 升级（改了一个程序集之后，**已实测**）
 
