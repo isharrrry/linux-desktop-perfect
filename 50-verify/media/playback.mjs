@@ -111,8 +111,21 @@ const { startXvfb, waitDisplay, startApp, findWindow, waitMapped, sleep, DOTNET_
                             tree_mtime: treeMtime });
             if (state1 !== state0) break;
           }
-          steps.push({ step: 'state_changes', ok: state0 !== state1, before: state0, after: state1,
+          // 【K-011-解4】关键区分：`state1` 是**从一份导出文件里读出来的**。
+          //   如果这份文件在整段重试期间一次都没被重写（mtime 不变），那"状态没变"这个结论
+          //   根本**没有观测基础** —— 它可能是"树没更新"，而不是"点击没生效"。
+          //   这两种情况的处置完全不同：
+          //     · 观测失效 ⇒ 判 DEGRADED（判据没法读，不是实现失败）；
+          //     · 观测有效但状态没变 ⇒ 判 FAIL（真的没点到/状态机没动）。
+          //   实测（连跑 4 次，1 次 FAIL）：FAIL 那次 8 轮重试 mtime 一次没涨，而同一坐标手工一次命中。
+          const mtList = attempts.map((a) => a.tree_mtime).filter((x) => x != null);
+          const mtimeAdvanced = mtList.length >= 2 && (Math.max(...mtList) - Math.min(...mtList)) > 0;
+          const stateChanged = state0 !== state1;
+          const observationValid = stateChanged || mtimeAdvanced;
+          steps.push({ step: 'state_changes', ok: stateChanged, observation_valid: observationValid,
+            before: state0, after: state1,
             diag: { win_id: win && win.id, bounds: [x, y, w, h], click_at: [Math.round(x + w / 2), Math.round(y + h / 2)], attempts,
+              mtime_advanced: mtimeAdvanced,
               mouse_cmd: mouseCmd, click_diag: lastClickDiag, geo_diag: lastGeoDiag, app_alive: !!(app && app.ok && app.proc && app.proc.exitCode === null), screen: xvfbOptsScreen } });
         } else {
           steps.push({ step: 'state_changes', ok: false, note: '没有可点的「播放」按钮' });
@@ -124,6 +137,9 @@ const { startXvfb, waitDisplay, startApp, findWindow, waitMapped, sleep, DOTNET_
     xvfb.kill();
   }
   const bad = steps.filter((s) => !s.ok);
+  // 【K-011-解4】观测失效（树文件在整段重试里没被重写过）⇒ 不能把"状态没变"当成实现失败。
+  const scStep = steps.find((s) => s.step === 'state_changes');
+  const obsInvalid = !!(scStep && scStep.observation_valid === false);
   globalThis.__ldpPlaybackRan = true;   // 【K-006】标记真检查已执行，避免下面那个占位 finish 覆盖它
   finish({
     acc: 'ACC-022', started, env: { ...env, dotnet_root: DOTNET_ROOT, steps },
@@ -134,7 +150,7 @@ const { startXvfb, waitDisplay, startApp, findWindow, waitMapped, sleep, DOTNET_
     //   现在**全部通过**（`state_changes` 观测到 `READY → PLAYING`），
     //   而原来的 `verdict: 'DEGRADED'` 是"点击还没修好时"留下的硬编码，早已过时。
     //   ⇒ 改成按实际结果算。渲染不在本判据范围内（见下面的 note，如实登记为已知限制）。
-    verdict: bad.length ? 'FAIL' : 'PASS',
+    verdict: obsInvalid ? 'DEGRADED' : (bad.length ? 'FAIL' : 'PASS'),
     // 渲染现状如实写进 degrade（不塞进 diff —— 那不是失败项，是判据之外的限制）：
     //   ① `MilCmdMediaPlayer` 收下命令但不画视频帧（Linux 侧没有解码+合成路径）；
     //   ② 样本没有 <MediaElement>（SCR-06 的元素表把 0/0~0/7 定死，加控件会让 ACC-027 错位）。
