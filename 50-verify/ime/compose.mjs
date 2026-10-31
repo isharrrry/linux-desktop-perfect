@@ -55,7 +55,7 @@ const { startXvfb, waitDisplay, startApp, findWindow, waitMapped, sleep, DOTNET_
         //   修法：起 Xvfb 之后立刻 `setxkbmap us`。
         {
           const r = sp('sh', ['-c', `DISPLAY=${xvfb.display} setxkbmap us 2>&1`]);
-          await sleep(500);
+          await sleep(2000);   // 【K-103】keymap 重建要时间，500ms 不够
           const km = String(sp('sh', ['-c', `DISPLAY=${xvfb.display} xmodmap -pke 2>/dev/null | head -2`]).stdout || '').trim();
           steps.push({ step: 'keymap', ok: km.includes('keycode'), setxkbmap_rc: r.status,
                        sample: km.split('\n')[0] || null });
@@ -154,7 +154,14 @@ const { startXvfb, waitDisplay, startApp, findWindow, waitMapped, sleep, DOTNET_
           //   ⇒ `ProcessKeyEvent(0,0,0)`（K-100 实测）。必须用 **XTest**（不带 `--window`），
           //   它注入的是"真事件"，keycode 由 X server 按当前 keymap 填。
           //   代价是依赖焦点 ⇒ 前面必须已经 `windowfocus` 成功。
-          sp2('sh', ['-c', `DISPLAY=${disp} xdotool type --delay 220 nihao`]);
+          // 【ACC-017 / K-103】打字前再确认 keymap 就绪（K-102 的 keycode=0 就是没 keymap）
+          const kmNow = String(sp2('sh', ['-c', `DISPLAY=${disp} xmodmap -pke 2>/dev/null | grep -c "keycode"`]).stdout || '').trim();
+          steps.push({ step: 'keymap_before_typing', ok: Number(kmNow) > 20, informational: true, keycodes: Number(kmNow) || 0 });
+          // 逐键发（比 `type nihao` 更可控，也便于在日志里对上每一个 keycode）
+          for (const ch of ['n', 'i', 'h', 'a', 'o']) {
+            sp2('sh', ['-c', `DISPLAY=${disp} xdotool key --clearmodifiers ${ch}`]);
+            await sleep(260);
+          }
           await sleep(2000);
           sp2('sh', ['-c', `DISPLAY=${disp} xdotool key space`]);
           await sleep(3000);
