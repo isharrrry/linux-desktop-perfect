@@ -59,7 +59,7 @@ const { startXvfb, waitDisplay, startApp, findWindow, waitMapped, sleep, DOTNET_
         } catch { /* 没装就算了，下面 ibus 会自己尝试 */ }
         steps.push({ step: 'dbus_session', ok: !!dbusAddr, address: dbusAddr || null });
         if (!/server=/.test(before)) {
-          sp('sh', ['-c', `DISPLAY=${xvfb.display} ${dbusAddr ? `DBUS_SESSION_BUS_ADDRESS=${dbusAddr} ` : ''}ibus-daemon --daemonize -r`]);
+          sp('sh', ['-c', `DISPLAY=${xvfb.display} ${dbusAddr ? `DBUS_SESSION_BUS_ADDRESS=${dbusAddr} ` : ''}ibus-daemon --daemonize --xim -r`]);
           startedByUs = true;
           await sleep(4000);
           before = ximServersOf(xvfb.display);
@@ -69,9 +69,11 @@ const { startXvfb, waitDisplay, startApp, findWindow, waitMapped, sleep, DOTNET_
       }
       // 【ACC-017 / K-098】导出 UIA 树：判据要验"文本真的进了输入框"，必须读到 `value`
       const treePath = `/tmp/acc017-tree-${Date.now()}.json`;
+      // 【ACC-017 / K-099】**必须用 `treeDump` 参数**，不能只往 extraEnv 塞 LDP_A11Y_DUMP ——
+      //   `app-session.mjs` 只在 `treeDump` 非空时才设 `DOTNET_STARTUP_HOOKS=LdpA11y.dll`（K-098 踩到）。
       app = await startApp({ sample: 'WpfFirstWindow', scr: 'SCR-01', display: xvfb.display,
-                             extraEnv: { WPF_LINUX_KEY_DIAG: '1', XMODIFIERS: '@im=ibus',
-                                         LDP_A11Y_DUMP: treePath } });
+                             treeDump: treePath,
+                             extraEnv: { WPF_LINUX_KEY_DIAG: '1', XMODIFIERS: '@im=ibus' } });
       if (app.ok) {
         const win = await findWindow(xvfb.display, 'WpfFirstWindow [SCR-01]', 25000);
         if (win) await waitMapped(xvfb.display, win.id);
