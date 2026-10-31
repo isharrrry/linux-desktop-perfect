@@ -209,6 +209,13 @@ namespace Ldp.A11y
 
         private static void Dump(Window win, string outPath, string scr, Application app)
         {
+            // 【K-011-解6】前面已确认：失败那次的 `d.InvokeAsync` 连等待超时都没返回，
+            //   说明 UI 线程当时不可用。这里给 Dump 本体打点，看它是不是那个卡住 UI 的元凶。
+            var __sw = System.Diagnostics.Stopwatch.StartNew();
+            Console.Error.WriteLine("[A11Y-DUMP] 开始 " + DateTime.UtcNow.ToString("HH:mm:ss.fff"));
+            Console.Error.Flush();
+            try
+            {
             var nodes = new List<Node>();
             // 根节点 = 窗口本身（path "0"，AT-SPI 的 frame）；其子节点从 "0/0" 起
             var winPeer = UIElementAutomationPeer.CreatePeerForElement(win) ?? new WindowAutomationPeer(win);
@@ -245,6 +252,18 @@ namespace Ldp.A11y
             sb.Append("\n  ]\n}\n");
             File.WriteAllText(outPath, sb.ToString(), new UTF8Encoding(false));
             GC.KeepAlive(app);
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine("[A11Y-DUMP] 异常：" + ex.GetType().Name + " " + ex.Message);
+                Console.Error.Flush();
+                throw;
+            }
+            finally
+            {
+                Console.Error.WriteLine("[A11Y-DUMP] 结束 耗时=" + __sw.ElapsedMilliseconds + "ms");
+                Console.Error.Flush();
+            }
         }
 
         // 树序遍历：有 peer 的元素占一个 path；没有 peer 的下沉（子元素接续父 path 段）
