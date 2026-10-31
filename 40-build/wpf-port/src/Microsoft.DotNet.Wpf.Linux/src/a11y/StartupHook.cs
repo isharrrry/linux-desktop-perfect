@@ -13,6 +13,14 @@ public static class StartupHook
 {
     public static void Initialize()
     {
+        // 【ACC-028】**无条件**先给 WinForms 家族补装 DllImport resolver。
+        //   为什么放在最前面：`System.Windows.Forms.dll` 是 Windows 原版，它没有我们的
+        //   `[ModuleInitializer]`，而 `SetDllImportResolver` 必须在它第一次 P/Invoke 之前装。
+        //   放在 `LDP_A11Y_DUMP` 判断之前，是为了让"只跑 WinForms、不要 UIA 树"的场景也生效。
+        try { Ldp.A11y.Win32ShimCoverage.Install(); } catch (Exception ex) {
+            Console.Error.WriteLine("[SHIM-COVER] Install 异常：" + ex.GetType().Name); Console.Error.Flush();
+        }
+
         string dump = Environment.GetEnvironmentVariable("LDP_A11Y_DUMP");
         if (string.IsNullOrEmpty(dump)) return;
         string scr = Environment.GetEnvironmentVariable("LDP_A11Y_SCREEN") ?? "";

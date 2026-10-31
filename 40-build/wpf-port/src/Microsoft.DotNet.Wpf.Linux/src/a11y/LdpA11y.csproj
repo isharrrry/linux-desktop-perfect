@@ -35,6 +35,7 @@
   <ItemGroup>
     <Compile Include="StartupHook.cs" />
     <Compile Include="TreeDumper.cs" />
+    <Compile Include="Win32ShimCoverage.cs" />
   </ItemGroup>
   <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
 </Project>

@@ -201,3 +201,33 @@ int ImmNotifyIME(void *himc, unsigned action, unsigned index, unsigned value)
 // 候选窗/组合窗定位：Linux 侧由 IME 自己画，这里只记录（判据读 calling 次数）
 int ImmSetCompositionWindow(void *himc, const void *form) { (void)himc; (void)form; g_stats.candidate_window_calls++; return 1; }
 int ImmSetCandidateWindow(void *himc, const void *form)  { (void)himc; (void)form; g_stats.candidate_window_calls++; return 1; }
+
+// ── 【ACC-028】SxS 激活上下文（`EnableVisualStyles` 需要）────────────────────────
+//   WinForms 的 `Application.EnableVisualStyles()` → `ThemingScope.CreateActivationContext`
+//   → `CreateActCtxW` → `ActivateActCtx`。Windows 上这用来激活 comctl32 的 manifest。
+//   **Linux 上没有 SxS，激活上下文没有对应语义** ⇒ 这里返回"成功 + 一个非零假句柄"，
+//   让调用方按"已激活"继续走下去（视觉样式的真正的呈现由我们的渲染承担）。
+//   实测：不加这两个，WinForms 程序在 `ApplicationConfiguration.Initialize()` 就抛
+//   `EntryPointNotFoundException: CreateActCtxW`。
+static int g_fake_actctx = 1;   // 假句柄的实体（地址稳定即可）
+
+void *CreateActCtxW(const void *pActCtx)
+{
+    (void)pActCtx;
+    imm_diag("CreateActCtxW → 假句柄（Linux 无 SxS）");
+    return (void *)&g_fake_actctx;
+}
+
+void *CreateActCtxA(const void *pActCtx) { return CreateActCtxW(pActCtx); }
+void *CreateActCtx(const void *pActCtx)  { return CreateActCtxW(pActCtx); }
+
+int ActivateActCtx(void *hActCtx, uintptr_t *lpCookie)
+{
+    (void)hActCtx;
+    if (lpCookie) *lpCookie = 0x4C4450u;   // 'LDP'，任意非零值
+    return 1;                               // TRUE
+}
+
+// 注： 已在 win32_misc.c:1276 实现（此处不重复定义，否则链接重复符号）
+void ReleaseActCtx(void *hActCtx) { (void)hActCtx; }
+int  AddRefActCtx(void *hActCtx)  { (void)hActCtx; return 1; }
