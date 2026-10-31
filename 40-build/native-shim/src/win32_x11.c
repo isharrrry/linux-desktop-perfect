@@ -226,25 +226,37 @@ void wpf_xim_attach_ic(Window w)
         fprintf(stderr, "\n"); fflush(stderr);
     }
     XIMStyle want = 0;
-    // 【ACC-017】优先 XIMPreeditCallbacks —— 只有它才会把预编辑字符串通过回调交给我们；
-    //   XIMPreeditNothing 下 IME 自己画，WPF 永远读不到预编辑。
+    // 【ACC-017 / K-080】**优先级反过来了：先要 XIMPreeditNothing，不再追求 callbacks。**
+    //   理由（子代理实测）：
+    //     1. Xlib **没有 commit 回调** —— 上屏字符串只能靠 `Xutf8LookupString` 在 `XFilterEvent` 之后取，
+    //        与用哪个 preedit style **无关**。
+    //     2. ibus 虽然**列出**了 `XIMPreeditCallbacks`(0x402/0x202)，但 **XCreateIC 建不出来**
+    //        （原来那段代码就是在 0x402 上 NULL 之后**直接 return、没有降级** ⇒ `g_xic` 永远是 NULL
+    //        ⇒ `XFilterEvent` 不生效 ⇒ commit 永远拿不到。这是 ACC-017 一直不通的真因）。
+    //     3. 而 `XIMPreeditNothing`(0x408) 下 **ibus 自己画浮动候选窗**，用户照样看得见候选词。
+    //   Wine 的 `winex11.drv/xim.c` 也是这个思路：要 callbacks 拿不到就 `input_style = input_style_fallback`。
+    int with_callbacks = 0;
     for (unsigned short i = 0; i < styles->count_styles; ++i) {
-        if ((styles->supported_styles[i] & XIMPreeditCallbacks) && !(styles->supported_styles[i] & XIMStatusCallbacks)) {
-            want = styles->supported_styles[i]; break;
-        }
+        if (styles->supported_styles[i] == (XIMPreeditNothing | XIMStatusNothing)) { want = styles->supported_styles[i]; break; }
     }
-    if (want == 0) {   // 再退一步：允许带 StatusCallbacks 的
-        for (unsigned short i = 0; i < styles->count_styles; ++i) {
-            if (styles->supported_styles[i] & XIMPreeditCallbacks) { want = styles->supported_styles[i]; break; }
-        }
-    }
-    int with_callbacks = (want != 0);
-    if (want == 0) {   // 最终回退：Nothing（此时拿不到预编辑，行为等同旧版）
+    if (want == 0) {   // 退一步：任何 PreeditNothing
         for (unsigned short i = 0; i < styles->count_styles; ++i) {
             if (styles->supported_styles[i] & XIMPreeditNothing) { want = styles->supported_styles[i]; break; }
         }
     }
+    if (want == 0) {   // 再退：才考虑 callbacks（有就比没有强）
+        for (unsigned short i = 0; i < styles->count_styles; ++i) {
+            if (styles->supported_styles[i] & XIMPreeditCallbacks) { want = styles->supported_styles[i]; with_callbacks = 1; break; }
+        }
+    }
     if (want == 0 && styles->count_styles > 0) want = styles->supported_styles[0];
+    // 保存一份 style 列表：XCreateIC 失败时要逐个降级（见下方）
+    int n_saved = 0;
+    XIMStyle saved_styles[16];
+    for (unsigned short i = 0; i < styles->count_styles && i < 16; ++i) {
+        saved_styles[i] = styles->supported_styles[i];
+        n_saved = (int)i + 1;
+    }
     XFree(styles);
     if (want == 0) {
         if (getenv("WPF_LINUX_KEY_DIAG")) { fprintf(stderr, "[XIM] 无可用样式，放弃建 IC\n"); fflush(stderr); }
@@ -300,7 +312,20 @@ void wpf_xim_attach_ic(Window w)
         g_xic = XCreateIC(g_xim, XNInputStyle, want, XNClientWindow, w, XNFocusWindow, w, NULL);
     }
     if (g_xic == NULL) {
-        if (getenv("WPF_LINUX_KEY_DIAG")) { fprintf(stderr, "[XIM] XCreateIC 返回 NULL（want=0x%lx callbacks=%d）\n", (unsigned long)want, with_callbacks); fflush(stderr); }
+        // 【ACC-017 / K-080】**必须降级重试**：原来这里直接 return ⇒ g_xic 永远 NULL ⇒ XFilterEvent 形同虚设。
+        //   逐个 style 试一遍，第一个建得起来的就用它。
+        if (getenv("WPF_LINUX_KEY_DIAG")) { fprintf(stderr, "[XIM] XCreateIC(want=0x%lx) 返回 NULL，开始逐个降级\n", (unsigned long)want); fflush(stderr); }
+        for (unsigned short i = 0; i < n_saved && g_xic == NULL; ++i) {
+            XIMStyle s2 = saved_styles[i];
+            g_xic = XCreateIC(g_xim, XNInputStyle, s2, XNClientWindow, w, XNFocusWindow, w, NULL);
+            if (g_xic != NULL) {
+                want = s2;
+                if (getenv("WPF_LINUX_KEY_DIAG")) { fprintf(stderr, "[XIM] 降级成功 style=0x%lx\n", (unsigned long)s2); fflush(stderr); }
+            }
+        }
+    }
+    if (g_xic == NULL) {
+        if (getenv("WPF_LINUX_KEY_DIAG")) { fprintf(stderr, "[XIM] XCreateIC 全部样式均失败\n"); fflush(stderr); }
         return;
     }
     wpf_imm_bind_hwnd((void *)w);   // WM_IME_* 投到这个窗口
