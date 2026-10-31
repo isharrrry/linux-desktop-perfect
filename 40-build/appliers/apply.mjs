@@ -113,8 +113,16 @@ const POINT_PATCHES = [
 
         private void WriteDocument(FixedDocument fixedDocument)
         {
+            // 【ACC-024 / K-135】**不能只靠 OpcPackage**：
+            //   'XpsDocument(string path, FileAccess, ...)' 那个构造函数**不给 _opcPackage 赋值**（K-134），
+            //   它走的是 CurrentXpsManager 那套（XpsPartBase.CurrentXpsManager，XpsDocument 继承自它）。
+            //   所以这里按 OpcPackage -> CurrentXpsManager.MetroPackage 的顺序取，两者任一可用即可。
             Package package = _xpsDocument.OpcPackage;
-            if (package == null) throw new InvalidOperationException("XpsDocument has no OPC package");
+            if (package == null)
+            {
+                package = _xpsDocument.CurrentXpsManager?.MetroPackage;
+            }
+            if (package == null) throw new InvalidOperationException("XpsDocument has no OPC package (both OpcPackage and CurrentXpsManager.MetroPackage are null)");
 
             const string nsXps = "http://schemas.microsoft.com/xps/2005/06";
             Uri uriFdseq = PackUriHelper.CreatePartUri(new Uri("/FixedDocumentSequence.fdseq", UriKind.Relative));
@@ -203,7 +211,7 @@ const POINT_PATCHES = [
   {
     patch: 'P26',
     file: 'src/Microsoft.DotNet.Wpf/src/ReachFramework/Packaging/XpsDocument.cs',
-    find: `using System.IO.Packaging;`,
+    find: 'using System.IO.Packaging;',
     replace: `using System.IO.Packaging;
 using System.Text;    // 【ACC-024 / K-130】ManagedXpsDocumentWriter 用 UTF8Encoding`,
     why: 'ACC-024：补 using System.Text（UTF8Encoding 需要）（K-130）',
