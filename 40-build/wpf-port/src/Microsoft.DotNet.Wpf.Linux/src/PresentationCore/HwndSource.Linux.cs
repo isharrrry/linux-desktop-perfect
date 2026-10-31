@@ -673,6 +673,17 @@ namespace System.Windows.Interop
             {
                 UsesPerPixelOpacity = parameters.EffectivePerPixelOpacity
             };
+            // 【K-011-解14】把 UsesPerPixelOpacity **缓存成字段**。
+            //   为什么：`HwndTarget.UsesPerPixelOpacity` 走
+            //   `CompositionTarget.VerifyAPIReadOnly()` → `DispatcherObject.VerifyAccess()`，
+            //   要求"调用线程 == CompositionTarget 的创建线程"。
+            //   而 `LayoutFilterMessage` 里的 `WM_WINDOWPOSCHANGING` 分支会读它，
+            //   那时代码可能正跑在**非 UI 线程**（经 `HwndSubclass.DispatcherCallbackOperation`
+            //   → `Dispatcher.LegacyInvokeImpl` 进来）⇒ 抛
+            //   `InvalidOperationException: The calling thread cannot access this object…`
+            //   ⇒ **未捕获 ⇒ 进程 abort**（实测：点击后约 6 s 必崩）。
+            //   这个值是创建期定死的，缓存后语义不变、且不再有任何跨线程访问。
+            _usesPerPixelOpacityCached = parameters.EffectivePerPixelOpacity;
             if (_hwndTarget.UsesPerPixelOpacity)
             {
                 _hwndTarget.BackgroundColor = Colors.Transparent;
@@ -1291,7 +1302,9 @@ namespace System.Windows.Interop
             // For windows with UsesPerPixelOpacity, we force the client to
             // fill the window, so we don't need to add in any frame space.
             //
-            if (!_adjustSizingForNonClientArea && !UsesPerPixelOpacity)
+            // 【K-011-解14】原来这里是 `!UsesPerPixelOpacity`（会走 HwndTarget 属性 → VerifyAccess）。
+            //   改用创建期缓存的值，避免在非 UI 线程上触发 InvalidOperationException。
+            if (!_adjustSizingForNonClientArea && !_usesPerPixelOpacityCached)
             {
                 int style = NativeMethods.IntPtrToInt32((IntPtr)SafeNativeMethods.GetWindowStyle(new HandleRef(this, _hwndWrapper.Handle), false));
                 int styleEx = NativeMethods.IntPtrToInt32((IntPtr)SafeNativeMethods.GetWindowStyle(new HandleRef(this, _hwndWrapper.Handle), true));
@@ -1689,6 +1702,9 @@ namespace System.Windows.Interop
             return result;
         }
 
+        /// <summary>【K-011-解14】`UsesPerPixelOpacity` 的缓存（见构造函数里的注释）。</summary>
+        private bool _usesPerPixelOpacityCached;
+
         private IntPtr LayoutFilterMessage(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
         {
             IntPtr result = IntPtr.Zero ;
@@ -1755,7 +1771,15 @@ namespace System.Windows.Interop
             if(!handled && (_constructionParameters != null || IsUsable))
             {
                 // Get the usesPerPixelOpacity from either the constructor parameters or the HwndTarget.
-                bool usesPerPixelOpacity = _constructionParameters != null ? ((HwndSourceParameters)_constructionParameters).EffectivePerPixelOpacity : _hwndTarget.UsesPerPixelOpacity;
+                // 【K-011-解14·真修法】原来这里在 `_constructionParameters == null` 时会读
+                //   `_hwndTarget.UsesPerPixelOpacity` —— 那个属性走
+                //   `CompositionTarget.VerifyAPIReadOnly()` → `VerifyAccess()`，要求调用线程
+                //   == CompositionTarget 的创建线程。而 `LayoutFilterMessage` 的
+                //   `WM_WINDOWPOSCHANGING` 分支可能跑在**非 UI 线程**上
+                //   （经 `HwndSubclass.DispatcherCallbackOperation` → `Dispatcher.LegacyInvokeImpl`）
+                //   ⇒ 抛 `InvalidOperationException` ⇒ 未捕获 ⇒ **进程 abort**。
+                //   实测：点击后约 6 s 必崩（4/4）。改用创建期缓存的值，语义不变、无跨线程访问。
+                bool usesPerPixelOpacity = _usesPerPixelOpacityCached;
 
                 switch(message)
                 {
