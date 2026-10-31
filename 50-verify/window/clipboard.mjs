@@ -57,7 +57,7 @@ try {
   // ③ XDND：**真的去读窗口的 XdndAware 属性**（D-011 第一步已实现"声明"，
   //   但"处理 XdndEnter/Position/Drop"那一层还没做 ⇒ 本步只验声明面）。
   {
-    let xdndOk = false, xdndValue = null, win = null, xdndMsg = null, xdndRaw = null;
+    let xdndOk = false, xdndValue = null, win = null, xdndMsg = null, xdndRaw = null, xdndStderr = null;
     const app = await startApp({ sample: 'WpfFirstWindow', scr: 'SCR-01', display: xvfb.display });
     if (app.ok) {
       win = await findWindow(xvfb.display, 'WpfFirstWindow [SCR-01]', 25000);
@@ -79,6 +79,9 @@ try {
           const line2 = (r2.stdout || '').trim().split(String.fromCharCode(10)).pop();
           try { xdndMsg = JSON.parse(line2); } catch { xdndMsg = null; }
           xdndRaw = (r2.stdout || '').trim().slice(-200);   // 诊断：把探针原始输出也带进读数
+          // 【2026-10-31 D-011 第 18 步】探针的 stderr 里才有 shim 的诊断（[XDND-*]、[DISPATCH] 等）。
+          //   原来只读 stdout ⇒ 那些诊断全被丢掉 ⇒ 排查时"看不到"不等于"没发生"。
+          xdndStderr = (r2.stderr || '').trim().slice(-800);
         }
       }
       app.kill();

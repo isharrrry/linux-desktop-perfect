@@ -945,6 +945,20 @@ LRESULT DispatchMessageW(const WPF_MSG *msg)
                     (g_wpf.key_state[0x11] & 0x80) ? 1 : 0, (g_wpf.key_state[0x10] & 0x80) ? 1 : 0,
                     (g_wpf.key_state[0x12] & 0x80) ? 1 : 0,
                     (unsigned long long)wpf_now_ms());
+    // 【2026-10-31 D-011 第 18 步】DispatchMessageW 是否真的被调到？
+    //   前面的诊断加在 wpf_dispatch_to_window 里，但那个函数是"dispatch 的落点"；
+    //   若 DispatchMessageW 本身没被调（或消息在中途被改），那里就永远是 0 次。
+    if (getenv("LDP_XDND_DIAG"))
+    {
+        static int s_dm_n = 0;
+        if (s_dm_n < 200)
+        {
+            ++s_dm_n;
+            fprintf(stderr, "[DISPATCH] #%d hwnd=%p msg=0x%04x\n", s_dm_n,
+                    (void *)msg->hwnd, (unsigned)msg->message);
+            if (msg->message == 0x0233) fflush(stderr);
+        }
+    }
     LRESULT r = wpf_dispatch_to_window(msg->hwnd, msg->message, msg->wParam, msg->lParam);
     s_dispatch_valid = 0;    // C 里没有 try/finally ⇒ 手动清（本函数无异常路径）
     s_dispatch_depth--;
