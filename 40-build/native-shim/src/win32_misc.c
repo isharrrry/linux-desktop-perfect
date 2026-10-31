@@ -214,6 +214,26 @@ BOOL BeginPaint(HWND h, WPF_PAINTSTRUCT *ps)
             ps->rcPaint.left = 0; ps->rcPaint.top = 0;
             ps->rcPaint.right = w->width; ps->rcPaint.bottom = w->height;
         }
+        // 【ACC-028 / K-163】**在 BeginPaint 里直接把背景画掉**。
+        //   为什么放在这里：K-162 证实控件分成两类 ——
+        //     · `UserPaint=false`（TextBox/ListBox/ComboBox）→ 走 `DefWindowProc`，背景会被画；
+        //     · `UserPaint=true`（Button/Label/Panel/Form）→ 走 `WmPaint`，但
+        //       `paintBackground = (usingBeginPaint && AllPaintingInWmPaint) || doubleBuffered`
+        //       对 `ScrollableControl` 派生类恒为 false ⇒ **背景没人画**。
+        //   ⇒ 在 `BeginPaint` 里统一补一次背景，两类控件就都能看见。
+        //   颜色规则：窗口类给了 `hbrBackground` 就用它；否则按「有父窗口=控件→灰，顶层→白」。
+        if (ps->hdc != WPF_FAKE_DC) {
+            wpf_window *pw2 = wpf_window_find(h);
+            if (pw2 && pw2->width > 0 && pw2->height > 0) {
+                wpf_class *pc2 = wpf_class_find_atom(pw2->class_atom);
+                uint32_t bgc = pc2 ? wpf_gdi_color(pc2->background, 0) : 0;
+                if (!bgc) bgc = pw2->parent ? 0x00F0F0F0 : 0x00FFFFFF;
+                WPF_RECT brc;
+                brc.left = 0; brc.top = 0;
+                brc.right = pw2->width; brc.bottom = pw2->height;
+                wpf_draw_fill_rect(ps->hdc, &brc, bgc);
+            }
+        }
         // 【ACC-028 / K-152】诊断：`WmPaint` 里 `if (doubleBuffered && clip 为 0) return;`
         //   而 `clip = paintScope.PaintRectangle` 正是这个 `rcPaint` —— 若窗口尺寸还是 0，
         //   整条绘制链会被这一句直接 return 掉（K-151 之后仍未画出画面的嫌疑点）。
