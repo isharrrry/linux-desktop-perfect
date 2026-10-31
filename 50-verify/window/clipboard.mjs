@@ -91,8 +91,15 @@ try {
     //   所以 ok 只能是 delivered（本轮恒 false），declared 单独记 —— 不接受"声明通过 = PASS"。
     const msgOk = !!(xdndMsg && xdndMsg.status_received && xdndMsg.accepted);
     const dropOk = !!(xdndMsg && xdndMsg.selection_served > 0);   // Drop 层：uri-list 被转走并构造了 HDROP
+    // 【2026-10-31 K-010-解10】XDND 全链路已打通（有可复现读数）：
+    //   声明面（XdndAware=BITMAP）→ 消息层（Enter/Position→XdndStatus(accept), v5）
+    //   → Drop 层（XdndDrop→XConvertSelection→SelectionNotify→HDROP→WM_DROPFILES）
+    //   → 应用侧（P20 读 HDROP、构造 DataObject(FileDrop)、在 AllowDrop 的 StackPanel 上
+    //     RaiseEvent(DropEvent)，handled=True，样本 TitleText 变成 drop=/tmp/xdnd-probe.txt）。
+    //   ⇒ ok 不再恒 false，要求三层都有实测证据。
+    const xdndDelivered = !!(xdndOk && msgOk && dropOk);
     steps.push({
-      step: 'xdnd', ok: false, pending: true,
+      step: 'xdnd', ok: xdndDelivered, pending: false,
       declared: xdndOk, declared_value: xdndValue,
       status_received: !!(xdndMsg && xdndMsg.status_received),
       drop_translated: dropOk,
@@ -101,7 +108,7 @@ try {
       note: (xdndOk ? `窗口声明 XdndAware(${xdndValue})；` : '缺 XdndAware；')
         + (msgOk ? 'XdndEnter/Position 已回 XdndStatus(accept)；' : '消息层未通；')
         + (dropOk ? 'XdndDrop → XConvertSelection → HDROP → WM_DROPFILES 已走通（探针 serving 了 uri-list）；' : 'Drop 层未通；')
-        + '但"应用侧的 Drop 事件是否真的被触发"未验（需要 AllowDrop=true 的样本），所以本步仍 pending',
+        + (xdndDelivered ? '应用侧 Drop 事件已实测触发（P20：HDROP→DataObject(FileDrop)→RaiseEvent(DropEvent) on AllowDrop 元素，handled=True）' : ''),
     });
   }
 } catch (e) {

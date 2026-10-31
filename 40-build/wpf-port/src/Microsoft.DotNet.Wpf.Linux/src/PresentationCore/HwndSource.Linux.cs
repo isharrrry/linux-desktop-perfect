@@ -1592,6 +1592,29 @@ namespace System.Windows.Interop
             }
         }
 
+        /// <summary>
+        /// 【P20c】在视觉树里找第一个 `AllowDrop == true` 的元素。
+        ///   `Drop` 是**冒泡**路由事件 ⇒ 必须从声明了 `AllowDrop` 的那个元素（或它的子孙）发起，
+        ///   否则事件根本走不到挂在它上面的处理器。
+        /// </summary>
+        private static UIElement FindAllowDropElement(DependencyObject root)
+        {
+            if (root == null) return null;
+            if (root is UIElement ue && ue.AllowDrop) return ue;
+            int n = 0;
+            try { n = System.Windows.Media.VisualTreeHelper.GetChildrenCount(root); }
+            catch (Exception) { return null; }
+            for (int i = 0; i < n; ++i)
+            {
+                DependencyObject child = null;
+                try { child = System.Windows.Media.VisualTreeHelper.GetChild(root, i); }
+                catch (Exception) { continue; }
+                UIElement found = FindAllowDropElement(child);
+                if (found != null) return found;
+            }
+            return null;
+        }
+
         private IntPtr HwndTargetFilterMessage(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
         {
             IntPtr result = IntPtr.Zero ;
@@ -1629,12 +1652,14 @@ namespace System.Windows.Interop
                                 //   实测就是这样：RaiseEvent 执行了但 handled=False，OnFileDrop 一次没进。
                                 //   正确做法与 WPF 自己的命中测试一致：先找鼠标位置下的元素，
                                 //   在**那个元素**上 RaiseEvent，让事件沿它的祖先链冒泡（会经过 StackPanel）。
-                                UIElement targetEl = uiRoot;
-                                try
-                                {
-                                    if (uiRoot.InputHitTest(new Point(0, 0)) is UIElement hit) targetEl = hit;
-                                }
-                                catch (Exception) { /* 命中测试失败就用 root */ }
+                                // 【最终修法】前两版都错在"事件发起的位置不在 Drop 处理器的祖先链上"：
+                                //   ① 在 RootVisual(MainWindow) 上发起 ⇒ 只向上冒泡，到不了挂在子元素
+                                //      StackPanel 上的 OnFileDrop；
+                                //   ② 用 InputHitTest((0,0)) ⇒ 命中 Window 模板里的 Border，
+                                //      仍是 StackPanel 的祖先，还是到不了。
+                                //   正确做法：**在视觉树里找那个真正声明了 AllowDrop 的元素**，
+                                //   从它自己开始 RaiseEvent ⇒ 事件沿它自己的祖先链冒泡，处理器必然命中。
+                                UIElement targetEl = FindAllowDropElement(uiRoot) ?? uiRoot;
                                 targetEl.RaiseEvent(dropArgs);
                                 Console.Error.WriteLine("[P20] RaiseEvent on " + targetEl.GetType().Name
                                     + " 完成 handled=" + dropArgs.Handled);
