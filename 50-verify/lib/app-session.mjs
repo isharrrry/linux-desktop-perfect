@@ -120,7 +120,11 @@ export async function startApp({ sample = 'WpfFirstWindow', scr = 'SCR-01', disp
 //   这里加一道有效性校验：只有 `xdotool getwindowgeometry` 成功返回的 id 才算找到。
 function windowUsable(display, id) {
   if (!id) return false;
-  const r = spawnSync('sh', ['-c', `DISPLAY=${display} xdotool getwindowgeometry --shell ${id} 2>/dev/null`], { encoding: 'utf8', timeout: 5000 });
+  // 【2026-10-31 回归修复】原来 timeout: 5000 —— `findWindow` 的 `waitFor` 会**反复**调这个，
+  //   一旦 xdotool 每次都失败就是 5 s × N，把 25 s 的窗口耗尽 ⇒ `findWindow` 直接返回 null
+  //   ⇒ 判据跳过 XDND 步（读数变成 `xdnd_declared: None`）。改成 800 ms：
+  //   xdotool 是本地调用，正常应 <50 ms；800 ms 只用于兜住异常。
+  const r = spawnSync('sh', ['-c', `DISPLAY=${display} xdotool getwindowgeometry --shell ${id} 2>/dev/null`], { encoding: 'utf8', timeout: 800 });
   return !!(r && r.status === 0 && r.stdout && /^X=-?\d+/m.test(r.stdout));
 }
 
@@ -131,8 +135,10 @@ export async function findWindow(display, titlePrefix, timeoutMs = 25000) {
       for (const line of r.stdout.split('\n')) {
         if (!line.includes(titlePrefix)) continue;
         const parts = line.trim().split(/\s+/);
+        // 【2026-10-31 K-006】**必须严格**：无效 id 会让调用方点在空处（ACC-022 的 state_changes 就靠这个）。
+        //   ⚠️ 曾试过"宽松 + usable 标记"，结果 ACC-022 立刻退回 READY→READY ⇒ 已恢复严格。
         if (windowUsable(display, parts[0]))
-          return { id: parts[0], title: parts.slice(3).join(' '), w: 0, h: 0 };
+          return { id: parts[0], title: parts.slice(3).join(' '), w: 0, h: 0, usable: true };
       }
     }
     // 没有 wmctrl：用 xwininfo 的树（含未映射窗口）
@@ -142,7 +148,7 @@ export async function findWindow(display, titlePrefix, timeoutMs = 25000) {
         if (!line.includes(titlePrefix)) continue;
         const m = line.match(/(0x[0-9a-f]+)\s+"([^"]*)".*?(\d+)x(\d+)\+/);
         if (m && windowUsable(display, m[1]))
-          return { id: m[1], title: m[2], w: Number(m[3]), h: Number(m[4]) };
+          return { id: m[1], title: m[2], w: Number(m[3]), h: Number(m[4]), usable: true };
       }
     }
     return null;

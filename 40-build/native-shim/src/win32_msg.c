@@ -873,6 +873,20 @@ BOOL TranslateMessage(const WPF_MSG *msg)
     // 我们在 X11 翻译层已经**直接**产生了 WM_CHAR（见 win32_x11.c），
     // 这里再产生一次就会重复。返回 FALSE = 「没有翻译出字符消息」，
     // 调用方（Dispatcher.TranslateAndDispatchMessage）不检查返回值，安全。
+    // 【2026-10-31 D-011 第 20 步】TranslateMessage 是 `TranslateAndDispatchMessage` 里
+    //   `handled==false` 分支的**第一个**调用 ⇒ 它有没有被调、以及 msg 还是不是 0x0233，
+    //   能直接区分"被 handled 拦下"和"消息在中途被改"。
+    if (msg && getenv("LDP_XDND_DIAG"))
+    {
+        static int s_tm_n = 0;
+        if (s_tm_n < 200)
+        {
+            ++s_tm_n;
+            fprintf(stderr, "[TRANSLATE] #%d hwnd=%p msg=0x%04x\n", s_tm_n,
+                    (void *)msg->hwnd, (unsigned)msg->message);
+            if (msg->message == 0x0233) fflush(stderr);
+        }
+    }
     (void)msg;
     return 0;
 }
