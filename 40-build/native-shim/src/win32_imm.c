@@ -59,6 +59,17 @@ void wpf_imm_set_available(int avail) { g_himc.available = avail ? 1 : 0; }
 int  wpf_imm_is_available(void)       { return g_himc.available; }
 void wpf_imm_bind_hwnd(void *hwnd)    { g_himc.hwnd = hwnd; }
 
+// 【ACC-017 / K-079】把 IME commit 出来的字符投给窗口。
+// WPF 的文本输入最终靠 `WM_CHAR`（`TextInput` 事件源），所以这里直接投 `WM_CHAR` 而不是 `WM_IME_CHAR`。
+// 调用方（`win32_x11.c` 的 XIM commit 路径）已经保证是 UTF-16 码元，代理对会分两次调用。
+#define WM_CHAR 0x0102
+void wpf_imm_post_char(uint16_t ch)
+{
+    if (!g_himc.hwnd) return;
+    PostMessageW(g_himc.hwnd, WM_CHAR, (uintptr_t)ch, 1);
+    if (g_himc.available) g_stats.composition_msgs++;
+}
+
 void wpf_imm_preedit_start(void)
 {
     g_himc.in_composition = 1;

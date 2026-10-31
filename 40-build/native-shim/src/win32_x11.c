@@ -69,6 +69,8 @@ static pthread_mutex_t g_xlock = PTHREAD_MUTEX_INITIALIZER;
 //   这一层依赖具体 IM 服务器的协议细节，见 70-operate 的 D-014。
 #include "win32_imm.h"
 
+// 【ACC-017 / K-079】IME commit 的字符由 IMM32 层投递（它知道当前绑定的 hwnd）
+extern void wpf_imm_post_char(uint16_t ch);
 static XIM  g_xim = NULL;
 static int  g_xim_inited = 0;
 static XIC  g_xic = NULL;          // 当前窗口的输入上下文（有 IM 服务器时才有）
@@ -80,14 +82,52 @@ static void wpf_xim_init_once(void)
     if (g_xim_inited) return;
     g_xim_inited = 1;
     if (!g_wpf.dpy) return;
-    // 让 Xlib 用 XMODIFIERS（如 `@im=ibus`）挑服务器；没有服务器时这里返回 NULL 是**正常**的
-    XSetLocaleModifiers("");
+    // 【ACC-017 / K-079】**必须把 XMODIFIERS 传进去**。
+    //   传空串时 XNQueryInputStyle 只返回 2 个 style（PreeditNone/StatusNone + PreeditNothing/StatusNothing），
+    //   传 "@im=ibus" 才看得到全部 6 个（含 PreeditCallbacks）。之前"ibus 不支持 callbacks"是观测假象。
+    {
+        const char *mods = getenv("XMODIFIERS");
+        XSetLocaleModifiers(mods ? mods : "@im=ibus");
+    }
     g_xim = XOpenIM(g_wpf.dpy, NULL, NULL, NULL);
     wpf_imm_set_available(g_xim != NULL);   // 【ACC-017】IMM32 层据此决定 ImmGetContext 返回 NULL 还是 HIMC
     if (getenv("WPF_LINUX_KEY_DIAG")) {
         fprintf(stderr, "[XIM] XOpenIM => %s（XMODIFIERS=%s）\n",
                 g_xim ? "ok" : "NULL（无输入法服务器）",
                 getenv("XMODIFIERS") ? getenv("XMODIFIERS") : "(unset)");
+        fflush(stderr);
+    }
+}
+
+// 【ACC-017 / K-079】从被 IME 消费的键事件里取出**已上屏**的字符串并投给窗口。
+//   关键：`Xlib` **没有 commit 回调**（只有 PreeditStart/Done/Draw/Caret 四个 preedit 回调），
+//   commit 串**只能**通过 `Xutf8LookupString`/`XmbLookupString` 在 `XFilterEvent` 之后拿到。
+//   ⇒ 所以 `XFilterEvent` 返回 True 之后**不能直接 continue**，必须先来这里取一次。
+static void wpf_xim_commit(XEvent *ev)
+{
+    if (g_xic == NULL || ev == NULL) return;
+    char buf[256];
+    KeySym ks = 0;
+    Status st = 0;
+    int n = Xutf8LookupString(g_xic, &ev->xkey, buf, sizeof(buf) - 1, &ks, &st);
+    if (n <= 0) return;
+    if (st != XLookupChars && st != XLookupBoth) return;   // 只有这两个状态携带 commit 串
+    buf[n] = 0;
+    // UTF-8 → UTF-16（手写解码，不依赖 locale/iconv），代理对分两次投 WM_CHAR
+    const unsigned char *p = (const unsigned char *)buf;
+    int posted = 0;
+    while (*p) {
+        uint32_t cp;
+        if (*p < 0x80) { cp = *p++; }
+        else if ((*p & 0xE0) == 0xC0) { if (!p[1]) break; cp = (uint32_t)(p[0] & 0x1F) << 6 | (p[1] & 0x3F); p += 2; }
+        else if ((*p & 0xF0) == 0xE0) { if (!p[1] || !p[2]) break; cp = (uint32_t)(p[0] & 0x0F) << 12 | (uint32_t)(p[1] & 0x3F) << 6 | (p[2] & 0x3F); p += 3; }
+        else if ((*p & 0xF8) == 0xF0) { if (!p[1] || !p[2] || !p[3]) break; cp = (uint32_t)(p[0] & 0x07) << 18 | (uint32_t)(p[1] & 0x3F) << 12 | (uint32_t)(p[2] & 0x3F) << 6 | (p[3] & 0x3F); p += 4; }
+        else { p++; continue; }
+        if (cp <= 0xFFFF) { wpf_imm_post_char((uint16_t)cp); posted++; }
+        else { cp -= 0x10000; wpf_imm_post_char((uint16_t)(0xD800 + (cp >> 10))); wpf_imm_post_char((uint16_t)(0xDC00 + (cp & 0x3FF))); posted += 2; }
+    }
+    if (posted && getenv("WPF_LINUX_KEY_DIAG")) {
+        fprintf(stderr, "[XIM] commit：%d 个码元（status=%d）\n", posted, (int)st);
         fflush(stderr);
     }
 }
@@ -1378,7 +1418,12 @@ int wpf_x11_pump_into_queue(wpf_thread *t)
             XLOCK();
             int consumed = XFilterEvent(&filtered, None);
             XUNLOCK();
-            if (consumed) { XLOCK(); continue; }
+            if (consumed) {
+                // 【ACC-017 / K-079】**不能直接 continue**：IME 上屏的字符就在此刻由
+                //   `Xutf8LookupString` 产生。先取出来投给窗口，再跳过键盘翻译。
+                wpf_xim_commit(&filtered);
+                XLOCK(); continue;
+            }
         }
 
         // 【KEY_DIAG 第一格】"事件到底有没有进到本进程" —— 收到即打（含合成位）。
