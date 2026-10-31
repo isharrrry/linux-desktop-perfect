@@ -194,8 +194,7 @@ const POINT_PATCHES = [
             return package.CreatePart(partUri, contentType, CompressionOption.Normal);
         }
     }
-
-`,
+}`,
     why: 'ACC-024：新增 ManagedXpsDocumentWriter（托管版 XPS 写入，按公开规范写 3 个 part）（K-123）',
   },
   {
