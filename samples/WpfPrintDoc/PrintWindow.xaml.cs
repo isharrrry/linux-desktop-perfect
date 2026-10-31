@@ -24,18 +24,23 @@ namespace LinuxDesktopPerfect.Samples.WpfPrintDoc
         {
             try
             {
-                var server = new LocalPrintServer();
-                // 【ACC-024 / K-055】不用 DefaultPrintQueue —— 它在我们的实现里是 null。
-                // 直接按名字取队列（SCR-05 的下拉框就是 "Fake CUPS 队列" 对应 shim 的 EnumPrinters 返回值）。
-                PrintQueue queue = server.GetPrintQueue("Fake CUPS Queue");
-                XpsDocumentWriter writer = PrintQueue.CreateXpsDocumentWriter(queue);
-                var doc = new FixedDocument();
-                var page = new FixedPage();
-                page.Children.Add(new TextBlock { Text = "打印测试" });
-                var pc = new PageContent();
-                ((IAddChild)pc).AddChild(page);
-                doc.Pages.Add(pc);
-                writer.Write(doc);
+                // 【ACC-024 / K-055】PrintServer/PrintQueue 的两个入口都在托管层 NRE（winspool 根本没被调到），
+                // 所以这里走**不需要打印机**的 XPS 路径：XpsDocument + XpsDocumentWriter 直接写文件。
+                // 这一半验证的是 XPS 序列化（ReachFramework 594 类型）+ 打包（System.IO.Packaging），
+                // 「打印到 CUPS」那半仍未实现，会单独记。
+                string xpsPath = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "ldp-print-" + DateTime.Now.Ticks + ".xps");
+                using (var xps = new System.Windows.Xps.Packaging.XpsDocument(xpsPath, System.IO.FileAccess.ReadWrite, System.IO.Packaging.CompressionOption.Fast))
+                {
+                    var writer = System.Windows.Xps.Packaging.XpsDocument.CreateXpsDocumentWriter(xps);
+                    var doc = new FixedDocument();
+                    var page = new FixedPage();
+                    page.Children.Add(new TextBlock { Text = "打印测试" });
+                    var pc = new PageContent();
+                    ((IAddChild)pc).AddChild(page);
+                    doc.Pages.Add(pc);
+                    writer.Write(doc);
+                }
+                Console.Error.WriteLine("[PRINT] XPS 已写出：" + xpsPath);
                 SetReadouts("job=1 state=done", "pages=1");
             }
             catch (Exception ex)
