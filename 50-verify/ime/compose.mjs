@@ -37,11 +37,48 @@ const { startXvfb, waitDisplay, startApp, findWindow, waitMapped, sleep, DOTNET_
   const steps = [];
   try {
     if (await waitDisplay(xvfb.display)) {
-      app = await startApp({ sample: 'WpfFirstWindow', scr: 'SCR-01', display: xvfb.display });
+      // 【2026-10-31】原来这里只数了 shim 里的 XIM 符号就判红，**从来没测过 XOpenIM**。
+      //   而"本机没有输入法服务器"这个理由是**错的**：ibus 早就装好了
+      //   （`ibus 1.5.26` + `ibus-libpinyin` + `ibus-table-wubi`），只是 `ibus-daemon` 没启动。
+      //   判据自己负责环境（"判据的命令是判据的一部分"）：没跑就起来，起来后**实测** XIM。
+      {
+        const { spawnSync: sp } = await import('node:child_process');
+        // 【关键】ibus-daemon 是**每个 X display 一个**：用 `pgrep` 判断"有没有在跑"
+        //   会命中别的 display 上的实例（本轮实测就踩了这个：`pgrep` 找到 :190 的那个，
+        //   于是没给判据自己的 display 起 daemon ⇒ `XIM_SERVERS` 是 `no such atom`）。
+        //   ⇒ 改成按 **该 display 的 XIM_SERVERS** 判断。
+        const ximServersOf = (d) => String(sp('sh', ['-c', `DISPLAY=${d} xprop -root XIM_SERVERS 2>/dev/null`]).stdout || '').trim();
+        let before = ximServersOf(xvfb.display);
+        let startedByUs = false;
+        if (!/server=/.test(before)) {
+          sp('sh', ['-c', `DISPLAY=${xvfb.display} ibus-daemon --daemonize --xim`]);
+          startedByUs = true;
+          await sleep(3000);
+          before = ximServersOf(xvfb.display);
+        }
+        steps.push({ step: 'ibus_daemon', ok: /server=/.test(before),
+                     started_by_us: startedByUs, xim_servers: before || null });
+      }
+      app = await startApp({ sample: 'WpfFirstWindow', scr: 'SCR-01', display: xvfb.display,
+                             extraEnv: { WPF_LINUX_KEY_DIAG: '1', XMODIFIERS: '@im=ibus' } });
       if (app.ok) {
         const win = await findWindow(xvfb.display, 'WpfFirstWindow [SCR-01]', 25000);
         if (win) await waitMapped(xvfb.display, win.id);
         steps.push({ step: 'window', ok: !!win, got: win ? win.title : null });
+        // 等 XIM 初始化（shim 在第一次聚焦时 XOpenIM + XCreateIC）
+        await sleep(5000);
+        const tr = app.trace ? app.trace() : '';
+        const ximOpenOk = /\[XIM\] XOpenIM => ok/.test(tr);
+        const xicOk = /\[XIM\] XCreateIC ok/.test(tr);
+        const mOpen = tr.match(/\[XIM\] XOpenIM => ([^（\n]*)/);
+        const mIc = tr.match(/\[XIM\] XCreateIC ok（第 (\d+) 个）style=(0x[0-9a-f]+)/);
+        steps.push({ step: 'xim_bridge', ok: ximOpenOk && xicOk,
+                     xopenim: mOpen ? mOpen[1].trim() : null,
+                     xcreateic_count: mIc ? Number(mIc[1]) : 0,
+                     ic_style: mIc ? mIc[2] : null,
+                     note: ximOpenOk && xicOk
+                       ? 'XIM 桥实测可用（XOpenIM ok + XCreateIC ok）'
+                       : 'XIM 桥未建立（见 xopenim 字段）' });
       } else {
         steps.push({ step: 'startup', ok: false, reason: app.reason });
       }
@@ -51,6 +88,11 @@ const { startXvfb, waitDisplay, startApp, findWindow, waitMapped, sleep, DOTNET_
     xvfb.kill();
   }
   const bad = steps.filter((s) => !s.ok);
+  const ximStep = steps.find((s) => s.step === 'xim_bridge');
+  const ximOk = !!(ximStep && ximStep.ok);
+  // 【2026-10-31 口径】XIM 桥（XOpenIM/XCreateIC/XFilterEvent）实测可用，
+  //   但 **预编辑/提交回调 → WM_IME_*** 这一层仍未实现 ⇒ "四条路径"一条都没走通
+  //   ⇒ 仍然判 FAIL，不放宽。只是把失败**理由**改成实测的、可复现的那条。
   finish({
     acc: 'ACC-017', started, env: { ...env, dotnet_root: DOTNET_ROOT, xim_symbols_in_shim: ximInShim, case: opts.case || 'preedit', steps },
     expectRef: 'ACC-017：预编辑/提交/取消/候选窗定位四路径',
@@ -58,16 +100,15 @@ const { startXvfb, waitDisplay, startApp, findWindow, waitMapped, sleep, DOTNET_
     diff: [
       ...missingNotes,
       ...bad.map((s) => `${s.step} 失败：${JSON.stringify(s).slice(0, 240)}`),
-      ximInShim > 0
-        ? `缺口：shim 已接 XIM（XOpenIM/XFilterEvent/焦点窗口的 XCreateIC+XSetICFocus 共 ${ximInShim} 处），但 ①本机**没有输入法服务器**（XOpenIM 返回 NULL，IC 建不起来）②**预编辑/提交回调 → WM_IME_*** 这一层还没做 ⇒ 四条路径仍无法验证（D-014 第二/三步）`
-        : `缺口：shim 无 XIM 入口（计数 = ${ximInShim}），也不产生 WM_IME_* ⇒ 四条路径都没有承载面`,
+      ximOk
+        ? `缺口（已实测）：XIM 桥**可用** —— ibus-daemon 由判据自己启动，`
+          + `\`XOpenIM => ok\`、\`XCreateIC ok（${ximStep.xcreateic_count} 个，style=${ximStep.ic_style}）\`；`
+          + `但 **预编辑/提交回调 → \`WM_IME_*\`** 这一层仍未实现 ⇒ 预编辑/提交/取消/候选窗定位四条路径都没有承载面（D-014 第二/三步）。`
+        : `缺口：XIM 桥未能建立（${ximStep ? ximStep.note : '未探测'}）。`
+          + `shim 里有 XIM 入口（计数 ${ximInShim}），但本环境拿不到输入法服务器 ⇒ 四条路径无法验证。`,
     ],
   });
 }
 
-// 被测对象齐备时才做真检查（当前路径下尚未到达）
-finish({
-  acc: 'ACC-017', started, env, verdict: 'FAIL', degrade: 'none',
-  expectRef: 'ACC-017：预编辑/提交/取消/候选窗定位四路径',
-  diff: ['被测对象齐备，但本条断言尚未接入（判据实现未完成，不得计为通过）', '依赖切片：见 08 §4 矩阵对应门'],
-});
+// 【2026-10-31】原来这里还有一个**无条件**的占位 finish，会把上面的真检查覆盖掉
+//   （和 ACC-022 同一个毛病）。已删除：真检查一定会 finish。
