@@ -159,6 +159,28 @@ namespace Ldp.A11y
             if (g_repeatStarted) { Console.Error.WriteLine("[A11Y-REPEAT] StartRepeat 重复调用，已跳过"); Console.Error.Flush(); return; }
             g_repeatStarted = true;
             Console.Error.WriteLine("[A11Y-REPEAT] StartRepeat 开始（400ms 周期）"); Console.Error.Flush();
+            // 【K-011-解8】一刀切开两种可能：
+            //   · 心跳（DispatcherTimer，Normal 优先级，1s）在卡住期间**也停了** ⇒ UI 线程真的不再转
+            //     （渲染/死锁），那就不是调度公平性问题；
+            //   · 心跳还在、只有我们的 `InvokeAsync(Background)` 不回 ⇒ 排队策略问题。
+            try
+            {
+                var hb = new DispatcherTimer(DispatcherPriority.Normal)
+                {
+                    Interval = TimeSpan.FromSeconds(1)
+                };
+                hb.Tick += (s2, e2) =>
+                {
+                    Console.Error.WriteLine("[A11Y-HB] tick " + DateTime.UtcNow.ToString("HH:mm:ss.fff"));
+                    Console.Error.Flush();
+                };
+                hb.Start();
+                Console.Error.WriteLine("[A11Y-HB] 心跳已启动（1s）"); Console.Error.Flush();
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine("[A11Y-HB] 启动失败：" + ex.GetType().Name); Console.Error.Flush();
+            }
             Dispatcher d = app.Dispatcher;
             var t = new Thread(() =>
             {
