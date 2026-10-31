@@ -23,6 +23,8 @@ namespace WpfGfx.Linux.Commands
             // 这 5 条在上游 Generated/wgx_commands.cs 里没有结构体定义：
             // 线上只有 MILCMD Type（+ Handle），8 字节。
             // VisualCreate(0x1a) 与 ValidateStructureOrder(0x8e) 的长度在下面各自的分段里。
+            // 0x17 媒体播放器：上游没有结构体定义（wgx_command_types.cs 里查不到），取最小下界。
+            MilCmd.MilCmdMediaPlayer => 8,
             MilCmd.MilCmdTransportSyncFlush => 8,
             MilCmd.MilCmdTransportDestroyResourcesOnChannel => 8,
             MilCmd.MilCmdChannelCreateResource => 8,
@@ -241,8 +243,9 @@ namespace WpfGfx.Linux.Commands
             // C 类：载荷是 Windows 事件句柄 / 原生 C++ 对象指针（Linux 无对应概念）
             MilCmd.MilCmdDoubleBufferedBitmap,
             MilCmd.MilCmdDoubleBufferedBitmapCopyForward,
-            // B 类：媒体播放器（需先有播放器子系统）
-            MilCmd.MilCmdMediaPlayer,
+            // 【2026-10-31 移出】0x17 媒体播放器：K-005 修好后，MILFactoryCreateMediaPlayer /
+            //   MILMediaOpen / 13 个 media 方法已实现，这条命令不再需要短路成 E_NOTIMPL。
+            //   注意口径：这里只是"**收得下**"，不做真正的视频渲染（见 DispatchCore 的 case 留痕）。
         };
 
         /// <summary>M1 返回 E_NOTIMPL 的命令数。</summary>

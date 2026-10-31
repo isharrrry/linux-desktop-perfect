@@ -96,6 +96,13 @@ namespace WpfGfx.Linux.Commands
                     return HResult.S_OK;
 
                 // ---------------- 传输 / 资源（命令头 8 字节） ----------------
+                // 0x17 媒体播放器：**收得下、不渲染**（与 shader 的处理同口径）。
+                //   状态机侧（MILFactoryCreateMediaPlayer/MILMediaOpen/…）已真实现，
+                //   但这条渲染命令的载荷（视频帧）没有对应的 Linux 合成路径 ⇒
+                //   这里返回 S_OK 只是让上游不再收到 E_NOTIMPL，**不表示视频画面能出来**。
+                case MilCmd.MilCmdMediaPlayer:
+                    return HResult.S_OK;
+
                 case MilCmd.MilCmdTransportSyncFlush:
                     return HResult.S_OK;                       // 本实现里批次即同步点
 

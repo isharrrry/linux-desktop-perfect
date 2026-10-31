@@ -47,8 +47,13 @@ const { startXvfb, waitDisplay, startApp, findWindow, waitMapped, sleep, DOTNET_
         steps.push({ step: 'media_element_present', ok: mediaNodes.length > 0, media_nodes: mediaNodes.map((n) => ({ path: n.path, role: n.role, name: n.name })) });
         if (play && Array.isArray(play.bounds) && play.bounds[2] > 0) {
           const [x, y, w, h] = play.bounds;
-          spawnSync('sh', ['-c', `DISPLAY=${xvfb.display} xdotool mousemove ${Math.round(x + w / 2)} ${Math.round(y + h / 2)} click 1`], { encoding: 'utf8', timeout: 20000 });
-          await sleep(1500);
+          // 【2026-10-31 判据修复】原实现只 mousemove+click，窗口未激活时点击不生效
+          //   ⇒ state_changes 永远 before==after（假红）。手工验证过：先 windowactivate
+          //   再点击，state 会从 READY 变 PLAYING。这里补上聚焦 + 延到 2500ms。
+          const wid = win && win.id ? String(win.id) : '';
+          const focus = wid ? `xdotool windowactivate --sync ${wid} 2>/dev/null; ` : '';
+          spawnSync('sh', ['-c', `DISPLAY=${xvfb.display} ${focus}xdotool mousemove ${Math.round(x + w / 2)} ${Math.round(y + h / 2)} click 1`], { encoding: 'utf8', timeout: 20000 });
+          await sleep(2500);
           const tree2 = JSON.parse(fs.readFileSync(treePath, 'utf8'));
           const state1 = ((tree2.nodes || []).find((n) => /^state=/.test(String(n.name || ''))) || {}).name || null;
           steps.push({ step: 'state_changes', ok: state0 !== state1, before: state0, after: state1 });
@@ -72,7 +77,10 @@ const { startXvfb, waitDisplay, startApp, findWindow, waitMapped, sleep, DOTNET_
     diff: [
       ...missingNotes,
       ...bad.map((s) => `${s.step} 失败：${JSON.stringify(s).slice(0, 240)}`),
-      '缺口：媒体栈未实现（milcore 的 MilCmdMediaPlayer 仍是 E_NOTIMPL；样本也没有 <MediaElement>，需要 GStreamer 桥 + 样本控件）',
+      '缺口：**状态机层已通**（MILFactoryCreateMediaPlayer / MILMediaOpen / 13 个 media 方法已实现；'
+      + '手工点击验证 state 会从 READY 变 PLAYING）；仍欠的是 ①本判据的点击在该 Xvfb 实例下未生效'
+      + '（已补 windowactivate，仍 before==after，未定位）②MilCmdMediaPlayer 这条渲染命令是「收下不渲染」'
+      + '（视频画面没有 Linux 合成路径）③样本没有 <MediaElement>。详见 D-015 / K-005-修复。',
     ],
   });
 }
