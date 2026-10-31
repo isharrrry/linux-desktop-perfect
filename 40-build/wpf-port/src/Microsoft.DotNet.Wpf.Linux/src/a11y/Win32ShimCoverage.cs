@@ -61,8 +61,14 @@ namespace Ldp.A11y
             //   （它自己会吞掉），于是走我们这条 ⇒ 由本仓的 `gdiplus` shim（29 个 Gdip* 导出）提供实现。
             //   这就是绕开 "System.Drawing.Common is not supported on non-Windows platforms" 的路径。
             bool cover = n.StartsWith("System.Windows.Forms", StringComparison.Ordinal)
-                      || n.StartsWith("System.Drawing", StringComparison.Ordinal)
                       || n.StartsWith("System.Private.Windows", StringComparison.Ordinal);
+            // 【不要覆盖 System.Drawing.Common 自己的 resolver】
+            //   我们换成 corefx 3.1 编的 Unix 版之后，它自己有 `System.Drawing.LibraryResolver`
+            //   （在 `Gdip..cctor` 里 `SetDllImportResolver`）。我们再抢着装会让它抛
+            //   `InvalidOperationException: A resolver is already set for the assembly`（实测）。
+            //   让它自己装，我们只需在 `$FX/` 提供 `libgdiplus.so` 符号链接指向 `libwpfwin32.so`
+            //   （它找的就是 `libgdiplus`，见 `src/misc/ExternDll.Unix.cs` 的 `Gdiplus = "gdiplus"`）。
+            if (n.StartsWith("System.Drawing", StringComparison.Ordinal)) return;
             if (!cover) return;
             try
             {

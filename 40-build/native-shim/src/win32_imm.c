@@ -240,3 +240,75 @@ int GetCurrentActCtx(void **lphActCtx)
     if (lphActCtx) *lphActCtx = (void *)&g_fake_actctx;
     return 1;
 }
+
+// ── 【ACC-028】窗口站 / 桌面（WinForms 的 `SystemInformation.UserInteractive` 需要）──
+//   Windows 上进程属于某个窗口站（WinSta0）和桌面（Default）；Linux 没有这个概念。
+//   这里返回**固定的非零假句柄**，并让 `GetUserObjectInformationW` 对"名字"查询返回 "WinSta0"/"Default"，
+//   对"标志"查询返回 0（表示没有 WSF_VISIBLE 之外的语义）。
+//   实测：不补这两个，WinForms 在 `ApplicationConfiguration.Initialize()` 就抛
+//   `EntryPointNotFoundException: GetProcessWindowStation`。
+static int g_fake_winsta = 1;
+static int g_fake_desktop = 2;
+
+void *GetProcessWindowStation(void) { return (void *)&g_fake_winsta; }
+void *GetThreadDesktop(uint32_t tid) { (void)tid; return (void *)&g_fake_desktop; }
+
+// nIndex: 2 = UOI_NAME, 1 = UOI_FLAGS, 3 = UOI_TYPE, 4 = UOI_USER_SID
+int GetUserObjectInformationW(void *hObj, int nIndex, uint16_t *pvInfo, uint32_t nLength, uint32_t *pNeeded)
+{
+    const char *name = (hObj == (void *)&g_fake_desktop) ? "Default" : "WinSta0";
+    if (nIndex == 2 || nIndex == 3) {            // UOI_NAME / UOI_TYPE
+        if (!pvInfo || nLength < 2) { if (pNeeded) *pNeeded = 2; return 0; }
+        int i = 0;
+        while (name[i] && (uint32_t)(i + 1) * 2 <= nLength) { pvInfo[i] = (uint16_t)name[i]; i++; }
+        pvInfo[i] = 0;
+        if (pNeeded) *pNeeded = (uint32_t)(i + 1) * 2;
+        return 1;
+    }
+    if (nIndex == 1) {                            // UOI_FLAGS → USEROBJECTFLAGS{ fInherit, fReserved, dwFlags }
+        if (!pvInfo || nLength < 12) { if (pNeeded) *pNeeded = 12; return 0; }
+        int32_t *f = (int32_t *)pvInfo;
+        f[0] = 0; f[1] = 0; f[2] = 1;             // dwFlags = WSF_VISIBLE
+        if (pNeeded) *pNeeded = 12;
+        return 1;
+    }
+    if (pNeeded) *pNeeded = 0;
+    return 0;
+}
+
+void *GetProcessWindowStationA(void) { return GetProcessWindowStation(); }
+int GetUserObjectInformationA(void *h, int i, void *p, uint32_t n, uint32_t *pn) { return GetUserObjectInformationW(h, i, (uint16_t *)p, n, pn); }
+
+// ── 【ACC-028】GDI 字体（WinForms 的 `System.Windows.Forms` 用 GDI，不是 GDI+）─────────
+//   WinForms 的 `Control`/`TextRenderer` 走 `CreateFontIndirectW` → `SelectObject` → `TextOut`/`GetTextMetrics`。
+//   本 shim 的 GDI 历来只有 `SelectObject`/`DeleteObject`/`GetObjectW` 三个存根（WPF 不需要 GDI 绘制）。
+//   Linux 上真正的文字渲染在 Skia/DirectWrite 那条链上；这里给字体**一个稳定的假句柄**，
+//   让控件能构造出来。**诚实标注**：用这个句柄做 `TextOut` 不会真的画出字形（见 K-016 的口径）。
+//   实测：不补它，WinForms 在 `Control..ctor` → `CreateFontIndirect` 就抛 `EntryPointNotFoundException`。
+static int g_fake_font = 1;
+
+void *CreateFontIndirectW(const void *lplf)
+{
+    (void)lplf;
+    return (void *)&g_fake_font;
+}
+
+void *CreateFontIndirectA(const void *lplf) { return CreateFontIndirectW(lplf); }
+void *CreateFontIndirect(const void *lplf)  { return CreateFontIndirectW(lplf); }
+
+void *CreateFontW(int32_t h, int32_t w, int32_t esc, int32_t orient, int32_t weight,
+                  uint32_t italic, uint32_t underline, uint32_t strike,
+                  uint32_t charset, uint32_t outPrec, uint32_t clipPrec, uint32_t quality,
+                  uint32_t pitch, const uint16_t *face)
+{
+    (void)h; (void)w; (void)esc; (void)orient; (void)weight; (void)italic; (void)underline;
+    (void)strike; (void)charset; (void)outPrec; (void)clipPrec; (void)quality; (void)pitch; (void)face;
+    return (void *)&g_fake_font;
+}
+void *CreateFontA(int32_t h, int32_t w, int32_t esc, int32_t orient, int32_t weight,
+                  uint32_t italic, uint32_t underline, uint32_t strike,
+                  uint32_t charset, uint32_t outPrec, uint32_t clipPrec, uint32_t quality,
+                  uint32_t pitch, const char *face)
+{
+    return CreateFontW(h, w, esc, orient, weight, italic, underline, strike, charset, outPrec, clipPrec, quality, pitch, (const uint16_t *)face);
+}

@@ -9,6 +9,10 @@
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <AssemblyName>System.Drawing.Common</AssemblyName>
+    <!-- 必须与 Windows 上的 System.Drawing.Common 一致：System.Windows.Forms 的 AssemblyRef
+         写的是 Version=10.0.0.0, PublicKeyToken=cc7b13ffcd2ddd51，版本对不上就是 FileNotFoundException。 -->
+    <AssemblyVersion>10.0.0.0</AssemblyVersion>
+    <FileVersion>10.0.0.0</FileVersion>
     <RootNamespace>System.Drawing</RootNamespace>
     <LangVersion>latest</LangVersion>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
@@ -29,7 +33,11 @@
   </PropertyGroup>
   <ItemGroup>
     <!-- 显式列出（通配符 + Exclude/Remove 在本仓实测都不可靠） -->
+    <Compile Include="src/System/Drawing/Drawing2D/AdjustableArrowCap.cs" />
+    <Compile Include="src/CommonInterop/AssemblyInfo.cs" />
     <Compile Include="src/CommonInterop/ConstsStub.cs" />
+    <Compile Include="src/CommonInterop/StockIconSupport.cs" />
+    <Compile Include="src/CommonInterop/LocalAppContextSwitchesStub.cs" />
     <Compile Include="src/CommonInterop/SR.Generated.cs" />
     <Compile Include="src/CommonInterop/FontConverterStub.cs" />
     <Compile Include="src/CommonInterop/Interop.HRESULT.cs" />

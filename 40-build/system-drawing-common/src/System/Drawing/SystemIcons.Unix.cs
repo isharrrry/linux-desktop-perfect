@@ -124,5 +124,24 @@ namespace System.Drawing
         {
             get { return icons[Shield_]; }
         }
+
+        /// <summary>
+        /// .NET 10 的 API：按 <see cref="StockIconId"/> 取系统图标。
+        /// 本后端没有 Windows 的 SHGetStockIconInfo，按语义折到手头这 8 个静态图标上；
+        /// **永远不返回 null**（调用方在异常处理路径上，再 NRE 会把进程带崩）。
+        /// </summary>
+        public static Icon GetStockIcon(StockIconId stockIcon, int size)
+        {
+            switch (stockIcon)
+            {
+                case StockIconId.Info:        return Information;
+                case StockIconId.Warning:     return Warning;
+                case StockIconId.Error:       return Error;
+                case StockIconId.Shield:      return Shield;
+                case StockIconId.Help:        return Question;
+                case StockIconId.Find:        return Question;
+                default:                      return Application;
+            }
+        }
     }
 }

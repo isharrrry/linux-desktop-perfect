@@ -37,6 +37,8 @@ using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Drawing.Imaging;
 
+using System.Drawing.Internal;
+
 namespace System.Drawing.Printing
 {
     [Serializable]
@@ -329,6 +331,19 @@ namespace System.Drawing.Printing
         {
             throw new NotImplementedException();
         }
+
+        // 【ACC-028】`GetHdevmodeInternal` / `CreateDeviceContext` 的 Unix 侧实现。
+        //   Windows 版在 `PrinterSettings.Windows.cs` 里，用 DEVMODE + GlobalLock；Linux 上**没有 DEVMODE 也没有打印子系统**。
+        //   口径（按 AGENTS.md 约束 5「诚实降级」）：
+        //     · `GetHdevmodeInternal` 返回 `IntPtr.Zero`（没有设备模式句柄可言）；
+        //     · `CreateDeviceContext` **明确抛 `PlatformNotSupportedException`**，
+        //       而不是返回 null 让调用方在 `dc.Hdc` 上吃 NullReferenceException。
+        //   唯一调用方是跨平台的 `PrintPreviewGraphics`（打印预览）——Linux 上本就不支持。
+        internal IntPtr GetHdevmodeInternal() => IntPtr.Zero;
+
+        internal DeviceContext CreateDeviceContext(IntPtr hdevmode)
+            => throw new PlatformNotSupportedException(
+                "打印预览需要 Windows 的 DEVMODE 与设备上下文；Linux 后端不提供打印。");
 
         public IntPtr GetHdevmode()
         {
