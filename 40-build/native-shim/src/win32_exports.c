@@ -69,11 +69,22 @@ FARPROC GetProcAddressW(HMODULE module, const char *name)
 {
     (void)module;   // 我们的 GetModuleHandle 返回不透明句柄，符号只在本 shim 里查
     void *p = wpf_shim_symbol(name);
+    if (!p) {
+        // 【ACC-028 / K-024】兜底：WinForms 是通过**符号链接**（$FX/USER32.dll → libwpfwin32.so）
+        //   加载本 shim 的。 用 dladdr 拿自己的路径再 dlopen(RTLD_NOLOAD)，
+        //   在被链接名加载的情况下那条路径可能对不上 ⇒ 返回 NULL ⇒
+        //    拿不到 DefWindowProcW ⇒ 抛 Win32Exception()。
+        //   这两个是窗口过程回退链的根基，编译期就能直接取地址，不必绕 dlopen。
+        if (name && strcmp(name, "DefWindowProcW") == 0) p = (void *)&DefWindowProcW;
+        else if (name && strcmp(name, "DefWindowProcA") == 0) p = (void *)&DefWindowProcA;
+        else if (name && strcmp(name, "DefWindowProc") == 0) p = (void *)&DefWindowProcW;
+    }
     if (!p) wpf_set_last_error(127);   // ERROR_PROC_NOT_FOUND
     return (FARPROC)p;
 }
 FARPROC GetProcAddressA(HMODULE m, const char *n) { return GetProcAddressW(m, n); }
-FARPROC GetProcAddress(HMODULE m, const char *n) { return GetProcAddressW(m, n); }
+FARPROC GetProcAddress(HMODULE m, const char *n) {
+    if (getenv("WPF_LINUX_KEY_DIAG")) { fprintf(stderr, "[GetProcAddress] name=%s\n", n ? n : "(null)"); fflush(stderr); } return GetProcAddressW(m, n); }
 FARPROC IntGetProcAddress(HMODULE m, const char *n) { return GetProcAddressW(m, n); }
 FARPROC GetProcAddressNoThrow(HMODULE m, const char *n) { return GetProcAddressW(m, n); }
 

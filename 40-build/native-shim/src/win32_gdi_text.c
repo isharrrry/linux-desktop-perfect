@@ -11,6 +11,10 @@
 #include <stdint.h>
 #include <string.h>
 #include "win32_abi.h"
+#include <time.h>
+
+// 由 win32_core.c 实现；这里只需地址（GetClassInfoW 要把它填进 WNDCLASSW.lpfnWndProc）
+extern intptr_t DefWindowProcW(void *hwnd, uint32_t msg, uintptr_t wp, intptr_t lp);
 
 // ── 一段固定度量：16px 字体、等宽近似 ───────────────────────────────────────
 // TEXTMETRICW 的字段顺序（Windows 真实布局）：
@@ -170,9 +174,58 @@ void UiaRaiseAutomationPropertyChangedEvent(void *pProvider, int id, void *oldVa
 // ── 窗口类查询（`NativeWindow.WindowClass.RegisterClass` 在注册前后会查一次）──────
 //   我们的窗口类注册表就是进程内的（见 win32_core.c 的 `RegisterClassExW`），
 //   这里按类名查表，把注册时存的字段填回 `WNDCLASSW`。
+// 【ACC-028 / K-024】`GetClassInfo` 必须对**系统窗口类**返回成功。
+//   WinForms 的 `NativeWindow.WindowClass.RegisterClass()` 里：
+//       if (!PInvoke.GetClassInfo(HINSTANCE.Null, n, &windowClass))
+//           throw new Win32Exception(Marshal.GetLastWin32Error(), SR.InvalidWndClsName);
+//   `SR.InvalidWndClsName` 的文案正是 **"Window class name is not valid."** —— 之前一直查不到来源，
+//   就是因为它在**资源**里而不在源码里（K-024）。
+//   Linux 上没有"系统窗口类表"，但这里**必须**表现得像有：填一个最小可用的 `WNDCLASSW`
+//   （`lpfnWndProc = DefWindowProcW`），否则 WinForms 连控件都构造不出来。
+//   端口：`WNDCLASSW` 的字段顺序与本文件前面定义的 `WPF_WNDCLASS_D` 一致。
+typedef struct {
+    uint32_t  style;
+    void     *lpfnWndProc;
+    int32_t   cbClsExtra;
+    int32_t   cbWndExtra;
+    void     *hInstance;
+    void     *hIcon;
+    void     *hCursor;
+    void     *hbrBackground;
+    uint16_t *lpszMenuName;
+    uint16_t *lpszClassName;
+} WPF_WNDCLASS_OUT;
+
 int GetClassInfoW(void *hInstance, const uint16_t *className, void *wc)
 {
-    (void)hInstance; (void)className; (void)wc;
-    return 0;   // 未找到 ⇒ WinForms 会走 RegisterClass 分支（正确行为）
+    (void)hInstance; (void)className;
+    if (!wc) return 0;
+    WPF_WNDCLASS_OUT *c = (WPF_WNDCLASS_OUT *)wc;
+    c->style         = 0;
+    c->lpfnWndProc   = (void *)&DefWindowProcW;   // 关键：非空，WinForms 会把它当默认窗口过程
+    c->cbClsExtra    = 0;
+    c->cbWndExtra    = 0;
+    c->hInstance     = 0;
+    c->hIcon         = 0;
+    c->hCursor       = 0;
+    c->hbrBackground = 0;
+    c->lpszMenuName  = 0;
+    c->lpszClassName = (uint16_t *)className;
+    return 1;   // 成功
 }
-int GetClassInfoA(void *hInstance, const char *className, void *wc) { (void)hInstance; (void)className; (void)wc; return 0; }
+int GetClassInfoA(void *hInstance, const char *className, void *wc) { return GetClassInfoW(hInstance, (const uint16_t *)className, wc); }
+
+// ── 消息循环阻塞点（`Application.RunMessageLoop` 的核心）──────────────────────
+//   WinForms 的 `LightThreadContext.FPushMessageLoop` 在队列空时调 `WaitMessage()` 阻塞。
+//   **不能**简单地 return TRUE —— 那会让消息循环变成忙等（一个核心 100%）。
+//   正确做法：真的等一次 X 事件。本 shim 的窗口层已有 `wpf_msg_wait`（见 win32_msg.c），
+//   这里复用它（返回 TRUE 表示"可能来消息了"，语义与 Win32 一致）。
+int WaitMessage(void)
+{
+    // ⚠️ 当前是**近似实现**：睡 1ms 后返回，而不是真的阻塞在 X 事件上。
+    //   目的只是避免消息循环 100% 占一个核；**延迟表现与真机不同**，这一点如实记录在这里。
+    //   （真等待需要接到 X 连接上，见 TODO；本轮先让它能跑。）
+    struct timespec ts = { 0, 1000000 };   // 1ms
+    nanosleep(&ts, NULL);
+    return 1;
+}

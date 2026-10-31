@@ -982,6 +982,12 @@ static HWND create_window_utf8(uint32_t dwExStyle, const char *cls,
             klass = wpf_class_find_atom((ATOM)(intptr_t)cls);
     }
     if (!klass) {
+        if (getenv("WPF_LINUX_KEY_DIAG")) {
+            fprintf(stderr, "[CreateWindowEx] 找不到类名：cls=%s\n", cls ? cls : "(null)");
+            fprintf(stderr, "  已注册的类：");
+            for (wpf_class *k = g_wpf.classes; k; k = k->next) fprintf(stderr, "[atom=%u %s] ", (unsigned)k->atom, k->name);
+            fprintf(stderr, "\n"); fflush(stderr);
+        }
         pthread_mutex_unlock(&g_wpf.lock);
         wpf_set_last_error(1411);   // ERROR_CLASS_DOES_NOT_EXIST
         return NULL;
@@ -1223,6 +1229,10 @@ BOOL ShowWindow(HWND hwnd, int nCmdShow)
         case SW_MINIMIZE:      want_state = WPF_WS_MIN; map = 1; break;
         case SW_RESTORE:       want_state = WPF_WS_NORMAL; map = 1; break;
         default: map = 1; break;
+    }
+    if (getenv("WPF_LINUX_KEY_DIAG")) {
+        fprintf(stderr, "[ShowWindow] hwnd=%p map=%d\n", (void *)hwnd, map);
+        fflush(stderr);
     }
     wpf_x11_map(hwnd, map);
     wpf_lock();
