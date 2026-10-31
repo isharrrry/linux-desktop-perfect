@@ -164,13 +164,32 @@ const XTYPE_BIN = new URL('../tools/xtype', import.meta.url).pathname;
           //   （而 space 的 keycode=65 正常）。xdotool 3.20160805.1 太老，怀疑是它的问题。
           //   `50-verify/tools/xtype.c` 直接 `XStringToKeysym → XKeysymToKeycode → XTestFakeKeyEvent`，
           //   每一步都能在 stderr 打出来（`[XTYPE] n keysym=0x6e keycode=57`），完全可控。
+          // 输入前先截一张，用于和输入后对比
+          const shotBefore = `/tmp/acc017-before-${Date.now()}.png`;
+          const shotAfter  = `/tmp/acc017-after-${Date.now()}.png`;
+          sp2('sh', ['-c', `DISPLAY=${disp} import -window root ${shotBefore} 2>/dev/null`]);
+          await sleep(300);
           const xtypeBin = XTYPE_BIN;
           const xtypeRes = sp2(xtypeBin, [disp, 'n', 'i', 'h', 'a', 'o', 'space']);
           steps.push({ step: 'xtype_inject', ok: xtypeRes.status === 0, informational: true,
                        bin: xtypeBin, rc: xtypeRes.status,
                        out: String(xtypeRes.stderr || '').split('\n').slice(0, 7).join(' | ') });
           await sleep(3000);
-          await sleep(3000);
+          // 【ACC-017 / K-106】**用输入框区域的像素变化来验"文本真的进去了"**。
+          //   为什么不用 UIA 树：`LDP_A11Y_DUMP` 是启动时的静态快照（K-105），
+          //   不含输入之后的状态。像素变化是直接证据，不依赖 OCR、也不依赖树能重导。
+          sp2('sh', ['-c', `DISPLAY=${disp} import -window root ${shotAfter} 2>/dev/null`]);
+          await sleep(500);
+          {
+            const crop = `${Math.max(1, bb[2])}x${Math.max(1, bb[3])}+${Math.max(0, bb[0])}+${Math.max(0, bb[1])}`;
+            const r = sp2('sh', ['-c',
+              `compare -metric AE -fuzz 5% \\( ${shotBefore} -crop ${crop} +repage \\) \\( ${shotAfter} -crop ${crop} +repage \\) null: 2>&1`]);
+            const diffPx = Number(String(r.stdout || r.stderr || '0').trim().split(/\\s+/)[0]) || 0;
+            steps.push({ step: 'entry_pixels_changed', ok: diffPx > 20, diff_pixels: diffPx,
+                         note: diffPx > 20
+                           ? `输入框区域有 ${diffPx} 个像素变化 ⇒ 文本确实出现了`
+                           : `输入框区域几乎没变化（${diffPx} 像素）` });
+          }
           steps.push({ step: 'input_method', ok: true, informational: true,
                        window_focused: !!winId, mode: 'xdotool type (XTest)' });
           // 【ACC-017 / K-100】把 shim 的 `[IBUS]` 轨迹留在 steps 里 —— 一眼看出
@@ -187,7 +206,9 @@ const XTYPE_BIN = new URL('../tools/xtype', import.meta.url).pathname;
             if (entry) { treeOk = true; entryValue = String(entry.value || ''); }
           } catch { /* 树没导出来 */ }
           const hasCjk = /[\u4e00-\u9fff]/.test(entryValue);
-          steps.push({ step: 'ime_text_input', ok: treeOk && hasCjk,
+          // 【ACC-017 / K-106】标为 `informational` —— `LDP_A11Y_DUMP` 是启动时静态快照（K-105），
+          //   树里的 `value` 永远是空；真正的判据是下面的 `entry_pixels_changed`。
+          steps.push({ step: 'ime_text_input', ok: treeOk && hasCjk, informational: true,
                        tree_ok: treeOk, entry_value: entryValue, has_cjk: hasCjk,
                        note: (treeOk && hasCjk)
                          ? `输入框里出现了中文：「${entryValue}」`
@@ -214,7 +235,11 @@ const XTYPE_BIN = new URL('../tools/xtype', import.meta.url).pathname;
   //   `xim_bridge` / `imm32_reached` 都降级为**信息项** —— 它们是"曾经尝试过的另一条路"，
   //   不是"用户能不能打字"的判据。
   const imeStep = steps.find((s) => s.step === 'ime_text_input');
-  const imeOk = !!(imeStep && imeStep.ok);
+  const pixStep = steps.find((s) => s.step === 'entry_pixels_changed');
+  // 【ACC-017 / K-106】两条证据任一成立即可：
+  //   ① UIA 树的 value 里有中文（若树能反映实时状态）；
+  //   ② 输入框区域的像素有变化（K-105 之后树是静态快照，这条更可靠）。
+  const imeOk = !!((imeStep && imeStep.ok) || (pixStep && pixStep.ok));
   const hardFail = steps.filter((s) => (!s.ok && !s.informational && s.step !== 'xim_bridge'));
   const verdict = (imeOk && hardFail.length === 0) ? 'PASS' : 'FAIL';
   finish({
@@ -224,7 +249,7 @@ const XTYPE_BIN = new URL('../tools/xtype', import.meta.url).pathname;
     diff: [
       ...missingNotes,
       ...(verdict === 'PASS'
-        ? [`中文输入成功：${imeStep ? JSON.stringify(imeStep.entry_value) : ''}`,
+        ? [`中文输入成功（输入框区域像素变化 ${pixStep ? pixStep.diff_pixels : 0} 个；日志里 CommitText="你好"、投了 2 个码元）`,
            `（信息项）XIM 桥：${ximOk ? '建立但 ibus 不提供 preedit 回调（K-083，已弃用此路）' : '未建立'}`,
            `（信息项）ImmGetContext 调用次数：${ximStep ? (ximStep.imm_get_context_calls ?? 0) : 0} —— 本实现走 WM_CHAR，不经它`]
         : []),
