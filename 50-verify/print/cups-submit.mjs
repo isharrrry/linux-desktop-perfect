@@ -21,7 +21,12 @@ const { opts } = parseArgs();
 const scr = opts.scr || 'SCR-05';
 const missingEnv = ['Xvfb', 'xdotool'].filter((b) => !which(b));
 if (missingEnv.length) {
-  finish({ acc: 'ACC-024', started, verdict: 'SKIP', degrade: `环境缺件：${missingEnv.join(', ')}`,
+  // 【ACC-024 / K-133】**这个硬编码 SKIP 已停用**（K-062 加的）。
+//   当时的判断「System.Printing 的实现是 C++/CLI，Linux 编不了」**是对的**（K-118 有源码证据），
+//   但结论下早了：绕开的路径存在 —— 托管侧 ManagedXpsDocumentWriter（K-123~K-132）。
+//   所以现在让它**真跑**。保留原判定作为历史记录：
+if (false) {
+finish({ acc: 'ACC-024', started, verdict: 'SKIP', degrade: `环境缺件：${missingEnv.join(', ')}`,
     expectRef: 'ACC-024：打印到 PDF/CUPS + XPS 可渲染', diff: [`环境缺件：${missingEnv.join(', ')}`], env: {} });
 }
 // 【ACC-024 / K-061】**平台硬边界**：`System.Printing` 的真实现是 C++/CLI
@@ -42,6 +47,8 @@ finish({ acc: 'ACC-024', started, verdict: 'SKIP',
     'XpsDocument/XpsDocumentWriter 的类型与 API 经反射可达（K-056/K-057）',
   ],
   env: { note: 'K-061' } });
+}
+
 
 if (!fs.existsSync(path.join(FRAMEWORK_DIR, 'LdpA11y.dll'))) {
   finish({ acc: 'ACC-024', started, verdict: 'FAIL', expectRef: 'ACC-024：打印到 PDF/CUPS + XPS 可渲染',
