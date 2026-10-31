@@ -47,6 +47,20 @@ const { startXvfb, waitDisplay, startApp, findWindow, waitMapped, sleep, DOTNET_
         //   会命中别的 display 上的实例（本轮实测就踩了这个：`pgrep` 找到 :190 的那个，
         //   于是没给判据自己的 display 起 daemon ⇒ `XIM_SERVERS` 是 `no such atom`）。
         //   ⇒ 改成按 **该 display 的 XIM_SERVERS** 判断。
+        // 【ACC-017 / K-102】**判据的 Xvfb 上没有键盘映射**！
+        //   `[XKEYS] type=2 send_event=0 keycode=0 keysym=0x0` 是硬证据：
+        //   真实键事件到了我们的窗口，但 `keycode` 是 0 —— X server 没有该键的映射。
+        //   手工测试用的 `:303` 有完整 keymap（`xmodmap -pke` 能列出 keycode 9 = Escape），
+        //   判据自己起的 Xvfb 则没有 ⇒ 所有键都被 XLookupKeysym 解成 0。
+        //   修法：起 Xvfb 之后立刻 `setxkbmap us`。
+        {
+          const r = sp('sh', ['-c', `DISPLAY=${xvfb.display} setxkbmap us 2>&1`]);
+          await sleep(500);
+          const km = String(sp('sh', ['-c', `DISPLAY=${xvfb.display} xmodmap -pke 2>/dev/null | head -2`]).stdout || '').trim();
+          steps.push({ step: 'keymap', ok: km.includes('keycode'), setxkbmap_rc: r.status,
+                       sample: km.split('\n')[0] || null });
+        }
+
         const ximServersOf = (d) => String(sp('sh', ['-c', `DISPLAY=${d} xprop -root XIM_SERVERS 2>/dev/null`]).stdout || '').trim();
         let before = ximServersOf(xvfb.display);
         let startedByUs = false;
@@ -149,7 +163,7 @@ const { startXvfb, waitDisplay, startApp, findWindow, waitMapped, sleep, DOTNET_
                        window_focused: !!winId, mode: 'xdotool type (XTest)' });
           // 【ACC-017 / K-100】把 shim 的 `[IBUS]` 轨迹留在 steps 里 —— 一眼看出
           //   "没连上 ibus" 还是 "连上了但键没送到"。
-          const ibusTrace = (app.trace ? app.trace() : '').split('\n').filter((l) => l.includes('[IBUS]')).slice(-12);
+          const ibusTrace = (app.trace ? app.trace() : '').split('\n').filter((l) => l.includes('[IBUS]') || l.includes('[XKEYS]')).slice(-20);
           steps.push({ step: 'ibus_trace', ok: true, informational: true, lines: ibusTrace });
 
           let entryValue = '';

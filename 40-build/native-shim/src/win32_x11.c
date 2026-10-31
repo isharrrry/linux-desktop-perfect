@@ -1628,6 +1628,18 @@ int wpf_x11_pump_into_queue(wpf_thread *t)
             HWND h = (HWND)(uintptr_t)ev.xkey.window;
             // 物理键 → VK 仍用**未按 Shift** 的 keysym（VK 描述"哪个键"，不是"哪个字符"）
             KeySym ks = XLookupKeysym(&ev.xkey, 0);
+            // 【ACC-017 / K-102】**先看清事件本身**，别再猜 xdotool 的哪种模式。
+            //   判据里 `ProcessKeyEvent(kv=0 kc=0)` 说明 keysym 和 keycode 都是 0，
+            //   但手工测试时同一份 shim 是好的 ⇒ 必须把事件的原始字段打出来。
+            if (getenv("WPF_LINUX_KEY_DIAG")) {
+                static int kx = 0;
+                if (kx++ < 40) {
+                    fprintf(stderr, "[XKEYS] type=%d send_event=%d keycode=%u state=0x%x keysym=0x%lx window=0x%lx\n",
+                            ev.type, ev.xany.send_event ? 1 : 0, ev.xkey.keycode, ev.xkey.state,
+                            (unsigned long)ks, (unsigned long)ev.xkey.window);
+                    fflush(stderr);
+                }
+            }
             // 【ACC-017 / K-091】**先问 ibus**：键要不要被输入法消费。
             //   只有在 KeyPress 且 ibus 已就绪时才问（KeyRelease 不参与 IME）。
             //   ibus 回 TRUE 表示它吃了这个键（正在组词），我们就不再翻译成 WM_KEYDOWN；
