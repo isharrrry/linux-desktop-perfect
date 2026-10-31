@@ -43,8 +43,25 @@ namespace LinuxDesktopPerfect.Samples.WpfMediaInk
                 Button pause = FindByName(w, "暂停");
                 TextBlock state = FindState(w);
 
-                if (play != null) play.Click += (s2, e2) => { player.Play(); SetState(state, "PLAYING"); };
-                if (pause != null) pause.Click += (s2, e2) => { player.Pause(); SetState(state, "PAUSED"); };
+                // 【K-011-解7】判据侧观察到：点击之后 UI 线程再也没交出过 Dispatcher 锁
+                //   （后续 d.InvokeAsync 永远不返回）。这里把点击处理器里的每一步都计时，
+                //   看是 player.Play() 还是 SetState 慢，或者干脆卡在不返回。
+                if (play != null) play.Click += (s2, e2) =>
+                {
+                    var sw = System.Diagnostics.Stopwatch.StartNew();
+                    Diag("click-play: 进入");
+                    player.Play();
+                    Diag("click-play: Play() 返回 " + sw.ElapsedMilliseconds + "ms");
+                    SetState(state, "PLAYING");
+                    Diag("click-play: SetState 返回 " + sw.ElapsedMilliseconds + "ms");
+                };
+                if (pause != null) pause.Click += (s2, e2) =>
+                {
+                    var sw = System.Diagnostics.Stopwatch.StartNew();
+                    player.Pause();
+                    Diag("click-pause: Pause() 返回 " + sw.ElapsedMilliseconds + "ms");
+                    SetState(state, "PAUSED");
+                };
 
                 SetState(state, player.Source == null ? "READY" : "READY");
                 Diag("hookup: play=" + (play != null) + " pause=" + (pause != null)
