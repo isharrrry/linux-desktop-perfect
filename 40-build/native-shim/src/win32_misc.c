@@ -13,6 +13,7 @@
 
 #define _GNU_SOURCE
 #include "win32_internal.h"
+#include "win32_gdi_dc.h"
 
 #include <dlfcn.h>
 #include <stdio.h>
@@ -31,11 +32,32 @@
 int wpf_legacy_dpi(void);   // 诊断开关（见 GetDeviceCaps 里那段说明）
 
 // [降级] 无 GDI 软件 DC。返回哨兵，不产生任何系统资源。
-HDC GetDC(HWND h) { (void)h; return WPF_FAKE_DC; }
-HDC GetWindowDC(HWND h) { (void)h; return WPF_FAKE_DC; }
-HDC CreateCompatibleDC(HDC hdc) { (void)hdc; return WPF_FAKE_DC; }
-int ReleaseDC(HWND h, HDC dc) { (void)h; (void)dc; return 1; }
-BOOL DeleteDC(HDC dc) { (void)dc; return 1; }
+// 【ACC-028 / K-144】**真 HDC**：绑到该 hwnd 的 X11 Window + GC（原来全返回同一个假值）。
+//   拿不到（窗口没建/没 X11）时回退 `WPF_FAKE_DC`，保证调用方不会拿到 NULL。
+HDC GetDC(HWND h)
+{
+    wpf_hdc *d = wpf_hdc_get(h);
+    return d ? (HDC)d : WPF_FAKE_DC;
+}
+HDC GetWindowDC(HWND h) { return GetDC(h); }
+HDC CreateCompatibleDC(HDC hdc)
+{
+    wpf_hdc *d = wpf_hdc_compat(hdc);
+    return d ? (HDC)d : WPF_FAKE_DC;
+}
+int ReleaseDC(HWND h, HDC dc)
+{
+    (void)h;
+    // 【关键】把绘制命令真正发到 X server —— 不 flush 就永远看不到画面
+    wpf_hdc_release(wpf_hdc_of(dc));
+    return 1;
+}
+BOOL DeleteDC(HDC dc)
+{
+    wpf_hdc *d = wpf_hdc_of(dc);
+    if (d) wpf_hdc_destroy(d);
+    return 1;
+}
 
 // [降级] GetStockObject：托管侧只拿来要 NULL_BRUSH（HwndWrapper 建窗前取背景刷）。
 // 返回值**必须非 0**（HwndWrapper 显式检查 `hNullBrush == IntPtr.Zero` → throw）。
@@ -60,7 +82,18 @@ HBITMAP CreateDIBSection(HDC dc, const void *bmi, UINT usage, void **bits, HANDL
     if (bits) *bits = calloc(1, 4 * 64 * 64);
     return (HBITMAP)(uintptr_t)0x2000;
 }
-HGDIOBJ SelectObject(HDC dc, HGDIOBJ obj) { (void)dc; return obj; }
+// 【ACC-028 / K-144】SelectObject 记录到 HDC 状态（brush/pen/font 分别存）
+HGDIOBJ SelectObject(HDC dc, HGDIOBJ obj)
+{
+    wpf_hdc *d = wpf_hdc_of(dc);
+    wpf_gdi_obj *o = wpf_gdi_of(obj);
+    if (d && o) {
+        if (o->kind == 1)      d->cur_brush = (HBRUSH)obj;
+        else if (o->kind == 2) d->cur_pen   = (HPEN)obj;
+        else if (o->kind == 3) d->cur_font  = (HFONT)obj;
+    }
+    return obj;
+}
 BOOL DeleteObject(HGDIOBJ o) { (void)o; return 1; }
 int GetObjectW(HGDIOBJ o, int n, void *buf) { (void)o; (void)n; (void)buf; return 0; }
 int GetObjectA(HGDIOBJ o, int n, void *buf) { (void)o; (void)n; (void)buf; return 0; }
@@ -121,7 +154,22 @@ int GetDeviceCapsW(HDC dc, int index) { return GetDeviceCaps(dc, index); }
 int GetDeviceCapsA(HDC dc, int index) { return GetDeviceCaps(dc, index); }
 int ExtEscape(HDC dc, int esc, int in_n, const char *in, int out_n, char *out)
 { (void)dc; (void)esc; (void)in_n; (void)in; (void)out_n; (void)out; return 0; }
-int FillRect(HDC dc, const WPF_RECT *rc, HBRUSH br) { (void)dc; (void)rc; (void)br; return 1; }
+// 【ACC-028 / K-144】**FillRect 真画**：取 brush 的颜色，XFillRectangle。
+//   这是 WinForms 控件背景（Button 底、Label 底、Form 底）最核心的一条。
+int FillRect(HDC dc, const WPF_RECT *rc, HBRUSH br)
+{
+    wpf_hdc *d = wpf_hdc_of(dc);
+    if (!d || !rc || !g_wpf.dpy) return 1;
+    wpf_gdi_obj *o = wpf_gdi_of((HGDIOBJ)br);
+    uint32_t color = o ? o->color : 0xFFFFFF;
+    if (color == 0xFFFFFFFFu) return 1;          // CLR_INVALID ⇒ 不画（相当于 NULL_BRUSH）
+    int x = rc->left, y = rc->top;
+    int w = rc->right - rc->left, h = rc->bottom - rc->top;
+    if (w <= 0 || h <= 0) return 1;
+    XSetForeground(g_wpf.dpy, d->gc, wpf_colorref_to_x(color));
+    XFillRectangle(g_wpf.dpy, d->drawable, d->gc, x, y, (unsigned)w, (unsigned)h);
+    return 1;
+}
 int StartDocW(HDC dc, const void *di) { (void)dc; (void)di; return 0; }
 int StartDocA(HDC dc, const void *di) { (void)dc; (void)di; return 0; }
 int StartDoc(HDC dc, const void *di) { return StartDocA(dc, di); }
@@ -142,7 +190,9 @@ BOOL BeginPaint(HWND h, WPF_PAINTSTRUCT *ps)
     }
     if (!ps) return 0;
     memset(ps, 0, sizeof(*ps));
-    ps->hdc = WPF_FAKE_DC;
+    // 【ACC-028 / K-144】真 HDC（原来给的是假值 ⇒ WinForms 画到内存，落不到 X11）
+    { wpf_hdc *d = wpf_hdc_get(h);
+      ps->hdc = d ? (HDC)d : WPF_FAKE_DC; }
     ps->fErase = 0;
     {
         wpf_lock();
@@ -155,7 +205,13 @@ BOOL BeginPaint(HWND h, WPF_PAINTSTRUCT *ps)
     }
     return 1;
 }
-BOOL EndPaint(HWND h, const WPF_PAINTSTRUCT *ps) { (void)h; (void)ps; return 1; }
+BOOL EndPaint(HWND h, const WPF_PAINTSTRUCT *ps)
+{
+    (void)h;
+    // 【ACC-028 / K-144】EndPaint 是"这一帧画完了"的信号 ⇒ 必须 flush 到 X server
+    if (ps) wpf_hdc_release(wpf_hdc_of(ps->hdc));
+    return 1;
+}
 
 // [降级] InvalidateRect：**不产生 WM_PAINT**。理由：本工程的重绘由 MIL 呈现
 // 驱动（HwndTarget → DUCE → M1 Skia），WM_PAINT 只在窗口首次 expose 时出现。
@@ -1261,7 +1317,12 @@ HRGN CreateRoundRectRgn(int l, int t, int r, int b, int w, int h)
 { (void)l; (void)t; (void)r; (void)b; (void)w; (void)h; return (HRGN)(uintptr_t)0x5001; }
 int CombineRgn(HRGN dst, HRGN a, HRGN b, int mode)
 { (void)dst; (void)a; (void)b; (void)mode; return 3; }   // RGN_DIFF/ERROR 之外：给"成功"的一个合法值
-HBRUSH CreateSolidBrush(uint32_t color) { (void)color; return (HBRUSH)(uintptr_t)0x5002; }
+// 【ACC-028 / K-144】brush 现在**记住颜色**（原来是同一个哨兵，颜色全丢）
+HBRUSH CreateSolidBrush(uint32_t color)
+{
+    wpf_gdi_obj *o = wpf_gdi_alloc(1, color, 0, 0);
+    return o ? (HBRUSH)o : (HBRUSH)(uintptr_t)0x5002;
+}
 HDC CreateDCW(const uint16_t *driver, const uint16_t *device, const uint16_t *port, const void *initData)
 { (void)driver; (void)device; (void)port; (void)initData; return (HDC)(uintptr_t)0x0001; }  // 与 GetDC 同一哨兵
 HDC CreateDCA(const char *driver, const char *device, const char *port, const void *initData)

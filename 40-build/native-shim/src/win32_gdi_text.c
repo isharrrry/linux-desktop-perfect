@@ -11,6 +11,7 @@
 #include <stdint.h>
 #include <string.h>
 #include "win32_abi.h"
+#include "win32_gdi_dc.h"
 #include <time.h>
 
 // 由 win32_core.c 实现；这里只需地址（GetClassInfoW 要把它填进 WNDCLASSW.lpfnWndProc）
@@ -104,18 +105,21 @@ int GetTextExtentPoint32A(void *hdc, const char *s, int32_t len, void *size) { r
 int GetTextExtentPointW(void *hdc, const uint16_t *s, int32_t len, void *size) { return GetTextExtentPoint32W(hdc, s, len, size); }
 
 // ── 绘制：返回成功，但**不真的画**（见文件头口径说明）──────────────────────────
+// 【ACC-028 / K-144】**TextOutW 真画**：UTF-16 → UTF-8，XDrawString。
 int TextOutW(void *hdc, int32_t x, int32_t y, const uint16_t *s, int32_t len)
 {
-    (void)hdc; (void)x; (void)y; (void)s; (void)len;
-    return 1;   // 不绘制
+    // 【ACC-028 / K-144】真画：UTF-16 → UTF-8 → XDrawString
+    return wpf_draw_text((HDC)hdc, x, y, s, len) ? 1 : 1;
 }
 int TextOutA(void *hdc, int32_t x, int32_t y, const char *s, int32_t len) { (void)hdc; (void)x; (void)y; (void)s; (void)len; return 1; }
 
 int ExtTextOutW(void *hdc, int32_t x, int32_t y, uint32_t opts, const void *rect,
                 const uint16_t *s, uint32_t len, const int32_t *dx)
 {
-    (void)hdc; (void)x; (void)y; (void)opts; (void)rect; (void)s; (void)len; (void)dx;
-    return 1;   // 不绘制
+    (void)opts; (void)dx;
+    // 【ACC-028 / K-144】OPAQUE 时先填背景，再画文字
+    if (rect) wpf_draw_text_bg((HDC)hdc, (const WPF_RECT *)rect);
+    return TextOutW(hdc, x, y, s, (int32_t)len);
 }
 int ExtTextOutA(void *hdc, int32_t x, int32_t y, uint32_t opts, const void *rect,
                 const char *s, uint32_t len, const int32_t *dx)
@@ -126,8 +130,13 @@ int ExtTextOutA(void *hdc, int32_t x, int32_t y, uint32_t opts, const void *rect
 
 int DrawTextW(void *hdc, const uint16_t *s, int32_t len, void *rect, uint32_t fmt)
 {
-    (void)hdc; (void)s; (void)len; (void)rect; (void)fmt;
-    return 1;   // 不绘制（返回高度近似为 0，调用方按 GetTextExtent 算）
+    (void)fmt;
+    // 【ACC-028 / K-144】DrawText 简化成"在 rect 内垂直居中画一行"（够 Button/Label 用）
+    if (!rect) return 1;
+    const WPF_RECT *r = (const WPF_RECT *)rect;
+    int32_t ty = r->top + (r->bottom - r->top + WPF_FAKE_FONT_HEIGHT) / 2;
+    TextOutW(hdc, r->left + 2, ty, s, len);
+    return 1;
 }
 int DrawTextA(void *hdc, const char *s, int32_t len, void *rect, uint32_t fmt) { (void)hdc; (void)s; (void)len; (void)rect; (void)fmt; return 1; }
 
@@ -138,9 +147,21 @@ int DrawTextExW(void *hdc, uint16_t *s, int32_t len, void *rect, uint32_t fmt, v
 }
 
 // ── 状态设置：纯记账（无 GDI 上下文，接受即返回成功）─────────────────────────
-int SetBkMode(void *hdc, int mode) { (void)hdc; (void)mode; return 1; }
-uint32_t SetTextColor(void *hdc, uint32_t color) { (void)hdc; (void)color; return color; }
-uint32_t SetBkColor(void *hdc, uint32_t color) { (void)hdc; (void)color; return color; }
+int SetBkMode(void *hdc, int mode)
+{
+    wpf_draw_set_bk_mode((HDC)hdc, mode);
+    return 1;
+}
+uint32_t SetTextColor(void *hdc, uint32_t color)
+{
+    wpf_draw_set_text_color((HDC)hdc, color);
+    return color;      // 简化：旧色不精确回传（调用方很少用）
+}
+uint32_t SetBkColor(void *hdc, uint32_t color)
+{
+    wpf_draw_set_bk_color((HDC)hdc, color);
+    return color;
+}
 uint32_t SetTextAlign(void *hdc, uint32_t align) { (void)hdc; (void)align; return align; }
 uint32_t GetTextAlign(void *hdc) { (void)hdc; return 0; }
 int SetMapMode(void *hdc, int mode) { (void)hdc; (void)mode; return 1; }

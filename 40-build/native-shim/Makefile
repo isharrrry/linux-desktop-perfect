@@ -43,7 +43,8 @@ SRCS     = $(SRCDIR)/win32_core.c $(SRCDIR)/win32_msg.c $(SRCDIR)/win32_x11.c \
            $(SRCDIR)/win32_clipboard.c \
 	$(SRCDIR)/win32_winspool.c \
 	$(SRCDIR)/win32_ibus.c \
-	$(SRCDIR)/win32_uxtheme.c
+	$(SRCDIR)/win32_uxtheme.c \
+	$(SRCDIR)/win32_gdi_dc.c
 OBJS     = $(patsubst $(SRCDIR)/%.c,$(OBJDIR)/%.o,$(SRCS))
 DEPS     = $(SRCDIR)/win32_abi.h $(SRCDIR)/win32_internal.h
 
