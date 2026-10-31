@@ -10,10 +10,9 @@ namespace LinuxDesktopPerfect.Samples.WinFormsBasics
         {
             string scr = ScrArg(args);
 
-            // 【ACC-028 / K-165】把被 catch 掉的异常打到 stderr。
-            //   背景：K-164 从截图里发现 WinFormsBasics 弹了 .NET 未处理异常对话框，
-            //   而那个对话框在「画面空白」时期完全看不见（K-160 的教训）。
-            //   这里只加诊断，不改任何业务行为。
+            // 【ACC-028 / K-165】把被 catch 掉的异常打到 stderr（纯诊断，不改业务行为）。
+            //   为什么需要：WinForms 的未处理异常对话框在「画面空白」时期完全看不见（K-160 的教训），
+            //   而 FirstChanceException 外部钩子在本仓环境下会 abort（K-164）。
             Application.ThreadException += (s, e) =>
             {
                 Console.Error.WriteLine("[EX] ThreadException: " + e.Exception);
