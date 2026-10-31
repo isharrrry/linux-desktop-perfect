@@ -629,11 +629,17 @@ namespace WpfGfx.Linux.Interop
             bool canOpenAllMedia,
             out IntPtr ppMedia)
         {
-            ppMedia = IntPtr.Zero;
-            _ = THIS_PTR;
-            _ = pEventProxy;
-            _ = canOpenAllMedia;
-            return HResult.E_NOTIMPL;
+            _ = THIS_PTR; _ = pEventProxy; _ = canOpenAllMedia;
+            // 【K-005 修：改对了文件】这里才是 bridge（wpfgfx_cor3.so）真正编译的 WpfGfx 源码。
+            //   M94–M146 我一直改的是 `40-build/wpf-port/src/.../WpfGfx/Interop/`，
+            //   而 bridge 的 ProjectReference 指向 `40-build/milcore/WpfGfx.Linux.csproj`
+            //   ⇒ 之前所有媒体改动都没进二进制（这也解释了"探针一次都不触发"）。
+            //   先只做**最小实现**：注册一个对象并返回 S_OK，用返回值探针确认入口被调到；
+            //   元数据读取（GetNaturalWidth 等）随后再接。
+            MilDeviceObject obj = MilDeviceObjectTable.Register(
+                MilDeviceObjectKind.MediaPlayer, null, "media-player");
+            ppMedia = obj.Handle;
+            return HResult.S_OK;
         }
 
         // ==================================================================

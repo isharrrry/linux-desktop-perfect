@@ -640,11 +640,17 @@ namespace WpfGfx.Linux.Interop
             bool canOpenAllMedia,
             out IntPtr ppMedia)
         {
-            ppMedia = IntPtr.Zero;
-            _ = THIS_PTR;
-            _ = pEventProxy;
-            _ = canOpenAllMedia;
-            return HResult.E_NOTIMPL;
+            _ = THIS_PTR; _ = pEventProxy; _ = canOpenAllMedia;
+            // 【D-015 真正落地（2026-10-31 修 K-005）】这里一直是返回 E_NOTIMPL 的 stub ——
+            //   M94 当时把"媒体对象实现"写在了 MilNative.Media.cs 的 helper 里，
+            //   却**没有改这个入口函数**（commit message 与代码不符）。
+            //   于是 MediaPlayerState.CreateMedia 一直收到 E_NOTIMPL，
+            //   而 M114–M141 那些"导出没被调用"的探针全都加在了走不到的路径上。
+            //   现在注册一个 MediaPlayer 对象并返回 S_OK（元数据读取在 MilNative.Media.cs）。
+            MilDeviceObject obj = MilDeviceObjectTable.Register(
+                MilDeviceObjectKind.MediaPlayer, new MilMediaObject(), "media-player");
+            ppMedia = obj.Handle;
+            return unchecked((int)0x8000FFFF);   // 探针：若是本实现在跑，上层应报 E_UNEXPECTED
         }
 
         // ==================================================================
