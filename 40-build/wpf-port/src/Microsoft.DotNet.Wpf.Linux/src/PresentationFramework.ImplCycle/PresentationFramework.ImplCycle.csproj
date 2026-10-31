@@ -23,7 +23,7 @@
     <!-- RefAssemblyAttrs.cs 用 #if WINDOWS_BASE / PRESENTATION_CORE / PRESENTATIONFRAMEWORK / REACHFRAMEWORK
          切换 namespace。cycle-breaker 里要的是 MS.Internal.ReachFramework.BuildInfo（SystemPrinting 常量），
          所以必须定义 REACHFRAMEWORK。 -->
-    <DefineConstants>$(DefineConstants);REACHFRAMEWORK</DefineConstants>
+    <DefineConstants>$(DefineConstants);PRESENTATIONFRAMEWORK</DefineConstants>
     <ImplicitUsings>disable</ImplicitUsings>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
@@ -38,16 +38,15 @@
   <ItemGroup>
     <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/cycle-breakers/PresentationFramework/PresentationFramework.cs" />
     <!-- System.Printing 的声明（PrintTicket/PrintCapabilities/ValidationResult/PrintTicketScope 等） -->
-    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/cycle-breakers/ReachFramework/System.Printing.*.cs" />
-    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/cycle-breakers/ReachFramework/System.Windows.Xps.Packaging.*.cs" />
-    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/cycle-breakers/ReachFramework/System.Windows.Xps.Serialization.*.cs" />
-    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/cycle-breakers/System.Printing/System.Printing.PrintQueue.cs" />
     <!-- BuildInfo：cycle-breaker 里的 [assembly:InternalsVisibleTo(MS.Internal.ReachFramework.BuildInfo.SystemPrinting)] 要用它 -->
-    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/Shared/RefAssemblyAttrs.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="WindowsBase"><HintPath>$(WpfLinuxRoot)src/Microsoft.DotNet.Wpf.Linux/src/WindowsBase/bin/$(WpfLinuxSelfBuiltConfiguration)/WindowsBase.dll</HintPath><Private>false</Private></Reference>
     <Reference Include="System.Xaml"><HintPath>$(WpfLinuxRoot)src/Microsoft.DotNet.Wpf.Linux/src/System.Xaml/bin/$(WpfLinuxSelfBuiltConfiguration)/System.Xaml.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="System.Printing">
+      <HintPath>$(WpfLinuxRoot)src/Microsoft.DotNet.Wpf.Linux/src/SystemPrinting.ApiCycle/bin/$(WpfLinuxSelfBuiltConfiguration)/System.Printing.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
     <Reference Include="PresentationCore"><HintPath>$(WpfLinuxRoot)src/Microsoft.DotNet.Wpf.Linux/src/PresentationCore/bin/$(WpfLinuxSelfBuiltConfiguration)/PresentationCore.dll</HintPath><Private>false</Private></Reference>
     <Reference Include="UIAutomationTypes"><HintPath>$(WpfLinuxRoot)src/Microsoft.DotNet.Wpf.Linux/src/UIAutomationTypes/bin/$(WpfLinuxSelfBuiltConfiguration)/UIAutomationTypes.dll</HintPath><Private>false</Private></Reference>
     <Reference Include="UIAutomationProvider"><HintPath>$(WpfLinuxRoot)src/Microsoft.DotNet.Wpf.Linux/src/UIAutomationProvider/bin/$(WpfLinuxSelfBuiltConfiguration)/UIAutomationProvider.dll</HintPath><Private>false</Private></Reference>

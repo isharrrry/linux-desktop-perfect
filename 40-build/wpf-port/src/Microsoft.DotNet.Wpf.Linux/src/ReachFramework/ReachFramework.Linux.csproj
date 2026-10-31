@@ -40,7 +40,19 @@
          源码改成 `pfi::System.Windows.Documents.FixedDocument` 这种形式 —— 而那些是**上游源码**
          （`switch` 大面积替换会失去与上游的可对照性）。⇒ 先不引，保持 ReachFramework 的现状。
     -->
-<Reference Include="System.Printing"><HintPath>$(WpfLinuxRoot)src/Microsoft.DotNet.Wpf.Linux/src/System.Printing/bin/$(WpfLinuxSelfBuiltConfiguration)/System.Printing.dll</HintPath><Private>false</Private></Reference>
+<!-- 【ACC-024】编译期用 api-cycle（只含声明），运行期仍是真 System.Printing。
+         两者 AssemblyName 都是 System.Printing、同一公钥 ⇒ 类型不冲突（不会再 CS0433）。 -->
+    <Reference Include="System.Printing"><HintPath>$(WpfLinuxRoot)src/Microsoft.DotNet.Wpf.Linux/src/SystemPrinting.ApiCycle/bin/$(WpfLinuxSelfBuiltConfiguration)/System.Printing.dll</HintPath><Private>false</Private></Reference>
+    <!-- 【ACC-024】ReachFramework 用到 PresentationFramework 的类型（FixedDocument/FixedPage/
+         SerializerWriter 等），而真 PF 又依赖 ReachFramework（循环）。
+         上游解法：引用 impl-cycle —— 一个 AssemblyName=PresentationFramework 的**非 shipping** 程序集，
+         只含类型声明（cycle-breakers/PresentationFramework/*.cs）。
+         注意它**必须**叫 PresentationFramework.dll（程序集身份），否则 ReachFramework 里的
+         `[assembly: InternalsVisibleTo]` 和类型解析都对不上。 -->
+    <Reference Include="PresentationFramework">
+      <HintPath>$(WpfLinuxRoot)src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework.ImplCycle/bin/$(WpfLinuxSelfBuiltConfiguration)/PresentationFramework.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
     <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/ReachFramework/Serialization/manager/IXpsSerializationManager.cs" />
     <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/ReachFramework/Serialization/manager/IXpsSerializationManagerAsync.cs" />
     <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/ReachFramework/Serialization/manager/MetroSerializationManager.cs" />
