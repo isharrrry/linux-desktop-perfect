@@ -12,4 +12,12 @@
     <ApplicationManifest></ApplicationManifest>
   </PropertyGroup>
 
+  <ItemGroup>
+    <!-- 运行时的完整 ReachFramework（594 类型 / 619008 字节）覆盖 NuGet 的 ref 子集 -->
+    <Reference Include="ReachFramework">
+      <HintPath>/home/links-dev/.local/share/ldp/dotnet/shared/Microsoft.WindowsDesktop.App/10.0.11/ReachFramework.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+
 </Project>

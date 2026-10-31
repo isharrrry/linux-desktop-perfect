@@ -42,6 +42,36 @@ const csprojWpf = (dir) => L(
   '</Project>',
 );
 
+// 【ACC-024 / K-056】打印样本专用 csproj：显式引用**运行时**的 ReachFramework.dll，
+// 绕开 NuGet 的 ref 版（microsoft.windowsdesktop.app.ref 里那份只有 5120 字节 / 8 类型，
+// XpsDocument 只暴露 Dispose() —— 编译期根本看不到 CreateXpsDocumentWriter 等 API）。
+// 注意 HintPath 用生成时展开的绝对路径：构建期没有 $(DOTNET_ROOT)，不能依赖它。
+const csprojWpfWithReachFramework = (dir) => L(
+  '<!-- 派生样本：由 samples/gen-samples.mjs 生成，勿手改 -->',
+  '<Project Sdk="Microsoft.NET.Sdk">',
+  '',
+  '  <PropertyGroup>',
+  '    <OutputType>WinExe</OutputType>',
+  '    <TargetFramework>net10.0</TargetFramework>',
+  '    <UseWPF>true</UseWPF>',
+  '    <Nullable>disable</Nullable>',
+  '    <ImplicitUsings>disable</ImplicitUsings>',
+  '    <AssemblyName>' + dir + '</AssemblyName>',
+  '    <RootNamespace>LinuxDesktopPerfect.Samples.' + dir + '</RootNamespace>',
+  '    <ApplicationManifest></ApplicationManifest>',
+  '  </PropertyGroup>',
+  '',
+  '  <ItemGroup>',
+  '    <!-- 运行时的完整 ReachFramework（594 类型 / 619008 字节）覆盖 NuGet 的 ref 子集 -->',
+  '    <Reference Include="ReachFramework">',
+  '      <HintPath>' + process.env.HOME + '/.local/share/ldp/dotnet/shared/Microsoft.WindowsDesktop.App/10.0.11/ReachFramework.dll</HintPath>',
+  '      <Private>false</Private>',
+  '    </Reference>',
+  '  </ItemGroup>',
+  '',
+  '</Project>',
+);
+
 const csprojWinForms = (dir) => L(
   '<!-- 派生样本：由 samples/gen-samples.mjs 生成，勿手改 -->',
   '<Project Sdk="Microsoft.NET.Sdk">',
@@ -511,7 +541,7 @@ const scr05 = {
   scr: 'SCR-05',
   ns: 'LinuxDesktopPerfect.Samples.WpfPrintDoc',
   files: (dir, ns) => ({
-    'WpfPrintDoc.csproj': csprojWpf(dir),
+    'WpfPrintDoc.csproj': csprojWpfWithReachFramework(dir),
     'App.xaml': appXaml(ns, 'PrintWindow.xaml'),
     'App.xaml.cs': appCs(ns),
     'PrintWindow.xaml.cs': windowCsWithPrint(ns, 'PrintWindow', 'WpfPrintDoc'),
