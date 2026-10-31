@@ -158,7 +158,7 @@ namespace Ldp.A11y
         {
             if (g_repeatStarted) { Console.Error.WriteLine("[A11Y-REPEAT] StartRepeat 重复调用，已跳过"); Console.Error.Flush(); return; }
             g_repeatStarted = true;
-            Console.Error.WriteLine("[A11Y-REPEAT] StartRepeat 开始（400ms 周期）"); Console.Error.Flush();
+            Console.Error.WriteLine("[A11Y-REPEAT] StartRepeat 开始（400ms 周期）pid=" + Environment.ProcessId); Console.Error.Flush();
             // 【K-011-解8】一刀切开两种可能：
             //   · 心跳（DispatcherTimer，Normal 优先级，1s）在卡住期间**也停了** ⇒ UI 线程真的不再转
             //     （渲染/死锁），那就不是调度公平性问题；
