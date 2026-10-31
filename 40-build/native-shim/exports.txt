@@ -737,20 +737,20 @@ libwpfwin32.so	GlobalSize	gap	MOD-15	10.0.11	无实现（kernel32）
 libwpfwin32.so	GlobalUnlock	impl	MOD-15	10.0.11
 libwpfwin32.so	GridPattern_GetItem	gap	MOD-81	10.0.11	托管桥替代（MOD-81，AT-SPI over D-Bus）；无原生入口
 libwpfwin32.so	HideCaret	impl	MOD-11	10.0.11
-libwpfwin32.so	ImmAssociateContext	gap	MOD-36	10.0.11	无实现（imm32）
-libwpfwin32.so	ImmConfigureIME	gap	MOD-36	10.0.11	无实现（imm32）
-libwpfwin32.so	ImmGetCompositionString	gap	MOD-36	10.0.11	无实现（imm32）
-libwpfwin32.so	ImmGetContext	gap	MOD-36	10.0.11	无实现（imm32）
-libwpfwin32.so	ImmGetConversionStatus	gap	MOD-36	10.0.11	无实现（imm32）
-libwpfwin32.so	ImmGetDefaultIMEWnd	gap	MOD-36	10.0.11	无实现（imm32）
-libwpfwin32.so	ImmGetOpenStatus	gap	MOD-36	10.0.11	无实现（imm32）
-libwpfwin32.so	ImmGetProperty	gap	MOD-36	10.0.11	无实现（imm32）
-libwpfwin32.so	ImmNotifyIME	gap	MOD-36	10.0.11	无实现（imm32）
-libwpfwin32.so	ImmReleaseContext	gap	MOD-36	10.0.11	无实现（imm32）
-libwpfwin32.so	ImmSetCandidateWindow	gap	MOD-36	10.0.11	无实现（imm32）
-libwpfwin32.so	ImmSetCompositionWindow	gap	MOD-36	10.0.11	无实现（imm32）
-libwpfwin32.so	ImmSetConversionStatus	gap	MOD-36	10.0.11	无实现（imm32）
-libwpfwin32.so	ImmSetOpenStatus	gap	MOD-36	10.0.11	无实现（imm32）
+libwpfwin32.so	ImmAssociateContext	impl	MOD-36	10.0.11	IMM32→XIM 桥（ACC-017/Q-012）
+libwpfwin32.so	ImmConfigureIME	impl	MOD-36	10.0.11	IMM32→XIM 桥（ACC-017/Q-012）
+libwpfwin32.so	ImmGetCompositionString	impl	MOD-36	10.0.11	IMM32→XIM 桥（ACC-017/Q-012）
+libwpfwin32.so	ImmGetContext	impl	MOD-36	10.0.11	IMM32→XIM 桥（ACC-017/Q-012）
+libwpfwin32.so	ImmGetConversionStatus	impl	MOD-36	10.0.11	IMM32→XIM 桥（ACC-017/Q-012）
+libwpfwin32.so	ImmGetDefaultIMEWnd	impl	MOD-36	10.0.11	IMM32→XIM 桥（ACC-017/Q-012）
+libwpfwin32.so	ImmGetOpenStatus	impl	MOD-36	10.0.11	IMM32→XIM 桥（ACC-017/Q-012）
+libwpfwin32.so	ImmGetProperty	impl	MOD-36	10.0.11	IMM32→XIM 桥（ACC-017/Q-012）
+libwpfwin32.so	ImmNotifyIME	impl	MOD-36	10.0.11	IMM32→XIM 桥（ACC-017/Q-012）
+libwpfwin32.so	ImmReleaseContext	impl	MOD-36	10.0.11	IMM32→XIM 桥（ACC-017/Q-012）
+libwpfwin32.so	ImmSetCandidateWindow	impl	MOD-36	10.0.11	IMM32→XIM 桥（ACC-017/Q-012）
+libwpfwin32.so	ImmSetCompositionWindow	impl	MOD-36	10.0.11	IMM32→XIM 桥（ACC-017/Q-012）
+libwpfwin32.so	ImmSetConversionStatus	impl	MOD-36	10.0.11	IMM32→XIM 桥（ACC-017/Q-012）
+libwpfwin32.so	ImmSetOpenStatus	impl	MOD-36	10.0.11	IMM32→XIM 桥（ACC-017/Q-012）
 libwpfwin32.so	InSendMessage	gap	MOD-11	10.0.11	无实现（user32）
 libwpfwin32.so	IntGetProcAddress	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
 libwpfwin32.so	InternetGetCookieExW	gap	MOD-15	10.0.11	无实现（wininet）

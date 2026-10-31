@@ -67,6 +67,8 @@ static pthread_mutex_t g_xlock = PTHREAD_MUTEX_INITIALIZER;
 //   · 事件泵对收到的每个 X 事件先过一遍 `XFilterEvent`（被 IM 消费的事件不再翻译成键盘消息）。
 //   ⚠️ 还没做的一层：IC 的预编辑/提交回调 → `WM_IME_*` 消息（WPF 的 Ime 路径要这些消息）。
 //   这一层依赖具体 IM 服务器的协议细节，见 70-operate 的 D-014。
+#include "win32_imm.h"
+
 static XIM  g_xim = NULL;
 static int  g_xim_inited = 0;
 static XIC  g_xic = NULL;          // 当前窗口的输入上下文（有 IM 服务器时才有）
@@ -81,6 +83,7 @@ static void wpf_xim_init_once(void)
     // 让 Xlib 用 XMODIFIERS（如 `@im=ibus`）挑服务器；没有服务器时这里返回 NULL 是**正常**的
     XSetLocaleModifiers("");
     g_xim = XOpenIM(g_wpf.dpy, NULL, NULL, NULL);
+    wpf_imm_set_available(g_xim != NULL);   // 【ACC-017】IMM32 层据此决定 ImmGetContext 返回 NULL 还是 HIMC
     if (getenv("WPF_LINUX_KEY_DIAG")) {
         fprintf(stderr, "[XIM] XOpenIM => %s（XMODIFIERS=%s）\n",
                 g_xim ? "ok" : "NULL（无输入法服务器）",
@@ -92,6 +95,74 @@ static void wpf_xim_init_once(void)
 int wpf_xim_available(void) { wpf_xim_init_once(); return g_xim != NULL; }
 int wpf_xim_ic_count(void) { return g_xic_created; }
 
+// ── 【ACC-017 / D-014 第三层】XIM 预编辑回调 → IMM32 缓冲 → WM_IME_* ─────────────
+//   为什么用 XIMPreeditCallbacks：当前 IC 原先选的是 XIMPreeditNothing，
+//   那个样式下 IME **不把预编辑字符串交给我们**，所以永远拿不到预编辑。
+//   要拿就必须选 XIMPreeditCallbacks 并注册四个回调。
+
+// 把 XIMText 转成 UTF-16（WPF 的 ImmGetCompositionString 要 UTF-16）
+static int wpf_xim_text_to_utf16(const XIMText *t, uint16_t *out, int cap)
+{
+    if (!t) return 0;
+    int n = 0;
+    if (t->encoding_is_wchar) {
+        const wchar_t *w = t->string.wide_char;
+        if (!w) return 0;
+        for (int i = 0; i < (int)t->length && n < cap; ++i) {
+            unsigned long cp = (unsigned long)w[i];        // Linux wchar_t 是 32 位（UCS-4）
+            if (cp < 0x10000) out[n++] = (uint16_t)cp;
+            else if (n + 1 < cap) {                        // 代理对
+                cp -= 0x10000;
+                out[n++] = (uint16_t)(0xD800 + (cp >> 10));
+                out[n++] = (uint16_t)(0xDC00 + (cp & 0x3FF));
+            }
+        }
+    } else {
+        const unsigned char *m = (const unsigned char *)t->string.multi_byte;
+        if (!m) return 0;
+        int i = 0;
+        while (i < (int)t->length && n < cap) {
+            unsigned long cp = m[i];
+            if (cp < 0x80) ++i;
+            else if ((cp & 0xE0) == 0xC0 && i + 1 < (int)t->length) { cp = ((cp & 0x1F) << 6) | (m[i+1] & 0x3F); i += 2; }
+            else if ((cp & 0xF0) == 0xE0 && i + 2 < (int)t->length) { cp = ((cp & 0x0F) << 12) | ((m[i+1] & 0x3F) << 6) | (m[i+2] & 0x3F); i += 3; }
+            else if ((cp & 0xF8) == 0xF0 && i + 3 < (int)t->length) { cp = ((cp & 0x07) << 18) | ((m[i+1] & 0x3F) << 12) | ((m[i+2] & 0x3F) << 6) | (m[i+3] & 0x3F); i += 4; }
+            else { ++i; continue; }
+            if (cp < 0x10000) out[n++] = (uint16_t)cp;
+            else if (n + 1 < cap) { cp -= 0x10000; out[n++] = (uint16_t)(0xD800 + (cp >> 10)); out[n++] = (uint16_t)(0xDC00 + (cp & 0x3FF)); }
+        }
+    }
+    return n;
+}
+
+static void wpf_xim_preedit_start_cb(XIC ic, XPointer cd, XPointer calldata)
+{ (void)ic; (void)cd; (void)calldata; wpf_imm_preedit_start(); }
+
+static void wpf_xim_preedit_draw_cb(XIC ic, XPointer cd, XPointer calldata)
+{
+    (void)ic; (void)cd;
+    const XIMText *t = (const XIMText *)calldata;
+    uint16_t buf[1024];
+    int n = wpf_xim_text_to_utf16(t, buf, 1024);
+    wpf_imm_preedit_update(buf, n, n);      // 光标放末尾（够 WPF 画原位预编辑）
+}
+
+static void wpf_xim_preedit_done_cb(XIC ic, XPointer cd, XPointer calldata)
+{
+    (void)ic; (void)cd;
+    // 标准 Xlib 里**没有** XNDoneCallback（只有 Start/Done/Draw 三个）。
+    // 按 XIM 规范，提交的字符串是从 PreeditDone 的 call_data（XIMText*）带过来的：
+    //   非空 ⇒ 这是一次"提交"（先把预编辑结束掉，再把文本交给 WPF）；
+    //   空   ⇒ 只是预编辑结束（取消或切换）。
+    const XIMText *t = (const XIMText *)calldata;
+    wpf_imm_preedit_done();
+    if (t) {
+        uint16_t buf[1024];
+        int n = wpf_xim_text_to_utf16(t, buf, 1024);
+        if (n > 0) wpf_imm_commit(buf, n);
+    }
+}
+
 // 给输入焦点窗口建 IC 并 SetICFocus（D-014 第二步）。
 //   没有 IM 服务器时 g_xim == NULL ⇒ 整段 no-op（本机就是这种情况，判据读数如实）。
 void wpf_xim_attach_ic(Window w)
@@ -101,17 +172,98 @@ void wpf_xim_attach_ic(Window w)
     if (g_xic != NULL && g_xic_window == w) { XSetICFocus(g_xic); return; }
     if (g_xic != NULL) { XUnsetICFocus(g_xic); XDestroyIC(g_xic); g_xic = NULL; }
     XIMStyles *styles = NULL;
-    if (XGetIMValues(g_xim, XNQueryInputStyle, &styles, NULL) != NULL || styles == NULL) return;
+    char *imErr = XGetIMValues(g_xim, XNQueryInputStyle, &styles, NULL);
+    if (imErr != NULL || styles == NULL) {
+        if (getenv("WPF_LINUX_KEY_DIAG"))
+            fprintf(stderr, "[XIM] XGetIMValues 失败 err=%s styles=%p\n", imErr ? imErr : "(null)", (void *)styles);
+        if (getenv("WPF_LINUX_KEY_DIAG")) fflush(stderr);
+        return;
+    }
+    if (getenv("WPF_LINUX_KEY_DIAG")) {
+        fprintf(stderr, "[XIM] 支持 %d 种样式：", styles->count_styles);
+        for (unsigned short i2 = 0; i2 < styles->count_styles && i2 < 12; ++i2)
+            fprintf(stderr, " 0x%lx", (unsigned long)styles->supported_styles[i2]);
+        fprintf(stderr, "\n"); fflush(stderr);
+    }
     XIMStyle want = 0;
+    // 【ACC-017】优先 XIMPreeditCallbacks —— 只有它才会把预编辑字符串通过回调交给我们；
+    //   XIMPreeditNothing 下 IME 自己画，WPF 永远读不到预编辑。
     for (unsigned short i = 0; i < styles->count_styles; ++i) {
-        // 优先"根窗口 + 预编辑在内部"的样式（WPF 的文本视图自己画预编辑）
-        if (styles->supported_styles[i] & XIMPreeditNothing) { want = styles->supported_styles[i]; break; }
+        if ((styles->supported_styles[i] & XIMPreeditCallbacks) && !(styles->supported_styles[i] & XIMStatusCallbacks)) {
+            want = styles->supported_styles[i]; break;
+        }
+    }
+    if (want == 0) {   // 再退一步：允许带 StatusCallbacks 的
+        for (unsigned short i = 0; i < styles->count_styles; ++i) {
+            if (styles->supported_styles[i] & XIMPreeditCallbacks) { want = styles->supported_styles[i]; break; }
+        }
+    }
+    int with_callbacks = (want != 0);
+    if (want == 0) {   // 最终回退：Nothing（此时拿不到预编辑，行为等同旧版）
+        for (unsigned short i = 0; i < styles->count_styles; ++i) {
+            if (styles->supported_styles[i] & XIMPreeditNothing) { want = styles->supported_styles[i]; break; }
+        }
     }
     if (want == 0 && styles->count_styles > 0) want = styles->supported_styles[0];
     XFree(styles);
-    if (want == 0) return;
-    g_xic = XCreateIC(g_xim, XNInputStyle, want, XNClientWindow, w, XNFocusWindow, w, NULL);
-    if (g_xic == NULL) return;
+    if (want == 0) {
+        if (getenv("WPF_LINUX_KEY_DIAG")) { fprintf(stderr, "[XIM] 无可用样式，放弃建 IC\n"); fflush(stderr); }
+        return;
+    }
+
+    static XIMCallback s_cb_start, s_cb_draw, s_cb_done;
+    s_cb_start.client_data = (XPointer)0; s_cb_start.callback = (XIMProc)wpf_xim_preedit_start_cb;
+    s_cb_draw.client_data  = (XPointer)0; s_cb_draw.callback  = (XIMProc)wpf_xim_preedit_draw_cb;
+    s_cb_done.client_data  = (XPointer)0; s_cb_done.callback  = (XIMProc)wpf_xim_preedit_done_cb;
+
+    if (with_callbacks) {
+        // 【ACC-017 实测】ibus 支持 0x402（XIMStatusNothing|XIMPreeditCallbacks），
+        //   但带三个回调的 XCreateIC 返回 NULL。先只带 Start/Draw 两个试（Done 单独试），
+        //   再退到"只登记样式、不注册回调"，以便区分"样式不可用"还是"回调参数有问题"。
+        // ① 标准写法：callbacks 模式下**不给 XNFocusWindow**（实测给它会返回 NULL）
+        g_xic = XCreateIC(g_xim, XNInputStyle, want,
+                          XNClientWindow, w,
+                          XNPreeditStartCallback, &s_cb_start,
+                          XNPreeditDoneCallback,  &s_cb_done,
+                          XNPreeditDrawCallback,  &s_cb_draw,
+                          NULL);
+        if (g_xic == NULL && getenv("WPF_LINUX_KEY_DIAG")) {
+            fprintf(stderr, "[XIM] ①无 FocusWindow 失败，试 ②带 FocusWindow\n"); fflush(stderr);
+        }
+        if (g_xic == NULL) {
+            // ② 带 XNFocusWindow
+            g_xic = XCreateIC(g_xim, XNInputStyle, want,
+                              XNClientWindow, w, XNFocusWindow, w,
+                              XNPreeditStartCallback, &s_cb_start,
+                              XNPreeditDrawCallback,  &s_cb_draw,
+                              XNPreeditDoneCallback,  &s_cb_done,
+                              NULL);
+        }
+        if (g_xic == NULL && getenv("WPF_LINUX_KEY_DIAG")) {
+            fprintf(stderr, "[XIM] ②也失败，试 ③两个回调\n"); fflush(stderr);
+        }
+        if (g_xic == NULL) {
+            // ③ 只注册 Start/Draw
+            g_xic = XCreateIC(g_xim, XNInputStyle, want,
+                              XNClientWindow, w,
+                              XNPreeditStartCallback, &s_cb_start,
+                              XNPreeditDrawCallback,  &s_cb_draw,
+                              NULL);
+        }
+        if (g_xic == NULL) {
+            g_xic = XCreateIC(g_xim, XNInputStyle, want, XNClientWindow, w, XNFocusWindow, w, NULL);
+            if (g_xic != NULL && getenv("WPF_LINUX_KEY_DIAG")) {
+                fprintf(stderr, "[XIM] 回退到无回调（callbacks 样式但拿不到预编辑）\n"); fflush(stderr);
+            }
+        }
+    } else {
+        g_xic = XCreateIC(g_xim, XNInputStyle, want, XNClientWindow, w, XNFocusWindow, w, NULL);
+    }
+    if (g_xic == NULL) {
+        if (getenv("WPF_LINUX_KEY_DIAG")) { fprintf(stderr, "[XIM] XCreateIC 返回 NULL（want=0x%lx callbacks=%d）\n", (unsigned long)want, with_callbacks); fflush(stderr); }
+        return;
+    }
+    wpf_imm_bind_hwnd((void *)w);   // WM_IME_* 投到这个窗口
     g_xic_window = w;
     g_xic_created++;
     XSetICFocus(g_xic);

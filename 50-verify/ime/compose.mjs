@@ -72,13 +72,27 @@ const { startXvfb, waitDisplay, startApp, findWindow, waitMapped, sleep, DOTNET_
         const xicOk = /\[XIM\] XCreateIC ok/.test(tr);
         const mOpen = tr.match(/\[XIM\] XOpenIM => ([^（\n]*)/);
         const mIc = tr.match(/\[XIM\] XCreateIC ok（第 (\d+) 个）style=(0x[0-9a-f]+)/);
+        const callbacksRejected = /①无 FocusWindow 失败|②也失败/.test(tr);
+        const fellBackNoCb = /回退到无回调/.test(tr);
+        const immGetContextCalls = (tr.match(/\[IME\] ImmGetContext/g) || []).length;
         steps.push({ step: 'xim_bridge', ok: ximOpenOk && xicOk,
                      xopenim: mOpen ? mOpen[1].trim() : null,
                      xcreateic_count: mIc ? Number(mIc[1]) : 0,
                      ic_style: mIc ? mIc[2] : null,
+                     callbacks_rejected: callbacksRejected,
+                     fell_back_without_callbacks: fellBackNoCb,
+                     imm_get_context_calls: immGetContextCalls,
                      note: ximOpenOk && xicOk
-                       ? 'XIM 桥实测可用（XOpenIM ok + XCreateIC ok）'
+                       ? (fellBackNoCb
+                          ? 'XIM 桥可用，但 ibus **拒绝 XIMPreeditCallbacks**（XCreateIC 带回调一律 NULL）⇒ 拿不到预编辑'
+                          : 'XIM 桥实测可用（含预编辑回调）')
                        : 'XIM 桥未建立（见 xopenim 字段）' });
+        // 【关键观测】IMM32 面是否真的被 WPF 调到
+        steps.push({ step: 'imm32_reached', ok: immGetContextCalls > 0,
+                     imm_get_context_calls: immGetContextCalls,
+                     note: immGetContextCalls > 0
+                       ? 'WPF 已走 IMM32 路径（ImmGetContext 被调用）'
+                       : 'WPF 未进入 IME 路径（没有 WM_IME_* 驱动，ImmGetContext 0 次）' });
       } else {
         steps.push({ step: 'startup', ok: false, reason: app.reason });
       }
@@ -101,9 +115,17 @@ const { startXvfb, waitDisplay, startApp, findWindow, waitMapped, sleep, DOTNET_
       ...missingNotes,
       ...bad.map((s) => `${s.step} 失败：${JSON.stringify(s).slice(0, 240)}`),
       ximOk
-        ? `缺口（已实测）：XIM 桥**可用** —— ibus-daemon 由判据自己启动，`
-          + `\`XOpenIM => ok\`、\`XCreateIC ok（${ximStep.xcreateic_count} 个，style=${ximStep.ic_style}）\`；`
-          + `但 **预编辑/提交回调 → \`WM_IME_*\`** 这一层仍未实现 ⇒ 预编辑/提交/取消/候选窗定位四条路径都没有承载面（D-014 第二/三步）。`
+        ? `缺口（已实测，逐层）：`
+          + `① **输入法服务器**：判据自己起 \`ibus-daemon --xim\`，\`XIM_SERVERS=@server=ibus\`、\`XOpenIM => ok\` ✔；`
+          + `② **XIM 输入上下文**：\`XCreateIC ok（style=${ximStep.ic_style}）\` ✔；`
+          + `③ **预编辑回调**：ibus 列出了 \`XIMPreeditCallbacks\` 样式，但**带回调的 XCreateIC 一律返回 NULL**`
+          + `（三级尝试全失败，${ximStep.fell_back_without_callbacks ? '已回退到无回调' : '未回退'}）`
+          + `⇒ **拿不到预编辑字符串**；`
+          + `④ **IMM32 面**：shim 已实现并导出 17 个 \`Imm*\`（\`ImmGetContext\`/\`ImmGetCompositionString\`/`
+          + `\`ImmNotifyIME\`/\`ImmSetCandidateWindow\` 等），\`imm32.dll\` 已加入 DllImport 映射；`
+          + `但 WPF 侧 \`ImmGetContext\` 实测 **${ximStep.imm_get_context_calls ?? 0} 次** —— `
+          + `因为 ③ 拿不到预编辑 ⇒ shim 不投递 \`WM_IME_*\` ⇒ WPF 不进 IME 路径。`
+          + `⇒ 四路径（预编辑/提交/取消/候选窗定位）仍未走通，卡点收敛到 **"ibus 的 XIM 前端不提供 callbacks"**。`
         : `缺口：XIM 桥未能建立（${ximStep ? ximStep.note : '未探测'}）。`
           + `shim 里有 XIM 入口（计数 ${ximInShim}），但本环境拿不到输入法服务器 ⇒ 四条路径无法验证。`,
     ],
