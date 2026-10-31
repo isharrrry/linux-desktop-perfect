@@ -87,11 +87,26 @@ namespace LdpVerify.Page
                 }
                 _stage = "get-first-page";
 
-                // 再取第一页的可视内容（验证分页不是"只报数字"）
-                DocumentPage first = pag.GetPage(0);
-                json = string.Format("{{\"ok\":true,\"page_count\":{0},\"page_size\":[{1},{2}],\"first_page_blank\":{3}}}",
-                    pages, (int)pag.PageSize.Width, (int)pag.PageSize.Height,
-                    first == DocumentPage.Missing ? "true" : "false");
+                // 【2026-10-31 判据修复（重要）】**跑满上限不是成功**。
+                //   原实现：`for (i<1000) GetPage(i)`，只要没遇到 `Missing` 就一路到 1000，
+                //   然后照旧报 `ok:true, page_count:1000` —— 这等于把"分页器**无限生成页**"
+                //   误报成"分页成功"。实测确实如此（`GetPage(i)` 永不返回 `Missing`）。
+                //   改为：跑满上限 ⇒ **明确失败**（`TooManyPages`），让判据据此判红。
+                if (pages >= 1000)
+                {
+                    json = string.Format("{{\"ok\":false,\"type\":\"TooManyPages\","
+                        + "\"error\":\"GetPage(i) 跑满 1000 次仍未返回 DocumentPage.Missing（分页器在无限生成页）\","
+                        + "\"page_count\":{0},\"page_size\":[{1},{2}]}}",
+                        pages, (int)pag.PageSize.Width, (int)pag.PageSize.Height);
+                }
+                else
+                {
+                    // 再取第一页的可视内容（验证分页不是"只报数字"）
+                    DocumentPage first = pag.GetPage(0);
+                    json = string.Format("{{\"ok\":true,\"page_count\":{0},\"page_size\":[{1},{2}],\"first_page_blank\":{3}}}",
+                        pages, (int)pag.PageSize.Width, (int)pag.PageSize.Height,
+                        first == DocumentPage.Missing ? "true" : "false");
+                }
             }
             catch (Exception ex)
             {

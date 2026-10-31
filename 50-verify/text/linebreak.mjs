@@ -108,8 +108,16 @@ let pagination = null;
   }
 }
 
-const degradeReason = '换行与双向已双路径验；**分页面**已接入 `page-app` 的读数，但分页测量在字体回退缺口下**卡住**'
-    + `（${pagination ? (pagination.type || 'unknown') + '：' + (pagination.error || '') : '无读数'}）⇒ D-019 未解；DEGRADED ≠ PASS`;
+// 【2026-10-31 判据修复】原来这条 degrade 是**无条件**的：即使 page-app 返回
+//   `{"ok":true,page_count:...,page_size:...}` 也照旧说"卡住"（D-019）。
+//   分页修通后再这么写就成了"判据与实现不同步" ⇒ 改成按实际读数分三态。
+const paginationOk = !!(pagination && pagination.ok === true);
+const degradeReason = paginationOk
+    ? '换行与双向已双路径验；分页面已由 `page-app` 实测通过'
+      + `（page_count=${pagination.page_count}，page_size=${JSON.stringify(pagination.page_size)}，`
+      + `first_page_blank=${pagination.first_page_blank}）`
+    : ('换行与双向已双路径验；**分页面**未通过'
+      + `（${pagination ? (pagination.type || 'unknown') + '：' + (pagination.error || '') : '无读数'}）`);
 finish({
   acc: 'ACC-015',
   started,
@@ -117,5 +125,5 @@ finish({
   env: { ...env, cases: rows, pagination },
   verdict: diff.length ? 'FAIL' : 'DEGRADED',
   degrade: diff.length ? 'none' : degradeReason,
-  diff: diff.length ? diff.slice(0, 8) : [`未覆盖项：${degradeReason}`],
+  diff: diff.length ? diff.slice(0, 8) : (paginationOk ? [] : [`未覆盖项：${degradeReason}`]),
 });

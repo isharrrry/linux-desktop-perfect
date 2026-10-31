@@ -475,6 +475,11 @@ typedef struct {
     int          qpd_calls;
     int          qpd_new_pending;
     int          qpd_vis_built;
+    int          qpd_new_issued;   /* 【2026-10-31 D-019-解17】**本页已发过一次 `fskupdNew`**。
+                                     原实现用 `g_pts_qpd_prev_page`（只记最后一次查的页）判"相邻"：
+                                     分页器**交替查询不同页**时 `adj` 恒 0 ⇒ **每次都给 `New`**
+                                     （实测 new_n=47 / nc_n=32）⇒ 消费者认为页一直在变 ⇒ 反复更新/建页。
+                                     改为按**页对象自身**判：首次 New，之后一律 NoChange。 */
     int          qpd_fstd_since;
     /* ── ⏪ `T-A66`：**断页记录（break record）句柄的"已失效"位** ────────────────────────────
        本侧断页记录句柄 ＝ 本对象内字段 `c_paras` 的地址（`FsCreatePageFinite`／`FsUpdateFinitePage`
@@ -7538,8 +7543,12 @@ int FsQueryPageDetails(void *pfscontext, void *pPage, void *pPageDetails)
 #elif WPF_PTS_QPD_FSKUPD_FAKE == 2
             const int fskupd = WPF_PTS_FSKUPD_NEW;    /* 反腿②：恒 New ⇒ 把"未变"谎报成"新建" */
 #else
-            const int fskupd = (qpd_vis_built || qpd_adjacent) ? WPF_PTS_FSKUPD_NOCHANGE
-                                                               : WPF_PTS_FSKUPD_NEW;
+            /* 【D-019-解17】按**页对象自身**判"是否已经发过 New"，不再依赖 `g_pts_qpd_prev_page`。
+               理由：分页器会**交替**查询不同页，那时 `qpd_adjacent` 恒 0 ⇒ 旧逻辑每次都给 New
+               （实测 new_n=47 / nc_n=32）⇒ 消费者以为页一直在变 ⇒ 反复建页（253 次）。 */
+            const int fskupd = (pg->qpd_new_issued || qpd_vis_built) ? WPF_PTS_FSKUPD_NOCHANGE
+                                                                     : WPF_PTS_FSKUPD_NEW;
+            pg->qpd_new_issued = 1;
 #endif
             g_pts_qpd_prev_page = (const void *)pPage;   /* 供下一次查询判定"是否同组" */
             pg->qpd_calls++;
