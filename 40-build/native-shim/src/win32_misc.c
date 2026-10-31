@@ -226,12 +226,44 @@ BOOL BeginPaint(HWND h, WPF_PAINTSTRUCT *ps)
             wpf_window *pw2 = wpf_window_find(h);
             if (pw2 && pw2->width > 0 && pw2->height > 0) {
                 wpf_class *pc2 = wpf_class_find_atom(pw2->class_atom);
+                int32_t is_child = (pw2->style & WS_CHILD) != 0;
                 uint32_t bgc = pc2 ? wpf_gdi_color(pc2->background, 0) : 0;
-                if (!bgc) bgc = pw2->parent ? 0x00F0F0F0 : 0x00FFFFFF;
+                // 【ACC-028 / K-164】用 `WS_CHILD` 判据替代 `parent != 0`：
+                //   WinForms 给顶层 Form 也挂了隐藏 owner，`parent` 判不准（K-163 的副作用）。
+                if (!bgc) bgc = is_child ? 0x00F0F0F0 : 0x00FFFFFF;
                 WPF_RECT brc;
                 brc.left = 0; brc.top = 0;
                 brc.right = pw2->width; brc.bottom = pw2->height;
                 wpf_draw_fill_rect(ps->hdc, &brc, bgc);
+
+                // 【ACC-028 / K-164】**画窗口文字**。
+                //   标题在 `SetWindowTextW` 时被 `wpf_x11_set_title` 存下来了，这里读回来画。
+                //   这是让 Button/Label/Form 的 Text 出现在屏幕上的最小手段 ——
+                //   不依赖 WinForms 的 `OnPaint`（那条路被 `paintBackground` 挡住了，K-151/K-163）。
+                if (is_child) {
+                    char tbuf[128];
+                    wpf_x11_query_title(h, tbuf, sizeof(tbuf));
+                    if (tbuf[0]) {
+                        uint16_t wbuf[128]; int wn = 0;
+                        for (const unsigned char *p8 = (const unsigned char *)tbuf; *p8 && wn < 127; ) {
+                            uint32_t cp; int extra;
+                            if (*p8 < 0x80) { cp = *p8; extra = 0; }
+                            else if ((*p8 & 0xE0) == 0xC0) { cp = *p8 & 0x1F; extra = 1; }
+                            else if ((*p8 & 0xF0) == 0xE0) { cp = *p8 & 0x0F; extra = 2; }
+                            else { cp = *p8 & 0x07; extra = 3; }
+                            ++p8;
+                            for (int k = 0; k < extra && *p8; ++k, ++p8) cp = (cp << 6) | (*p8 & 0x3F);
+                            if (cp >= 0x10000) { wbuf[wn++] = (uint16_t)(0xD800 + ((cp - 0x10000) >> 10));
+                                                 if (wn < 127) wbuf[wn++] = (uint16_t)(0xDC00 + ((cp - 0x10000) & 0x3FF)); }
+                            else wbuf[wn++] = (uint16_t)cp;
+                        }
+                        if (wn > 0) {
+                            // 垂直居中、左侧留 4px
+                            int32_t ty = (pw2->height + 16) / 2;
+                            wpf_draw_text(ps->hdc, 4, ty, wbuf, wn);
+                        }
+                    }
+                }
             }
         }
         // 【ACC-028 / K-152】诊断：`WmPaint` 里 `if (doubleBuffered && clip 为 0) return;`
