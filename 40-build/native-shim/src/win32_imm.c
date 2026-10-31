@@ -65,6 +65,12 @@ void wpf_imm_bind_hwnd(void *hwnd)    { g_himc.hwnd = hwnd; }
 #define WM_CHAR 0x0102
 void wpf_imm_post_char(uint16_t ch)
 {
+    // 【ACC-017 / K-082】诊断：把每个投递的码元打出来（env 门控）。
+    //   实测发现 commit 6 次，但 `WM_CHAR|post_char` 日志只有 2 处 ⇒ 投递链路有丢失，必须逐个可观测。
+    if (getenv("WPF_LINUX_KEY_DIAG")) {
+        fprintf(stderr, "[IMM] post_char U+%04X -> hwnd=%p\n", (unsigned)ch, g_himc.hwnd);
+        fflush(stderr);
+    }
     if (!g_himc.hwnd) return;
     PostMessageW(g_himc.hwnd, WM_CHAR, (uintptr_t)ch, 1);
     if (g_himc.available) g_stats.composition_msgs++;
