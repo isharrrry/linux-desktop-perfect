@@ -13,6 +13,24 @@ public static class StartupHook
 {
     public static void Initialize()
     {
+        // 【ACC-028 / K-067】抓首次机会异常，打印 TargetSite + 完整栈。
+        //   比普通栈更准：TargetSite 直接指出"哪个方法没被找到"。
+        //   只对 EntryPointNotFoundException 生效，避免刷屏。
+        try
+        {
+            AppDomain.CurrentDomain.FirstChanceException += (s3, e3) =>
+            {
+                if (e3.Exception is not EntryPointNotFoundException) return;
+                var ex = e3.Exception;
+                Console.Error.WriteLine("[FCE] " + ex.GetType().Name + ": " + ex.Message);
+                Console.Error.WriteLine("[FCE] TargetSite = " +
+                    (ex.TargetSite != null ? (ex.TargetSite.DeclaringType?.FullName ?? "?") + "." + ex.TargetSite.Name : "(null)"));
+                Console.Error.WriteLine("[FCE] Stack = " + ex.StackTrace);
+                Console.Error.Flush();
+            };
+        }
+        catch (Exception ex) { Console.Error.WriteLine("[FCE] 安装失败：" + ex.GetType().Name); }
+
         // 【ACC-028】**无条件**先给 WinForms 家族补装 DllImport resolver。
         //   为什么放在最前面：`System.Windows.Forms.dll` 是 Windows 原版，它没有我们的
         //   `[ModuleInitializer]`，而 `SetDllImportResolver` 必须在它第一次 P/Invoke 之前装。
