@@ -3003,6 +3003,17 @@ namespace WpfLinux.Shims.PresentationCore
             int eop = range.HasEop ? 1 : 0;
             int length = visibleLen + range.HardBreakLen + eop;                 // ① 含硬断字符 + EOP
             int newlineLength = range.HardBreakLen + eop;                       // 末行 NewlineLength=1 是 EOP
+            // 【D-019 诊断（2026-10-31）】确认 HasEop 到底有没有落到段末行上。
+            //   为什么打：`Line.FormattingResult` 第一道检查就是 `NewlineLength == 0` ⇒
+            //   恒返 fsflrOutOfSpace(0)，64 行全是 0。要看的就是 HasEop/newlineLength/range.End。
+            if (Environment.GetEnvironmentVariable("LDP_EOP_DIAG") == "1")
+            {
+                Console.Error.WriteLine("[EOP-DIAG] start=" + range.Start + " end=" + range.End
+                    + " textLen=" + (text == null ? -1 : text.Length)
+                    + " visibleLen=" + visibleLen + " hardBreak=" + range.HardBreakLen
+                    + " hasEop=" + (range.HasEop ? 1 : 0) + " newlineLen=" + newlineLength);
+                Console.Error.Flush();
+            }
             int trailingWhitespaceLength = trailingWs + range.HardBreakLen + eop;
 
             TextRunProperties props;
