@@ -1163,7 +1163,11 @@ namespace WpfLinux.Shims.PresentationCore
         /// <summary>D-F1c/B2：每面 Unicode 覆盖集合（**不持句柄**）。上限 32 个面，超出即整体清空（有界内存）。</summary>
         private static readonly Dictionary<string, HashSet<int>> s_coverCache =
             new Dictionary<string, HashSet<int>>(StringComparer.Ordinal);
-        private const int MaxCoverCache = 32;
+        // 【2026-10-31 D-019 自旋修复】原来是 32：本机字体目录里有几百个 face，
+        //   每个 face 的 collect_unicodes 要建 2–3 万码点的 HashSet；缓存一超 32 就整体
+        //   Clear() ⇒ 反复重算。dotnet-trace 显示 CPU 全烧在 CoversCpByBitmap（6203ms，
+        //   另加 HashSet.Resize 821ms + Memmove 1026ms）。提到 1024 让常见 face 常驻。
+        private const int MaxCoverCache = 1024;
 
         private static bool CoversCpByBitmap(string path, int faceIndex, int cp)
         {
@@ -1173,7 +1177,9 @@ namespace WpfLinux.Shims.PresentationCore
                 HashSet<int> hit;
                 if (s_coverCache.TryGetValue(key, out hit)) return hit.Contains(cp);
             }
-            HashSet<int> set = new HashSet<int>();
+            // 【2026-10-31】预分配：一个 CJK face 常有 2–3 万码点，默认容量会反复 Resize
+            //   （trace 里 Resize 821ms + Memmove 1026ms 都是这块）。
+            HashSet<int> set = new HashSet<int>(1 << 16);
             IntPtr blob = IntPtr.Zero, face = IntPtr.Zero, hs = IntPtr.Zero;
             try
             {
