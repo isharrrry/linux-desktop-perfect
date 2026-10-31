@@ -1557,6 +1557,41 @@ namespace System.Windows.Interop
             return new Size(convertedPt.X, convertedPt.Y);
         }
 
+        /// <summary>
+        /// 【P20b】从 `WM_DROPFILES` 的 HDROP 里读出文件路径列表（HDROP 由本项目的 shim 从
+        /// X DnD 的 uri-list 翻译而来）。**注意本文件才是真正参与编译的那份** ——
+        /// 上游 `PresentationCore/.../InterOp/HwndSource.cs` 在 `PresentationCore.Linux.csproj:1660`
+        /// 被 `<Compile Remove>` 掉了，之前把 P20 加在那边，所以它从来没生效过（K-010-解7）。
+        /// </summary>
+        [System.Runtime.InteropServices.DllImport("user32.dll", EntryPoint = "DragQueryFileW", CharSet = System.Runtime.InteropServices.CharSet.Unicode)]
+        private static extern uint WpfLinuxDragQueryFileW(IntPtr hDrop, uint iFile, char[] lpszFile, uint cch);
+
+        [System.Runtime.InteropServices.DllImport("user32.dll", EntryPoint = "DragFinish")]
+        private static extern void WpfLinuxDragFinish(IntPtr hDrop);
+
+        private static string[] WpfLinuxDroppedFiles(IntPtr hDrop)
+        {
+            try
+            {
+                int count = (int)WpfLinuxDragQueryFileW(hDrop, 0xFFFFFFFFu, null, 0);
+                if (count <= 0) return null;
+                string[] paths = new string[count];
+                for (int i = 0; i < count; ++i)
+                {
+                    int len = (int)WpfLinuxDragQueryFileW(hDrop, (uint)i, null, 0);
+                    if (len <= 0) { paths[i] = string.Empty; continue; }
+                    char[] buf = new char[len + 1];
+                    WpfLinuxDragQueryFileW(hDrop, (uint)i, buf, (uint)buf.Length);
+                    paths[i] = new string(buf, 0, len);
+                }
+                return paths;
+            }
+            finally
+            {
+                WpfLinuxDragFinish(hDrop);
+            }
+        }
+
         private IntPtr HwndTargetFilterMessage(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
         {
             IntPtr result = IntPtr.Zero ;
@@ -1564,6 +1599,36 @@ namespace System.Windows.Interop
             if (IsUsable)
             {
                 HwndTarget hwndTarget = _hwndTarget;
+                // 【P20 · 已搬到本文件（真正参与编译的那份）】
+                //   把 shim 翻译出来的 `WM_DROPFILES` 转成应用的 `Drop` 事件：
+                //   读 HDROP 的文件列表 → DataObject(FileDrop) → 在 RootVisual 上 RaiseEvent(DropEvent)。
+                //   上游 PresentationCore 里没有任何 WM_DROPFILES 处理（走的 OLE），Linux 上没有 OLE。
+                if (msg == 0x0233 /* WM_DROPFILES */ && wParam != IntPtr.Zero)
+                {
+                    Console.Error.WriteLine("[P20] WM_DROPFILES wParam=0x" + wParam.ToInt64().ToString("x"));
+                    Console.Error.Flush();
+                    try
+                    {
+                        string[] paths = WpfLinuxDroppedFiles(wParam);
+                        if (paths != null && paths.Length > 0 && hwndTarget != null && hwndTarget.RootVisual != null)
+                        {
+                            DataObject data = new DataObject(DataFormats.FileDrop, paths);
+                            DragEventArgs dropArgs = new DragEventArgs(
+                                data, DragDropKeyStates.None, DragDropEffects.Copy,
+                                hwndTarget.RootVisual, new Point(0, 0));
+                            dropArgs.RoutedEvent = DragDrop.DropEvent;
+                            // RaiseEvent 在 UIElement 上（Visual 没有）
+                            if (hwndTarget.RootVisual is UIElement uiRoot) uiRoot.RaiseEvent(dropArgs);
+                            handled = true;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        // 拖放是"锦上添花"：任何异常都不能把窗口消息循环打崩
+                        Console.Error.WriteLine("[P20] 异常：" + ex.GetType().Name + " " + ex.Message);
+                        Console.Error.Flush();
+                    }
+                }
                 if (hwndTarget != null)
                 {
                     result = hwndTarget.HandleMessage((WindowMessage)msg, wParam, lParam);
