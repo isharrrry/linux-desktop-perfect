@@ -692,3 +692,31 @@ void SetLastError(DWORD dwErrCode)
 {
     wpf_set_last_error(dwErrCode);
 }
+
+// ── 【ACC-028 / K-154 主代理补】GetThreadLocale ─────────────────────────────
+//   来源：**不是 WPF 上游声明的**（grep 40-build/upstream/wpf/src 为空），
+//   而是 WinForms / CoreCLR 侧在运行时调 KERNEL32!GetThreadLocale。
+//   实测（/tmp/wfb-ex2.log 的 FirstChanceException 钩子）：
+//     EntryPointNotFoundException: Unable to find an entry point named
+//     'GetThreadLocale' in shared library 'KERNEL32.dll'.
+//   它是**第一个**首 chance 异常，顺着 ButtonBaseAdapter.ColorOptions.Calculate()
+//   -> DeviceContextExtensions.ToHdcScope() 一路污染 WinForms 的 ExceptionWhilePainting 状态。
+//   语义：返回当前线程的 LCID。Linux 无 LCID 概念，按 LANG/LC_ALL 粗映射，
+//   缺省 0x0409（en-US）—— WinForms 期望的中性英文，不触发 RTL/复杂脚本分支。
+DWORD GetThreadLocale(void)
+{
+    static DWORD cached = 0;
+    if (cached) return cached;
+    const char *lang = getenv("LC_ALL");
+    if (!lang || !*lang) lang = getenv("LC_CTYPE");
+    if (!lang || !*lang) lang = getenv("LANG");
+    if (lang && lang[0] == 'z' && lang[1] == 'h') {
+        // zh_CN -> 0x0804, zh_TW -> 0x0404
+        cached = (lang[3] == 'T' || lang[3] == 't' || (lang[3] == '_' && lang[4] == 'T')) ? 0x0404u : 0x0804u;
+    } else if (lang && lang[0] == 'j' && lang[1] == 'a') {
+        cached = 0x0411u;   // ja-JP
+    } else {
+        cached = 0x0409u;   // en-US（缺省）
+    }
+    return cached;
+}

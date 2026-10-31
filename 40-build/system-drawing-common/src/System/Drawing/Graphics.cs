@@ -325,9 +325,26 @@ namespace System.Drawing
             }
             catch (Exception ex)
             {
-                Console.Error.WriteLine("[Graphics.GetHdc] GdipGetDC 抛 " + ex.GetType().Name + ": " + ex.Message);
-                Console.Error.Flush();
-                throw;
+                // 【ACC-028 / K-153】不让 `GetHdc` 抛。
+                //   背景（FirstChanceException 实测，/tmp/wfb-ex2.log）：
+                //   `ButtonBaseAdapter.ColorOptions.Calculate()`
+                //     → `DeviceContextExtensions.ToHdcScope(...)`
+                //     → `DeviceContextHdcScope..ctor(...)`
+                //     → `IHdcContext.GetHdc()` → 本方法 → `EntryPointNotFoundException`
+                //   → `Control.PaintWithErrorHandling` 的 catch 里
+                //     `SetState(States.ExceptionWhilePainting, true)` ⇒ **之后所有 WM_PAINT 开头就 return**
+                //   ⇒ 整个窗口永久空白（K-152 已确认 Form 的 paintBackground 也是 false）。
+                //   本机 libgdiplus 有 `GdipGetDC` 的 T 符号，但走的是 NativeLibrary 手动绑定，
+                //   拿不到入口就抛 "Entry point was not found."。
+                //   ⇒ 这里返回 0：`DeviceContextHdcScope` 会退到 GDI+/Graphics 路径，不再污染
+                //     `ExceptionWhilePainting` 状态。
+                if (Environment.GetEnvironmentVariable("WPF_LINUX_KEY_DIAG") != null)
+                {
+                    Console.Error.WriteLine("[Graphics.GetHdc] GdipGetDC 失败(" + ex.GetType().Name + ") ⇒ 返回 0");
+                    Console.Error.Flush();
+                }
+                _nativeHdc = IntPtr.Zero;
+                return IntPtr.Zero;
             }
             Console.Error.WriteLine("[Graphics.GetHdc] 返回 hdc=" + hdc.ToString("x"));
             Console.Error.Flush();
