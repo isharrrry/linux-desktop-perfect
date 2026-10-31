@@ -33,14 +33,11 @@
     <DefineConstants>$(DefineConstants);REACHFRAMEWORK</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="AssemblyInfo.cs" />
     <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/cycle-breakers/ReachFramework/System.Printing.*.cs" />
     <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/cycle-breakers/ReachFramework/System.Windows.Xps.Packaging.*.cs" />
     <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/cycle-breakers/ReachFramework/System.Windows.Xps.Serialization.*.cs" />
     <!-- PrintQueue 改用 System.Printing.internals.cs 那份（官方 ref） -->
-    <!-- 【ACC-024】ReachFramework 用到 System.Printing 的**内部**类型（XpsPrintStream / ILegacyDevice），
-         它们在 System.Printing 的 ref 程序集里单独一个文件，而 cycle-breaker 那组没有。
-         漏了它 ReachFramework 报 CS0246「XpsPrintStream/ILegacyDevice 找不到」。 -->
-    <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/System.Printing/ref/System.Printing.internals.cs" />
     <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/Shared/RefAssemblyAttrs.cs" />
   </ItemGroup>
   <ItemGroup>
