@@ -208,6 +208,25 @@ static DBusHandlerResult ibus_filter(DBusConnection *conn, DBusMessage *msg, voi
                     if (st2 == DBUS_TYPE_STRING) {
                         const char *sv = NULL; dbus_message_iter_get_basic(&sub, &sv);
                         fprintf(stderr, "[IBUS]   variant string = \"%s\"\n", sv ? sv : "(null)"); fflush(stderr);
+                    } else if (st2 == DBUS_TYPE_STRUCT) {
+                        // 【ACC-017 / K-095】把 struct 的**每个字段**按序号打出来，一次看清文本在哪。
+                        DBusMessageIter f; dbus_message_iter_recurse(&sub, &f);
+                        int idx = 0;
+                        do {
+                            int ft = dbus_message_iter_get_arg_type(&f);
+                            if (ft == DBUS_TYPE_STRING) {
+                                const char *fv = NULL; dbus_message_iter_get_basic(&f, &fv);
+                                fprintf(stderr, "[IBUS]   struct[%d] string = \"%s\"\n", idx, fv ? fv : "(null)"); fflush(stderr);
+                            } else if (ft == DBUS_TYPE_ARRAY) {
+                                fprintf(stderr, "[IBUS]   struct[%d] array\n", idx); fflush(stderr);
+                            } else if (ft == DBUS_TYPE_UINT32) {
+                                dbus_uint32_t fv = 0; dbus_message_iter_get_basic(&f, &fv);
+                                fprintf(stderr, "[IBUS]   struct[%d] uint32 = %u\n", idx, fv); fflush(stderr);
+                            } else {
+                                fprintf(stderr, "[IBUS]   struct[%d] type='%c'(%d)\n", idx, ft ? ft : '?', ft); fflush(stderr);
+                            }
+                            idx++;
+                        } while (dbus_message_iter_next(&f));
                     }
                 } else if (t == DBUS_TYPE_STRING) {
                     const char *sv = NULL; dbus_message_iter_get_basic(&it, &sv);
@@ -225,10 +244,20 @@ static DBusHandlerResult ibus_filter(DBusConnection *conn, DBusMessage *msg, voi
             if (dbus_message_iter_init(msg, &it) && dbus_message_iter_get_arg_type(&it) == DBUS_TYPE_VARIANT) {
                 dbus_message_iter_recurse(&it, &var);
                 if (dbus_message_iter_get_arg_type(&var) == DBUS_TYPE_STRUCT) {
+                    // 【ACC-017 / K-095】**实测的 IBusText 结构**：
+                    //   struct[0] = string "IBusText"   （类型名）
+                    //   struct[1] = array               （attr_list）
+                    //   struct[2] = string "你好"        ← **真文本在这里**
+                    //   struct[3] = variant
                     dbus_message_iter_recurse(&var, &st2);
-                    if (dbus_message_iter_get_arg_type(&st2) == DBUS_TYPE_STRING) {
-                        dbus_message_iter_get_basic(&st2, &utf8);
-                    }
+                    int fi = 0;
+                    do {
+                        if (fi == 2 && dbus_message_iter_get_arg_type(&st2) == DBUS_TYPE_STRING) {
+                            dbus_message_iter_get_basic(&st2, &utf8);
+                            break;
+                        }
+                        fi++;
+                    } while (fi <= 2 && dbus_message_iter_next(&st2));
                 } else if (dbus_message_iter_get_arg_type(&var) == DBUS_TYPE_STRING) {
                     dbus_message_iter_get_basic(&var, &utf8);
                 }

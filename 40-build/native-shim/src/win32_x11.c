@@ -71,6 +71,7 @@ static pthread_mutex_t g_xlock = PTHREAD_MUTEX_INITIALIZER;
 
 // 【ACC-017 / K-079】IME commit 的字符由 IMM32 层投递（它知道当前绑定的 hwnd）
 extern void wpf_imm_post_char(uint16_t ch);
+extern void wpf_imm_bind_hwnd(void *hwnd);
 // 【ACC-017 / K-091】IBus D-Bus 客户端（win32_ibus.c）—— 我们的正路，XIM 那条已证不通（K-087/K-089）
 extern int  wpf_ibus_init(void);
 extern int  wpf_ibus_available(void);
@@ -850,6 +851,13 @@ uint64_t wpf_x11_create_window(wpf_window *w, const char *title)
 
     XFlush(d);
     XUNLOCK();
+    // 【ACC-017 / K-096】**把 IMM32 的投递目标绑到这个窗口**。
+    //   之前只在 `wpf_xim_attach()`（XIM 路线）里绑，而 XIM 已被弃用（K-087）
+    //   ⇒ `g_himc.hwnd` 一直是 NULL ⇒ `wpf_imm_post_char` 拿不到目标 ⇒
+    //   K-094/K-095 里那些 `post_char U+4F60 -> hwnd=(nil)` 就是这个原因。
+    //   绑最近创建的这个窗口：单窗口样本够用；多窗口时后创建的优先（与 Windows 的"当前活动窗口"近似）。
+    wpf_imm_bind_hwnd((void *)(uintptr_t)xid);
+
     return (uint64_t)xid;
 }
 
