@@ -200,13 +200,31 @@ const POINT_PATCHES = [
   {
     patch: 'P25',
     file: 'src/Microsoft.DotNet.Wpf/src/ReachFramework/Packaging/XpsDocument.cs',
-    find: `        private Package        _opcPackage;`,
-    replace: `        private Package        _opcPackage;
-
-        // 【ACC-024 / K-124】给同程序集的 ManagedXpsDocumentWriter 一个访问底层 OPC 包的入口。
-        //   上游把它藏成 private（只在构造函数里用），而托管版 writer 需要直接往包里写 part。
-        internal Package OpcPackage { get { return _opcPackage; } }`,
-    why: 'ACC-024：暴露 XpsDocument._opcPackage 给同程序集的 ManagedXpsDocumentWriter 用（K-124）',
+    find: `        internal
+        Package
+        OpcPackage
+        {
+            set
+            {
+                _opcPackage = value;
+            }
+        }`,
+    replace: `        internal
+        Package
+        OpcPackage
+        {
+            // 【ACC-024 / K-128】上游这里只有 setter（给 XpsDocumentWriter 内部用的），
+            //   托管版 ManagedXpsDocumentWriter 需要 **getter** 来拿底层 OPC 包写 part。
+            get
+            {
+                return _opcPackage;
+            }
+            set
+            {
+                _opcPackage = value;
+            }
+        }`,
+    why: 'ACC-024：给 XpsDocument.OpcPackage 补 getter，供 ManagedXpsDocumentWriter 拿包（K-128）',
   },
   {
     patch: 'P23',
