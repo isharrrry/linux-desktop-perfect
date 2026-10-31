@@ -69,6 +69,10 @@ python3 本体/本体校验.py && node 本体/渲染校验.mjs
 node samples/gen-samples.mjs --check
 node 40-build/appliers/apply.mjs --check
 
+# 【K-007】跑 ACC-012（剪贴板/拖放）前必须先编探针，否则判据会报"缺被测对象：bin/clip-probe"、
+#   并被记成 FAIL —— 那是探针没编，不是实现失败。编完立刻回到真实状态（DEGRADED）。
+make -C 40-build/native-shim probes
+
 node 50-verify/index/gen-index.mjs             # 汇总全部判据读数
 ```
 
