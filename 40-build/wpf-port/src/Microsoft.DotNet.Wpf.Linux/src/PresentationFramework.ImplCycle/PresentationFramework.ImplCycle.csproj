@@ -47,6 +47,11 @@
       <HintPath>$(WpfLinuxRoot)src/Microsoft.DotNet.Wpf.Linux/src/SystemPrinting.ApiCycle/bin/$(WpfLinuxSelfBuiltConfiguration)/System.Printing.dll</HintPath>
       <Private>false</Private>
     </Reference>
+    <!-- 【ACC-024 / K-043】同上：让本程序集里的 System.Printing.PrintTicket 也解析到 ReachFramework。 -->
+    <Reference Include="ReachFramework">
+      <HintPath>$(WpfLinuxRoot)src/Microsoft.DotNet.Wpf.Linux/src/ReachFramework.ApiCycle/bin/$(WpfLinuxSelfBuiltConfiguration)/ReachFramework.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
     <Reference Include="PresentationCore"><HintPath>$(WpfLinuxRoot)src/Microsoft.DotNet.Wpf.Linux/src/PresentationCore/bin/$(WpfLinuxSelfBuiltConfiguration)/PresentationCore.dll</HintPath><Private>false</Private></Reference>
     <Reference Include="UIAutomationTypes"><HintPath>$(WpfLinuxRoot)src/Microsoft.DotNet.Wpf.Linux/src/UIAutomationTypes/bin/$(WpfLinuxSelfBuiltConfiguration)/UIAutomationTypes.dll</HintPath><Private>false</Private></Reference>
     <Reference Include="UIAutomationProvider"><HintPath>$(WpfLinuxRoot)src/Microsoft.DotNet.Wpf.Linux/src/UIAutomationProvider/bin/$(WpfLinuxSelfBuiltConfiguration)/UIAutomationProvider.dll</HintPath><Private>false</Private></Reference>
