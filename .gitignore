@@ -75,3 +75,7 @@ node_modules/
 
 # --- media-bridge 构建产物 ---
 40-build/media-bridge/bin/
+
+# --- 上游源码快照（体积大，按需拉取，不入库）---
+40-build/upstream/winforms/
+40-build/upstream/wpf-gitee/

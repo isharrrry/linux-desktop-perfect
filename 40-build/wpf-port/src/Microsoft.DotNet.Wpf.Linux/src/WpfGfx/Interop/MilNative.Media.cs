@@ -188,8 +188,7 @@ namespace WpfGfx.Linux.Interop
         {
             MilMediaObject media = MediaOf(THIS_PTR);
             if (media == null) return HResult.E_INVALIDARG;
-            if (pfHas == IntPtr.Zero) return HResult.E_INVALIDARG;
-            pfHas = media.HasVideo;
+            pfHasVideo = media.HasVideo;
             return HResult.S_OK;
         }
 
@@ -198,8 +197,7 @@ namespace WpfGfx.Linux.Interop
         {
             MilMediaObject media = MediaOf(THIS_PTR);
             if (media == null) return HResult.E_INVALIDARG;
-            if (pfHas == IntPtr.Zero) return HResult.E_INVALIDARG;
-            pfHas = media.HasAudio;
+            pfHasAudio = media.HasAudio;
             return HResult.S_OK;
         }
 
@@ -208,8 +206,7 @@ namespace WpfGfx.Linux.Interop
         {
             MilMediaObject media = MediaOf(THIS_PTR);
             if (media == null) return HResult.E_INVALIDARG;
-            if (ph == IntPtr.Zero) return HResult.E_INVALIDARG;
-            ph = (int)media.Height;
+            puiHeight = media.Height;
             return HResult.S_OK;
         }
 
@@ -218,8 +215,7 @@ namespace WpfGfx.Linux.Interop
         {
             MilMediaObject media = MediaOf(THIS_PTR);
             if (media == null) return HResult.E_INVALIDARG;
-            if (pw == IntPtr.Zero) return HResult.E_INVALIDARG;
-            pw = (int)media.Width;
+            puiWidth = media.Width;
             return HResult.S_OK;
         }
 
@@ -228,9 +224,9 @@ namespace WpfGfx.Linux.Interop
         {
             MilMediaObject media = MediaOf(THIS_PTR);
             if (media == null) return HResult.E_INVALIDARG;
-            if (plength == IntPtr.Zero) return HResult.E_INVALIDARG;
+            if (pllLength == IntPtr.Zero) return HResult.E_INVALIDARG;
             // 单位是 100ns（与时间戳一致）：毫秒 × 10000
-            plength = (long)media.DurationMs * 10000L;
+            pllLength = (long)media.DurationMs * 10000L;
             return HResult.S_OK;
         }
 
@@ -254,7 +250,6 @@ namespace WpfGfx.Linux.Interop
             _ = THIS_PTR;
             return HResult.E_NOTIMPL;
         }
-    }
 
         // ==================================================================
         //  媒体对象的真实现（D-015 第三步）
@@ -331,4 +326,5 @@ namespace WpfGfx.Linux.Interop
             public double Rate;          // SetRate 的值：>0 = 播放、0 = 暂停（WPF 的 Play/Pause 就是这条）
             public long   PositionTicks; // 100ns
         }
+}
 }
