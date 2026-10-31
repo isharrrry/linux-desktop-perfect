@@ -1665,7 +1665,7 @@ const char *WpfLinuxWin32_PtsFsParaListParaLastSrc(void) { return g_pts_fsp_pl_p
 /* ⏪ `T-A28`：每段行记录上界（有界 ⇒ 撞界即 `fl_truncated=1` 并**拒绝回查**，绝不静默截断）。
    ⏪ `T-B15`：`32 → 64` —— 浮动绕排把含浮动的段**再断行**（行宽收缩 ⇒ 行数成倍）⇒ 旧上界会让
    该段 `fl_truncated=1`（`fl_ok=0`）⇒ 连带把 `T-B3`／`T-B4` 的段高链打成 `-1`。上界只增不减。 */
-#define WPF_PTS_FL_MAXLINE 64
+#define WPF_PTS_FL_MAXLINE 128
 /* 【2026-10-31 实测结论，保留 64】试过放大到 128 / 4096：
      · 64 行时 truncated=1（撞界）⇒ 台账不可用 ⇒ FsQueryTextDetails 恒拒（no-text-line-model）；
      · 放大后**必然 WatchdogTimeout**（20 s 看门狗）：64 行本身就要约 19 s ⇒ 单行排版 ≈ 0.3 s。

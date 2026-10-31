@@ -249,11 +249,41 @@ namespace WpfLinux.Shims.PresentationCore
         ///   ⇒ "路径 + 面下标"合起来才是**一份面**；只传路径就等于偷偷钉死 face0，
         ///   而渲染侧按 `GlyphTypeface`（它自带面下标）取面 ⇒ 两边一旦不同就是"数对了、字错了"。
         /// </summary>
+        private static readonly Dictionary<(string, int, double, string, string), HbShapedRun> s_shapeCache = new();
+        private static readonly object s_shapeGate = new();
+        private const int MaxShapeCache = 8192;
+        internal static int ShapeHits => s_shapeHits;
+        internal static int ShapeMisses => s_shapeMisses;
+        private static int s_shapeHits, s_shapeMisses;
+
         internal static HbShapedRun Shape(string fontPath, int faceIndex, string text, double emSize, string language = "zh-cn")
         {
             if (string.IsNullOrEmpty(text)) return HbShapedRun.Empty(emSize);   // 空行：不发 HB 调用
 
+            // 【D-019 整形结果缓存（2026-10-31）——本轮的关键修复】
+            //   分段计时实测：Shape 20 s 内被调 **49169 次**、总 12.2 s、平均 0.248 ms/次，
+            //   而只排出 **21 行** ⇒ **每行 2341 次整形**（一行才 50 字符）——大量重复整形。
+            //   缓存的是**托管不可变结果** `HbShapedRun`（不共享任何 HarfBuzz 句柄，
+            //   与 v1/v3 那两次段错误无关），所以是安全的。key 含 fontPath/faceIndex/text/em/language。
+            // 用 ValueTuple 做 key：避免每次（约 5 万次）都拼一个长字符串。
+            var shapeKey = (fontPath, faceIndex, emSize, language ?? "zh-cn", text);
+            lock (s_shapeGate)
+            {
+                if (s_shapeCache.TryGetValue(shapeKey, out HbShapedRun cachedRun))
+                {
+                    System.Threading.Interlocked.Increment(ref s_shapeHits);
+                    return cachedRun;
+                }
+            }
+            System.Threading.Interlocked.Increment(ref s_shapeMisses);
+
             byte[] langZ = Encoding.UTF8.GetBytes((language ?? "zh-cn") + "\0");
+
+            // 【D-019 分段计时（2026-10-31）】采样器看不到 P/Invoke 内部，只能手工分段。
+            //   目的：确定 0.8 s/行 到底花在 blob→face→font→buffer→hb_shape 的哪一段。
+            bool diag = Environment.GetEnvironmentVariable("LDP_SHAPE_DIAG") == "1";
+            var sw = diag ? System.Diagnostics.Stopwatch.StartNew() : null;
+            long tAfterFont = 0, tAfterBuf = 0, tAfterShape = 0;
 
             IntPtr blob = IntPtr.Zero, face = IntPtr.Zero, font = IntPtr.Zero, buf = IntPtr.Zero;
             bool blobShared = false;
@@ -281,13 +311,25 @@ namespace WpfLinux.Shims.PresentationCore
                 hb_ot_font_set_funcs(font);
                 hb_font_set_scale(font, (int)upem, (int)upem);      // advance 以 font unit 返回
 
+                if (diag) tAfterFont = sw.ElapsedTicks;
                 buf = hb_buffer_create();
                 fixed (char* t = text) hb_buffer_add_utf16(buf, t, text.Length, 0, text.Length);
+                if (diag) tAfterBuf = sw.ElapsedTicks;
                 hb_buffer_guess_segment_properties(buf);
                 bool rtlDir = hb_buffer_get_direction(buf) == HB_DIRECTION_RTL;   // 修法①：方向来自 HB 自己
                 // U1 的硬要求：**必须把 language 传进 buffer**（不给 ⇒ SC/TC 面回落 JP 字形）。
                 fixed (byte* lz = langZ) hb_buffer_set_language(buf, hb_language_from_string(lz, -1));
                 hb_shape(font, buf, IntPtr.Zero, 0);
+                if (diag)
+                {
+                    tAfterShape = sw.ElapsedTicks;
+                    double toMs = 1000.0 / System.Diagnostics.Stopwatch.Frequency;
+                    Console.Error.WriteLine("[SHAPE-DIAG] len=" + text.Length + " font=" + (tAfterFont * toMs).ToString("F2")
+                        + "ms buf=" + ((tAfterBuf - tAfterFont) * toMs).ToString("F2")
+                        + "ms shape=" + ((tAfterShape - tAfterBuf) * toMs).ToString("F2")
+                        + "ms total=" + (tAfterShape * toMs).ToString("F2") + "ms");
+                    Console.Error.Flush();
+                }
 
                 IntPtr infos = hb_buffer_get_glyph_infos(buf, out uint n);
                 IntPtr pos = hb_buffer_get_glyph_positions(buf, out uint n2);
@@ -346,6 +388,12 @@ namespace WpfLinux.Shims.PresentationCore
                 }
 
                 ApplyTabStops(r, text, font, 0, 4.0 * r.EmSize);   // 先用框架默认填；`FormatLine` 会用真实 tabInterval/Indent 覆盖（幂等）
+                // 写缓存（结果不可变；超上限就整体清空，与 s_coverCache 同策略）
+                lock (s_shapeGate)
+                {
+                    if (s_shapeCache.Count >= MaxShapeCache) s_shapeCache.Clear();
+                    s_shapeCache[shapeKey] = r;
+                }
                 return r;
             }
             finally
