@@ -50,8 +50,11 @@ namespace LinuxDesktopPerfect.Samples.WpfPrintDoc
                 doc.Pages.Add(pc);
                 var mWrite = writer.GetType().GetMethod("Write", new Type[] { typeof(FixedDocument) });
                 mWrite.Invoke(writer, new object[] { doc });
-                var mClose = xps.GetType().GetMethod("Close");
+                var mClose = xps.GetType().GetMethod("Close", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+                var mDisp  = xps.GetType().GetMethod("Dispose", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance, null, Type.EmptyTypes, null);
+                Console.Error.WriteLine("[PRINT] Close=" + (mClose != null ? "found" : "NULL") + " Dispose=" + (mDisp != null ? "found" : "NULL"));
                 if (mClose != null) mClose.Invoke(xps, null);
+                else if (mDisp != null) mDisp.Invoke(xps, null);
                 Console.Error.WriteLine("[PRINT] XPS 已写出：" + xpsPath);
                 SetReadouts("job=1 state=done", "pages=1");
             }

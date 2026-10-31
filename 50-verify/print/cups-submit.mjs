@@ -78,8 +78,23 @@ try {
     const jobDone = /state=done/.test(String(r1.job || ""));
     const pagesPositive = /^pages=[1-9][0-9]*$/.test(String(r1.pages || ""));
     const changed = r0.job !== r1.job || r0.pages !== r1.pages;
-    const ok = changed && jobDone && pagesPositive;
-    steps.push({ step: 'print_changes_readout', ok: ok && alive, before: r0, after: r1, alive, job_done: jobDone, pages_positive: pagesPositive });
+    // 【ACC-024 / K-058】**再加一条：XPS 产物必须有内容**。
+    //   K-058 实测：样本回写 job=1 state=done / pages=1，但 /tmp/ldp-print-*.xps 只有 22 字节
+    //   （空 ZIP 的 End of Central Directory）—— 说明 XpsDocumentWriter.Write 的序列化链是空实现。
+    //   只看读数会给出"绿灯但产物是空文件"的假 PASS，所以这里检查最新 XPS 的大小。
+    //   阈值 1000 字节：正常 XPS（含一个 FixedPage + 字体子集）远大于此，空 ZIP 恒为 22。
+    let xpsBytes = 0;
+    try {
+        const dir = os.tmpdir();
+        const files = fs.readdirSync(dir).filter((f) => /^ldp-print-.*\.xps$/.test(f));
+        for (const f of files) {
+            const st = fs.statSync(path.join(dir, f));
+            if (st.size > xpsBytes) xpsBytes = st.size;
+        }
+    } catch { /* 目录读不到就按 0 算 */ }
+    const xpsHasContent = xpsBytes >= 1000;
+    const ok = changed && jobDone && pagesPositive && xpsHasContent;
+    steps.push({ step: 'print_changes_readout', ok: ok && alive, before: r0, after: r1, alive, job_done: jobDone, pages_positive: pagesPositive, xps_bytes: xpsBytes, xps_has_content: xpsHasContent });
   } else {
     steps.push({ step: 'print_changes_readout', ok: false, note: '「打印」按钮没有可点的 bounds' });
   }
