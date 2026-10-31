@@ -3,7 +3,7 @@
 // 少了它，本程序集里 400+ 处 SR.Xxx 全是 CS0117/CS0122。
 using System.Globalization;
 
-namespace MS.Internal.ReachFramework
+namespace MS.Internal
 {
     internal static class SR
     {
