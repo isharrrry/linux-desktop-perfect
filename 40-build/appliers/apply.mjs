@@ -57,7 +57,7 @@ const POINT_PATCHES = [
     why: 'PBT 工程的 TargetFrameworks 是 net472;net10.0，而 Pbt.props 写死 net6.0 → NETSDK1005（补丁项 16）',
   },
   {
-    patch: 'P21',
+    patch: 'P24',
     file: 'src/Microsoft.DotNet.Wpf/src/ReachFramework/Packaging/XpsDocument.cs',
     find: `        #endregion Public Events
     }
@@ -198,7 +198,7 @@ const POINT_PATCHES = [
     why: 'ACC-024：新增 ManagedXpsDocumentWriter（托管版 XPS 写入，按公开规范写 3 个 part）（K-123）',
   },
   {
-    patch: 'P22',
+    patch: 'P25',
     file: 'src/Microsoft.DotNet.Wpf/src/ReachFramework/Packaging/XpsDocument.cs',
     find: `        private Package        _opcPackage;`,
     replace: `        private Package        _opcPackage;
@@ -209,7 +209,7 @@ const POINT_PATCHES = [
     why: 'ACC-024：暴露 XpsDocument._opcPackage 给同程序集的 ManagedXpsDocumentWriter 用（K-124）',
   },
   {
-    patch: 'P20',
+    patch: 'P23',
     file: 'src/Microsoft.DotNet.Wpf/src/ReachFramework/Packaging/XpsDocument.cs',
     find: `            XpsDocumentWriter   writer  = new XpsDocumentWriter(xpsDocument);`,
     replace: `            // 【ACC-024 / K-123】上游这里 new 的是 C++/CLI 的 XpsDocumentWriter，
