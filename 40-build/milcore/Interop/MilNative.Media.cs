@@ -27,10 +27,20 @@ namespace WpfGfx.Linux.Interop
         /// <summary>打开媒体源。E_NOTIMPL（无解码器）。</summary>
         public static int MILMediaOpen(IntPtr THIS_PTR, string src)
         {
+            // 【D-015 逐步推进（2026-10-31，K-005 修好后）】这是 OpenMedia 的落点。
+            //   先做**最小成功**：记住源路径并返回 S_OK，让 MediaPlayer.Open 走通，
+            //   再看下一个卡点（HasVideo/GetNaturalWidth 等）。
+            //   真正的解码由 40-build/media-bridge 的 libldpmedia.so 提供，稍后接。
             _ = THIS_PTR;
-            _ = src;
-            return HResult.E_NOTIMPL;
+            if (string.IsNullOrEmpty(src)) return HResult.E_INVALIDARG;
+            MediaSource = src;
+            return HResult.S_OK;
         }
+
+        /// <summary>最近一次 Open 的源路径（诊断/后续解码用）。</summary>
+        internal static string MediaSource;
+        internal static long MediaPositionTicks;
+        internal static double MediaRate;
 
         /// <summary>停止播放。E_NOTIMPL。</summary>
         public static int MILMediaStop(IntPtr THIS_PTR)
@@ -49,17 +59,15 @@ namespace WpfGfx.Linux.Interop
         /// <summary>取播放位置（100ns）。E_NOTIMPL，pllTime 置 0。</summary>
         public static int MILMediaGetPosition(IntPtr THIS_PTR, ref long pllTime)
         {
-            _ = THIS_PTR;
-            pllTime = 0;
-            return HResult.E_NOTIMPL;
+            pllTime = MediaPositionTicks;
+            return HResult.S_OK;
         }
 
         /// <summary>设置播放位置。E_NOTIMPL。</summary>
         public static int MILMediaSetPosition(IntPtr THIS_PTR, long llTime)
         {
-            _ = THIS_PTR;
-            _ = llTime;
-            return HResult.E_NOTIMPL;
+            MediaPositionTicks = llTime;
+            return HResult.S_OK;
         }
 
         /// <summary>设置音量。E_NOTIMPL。</summary>
@@ -89,88 +97,77 @@ namespace WpfGfx.Linux.Interop
         /// <summary>是否正在缓冲。E_NOTIMPL，pIsBuffering 置 false。</summary>
         public static int MILMediaIsBuffering(IntPtr THIS_PTR, ref bool pIsBuffering)
         {
-            _ = THIS_PTR;
             pIsBuffering = false;
-            return HResult.E_NOTIMPL;
+            return HResult.S_OK;
         }
 
         /// <summary>是否可暂停。E_NOTIMPL，pCanPause 置 false。</summary>
         public static int MILMediaCanPause(IntPtr THIS_PTR, ref bool pCanPause)
         {
-            _ = THIS_PTR;
-            pCanPause = false;
-            return HResult.E_NOTIMPL;
+            pCanPause = !string.IsNullOrEmpty(MediaSource);
+            return HResult.S_OK;
         }
 
         /// <summary>下载进度。E_NOTIMPL，pProgress 置 0。</summary>
         public static int MILMediaGetDownloadProgress(IntPtr THIS_PTR, ref double pProgress)
         {
-            _ = THIS_PTR;
-            pProgress = 0.0;
-            return HResult.E_NOTIMPL;
+            pProgress = 1.0;
+            return HResult.S_OK;
         }
 
         /// <summary>缓冲进度。E_NOTIMPL，pProgress 置 0。</summary>
         public static int MILMediaGetBufferingProgress(IntPtr THIS_PTR, ref double pProgress)
         {
-            _ = THIS_PTR;
-            pProgress = 0.0;
-            return HResult.E_NOTIMPL;
+            pProgress = 1.0;
+            return HResult.S_OK;
         }
 
         /// <summary>设置播放速率。E_NOTIMPL。</summary>
         public static int MILMediaSetRate(IntPtr THIS_PTR, double dblRate)
         {
-            _ = THIS_PTR;
-            _ = dblRate;
-            return HResult.E_NOTIMPL;
+            MediaRate = dblRate;
+            return HResult.S_OK;
         }
 
         /// <summary>是否有视频轨。E_NOTIMPL，pfHasVideo 置 false（没有媒体 = 没有视频轨）。</summary>
         public static int MILMediaHasVideo(IntPtr THIS_PTR, ref bool pfHasVideo)
         {
-            _ = THIS_PTR;
             pfHasVideo = false;
-            return HResult.E_NOTIMPL;
+            return HResult.S_OK;
         }
 
         /// <summary>是否有音频轨。E_NOTIMPL，pfHasAudio 置 false。</summary>
         public static int MILMediaHasAudio(IntPtr THIS_PTR, ref bool pfHasAudio)
         {
-            _ = THIS_PTR;
             pfHasAudio = false;
-            return HResult.E_NOTIMPL;
+            return HResult.S_OK;
         }
 
         /// <summary>视频自然高度。E_NOTIMPL，puiHeight 置 0。</summary>
         public static int MILMediaGetNaturalHeight(IntPtr THIS_PTR, ref uint puiHeight)
         {
-            _ = THIS_PTR;
             puiHeight = 0;
-            return HResult.E_NOTIMPL;
+            return HResult.S_OK;
         }
 
         /// <summary>视频自然宽度。E_NOTIMPL，puiWidth 置 0。</summary>
         public static int MILMediaGetNaturalWidth(IntPtr THIS_PTR, ref uint puiWidth)
         {
-            _ = THIS_PTR;
             puiWidth = 0;
-            return HResult.E_NOTIMPL;
+            return HResult.S_OK;
         }
 
         /// <summary>媒体总时长（100ns）。E_NOTIMPL，pllLength 置 0。</summary>
         public static int MILMediaGetMediaLength(IntPtr THIS_PTR, ref long pllLength)
         {
-            _ = THIS_PTR;
             pllLength = 0;
-            return HResult.E_NOTIMPL;
+            return HResult.S_OK;
         }
 
         /// <summary>是否需要更新 UI 帧。E_NOTIMPL。</summary>
         public static int MILMediaNeedUIFrameUpdate(IntPtr THIS_PTR)
         {
-            _ = THIS_PTR;
-            return HResult.E_NOTIMPL;
+            return 0;
         }
 
         /// <summary>媒体子系统关闭。E_NOTIMPL。</summary>
