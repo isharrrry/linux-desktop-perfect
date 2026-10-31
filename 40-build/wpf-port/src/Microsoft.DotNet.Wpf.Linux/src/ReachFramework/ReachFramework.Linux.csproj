@@ -264,6 +264,8 @@
     <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/ReachFramework/Serialization/XpsImageSerializationService.cs" />
     <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/ReachFramework/Serialization/Crc32.cs" />
     <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/ReachFramework/SerializerFactory/XpsSerializerFactory.cs" />
+    <!-- 【ACC-024 / K-045】SR 来自 Common/src/System/SR.cs（上游 ReachFramework.csproj 第 49 行）。
+         漏了它，本程序集里 400+ 处 `SR.Xxx` 都是 CS0122「不可访问」，把真正剩下的错误全淹掉。 -->
     <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/ReachFramework/SerializerFactory/XpsSerializerWriter.cs" />
     <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/ReachFramework/AlphaFlattener/Primitive.cs" />
     <Compile Include="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/ReachFramework/AlphaFlattener/PrimitiveList.cs" />
