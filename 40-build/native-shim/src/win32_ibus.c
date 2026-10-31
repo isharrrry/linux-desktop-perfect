@@ -39,6 +39,7 @@ extern void wpf_imm_post_char(uint16_t ch);
 #define IBUS_IFACE     "org.freedesktop.IBus"
 #define IBUS_IC_IFACE  "org.freedesktop.IBus.InputContext"
 
+static DBusHandlerResult ibus_filter(DBusConnection *conn, DBusMessage *msg, void *ud);  // 前置声明
 static DBusConnection *g_conn = NULL;
 static char g_ic_path[256];
 static int  g_ibus_ok = 0;
@@ -150,10 +151,95 @@ int wpf_ibus_init(void)
         ibus_diag("[IBUS] dbus_bus_register 失败（非致命）：%s", err.message ? err.message : "?");
         dbus_error_free(&err);
     }
+    dbus_connection_add_filter(g_conn, ibus_filter, NULL, NULL);
     if (!ibus_call_create_ic()) { ibus_diag("[IBUS] 建 IC 失败"); return 0; }
     ibus_simple_call(IBUS_IC_IFACE, "FocusIn");
     dbus_connection_flush(g_conn);
     g_ibus_ok = 1;
     ibus_diag("[IBUS] 就绪：ic=%s", g_ic_path);
     return 1;
+}
+
+// ── D-Bus 消息过滤器：接 CommitText ─────────────────────────────────────────
+// 【ACC-017 / K-091】ibus 把最终上屏的字符串通过 `CommitText(STRING)` 发给我们。
+//   这是**唯一**需要监听的方法 —— 预编辑（PreeditText/PreeditShowTable）可以先不管，
+//   因为候选窗由 ibus 自己画（XIM 那条路已经证明它画得出来）。
+static DBusHandlerResult ibus_filter(DBusConnection *conn, DBusMessage *msg, void *ud)
+{
+    (void)conn; (void)ud;
+    if (dbus_message_is_signal(msg, IBUS_IC_IFACE, "CommitText")) {
+        const char *utf8 = NULL;
+        if (dbus_message_get_args(msg, NULL, DBUS_TYPE_STRING, &utf8, DBUS_TYPE_INVALID) && utf8) {
+            if (getenv("WPF_LINUX_KEY_DIAG")) {
+                fprintf(stderr, "[IBUS] CommitText = \"%s\"\n", utf8); fflush(stderr);
+            }
+            // UTF-8 → UTF-16，代理对分两次投（同 win32_x11.c 的 commit 路径）
+            const unsigned char *p2 = (const unsigned char *)utf8;
+            int posted = 0;
+            while (*p2) {
+                uint32_t cp;
+                if (*p2 < 0x80) cp = *p2++;
+                else if ((*p2 & 0xE0) == 0xC0) { if (!p2[1]) break; cp = (uint32_t)(p2[0] & 0x1F) << 6 | (p2[1] & 0x3F); p2 += 2; }
+                else if ((*p2 & 0xF0) == 0xE0) { if (!p2[1] || !p2[2]) break; cp = (uint32_t)(p2[0] & 0x0F) << 12 | (uint32_t)(p2[1] & 0x3F) << 6 | (p2[2] & 0x3F); p2 += 3; }
+                else if ((*p2 & 0xF8) == 0xF0) { if (!p2[1] || !p2[2] || !p2[3]) break; cp = (uint32_t)(p2[0] & 0x07) << 18 | (uint32_t)(p2[1] & 0x3F) << 12 | (uint32_t)(p2[2] & 0x3F) << 6 | (p2[3] & 0x3F); p2 += 4; }
+                else { p2++; continue; }
+                if (cp <= 0xFFFF) { wpf_imm_post_char((uint16_t)cp); posted++; }
+                else { cp -= 0x10000; wpf_imm_post_char((uint16_t)(0xD800 + (cp >> 10))); wpf_imm_post_char((uint16_t)(0xDC00 + (cp & 0x3FF))); posted += 2; }
+            }
+            if (posted) ibus_diag("[IBUS] 已投 %d 个码元到 WPF", posted);
+        }
+        return DBUS_HANDLER_RESULT_HANDLED;
+    }
+    return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+}
+
+// ── 把 X 键事件转给 ibus ────────────────────────────────────────────────────
+// ibus 的 `ProcessKeyEvent(keyval:u32, keycode:u32, state:u32)` 语义与 X 完全一致：
+//   keyval 来自 `XLookupKeysym`，state 直接用 X 的修饰键位。
+// 返回 1 表示 ibus **消费**了这个键（调用方不要再翻译成 WM_KEYDOWN）。
+int wpf_ibus_process_key(unsigned int keyval, unsigned int keycode, unsigned int state, unsigned int *out_keyval)
+{
+    if (!g_ibus_ok || !g_conn || !g_ic_path[0]) return 0;
+    DBusMessage *m = dbus_message_new_method_call(IBUS_SERVICE, g_ic_path, IBUS_IC_IFACE, "ProcessKeyEvent");
+    if (!m) return 0;
+    dbus_uint32_t kv = keyval, kc = keycode, st = state;
+    DBusMessageIter it;
+    dbus_message_iter_init_append(m, &it);
+    dbus_message_iter_append_basic(&it, DBUS_TYPE_UINT32, &kv);
+    dbus_message_iter_append_basic(&it, DBUS_TYPE_UINT32, &kc);
+    dbus_message_iter_append_basic(&it, DBUS_TYPE_UINT32, &st);
+
+    DBusError err; dbus_error_init(&err);
+    DBusMessage *r = dbus_connection_send_with_reply_and_block(g_conn, m, 1000, &err);
+    dbus_message_unref(m);
+    int handled = 0;
+    if (!r) { if (err.message) { ibus_diag("[IBUS] ProcessKeyEvent 失败：%s", err.message); } dbus_error_free(&err); return 0; }
+    dbus_bool_t h = FALSE;
+    dbus_uint32_t got = 0;
+    if (dbus_message_get_args(r, &err, DBUS_TYPE_BOOLEAN, &h, DBUS_TYPE_UINT32, &got, DBUS_TYPE_INVALID)) {
+        handled = h ? 1 : 0;
+        if (out_keyval) *out_keyval = got;
+    } else { dbus_error_free(&err); }
+    dbus_message_unref(r);
+    return handled;
+}
+
+// ── 非阻塞轮询：在 X 事件泵每次循环里调一次 ─────────────────────────────────
+// 【为什么不在事件泵里阻塞】D-Bus 的 `send_with_reply_and_block` 只在 ProcessKeyEvent
+//   里用（有 1s 超时，且用户按键本身就是异步的），而**信号**必须靠这里轮询收，
+//   一轮最多读几条消息，绝不阻塞 X 事件循环。
+void wpf_ibus_pump(void)
+{
+    // 【ACC-017 / K-091】懒初始化：第一次 pump 时去连 ibus。
+    //   放在这里而不是启动路径，是因为：`wpf_x11_ensure` 早于窗口创建，那时还没有 hwnd 可绑；
+    //   而 pump 是事件泵每次循环都调的，窗口一定已经在了。
+    static int tried = 0;
+    if (!g_conn && !tried) { tried = 1; wpf_ibus_init(); }
+    if (!g_conn) return;
+    // 一次最多读 4 条，避免单次循环太久
+    for (int i = 0; i < 4; ++i) {
+        if (!dbus_connection_read_write(g_conn, 0)) return;   // 0ms = 非阻塞
+        while (dbus_connection_dispatch(g_conn) == DBUS_DISPATCH_DATA_REMAINS) { }
+        if (!dbus_connection_get_dispatch_status(g_conn)) break;
+    }
 }

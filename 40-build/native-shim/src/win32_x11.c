@@ -71,6 +71,11 @@ static pthread_mutex_t g_xlock = PTHREAD_MUTEX_INITIALIZER;
 
 // 【ACC-017 / K-079】IME commit 的字符由 IMM32 层投递（它知道当前绑定的 hwnd）
 extern void wpf_imm_post_char(uint16_t ch);
+// 【ACC-017 / K-091】IBus D-Bus 客户端（win32_ibus.c）—— 我们的正路，XIM 那条已证不通（K-087/K-089）
+extern int  wpf_ibus_init(void);
+extern int  wpf_ibus_available(void);
+extern void wpf_ibus_pump(void);
+extern int  wpf_ibus_process_key(unsigned int keyval, unsigned int keycode, unsigned int state, unsigned int *out_keyval);
 static XIM  g_xim = NULL;
 static int  g_xim_inited = 0;
 static XIC  g_xic = NULL;          // 当前窗口的输入上下文（有 IM 服务器时才有）
@@ -1439,6 +1444,10 @@ int wpf_x11_pump_into_queue(wpf_thread *t)
         }
     }
 
+    // 【ACC-017 / K-091】先把 ibus 的 CommitText 信号收掉（非阻塞，最多 4 条）。
+    //   放在 XNextEvent 之前，保证"按键 → ibus 处理 → CommitText → WM_CHAR"能在同一轮里走完。
+    wpf_ibus_pump();
+
     XLOCK();
     while (XPending(d)) {
         XEvent ev;
@@ -1610,6 +1619,18 @@ int wpf_x11_pump_into_queue(wpf_thread *t)
             HWND h = (HWND)(uintptr_t)ev.xkey.window;
             // 物理键 → VK 仍用**未按 Shift** 的 keysym（VK 描述"哪个键"，不是"哪个字符"）
             KeySym ks = XLookupKeysym(&ev.xkey, 0);
+            // 【ACC-017 / K-091】**先问 ibus**：键要不要被输入法消费。
+            //   只有在 KeyPress 且 ibus 已就绪时才问（KeyRelease 不参与 IME）。
+            //   ibus 回 TRUE 表示它吃了这个键（正在组词），我们就不再翻译成 WM_KEYDOWN；
+            //   它同时会通过 `CommitText` 信号把最终字符串送来（由 wpf_ibus_pump 收）。
+            if (ev.type == KeyPress && wpf_ibus_available()) {
+                unsigned int kout = 0;
+                if (wpf_ibus_process_key((unsigned int)ks, (unsigned int)ev.xkey.keycode,
+                                         (unsigned int)ev.xkey.state, &kout)) {
+                    produced++;   // 计入"被消费"，避免上层以为丢消息
+                    break;
+                }
+            }
             uint32_t vk = keysym_to_vk(ks);
             // 字符用 Xlib 按**当前修饰键**翻译的结果（补丁 F1）：
             //   旧版把未按 Shift 的 keysym 直接当字符 ⇒ `Shift+a` 也产小写 'a'（大写丢失）。
