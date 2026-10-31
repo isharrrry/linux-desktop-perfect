@@ -77,6 +77,7 @@ extern int  wpf_ibus_init(void);
 extern int  wpf_ibus_available(void);
 extern void wpf_ibus_pump(void);
 extern int  wpf_ibus_process_key(unsigned int keyval, unsigned int keycode, unsigned int state, unsigned int *out_keyval);
+extern int  wpf_ibus_is_composing(void);
 static XIM  g_xim = NULL;
 static int  g_xim_inited = 0;
 static XIC  g_xic = NULL;          // 当前窗口的输入上下文（有 IM 服务器时才有）
@@ -1638,6 +1639,12 @@ int wpf_x11_pump_into_queue(wpf_thread *t)
                     fflush(stderr);
                 }
             }
+            // 【ACC-017 / K-097】**组词期间只拦"原始键投递"，但必须继续把键送给 ibus**。
+            //   ⚠️ 第一版写成"composing 就直接 break"，结果连 `ProcessKeyEvent` 都跳过了
+            //   ⇒ ibus 只收到第一个 `n`、后续 `i/h/a/o` 全断 ⇒ 组词失败、输入框空白（实测踩到）。
+            //   正确做法：先无条件把键交给 ibus（它需要后续键来组词），
+            //   只跳过后面那段"翻译成 WM_KEYDOWN/WM_CHAR"的逻辑。
+            int composing_before = wpf_ibus_is_composing();
             if (ev.type == KeyPress && wpf_ibus_available()) {
                 unsigned int kout = 0;
                 if (wpf_ibus_process_key((unsigned int)ks, (unsigned int)ev.xkey.keycode,
@@ -1646,6 +1653,7 @@ int wpf_x11_pump_into_queue(wpf_thread *t)
                     break;
                 }
             }
+            if (composing_before) { produced++; break; }   // 组词中：键已交给 ibus，不再翻译成 WM_CHAR
             uint32_t vk = keysym_to_vk(ks);
             // 字符用 Xlib 按**当前修饰键**翻译的结果（补丁 F1）：
             //   旧版把未按 Shift 的 keysym 直接当字符 ⇒ `Shift+a` 也产小写 'a'（大写丢失）。

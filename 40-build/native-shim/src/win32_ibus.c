@@ -43,6 +43,11 @@ static DBusHandlerResult ibus_filter(DBusConnection *conn, DBusMessage *msg, voi
 static DBusConnection *g_conn = NULL;
 static char g_ic_path[256];
 static int  g_ibus_ok = 0;
+// 【ACC-017 / K-097】组词状态：ibus 异步回 `UpdatePreeditText` 表示"正在组词"，
+//   期间原始按键**不该**进 TextBox（否则会看到 `nihao 你好`）。
+//   不能用 `ProcessKeyEvent` 的返回值判断 —— 实测它一律返回 FALSE（K-092/K-096）。
+static int  g_composing = 0;
+int wpf_ibus_is_composing(void) { return g_composing; }
 
 static void ibus_diag(const char *fmt, ...)
 {
@@ -193,7 +198,12 @@ static DBusHandlerResult ibus_filter(DBusConnection *conn, DBusMessage *msg, voi
         if (member) { fprintf(stderr, "[IBUS] recv %s.%s\n", iface ? iface : "?", member); fflush(stderr); }
     }
 
+    if (dbus_message_is_signal(msg, IBUS_IC_IFACE, "UpdatePreeditText")) { g_composing = 1; }
+    if (dbus_message_is_signal(msg, IBUS_IC_IFACE, "ShowPreeditText"))   { g_composing = 1; }
+    if (dbus_message_is_signal(msg, IBUS_IC_IFACE, "HidePreeditText"))   { g_composing = 0; }
+
     if (dbus_message_is_signal(msg, IBUS_IC_IFACE, "CommitText")) {
+        g_composing = 0;
         // 【ACC-017 / K-094】ibus 的 `CommitText` 参数**不是**裸 STRING（实测 `get_args(STRING)` 失败）。
         //   类型可能是 VARIANT（`IBusText` 对象）或 STRUCT。这里把实际签名打出来，一次看清。
         if (getenv("WPF_LINUX_KEY_DIAG")) {
