@@ -253,8 +253,21 @@ namespace MS.Win32
             //   这里必须重新放一条，才能看到 WM_DROPFILES 到底有没有进 WndProc、_hooks 有几条。
             if (msg == 0x0233 /* WM_DROPFILES */)
             {
+                string hookNames = "null";
+                if (_hooks != null)
+                {
+                    var names = new System.Text.StringBuilder();
+                    foreach (object h in _hooks)
+                    {
+                        if (h is HwndWrapperHook hw)
+                            names.Append(hw.Method.DeclaringType?.Name).Append('.').Append(hw.Method.Name).Append(';');
+                        else
+                            names.Append("<").Append(h == null ? "null" : h.GetType().Name).Append(">;");
+                    }
+                    hookNames = names.Length == 0 ? "(empty)" : names.ToString();
+                }
                 Console.Error.WriteLine("[P25] HwndWrapper.Linux.WndProc 收到 WM_DROPFILES hwnd=0x"
-                    + hwnd.ToInt64().ToString("x") + " hooksNull=" + (_hooks == null));
+                    + hwnd.ToInt64().ToString("x") + " hooks=" + hookNames);
                 Console.Error.Flush();
             }
 
@@ -268,6 +281,15 @@ namespace MS.Win32
                 foreach(HwndWrapperHook hook in _hooks)
                 {
                     result = hook(hwnd, msg, wParam, lParam, ref handled);
+                    // 【P26】看 WM_DROPFILES 是不是被前面的 hook 提前 handled=true 截断了
+                    //   （P25 显示 _hooks 里确实有 HwndTargetFilterMessage，它在最后一条，
+                    //    若前面某条置了 handled，后面的就都不会执行 ⇒ P20 自然 0 次）。
+                    if (msg == 0x0233)
+                    {
+                        Console.Error.WriteLine("[P26] " + hook.Method.DeclaringType?.Name + "." + hook.Method.Name
+                            + " → handled=" + handled + " wParam=0x" + wParam.ToInt64().ToString("x"));
+                        Console.Error.Flush();
+                    }
 
                     CheckForCreateWindowFailure(result, handled);
 
