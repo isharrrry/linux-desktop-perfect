@@ -611,6 +611,15 @@ LRESULT wpf_dispatch_to_window(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
     }
     pthread_mutex_unlock(&g_wpf.lock);
 
+    // 【2026-10-31 D-011 第 10 步诊断】`WM_DROPFILES(0x0233)` 是否真的走到这里、
+    //   以及 `proc` 有没有拿到（拿不到就落到 DefWindowProcW ⇒ 托管侧永远看不到）。
+    if (msg == 0x0233 && getenv("LDP_XDND_DIAG"))
+    {
+        fprintf(stderr, "[XDND-DISPATCH] hwnd=%p msg=0x%x proc=%p wndproc=%p class_wndproc=%p\n",
+                (void *)hwnd, msg, (void *)proc,
+                w ? (void *)w->wndproc : NULL, w ? (void *)w->class_wndproc : NULL);
+        fflush(stderr);
+    }
     if (!proc) return DefWindowProcW(hwnd, msg, wp, lp);
     return proc(hwnd, msg, wp, lp);
 }
