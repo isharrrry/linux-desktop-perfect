@@ -111,13 +111,29 @@ const { startXvfb, waitDisplay, startApp, findWindow, waitMapped, sleep, DOTNET_
         {
           const { spawnSync: sp2 } = await import('node:child_process');
           const disp = xvfb.display;
-          // TextBox 的 bounds 实测为 [13,45,759,20]（K-095），取中心附近
-          sp2('sh', ['-c', `DISPLAY=${disp} xdotool mousemove 200 55 click 1`]);
+          // 【ACC-017 / K-100】**从树里读 bounds 再点**，不要硬编码坐标（K-099 踩到：
+          //   判据里的窗口是 `WpfFirstWindow [SCR-01]`，位置和手工测试时不一定一样）。
+          const readEntry = () => {
+            try {
+              const t = JSON.parse(fs.readFileSync(treePath, 'utf8'));
+              return (t.nodes || []).find((n) => n.role === 'entry' || /输入样本/.test(String(n.name || ''))) || null;
+            } catch { return null; }
+          };
+          const e0 = readEntry();
+          const bb = (e0 && Array.isArray(e0.bounds)) ? e0.bounds : [13, 45, 759, 20];
+          const cx = Math.round(bb[0] + bb[2] / 2);
+          const cy = Math.round(bb[1] + bb[3] / 2);
+          steps.push({ step: 'entry_bounds', ok: true, informational: true, bounds: bb, click_at: [cx, cy] });
+          sp2('sh', ['-c', `DISPLAY=${disp} xdotool mousemove ${cx} ${cy} click 1`]);
           await sleep(1500);
           sp2('sh', ['-c', `DISPLAY=${disp} xdotool type --delay 220 nihao`]);
           await sleep(2000);
           sp2('sh', ['-c', `DISPLAY=${disp} xdotool key space`]);
           await sleep(3000);
+          // 【ACC-017 / K-100】把 shim 的 `[IBUS]` 轨迹留在 steps 里 —— 一眼看出
+          //   "没连上 ibus" 还是 "连上了但键没送到"。
+          const ibusTrace = (app.trace ? app.trace() : '').split('\n').filter((l) => l.includes('[IBUS]')).slice(-12);
+          steps.push({ step: 'ibus_trace', ok: true, informational: true, lines: ibusTrace });
 
           let entryValue = '';
           let treeOk = false;
