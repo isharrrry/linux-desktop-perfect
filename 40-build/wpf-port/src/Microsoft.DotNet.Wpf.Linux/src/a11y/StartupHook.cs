@@ -26,6 +26,24 @@ public static class StartupHook
                 Console.Error.WriteLine("[FCE] TargetSite = " +
                     (ex.TargetSite != null ? (ex.TargetSite.DeclaringType?.FullName ?? "?") + "." + ex.TargetSite.Name : "(null)"));
                 Console.Error.WriteLine("[FCE] Stack = " + ex.StackTrace);
+                // 【K-069】检查接口映射：PaintEventArgs 有没有把 IDeviceContext.GetHdc 映射上
+                try
+                {
+                    var tPe = Type.GetType("System.Windows.Forms.PaintEventArgs, System.Windows.Forms");
+                    var tIdc = Type.GetType("System.Drawing.IDeviceContext, System.Drawing.Common");
+                    if (tPe != null && tIdc != null)
+                    {
+                        Console.Error.WriteLine("[FCE] PaintEventArgs=" + tPe.Assembly.FullName);
+                        Console.Error.WriteLine("[FCE] IDeviceContext=" + tIdc.Assembly.FullName);
+                        var im = tPe.GetInterfaceMap(tIdc);
+                        Console.Error.WriteLine("[FCE] InterfaceMap 长度=" + im.InterfaceMethods.Length);
+                        for (int i = 0; i < im.InterfaceMethods.Length; i++)
+                            Console.Error.WriteLine("[FCE]   " + im.InterfaceMethods[i].Name + " -> " +
+                                (im.TargetMethods[i]?.Name ?? "(null)"));
+                    }
+                    else Console.Error.WriteLine("[FCE] 找不到类型 pe=" + (tPe != null) + " idc=" + (tIdc != null));
+                }
+                catch (Exception e4) { Console.Error.WriteLine("[FCE] GetInterfaceMap 失败：" + e4.GetType().Name + ": " + e4.Message); }
                 Console.Error.Flush();
             };
         }
