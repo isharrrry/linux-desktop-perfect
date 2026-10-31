@@ -13,17 +13,22 @@ namespace LinuxDesktopPerfect.Samples.WinFormsBasics
             // 【ACC-028 / K-165】把被 catch 掉的异常打到 stderr（纯诊断，不改业务行为）。
             //   为什么需要：WinForms 的未处理异常对话框在「画面空白」时期完全看不见（K-160 的教训），
             //   而 FirstChanceException 外部钩子在本仓环境下会 abort（K-164）。
-            Application.ThreadException += (s, e) =>
+            // 默认不打印（否则 ACC-028 的 startup_exception 判据会把诊断行当成启动失败）；
+            // 需要看异常时设 WPF_LINUX_KEY_DIAG=1。
+            bool diag = Environment.GetEnvironmentVariable("WPF_LINUX_KEY_DIAG") != null;
+            if (diag)
             {
-                Console.Error.WriteLine("[EX] ThreadException: " + e.Exception);
-                Console.Error.Flush();
+                Application.ThreadException += (s, e) =>
+                {
+                    Console.Error.WriteLine("[EX] ThreadException: " + e.Exception);
+                    Console.Error.Flush();
+                };
+                AppDomain.CurrentDomain.UnhandledException += (s, e) =>
+                {
+                    Console.Error.WriteLine("[EX] Unhandled: " + e.ExceptionObject);
+                    Console.Error.Flush();
+                };
             };
-            AppDomain.CurrentDomain.UnhandledException += (s, e) =>
-            {
-                Console.Error.WriteLine("[EX] Unhandled: " + e.ExceptionObject);
-                Console.Error.Flush();
-            };
-            Application.SetUnhandledExceptionMode(UnhandledExceptionMode.CatchException);
 
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);

@@ -222,6 +222,18 @@ BOOL BeginPaint(HWND h, WPF_PAINTSTRUCT *ps)
         //       对 `ScrollableControl` 派生类恒为 false ⇒ **背景没人画**。
         //   ⇒ 在 `BeginPaint` 里统一补一次背景，两类控件就都能看见。
         //   颜色规则：窗口类给了 `hbrBackground` 就用它；否则按「有父窗口=控件→灰，顶层→白」。
+        // 【ACC-028 / K-167】**只对 WinForms 窗口补背景**。
+        //   教训（实测）：WPF 样本 `WpfFirstWindow` 从 5344 字节掉到 385 字节 ——
+        //   因为 WPF 用 MIL/DUCE/Skia 自己渲染到窗口，而这里每帧把整个客户区填成灰/白，
+        //   **直接把 WPF 的画面盖掉了**（ACC-007 因此从 PASS 变 FAIL）。
+        //   WinForms 的窗口类名形如 `WindowsForms10.Window.8.app.0.33c0d9d_r3_ad1`，
+        //   用它做判据 —— 只对这类窗口补背景。
+        if (ps->hdc != WPF_FAKE_DC) {
+            wpf_window *pw0 = wpf_window_find(h);
+            const char *cname = NULL;
+            if (pw0) { wpf_class *pc0 = wpf_class_find_atom(pw0->class_atom); if (pc0) cname = pc0->name; }
+            if (!cname || !strstr(cname, "WindowsForms")) return 1;
+        }
         if (ps->hdc != WPF_FAKE_DC) {
             wpf_window *pw2 = wpf_window_find(h);
             if (pw2 && pw2->width > 0 && pw2->height > 0) {
