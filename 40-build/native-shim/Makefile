@@ -23,7 +23,8 @@ WARN     = -Wall -Wextra -Wno-unused-parameter -Wno-cast-function-type
 #   这里固化成 DEFS，`make` 与 `make CFLAGS=…` 都不会丢。
 DEFS    ?= -DWPF_PTS_FSP_PL_M1=1 -DWPF_PTS_FSP_PL_M2=1
 CFLAGS  ?= $(CSTD) $(OPT) $(WARN) -fPIC -fvisibility=default $(DEFS)
-LDLIBS   = -lX11 -ldl -lpthread
+CFLAGS   += $(shell pkg-config --cflags dbus-1 2>/dev/null)
+LDLIBS   = -lX11 -ldl -lpthread $(shell pkg-config --libs dbus-1 2>/dev/null)
 
 SRCDIR   = src
 OBJDIR   = obj
@@ -40,7 +41,8 @@ SRCS     = $(SRCDIR)/win32_core.c $(SRCDIR)/win32_msg.c $(SRCDIR)/win32_x11.c \
            $(SRCDIR)/win32_oem.c $(SRCDIR)/win32_gdiplus.c \
 	$(SRCDIR)/win32_gdi_text.c $(SRCDIR)/win32_pts.c \
            $(SRCDIR)/win32_clipboard.c \
-	$(SRCDIR)/win32_winspool.c
+	$(SRCDIR)/win32_winspool.c \
+	$(SRCDIR)/win32_ibus.c
 OBJS     = $(patsubst $(SRCDIR)/%.c,$(OBJDIR)/%.o,$(SRCS))
 DEPS     = $(SRCDIR)/win32_abi.h $(SRCDIR)/win32_internal.h
 
