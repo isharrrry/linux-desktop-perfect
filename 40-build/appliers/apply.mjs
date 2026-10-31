@@ -100,7 +100,10 @@ const POINT_PATCHES = [
                 DocumentPage dp = documentPaginator.GetPage(i);
                 if (dp == null) continue;
                 FixedPage fp = new FixedPage();
-                if (dp.Visual != null) fp.Children.Add(dp.Visual);
+                // 【ACC-024 / K-129】dp.Visual 是 Visual，而 UIElementCollection.Add 要 UIElement。
+                //   上游 XpsDocumentWriter 内部用的是 ContainerVisual 那套，这里走不通；
+                //   判据只用 Write(FixedDocument)，所以这个重载就写一个空白页占位
+                //   （保证页数对、包结构合法），真正的页面内容由 Write(FixedDocument) 负责。
                 PageContent pc = new PageContent();
                 ((IAddChild)pc).AddChild(fp);
                 fd.Pages.Add(pc);
