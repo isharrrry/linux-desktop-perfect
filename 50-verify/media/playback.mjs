@@ -61,6 +61,7 @@ const { startXvfb, waitDisplay, startApp, findWindow, waitMapped, sleep, DOTNET_
           let mouseCmd = '';
           let lastClickDiag = null;
           let lastGeoDiag = null;
+          const attempts = [];   // 【K-011】每次重试的中间读数，失败时能看出是哪一环
           for (let attempt = 0; attempt < 8; attempt++) {
             // 【2026-10-31 判据修复 v3 —— 真根因】树里的 bounds 是**窗口内坐标**，
             //   而 xdotool mousemove 需要**屏幕坐标**。本判据的 Xvfb 是 1400x1000
@@ -101,10 +102,11 @@ const { startXvfb, waitDisplay, startApp, findWindow, waitMapped, sleep, DOTNET_
             await sleep(2200);
             const tree2 = JSON.parse(fs.readFileSync(treePath, 'utf8'));
             state1 = ((tree2.nodes || []).find((n) => /^state=/.test(String(n.name || ''))) || {}).name || null;
+            attempts.push({ attempt, state0, state1, click_status: clickRes.status, clicked: mouseCmd });
             if (state1 !== state0) break;
           }
           steps.push({ step: 'state_changes', ok: state0 !== state1, before: state0, after: state1,
-            diag: { win_id: win && win.id, bounds: [x, y, w, h], click_at: [Math.round(x + w / 2), Math.round(y + h / 2)],
+            diag: { win_id: win && win.id, bounds: [x, y, w, h], click_at: [Math.round(x + w / 2), Math.round(y + h / 2)], attempts,
               mouse_cmd: mouseCmd, click_diag: lastClickDiag, geo_diag: lastGeoDiag, app_alive: !!(app && app.ok && app.proc && app.proc.exitCode === null), screen: xvfbOptsScreen } });
         } else {
           steps.push({ step: 'state_changes', ok: false, note: '没有可点的「播放」按钮' });
