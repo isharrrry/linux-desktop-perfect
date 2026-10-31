@@ -40,6 +40,14 @@
 
 #include "win32_internal.h"
 
+/* 【2026-10-31 D-019-解14】页几何修正：原来页是 `768×576`（**PTS 单位** ⇒ 只有 2.56×1.92 DIP，
+   注释自称"仅够页对象存在"），而行宽 `DU` = 180000 PTS = **600 DIP** —— 行宽是页宽的 **234 倍**，
+   **一页连一行都放不下** ⇒ 分页器只能一直建页（实测 `FsCreatePageFinite` 252 次）。
+   按 `TextDpi`（300 单位 = 1 DIP）换算成真实页：768 DIP × 300 = 230400、576 DIP × 300 = 172800。 */
+#define WPF_PTS_PAGE_W 230400        /* 768 DIP × 300 单位/DIP */
+#define WPF_PTS_PAGE_H 172800        /* 576 DIP × 300 单位/DIP */
+
+
 #include <stdio.h>
 #include <stdlib.h>     // getenv / atoi
 #include <pthread.h>    /* ⏪ `T-A33`：`pthread_self()` —— 格式窗所在线程（跨线程拒驱判据） */
@@ -667,7 +675,7 @@ int FsCreatePageBottomless(void *pfscontext, const void *fsnmsect, int *pfsfmtrb
             /* ⏪ `T-B14`：本窗内**换新当前代**（若它已过期）—— 承 T-B3「本窗新造」判据，见该函数件头。 */
             wpf_pts_fsp_pl_renew(wpf_pts_doc_ptr(pfscontext), fsnmsect, "FsCreatePageBottomless");
             p->result = 0;                     /* `fmtrblGoalReached`（本次调用的结果） */
-            p->pg_w = 768; p->pg_h = 576;     /* 页矩形：本模块自持（与装置窗口几何同源） */
+            p->pg_w = WPF_PTS_PAGE_W; p->pg_h = WPF_PTS_PAGE_H;   /* D-019-解14：真实页尺寸（768×576 DIP）*/
             p->bbox_defined = 1;               /* 声明 bbox 有效（否则托管侧按"未定义"处理） */
             p->c_paras = 1;                    /* `t127`：该 track 有 1 段（按对象存；非全局常量） */
             g_pts_fsp_live[g_pts_fsp_live_n++] = p;
@@ -2569,6 +2577,8 @@ out:
 #ifndef WPF_PTS_FL_DEFAULT
 #define WPF_PTS_FL_DEFAULT 1
 #endif
+
+
 #define WPF_PTS_FL_DU 180000         /* 本侧页几何：**PTS 单位**（`TextDpi`：`300 单位 = 1 DIP`）
                                          ⇒ `180000 = 600 DIP`（`TextDpi.cs:201` 的 `_scale=28800/96=300`）。
                                          ⚠️ `FsCreatePageFinite` 的 `768/576` 是**同一单位制**下的**另一组**
@@ -3705,7 +3715,7 @@ static void wpf_pts_engine_drive_from(wpf_pts_doc *d, const void *methods_base, 
             (rc1 == 0 && sobjc != sobjc_pre) ? "OBJCTX-PRODUCED" : "OBJCTX-NOT-PRODUCED");
     /* ── 槽 3：投毒全部 out ⇒ 驱动一次 ⇒ 四条断言 ─────────────────────────────── */
     wpf_pts_fsgeom_guess geom; memset(&geom, 0, sizeof(geom));
-    geom.du = 768; geom.dv = 576;                  /* 本侧页几何（作者：本侧，`win32_pts.c:290/:352`） */
+    geom.du = WPF_PTS_PAGE_W; geom.dv = WPF_PTS_PAGE_H;   /* D-019-解14：与 pg_w/pg_h 同源 */
     int rect[4] = { 0, 0, 768, 576 };              /* fsrcToFill：本侧矩形（作者：本侧） */
     int o_fsfmtr = -0x5A5A, o_dvr_used = -0x5A5A, o_fskclear = -0x5A5A, o_dvrtop = -0x5A5A;
     int o_breakpos = -0x5A5A;
