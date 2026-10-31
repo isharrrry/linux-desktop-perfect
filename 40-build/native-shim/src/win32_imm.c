@@ -72,7 +72,18 @@ void wpf_imm_post_char(uint16_t ch)
         fflush(stderr);
     }
     if (!g_himc.hwnd) return;
-    PostMessageW(g_himc.hwnd, WM_CHAR, (uintptr_t)ch, 1);
+    // 【ACC-017 / K-096】`lParam` 必须按 Windows 规范构造，不能传常数 1。
+    //   WM_CHAR 的 lParam：bit0-15 重复计数(1)、bit16-23 扫描码、bit24 扩展位、bit31 转换位(0=按下)。
+    //   WPF 的 `HwndSource` 会把 lParam 传进 `TextComposition`，全 0 可能被当成异常输入丢掉。
+    //   这里给一个"像真的按键"的 lParam：扫描码取 0x1E（键 A 的位置，仅占位），转换位 0。
+    {
+        // 【ACC-017 / K-096】顺序必须是 **WM_KEYDOWN → WM_CHAR**，且**只投一次 WM_CHAR**。
+        //   之前写成"先 WM_CHAR 再 WM_KEYDOWN 再 WM_CHAR" ⇒ 每个字被 WPF 吃了两遍 ⇒
+        //   截图里出现 `你你好好`（K-095 实测）。这里修正为标准的两次投递。
+        intptr_t lp = (intptr_t)(1u | ((uint32_t)0x1E << 16));
+        PostMessageW(g_himc.hwnd, 0x0100 /*WM_KEYDOWN*/, (uintptr_t)0, lp);
+        PostMessageW(g_himc.hwnd, WM_CHAR, (uintptr_t)ch, lp);
+    }
     if (g_himc.available) g_stats.composition_msgs++;
 }
 
