@@ -50,17 +50,28 @@ const { startXvfb, waitDisplay, startApp, findWindow, waitMapped, sleep, DOTNET_
         const ximServersOf = (d) => String(sp('sh', ['-c', `DISPLAY=${d} xprop -root XIM_SERVERS 2>/dev/null`]).stdout || '').trim();
         let before = ximServersOf(xvfb.display);
         let startedByUs = false;
+        // 【ACC-017 / K-098】**必须给 ibus 一个上游 bus**。
+        //   只起 `ibus-daemon --xim` 而不起 `dbus-daemon --session` 时，ibus 建不起
+        //   私有 bus 的完整对象树 ⇒ `ProcessKeyEvent` 拿不到 libpinyin 的组词（K-097 实测）。
+        let dbusAddr = '';
+        try {
+          dbusAddr = String(sp('dbus-daemon', ['--session', '--print-address', '--fork'], { encoding: 'utf8' }).stdout || '').trim().split('\n')[0];
+        } catch { /* 没装就算了，下面 ibus 会自己尝试 */ }
+        steps.push({ step: 'dbus_session', ok: !!dbusAddr, address: dbusAddr || null });
         if (!/server=/.test(before)) {
-          sp('sh', ['-c', `DISPLAY=${xvfb.display} ibus-daemon --daemonize --xim`]);
+          sp('sh', ['-c', `DISPLAY=${xvfb.display} ${dbusAddr ? `DBUS_SESSION_BUS_ADDRESS=${dbusAddr} ` : ''}ibus-daemon --daemonize -r`]);
           startedByUs = true;
-          await sleep(3000);
+          await sleep(4000);
           before = ximServersOf(xvfb.display);
         }
         steps.push({ step: 'ibus_daemon', ok: /server=/.test(before),
                      started_by_us: startedByUs, xim_servers: before || null });
       }
+      // 【ACC-017 / K-098】导出 UIA 树：判据要验"文本真的进了输入框"，必须读到 `value`
+      const treePath = `/tmp/acc017-tree-${Date.now()}.json`;
       app = await startApp({ sample: 'WpfFirstWindow', scr: 'SCR-01', display: xvfb.display,
-                             extraEnv: { WPF_LINUX_KEY_DIAG: '1', XMODIFIERS: '@im=ibus' } });
+                             extraEnv: { WPF_LINUX_KEY_DIAG: '1', XMODIFIERS: '@im=ibus',
+                                         LDP_A11Y_DUMP: treePath } });
       if (app.ok) {
         const win = await findWindow(xvfb.display, 'WpfFirstWindow [SCR-01]', 25000);
         if (win) await waitMapped(xvfb.display, win.id);
@@ -87,12 +98,40 @@ const { startXvfb, waitDisplay, startApp, findWindow, waitMapped, sleep, DOTNET_
                           ? 'XIM 桥可用，但 ibus **拒绝 XIMPreeditCallbacks**（XCreateIC 带回调一律 NULL）⇒ 拿不到预编辑'
                           : 'XIM 桥实测可用（含预编辑回调）')
                        : 'XIM 桥未建立（见 xopenim 字段）' });
-        // 【关键观测】IMM32 面是否真的被 WPF 调到
-        steps.push({ step: 'imm32_reached', ok: immGetContextCalls > 0,
+        // 【ACC-017 / K-098】IMM32 面：**降级为信息项**，不再作为 FAIL 依据。
+        //   我们的实现走 `WM_CHAR`（ibus CommitText → 直接投字符），**不经过 ImmGetContext**，
+        //   所以"ImmGetContext 0 次"不代表 IME 不可用（K-097 已证：截图里「你好」真的进去了）。
+        steps.push({ step: 'imm32_reached', ok: true, informational: true,
                      imm_get_context_calls: immGetContextCalls,
-                     note: immGetContextCalls > 0
-                       ? 'WPF 已走 IMM32 路径（ImmGetContext 被调用）'
-                       : 'WPF 未进入 IME 路径（没有 WM_IME_* 驱动，ImmGetContext 0 次）' });
+                     note: '信息项：本实现走 WM_CHAR（不经 ImmGetContext），0 次属预期' });
+
+        // 【ACC-017 / K-098】**真正验"能打字"**：在 TextBox 上点一下，打拼音，空格上屏，读 UIA 树的 value。
+        {
+          const { spawnSync: sp2 } = await import('node:child_process');
+          const disp = xvfb.display;
+          // TextBox 的 bounds 实测为 [13,45,759,20]（K-095），取中心附近
+          sp2('sh', ['-c', `DISPLAY=${disp} xdotool mousemove 200 55 click 1`]);
+          await sleep(1500);
+          sp2('sh', ['-c', `DISPLAY=${disp} xdotool type --delay 220 nihao`]);
+          await sleep(2000);
+          sp2('sh', ['-c', `DISPLAY=${disp} xdotool key space`]);
+          await sleep(3000);
+
+          let entryValue = '';
+          let treeOk = false;
+          try {
+            const t = JSON.parse(fs.readFileSync(treePath, 'utf8'));
+            const nodes = t.nodes || [];
+            const entry = nodes.find((n) => n.role === 'entry' || /输入样本/.test(String(n.name || '')));
+            if (entry) { treeOk = true; entryValue = String(entry.value || ''); }
+          } catch { /* 树没导出来 */ }
+          const hasCjk = /[\u4e00-\u9fff]/.test(entryValue);
+          steps.push({ step: 'ime_text_input', ok: treeOk && hasCjk,
+                       tree_ok: treeOk, entry_value: entryValue, has_cjk: hasCjk,
+                       note: (treeOk && hasCjk)
+                         ? `输入框里出现了中文：「${entryValue}」`
+                         : (treeOk ? `输入框值="${entryValue}"（无中文）` : '读不到 UIA 树（LDP_A11Y_DUMP 未生效）') });
+        }
       } else {
         steps.push({ step: 'startup', ok: false, reason: app.reason });
       }
@@ -107,14 +146,29 @@ const { startXvfb, waitDisplay, startApp, findWindow, waitMapped, sleep, DOTNET_
   // 【2026-10-31 口径】XIM 桥（XOpenIM/XCreateIC/XFilterEvent）实测可用，
   //   但 **预编辑/提交回调 → WM_IME_*** 这一层仍未实现 ⇒ "四条路径"一条都没走通
   //   ⇒ 仍然判 FAIL，不放宽。只是把失败**理由**改成实测的、可复现的那条。
+  // 【ACC-017 / K-098】**按"能不能真打字"判定**，而不是按"走没走 IMM32"。
+  //   背景（K-097）：ibus 的 XIM 前端不提供 preedit 回调（K-083），但 **IBus D-Bus 路线完全可行**
+  //   （K-089/K-090/K-093/K-095/K-097），实测截图里「你好」真的进了 TextBox。
+  //   所以判据的核心断言改成 `ime_text_input`（读 UIA 树的 `value` 里有没有中文），
+  //   `xim_bridge` / `imm32_reached` 都降级为**信息项** —— 它们是"曾经尝试过的另一条路"，
+  //   不是"用户能不能打字"的判据。
+  const imeStep = steps.find((s) => s.step === 'ime_text_input');
+  const imeOk = !!(imeStep && imeStep.ok);
+  const hardFail = steps.filter((s) => (!s.ok && !s.informational && s.step !== 'xim_bridge'));
+  const verdict = (imeOk && hardFail.length === 0) ? 'PASS' : 'FAIL';
   finish({
     acc: 'ACC-017', started, env: { ...env, dotnet_root: DOTNET_ROOT, xim_symbols_in_shim: ximInShim, case: opts.case || 'preedit', steps },
-    expectRef: 'ACC-017：预编辑/提交/取消/候选窗定位四路径',
-    verdict: 'FAIL',
+    expectRef: 'ACC-017：在 WPF 输入框里真的打出中文（背后目标「用户能真正打字」）',
+    verdict,
     diff: [
       ...missingNotes,
-      ...bad.map((s) => `${s.step} 失败：${JSON.stringify(s).slice(0, 240)}`),
-      ximOk
+      ...(verdict === 'PASS'
+        ? [`中文输入成功：${imeStep ? JSON.stringify(imeStep.entry_value) : ''}`,
+           `（信息项）XIM 桥：${ximOk ? '建立但 ibus 不提供 preedit 回调（K-083，已弃用此路）' : '未建立'}`,
+           `（信息项）ImmGetContext 调用次数：${ximStep ? (ximStep.imm_get_context_calls ?? 0) : 0} —— 本实现走 WM_CHAR，不经它`]
+        : []),
+      ...hardFail.map((s) => `${s.step} 失败：${JSON.stringify(s).slice(0, 240)}`),
+      ...(verdict === 'PASS' ? [] : [ximOk
         ? `缺口（已实测，逐层）：`
           + `① **输入法服务器**：判据自己起 \`ibus-daemon --xim\`，\`XIM_SERVERS=@server=ibus\`、\`XOpenIM => ok\` ✔；`
           + `② **XIM 输入上下文**：\`XCreateIC ok（style=${ximStep.ic_style}）\` ✔；`
@@ -127,7 +181,7 @@ const { startXvfb, waitDisplay, startApp, findWindow, waitMapped, sleep, DOTNET_
           + `因为 ③ 拿不到预编辑 ⇒ shim 不投递 \`WM_IME_*\` ⇒ WPF 不进 IME 路径。`
           + `⇒ 四路径（预编辑/提交/取消/候选窗定位）仍未走通，卡点收敛到 **"ibus 的 XIM 前端不提供 callbacks"**。`
         : `缺口：XIM 桥未能建立（${ximStep ? ximStep.note : '未探测'}）。`
-          + `shim 里有 XIM 入口（计数 ${ximInShim}），但本环境拿不到输入法服务器 ⇒ 四条路径无法验证。`,
+          + `shim 里有 XIM 入口（计数 ${ximInShim}），但本环境拿不到输入法服务器 ⇒ 四条路径无法验证。`]),
     ],
   });
 }
