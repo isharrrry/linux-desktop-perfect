@@ -224,6 +224,15 @@ for (const rel of files) {
   for (const pp of POINT_PATCHES) {
     if (rel.split(path.sep).join('/') !== pp.file) continue;
     if (!text.includes(pp.find)) {
+      // 【K-076】**幂等化**：如果 `replace` 的文本已经在里面（说明上游自己修了这项，
+      // 或者这份源码已经是打过补丁的版本），就不是错误，静默跳过。
+      // 现实背景：我们把 `build/wpf/src` 从 10.0.14 换成了 v10.0.11，
+      // 而 P16（`Pbt.props` 里 `net6.0` → `net10.0`）在 10.0.11 里上游已经改成 net10.0，
+      // 于是 `find` 必然不命中。判据应当是"补丁效果存在"，而不是"原文必须存在"。
+      if (pp.replace && text.includes(pp.replace)) {
+        if (process.env.LDP_APPLY_VERBOSE) console.log(`SKIP ${pp.patch}：已被上游修复（replace 文本已存在）`);
+        continue;
+      }
       console.error(`ERROR ${pp.patch} 定点补丁未命中：${pp.file}（上游可能已修，请复核后删掉该项）`);
       process.exit(1);
     }
