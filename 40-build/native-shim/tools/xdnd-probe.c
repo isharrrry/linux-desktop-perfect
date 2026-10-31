@@ -57,6 +57,19 @@ int main(int argc, char **argv) {
     // 源窗口：1x1 的 InputOnly（只收事件，不显示）
     src = XCreateSimpleWindow(dpy, DefaultRootWindow(dpy), -10, -10, 1, 1, 0, 0, 0);
     XSelectInput(dpy, src, PropertyChangeMask | StructureNotifyMask);
+    // 【必须】把自己设成 XdndSelection 的 owner —— 目标会用
+    //   XConvertSelection(XdndSelection, text/uri-list, …) 来**向源取数据**；
+    //   若源不是 owner，X 直接把那个转换判为失败（SelectionNotify 带 property=None），
+    //   于是我们这边 `selection_served` 永远是 0 —— **看起来像目标没取数据，其实是源没接**。
+    //   第一版探针就是漏了这一句，害我以为 Drop 层没通。
+    XSetSelectionOwner(dpy, a_xdnd_selection, src, CurrentTime);
+    XFlush(dpy);
+    if (XGetSelectionOwner(dpy, a_xdnd_selection) != src) {
+        printf("{\"status_received\":false,\"accepted\":false,\"selection_served\":0,"
+               "\"version\":0,\"drop_sent\":false,\"finished_received\":false,"
+               "\"error\":\"拿不到 XdndSelection 的 owner\"}\n");
+        XCloseDisplay(dpy); return 0;
+    }
 
     // 读目标的 XdndAware 版本（没有就报错 —— 这正是"声明面"的验证）
     Atom type; int fmt; unsigned long n, after; unsigned char *data = NULL;
