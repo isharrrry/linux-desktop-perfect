@@ -124,12 +124,29 @@ const { startXvfb, waitDisplay, startApp, findWindow, waitMapped, sleep, DOTNET_
           const cx = Math.round(bb[0] + bb[2] / 2);
           const cy = Math.round(bb[1] + bb[3] / 2);
           steps.push({ step: 'entry_bounds', ok: true, informational: true, bounds: bb, click_at: [cx, cy] });
+          // 【ACC-017 / K-101】**keycode=0 的根因是焦点**：判据窗口没有 WM，
+          //   `xdotool type` 默认发给"当前焦点窗口"，而焦点可能还在 root 上 ⇒ 键事件缺 keycode。
+          //   三步修：① 显式 windowfocus；② 把鼠标点进去（WPF 靠点击设内部焦点）；
+          //          ③ 所有键事件都用 `--window <id>` 显式定向。
+          const winId = (win && win.id) ? win.id : null;
+          if (winId) {
+            sp2('sh', ['-c', `DISPLAY=${disp} xdotool windowfocus ${winId}`]);
+            await sleep(800);
+          }
           sp2('sh', ['-c', `DISPLAY=${disp} xdotool mousemove ${cx} ${cy} click 1`]);
           await sleep(1500);
+          // 【ACC-017 / K-101】**不要用 `xdotool key --window`**：它走 `XSendEvent`（合成事件），
+          //   发出来的 `XKeyEvent` **没有真实 keycode** ⇒ 我们那侧 `XLookupKeysym` 得到 0
+          //   ⇒ `ProcessKeyEvent(0,0,0)`（K-100 实测）。必须用 **XTest**（不带 `--window`），
+          //   它注入的是"真事件"，keycode 由 X server 按当前 keymap 填。
+          //   代价是依赖焦点 ⇒ 前面必须已经 `windowfocus` 成功。
           sp2('sh', ['-c', `DISPLAY=${disp} xdotool type --delay 220 nihao`]);
           await sleep(2000);
           sp2('sh', ['-c', `DISPLAY=${disp} xdotool key space`]);
           await sleep(3000);
+          await sleep(3000);
+          steps.push({ step: 'input_method', ok: true, informational: true,
+                       window_focused: !!winId, mode: 'xdotool type (XTest)' });
           // 【ACC-017 / K-100】把 shim 的 `[IBUS]` 轨迹留在 steps 里 —— 一眼看出
           //   "没连上 ibus" 还是 "连上了但键没送到"。
           const ibusTrace = (app.trace ? app.trace() : '').split('\n').filter((l) => l.includes('[IBUS]')).slice(-12);
