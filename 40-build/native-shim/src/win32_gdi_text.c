@@ -229,3 +229,47 @@ int WaitMessage(void)
     nanosleep(&ts, NULL);
     return 1;
 }
+
+// ── 进程启动信息（`GetStartupInfoW`）─────────────────────────────────────────
+//   WinForms 在 `ThreadContext` 初始化时会读 `STARTUPINFO`（主要看 `wShowWindow`/`dwFlags`）。
+//   Linux 上没有 Windows 的"启动显示方式"，返回一个**已清零 + cb 正确**的结构即可。
+//   实测：不补它，WinForms 的 `Application.Run` 抛
+//   `EntryPointNotFoundException: GetStartupInfoW`，而它被 `ThreadException` 接住后
+//   弹了「Unhandled exception has occurred…」对话框（对话框标题里带着这条消息，见 K-025）。
+typedef struct {
+    uint32_t  cb;
+    uint16_t *lpReserved, *lpDesktop, *lpTitle;
+    uint32_t  dwX, dwY, dwXSize, dwYSize, dwXCountChars, dwYCountChars, dwFillAttribute, dwFlags;
+    uint16_t  wShowWindow, cbReserved2;
+    uint8_t  *lpReserved2;
+    void     *hStdInput, *hStdOutput, *hStdError;
+} WPF_STARTUPINFOW;
+
+void GetStartupInfoW(WPF_STARTUPINFOW *si)
+{
+    if (!si) return;
+    memset(si, 0, sizeof(*si));
+    si->cb = (uint32_t)sizeof(*si);
+    // dwFlags = 0 ⇒ wShowWindow **无效**；WinForms 会退回到默认的"正常显示"。
+    // 这比假装 STARTF_USESHOWWINDOW + SW_SHOWNORMAL 更诚实（我们没有那个来源）。
+}
+void GetStartupInfoA(void *si) { GetStartupInfoW((WPF_STARTUPINFOW *)si); }
+
+// ── OLE / COM 初始化（`OleInitialize`）──────────────────────────────────────
+//   WinForms 的 `ThreadContext` 会 `OleInitialize()` 一次（剪贴板/拖放要用 OLE）。
+//   Linux 上没有 COM/OLE 运行时；本 shim 的剪贴板与拖放走 X11（见 win32_clipboard.c / XDND）。
+//   口径：**返回 S_OK（假成功）** 而不是失败 —— 因为"没有 OLE"在这里不是错误，
+//   后续真正用 OLE 的地方（`IDropTarget` 等）会各自走本仓的 X11 实现或如实失败。
+//   实测：不补它，`Application.Run` 抛 `EntryPointNotFoundException: OleInitialize`。
+// 注：OleInitialize/OleUninitialize 已在 win32_oem.c 实现（重复定义会链接失败）
+
+// ── `OleInitialize`（**注意：`CoInitialize` 系列在 win32_oem.c 里已有，别重复**）──────
+//   `exports.txt` 里 `OleInitialize` 一直是 `gap`（"无实现（ole32）"），而 WinForms 的
+//   `ThreadContext` 初始化会调它（剪贴板/拖放走 OLE 的那条路径）。
+//   Linux 上没有 COM/OLE 运行时；本仓的剪贴板与拖放走 X11（win32_clipboard.c / XDND）。
+//   口径：**返回 S_OK（假成功）**，而不是失败 —— 「没有 OLE」不是错误，
+//   真要用 OLE 的地方会各自走 X11 实现或如实失败。
+//   实测：不补它，`Application.Run` 抛 `EntryPointNotFoundException: OleInitialize`，
+//   被 `ThreadException` 接住后弹出「Unhandled exception…」对话框（标题里带这条消息，见 K-025）。
+int32_t OleInitialize(void *reserved) { (void)reserved; return 0; }   // S_OK
+int32_t OleUninitialize(void) { return 0; }

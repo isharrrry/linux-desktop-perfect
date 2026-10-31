@@ -1116,7 +1116,15 @@ HWND CreateWindowExW(uint32_t e, const uint16_t *c, const uint16_t *n, uint32_t 
 {
     char *cls = wpf_utf16_to_utf8_dup(c);
     char *title = wpf_utf16_to_utf8_dup(n);
+    if (getenv("WPF_LINUX_KEY_DIAG")) {
+        fprintf(stderr, "[CreateWindowExW] cls=%s title=%s style=0x%x size=%dx%d parent=%p\n",
+                cls ? cls : "(null)", title ? title : "", s, w, h, (void *)p);
+        fflush(stderr);
+    }
     HWND r = create_window_utf8(e, cls, title, s, x, y, w, h, p, m, i, lp);
+    if (getenv("WPF_LINUX_KEY_DIAG")) {
+        fprintf(stderr, "[CreateWindowExW] -> hwnd=%p\n", (void *)r); fflush(stderr);
+    }
     free(cls); free(title);
     return r;
 }
