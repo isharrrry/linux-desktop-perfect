@@ -176,6 +176,24 @@ typedef struct { wic_object hdr; uint8_t *bgra; uint32_t width, height; } ldp_ct
 //     **坏参数变成干净的 HRESULT 失败**，而不是进程崩溃。
 //
 //   判定用 `mincore(2)`：它对未映射页返回 ENOMEM，且**不会**触发 SIGSEGV。
+// ── 【K-425】MIL handle 识别 ────────────────────────────────────────────────
+//   架构真相（子代理 4 步锁死）：
+//     WPF 的 `CWICWrapperBitmap` 走官方 `wpfgfx_cor3.dll` 的 `MilResource_*` 路径，
+//     而本仓的 `libwpfwic.so` 走自己的 `wic_object` 路径。
+//     **`wpfgfx_cor3.dll` 用同一个函数指针表调两者** ⇒ 我们的 `_Proxy` 会收到
+//     **MIL handle**（`0x2000000X` 形态）而不是 `wic_object*`。
+//   实测值：`0x20000005 = 0x20000000 | 0x5`（MIL handle 的位编码）。
+//
+//   ⇒ 识别它，并**返回合理的默认值**（而不是 E_INVALIDARG），
+//     让 WPF 的 `PixelFormat.GetPixelFormat` 能继续往下走。
+#define WIC_MIL_HANDLE_MASK 0xFFFF0000u
+#define WIC_MIL_HANDLE_TAG  0x20000000u
+
+static int wic_is_mil_handle(const void *p)
+{
+    return p && (((uintptr_t)p & WIC_MIL_HANDLE_MASK) == WIC_MIL_HANDLE_TAG);
+}
+
 static int wic_ptr_readable(const void *p)
 {
     if (!p) return 0;
@@ -213,6 +231,20 @@ int32_t IWICBitmapSource_GetSize_Proxy(void *source, uint32_t *w, uint32_t *h)
 
 int32_t IWICBitmapSource_GetPixelFormat_Proxy(void *source, void *guid)
 {
+    // 【K-426】MIL handle ⇒ 返回 WPF 期望的 32bppBGRA（而不是 E_INVALIDARG）
+    //   让 `PixelFormat.GetPixelFormat` 能通过，从而 `RenderTargetBitmap` 能继续。
+    //   这不是"修好"，而是"让类型不匹配的句柄走一条合理的默认路径"。
+    if (wic_is_mil_handle(source)) {
+        if (getenv("LDP_WIC_TRACE")) { fprintf(stderr, "[WIC-GPF] MIL handle %p -> 32bppBGRA (default)\n", source); fflush(stderr); }
+        if (guid) {
+            static const uint8_t bgra[16] = {
+                0x24, 0xc3, 0xdd, 0x6f, 0x03, 0x4e, 0xfe, 0x4b,
+                0xb1, 0x85, 0x3d, 0x77, 0x76, 0x8d, 0xc9, 0x0f
+            };
+            memcpy(guid, bgra, 16);
+        }
+        return S_OK_;
+    }
     if (!wic_ptr_readable(source)) return 0x80070057;
     wic_object *o = (wic_object *)source;
     if (o->magic != WIC_DECODER_MAGIC && o->magic != COLOR_TRANSFORM_MAGIC_) return 0x80070057;
