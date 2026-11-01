@@ -209,13 +209,18 @@ const LIBS = {
   wtsapi32: ['libwpfwin32.so', 'MOD-15'],
   wininet: ['libwpfwin32.so', 'MOD-15'],
   urlmon: ['libwpfwin32.so', 'MOD-15'],
-  'system.io.compression.native': ['libwpfwin32.so', 'MOD-15'],
+  // 【清算 / K-185】库名是 `libSystem.IO.Compression.Native`（带 lib 前缀）⇒ 独立 .so
+  'system.io.compression.native': ['libSystem.IO.Compression.Native.so', 'MOD-52'],
   mshwgst: ['libwpfwin32.so', 'MOD-83'],
   presentationnative: ['libwpfwin32.so', 'MOD-16'],
   presentationcffrasterizer: ['libwpfwin32.so', 'MOD-35'],
   'wpfgfx_v0400': ['libwpfgfx_linux.so', 'MOD-25'],
   milctrl: ['libwpfgfx_linux.so', 'MOD-25'],
   windowscodecs: ['libwpfwic.so', 'MOD-41'],
+  // 【清算 / K-185】.NET 的 System.IO.Compression 走 `[DllImport("libSystem.IO.Compression.Native")]`
+  //   —— 库名带 `lib` 前缀，所以这 8 个符号**不在 libwpfwin32.so 里**，在独立构建的
+  //   `40-build/zlib-native/bin/libSystem.IO.Compression.Native.so`（zlib 适配层）。
+  'system.io.compression.native': ['libSystem.IO.Compression.Native.so', 'MOD-52'],
   windowscodecsext: ['libwpfwic.so', 'MOD-41'],
   mscms: ['libwpfwic.so', 'MOD-42'],
   uiautomationcore: ['libwpfwin32.so', 'MOD-81'],
@@ -381,6 +386,26 @@ function parseMilcoreExports() {
 //   以前 `SO_IMPL` 只有 `libwpfwin32.so` 和 `libwpfgfx_linux.so`，
 //   于是 `statusFor('libwpfwic.so', ...)` 永远落到 `gap` 分支 ——
 //   **即使 .so 里真导出了也标 gap**（实测：补完 71 个 WIC 符号后清单仍是 gap 119）。
+// 【清算 / K-185】zlib 适配层的导出表（`40-build/zlib-native/bin/libSystem.IO.Compression.Native.so`）
+function parseZlibExports() {
+  const map = new Map();
+  const soPath = path.join(ROOT, '40-build/zlib-native/bin/libSystem.IO.Compression.Native.so');
+  if (!fs.existsSync(soPath)) {
+    warnings.push('libSystem.IO.Compression.Native.so 不存在（先 make -C 40-build/zlib-native），压缩组按 gap 处理');
+    return map;
+  }
+  let out = '';
+  try { out = execFileSync('nm', ['-D', '--defined-only', soPath], { encoding: 'utf8' }); }
+  catch (e) { warnings.push('nm 读取 zlib 适配层失败：' + e.message); return map; }
+  for (const line of out.split('\n')) {
+    const parts = line.trim().split(/\s+/);
+    if (parts.length < 3) continue;
+    if (parts[parts.length - 2] !== 'T') continue;
+    map.set(parts[parts.length - 1], { file: 'libSystem.IO.Compression.Native.so', body: 'x;' });
+  }
+  return map;
+}
+
 function parseWicExports() {
   const map = new Map();
   const soPath = path.join(ROOT, '40-build/wic-dwrite/bin/libwpfwic.so');

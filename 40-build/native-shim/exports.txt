@@ -6,6 +6,13 @@
 # 规模：1285 行（impl 984 / stub 103 / gap 198）
 # 输入：上游 1534 条 DllImport 声明（另有 0 条属性块后无 extern 声明被跳过）、native-shim 886 个导出、milcore 109 个导出
 # 排除：wpf_*（shim 内部件）、WpfLinuxWin32_*（桥件，非 Win32 契约入口）
+libSystem.IO.Compression.Native.so	CompressionNative_Crc32	gap	MOD-52	10.0.11	无实现（system.io.compression.native）
+libSystem.IO.Compression.Native.so	CompressionNative_Deflate	gap	MOD-52	10.0.11	无实现（system.io.compression.native）
+libSystem.IO.Compression.Native.so	CompressionNative_DeflateEnd	gap	MOD-52	10.0.11	无实现（system.io.compression.native）
+libSystem.IO.Compression.Native.so	CompressionNative_DeflateInit2_	gap	MOD-52	10.0.11	无实现（system.io.compression.native）
+libSystem.IO.Compression.Native.so	CompressionNative_Inflate	gap	MOD-52	10.0.11	无实现（system.io.compression.native）
+libSystem.IO.Compression.Native.so	CompressionNative_InflateEnd	gap	MOD-52	10.0.11	无实现（system.io.compression.native）
+libSystem.IO.Compression.Native.so	CompressionNative_InflateInit2_	gap	MOD-52	10.0.11	无实现（system.io.compression.native）
 libwpfgfx_linux.so	GetNextPerfElementId	impl	MOD-25	10.0.11
 libwpfgfx_linux.so	IWICColorContext_GetExifColorSpace_Proxy	impl	MOD-25	10.0.11
 libwpfgfx_linux.so	IWICColorContext_GetProfileBytes_Proxy	impl	MOD-25	10.0.11
@@ -282,13 +289,6 @@ libwpfwin32.so	CoUninitialize	impl	MOD-63	10.0.11
 libwpfwin32.so	CombineRgn	impl	MOD-13	10.0.11
 libwpfwin32.so	CommDlgExtendedError	gap	MOD-62	10.0.11	无实现（comdlg32）
 libwpfwin32.so	CommandLineToArgvW	impl	MOD-15	10.0.11
-libwpfwin32.so	CompressionNative_Crc32	gap	MOD-15	10.0.11	无实现（system.io.compression.native）
-libwpfwin32.so	CompressionNative_Deflate	gap	MOD-15	10.0.11	无实现（system.io.compression.native）
-libwpfwin32.so	CompressionNative_DeflateEnd	gap	MOD-15	10.0.11	无实现（system.io.compression.native）
-libwpfwin32.so	CompressionNative_DeflateInit2_	gap	MOD-15	10.0.11	无实现（system.io.compression.native）
-libwpfwin32.so	CompressionNative_Inflate	gap	MOD-15	10.0.11	无实现（system.io.compression.native）
-libwpfwin32.so	CompressionNative_InflateEnd	gap	MOD-15	10.0.11	无实现（system.io.compression.native）
-libwpfwin32.so	CompressionNative_InflateInit2_	gap	MOD-15	10.0.11	无实现（system.io.compression.native）
 libwpfwin32.so	ConvertStringSecurityDescriptorToSecurityDescriptor	gap	MOD-15	10.0.11	无实现（advapi32）
 libwpfwin32.so	CountClipboardFormats	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
 libwpfwin32.so	CreateActCtx	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
