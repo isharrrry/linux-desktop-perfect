@@ -1981,6 +1981,15 @@ uint32_t wpf_thread_id_of_window(HWND hwnd)
 // 都落在这里，返回错误值会直接改变上层可见行为。
 LRESULT DefWindowProcW(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
+    // 【K-348 诊断】看原生控件的 WM_PAINT 是否真的到达这里（WinForms 会把原生控件的
+    //   绘制转发给 DefWindowProc）。只在 WPF_LINUX_KEY_DIAG=1 时打印前 40 条。
+    if (getenv("WPF_LINUX_KEY_DIAG") && (msg == 0x000F /*WM_PAINT*/ || msg == 0x0318 /*WM_THEMECHANGED*/)) {
+        static int np = 0;
+        if (np++ < 40) {
+            fprintf(stderr, "[DEFWND] msg=0x%04x hwnd=%p\n", msg, (void *)hwnd);
+            fflush(stderr);
+        }
+    }
     switch (msg) {
         case WM_NCCREATE:  return 1;    // 允许建窗（HwndWrapper 依赖）
         case WM_CLOSE:     DestroyWindow(hwnd); return 0;
