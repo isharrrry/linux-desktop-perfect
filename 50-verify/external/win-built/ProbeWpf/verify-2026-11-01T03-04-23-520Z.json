@@ -1,0 +1,29 @@
+{
+ "name": "ProbeWpf",
+ "dll": "50-verify/external/win-built/ProbeWpf/ProbeWpf.dll",
+ "display": ":125",
+ "windowFound": true,
+ "window": {
+  "id": "0x200002",
+  "title": "SystemResourceNotifyWindow"
+ },
+ "shot": "50-verify/external/win-built/ProbeWpf/shot-2026-11-01T03-04-23-520Z.png",
+ "shotBytes": 13246,
+ "uiaNodeCount": 5,
+ "uiaSample": [
+  "frame:ProbeWpf [EXT-01]",
+  "label:hello",
+  "entry:edit",
+  "push button:btn",
+  "label:count"
+ ],
+ "exited": null,
+ "logTail": [
+  "[A11Y-DUMP] 开始 03:04:31.389",
+  "[A11Y-DUMP] 结束 耗时=0ms",
+  "[A11Y-REPEAT] dumped",
+  "[A11Y-DUMP] 开始 03:04:31.790",
+  "[A11Y-DUMP] 结束 耗时=2ms",
+  "[A11Y-REPEAT] dumped"
+ ]
+}

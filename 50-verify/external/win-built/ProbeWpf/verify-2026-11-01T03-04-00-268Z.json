@@ -1,0 +1,15 @@
+{
+ "name": "ProbeWpf",
+ "dll": "50-verify/external/win-built/ProbeWpf/ProbeWpf.dll",
+ "display": ":300",
+ "started": true,
+ "exited": null,
+ "window": "0x400002 \"SystemResourceNotifyWindow\": (\"HwndWrapper[ProbeWpf;;29061b77-90ac-4896-8c5b-a99ac036ceb1]\" \"HwndWrapper[ProbeWpf;;29061b77-90ac-4896-8c5b-a99ac036ceb1]\")  800x600+0+0  +0+0",
+ "shot": "50-verify/external/win-built/ProbeWpf/shot-2026-11-01T03-04-00-268Z.png",
+ "shotBytes": 328,
+ "uiaNodeCount": 0,
+ "uiaSample": [],
+ "logTail": [
+  "[G147_WORKAREA] source=net-workarea GetMonitorInfo mon=0,0,1280,1024 work=0,0,1280,1024 prop_present=1 prop_n=16"
+ ]
+}
