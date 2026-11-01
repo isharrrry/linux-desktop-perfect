@@ -8,6 +8,7 @@
 | 我想… | 看 |
 |---|---|
 | 知道**装了什么、怎么装** | 本文 §2–§3 |
+| 知道**Windows 编译的程序集怎么跑起来** | 本文 §3.2 |
 | 知道**当前哪些判据通过** | [`交付清单.md`](交付清单.md)（从读数自动生成）|
 | 知道**读数怎么读、什么不算通过** | [`读数怎么读.md`](读数怎么读.md) |
 | 知道**改一个程序集要跑哪几步** | 本文 §7 |
@@ -46,6 +47,8 @@ node 40-build/milcore-bridge/build-bridge.mjs --install ~/.local/share/ldp/dotne
 
 ## 3. 怎么跑
 
+### 3.1 跑本仓样本
+
 ```bash
 source ~/.local/share/ldp/dotnet/env.sh
 export DOTNET_ROOT=$HOME/.local/share/ldp/dotnet
@@ -55,6 +58,69 @@ dotnet samples/WpfFirstWindow/bin/Release/net10.0/WpfFirstWindow.dll
 ```
 
 需要 X 显示（真桌面或 `Xvfb :N -screen 0 1280x1024x24 &`）。
+
+### 3.2 跑外部（Windows 上编译的）程序集
+
+**结论**：Windows 上 `dotnet build -c Release` 出来的 `net10.0-windows` 托管程序集，拷到 Linux 上
+**不做任何重新编译**就能跑（判据 [`50-verify/external/check-external-winapp.mjs`](../50-verify/external/check-external-winapp.mjs)；WPF 外部样本 6/6）。原因：WPF/WinForms 的托管层是 IL，
+本仓发的是版本号一致的 `Microsoft.WindowsDesktop.App 10.0.11`，程序要 `10.0.0`，同 major
+默认 roll-forward 即加载。**前提是本机已按 §2 装好运行时**（运行时产物与上游快照均不入库，
+见 [`40-build/lock/README.md`](../40-build/lock/README.md)）。
+
+**拷什么**：只拷三个文件到同一目录——`<App>.dll` + `<App>.deps.json` + `<App>.runtimeconfig.json`。
+不要拷 `.exe`（Linux 不用 apphost）、不要拷 `.pdb`；有私有依赖的第三方 dll 一并拷，
+但**不要**拷 Windows 侧 `publish` 出来的 WPF 框架件（会与自产框架冲突）。
+
+**最小运行命令**（2026-11-01 实测）：
+
+```bash
+D=~/.local/share/ldp/dotnet
+env -i DISPLAY=:91 HOME=$HOME DOTNET_ReadyToRun=0 $D/dotnet /path/to/App.dll
+```
+
+**只需一个环境变量** `DOTNET_ReadyToRun=0`（D-005：上游 pack 件是 win-x64 ReadyToRun，
+不关就 `BadImageFormatException`）。另外三个常被列进「前置条件」的变量实测都不必需：
+
+| 变量 | 是否必需 | 实测依据（2026-11-01） |
+|---|---|---|
+| `DOTNET_ReadyToRun=0` | **必需** | 全空环境抛 `BadImageFormatException at Application.ApplicationInit`；只加它即出窗口。写进 `runtimeconfig.json` 的 4 种 `configProperties` 写法均无效 |
+| `DISPLAY` | **必需** | 要 X 显示 |
+| `DOTNET_ROOT` | 不必需 | 用绝对路径 `$D/dotnet` 时宿主按自身位置找框架；用系统 `dotnet` 时设了也不管用（报 `You must install or update .NET`）|
+| `WPF_LINUX_WIN32_SHIM` | 不必需 | resolver 查找顺序是 环境变量 → 应用目录 → 程序集目录；`install-runtime` 已把 `libwpfwin32.so` 放进框架根，第三档即命中 |
+| `LD_LIBRARY_PATH` | 不必需 | 文本/媒体/图像三类样本各跑「有/无」对照共 6 次，全部出窗口且无致命异常 |
+| `DOTNET_STARTUP_HOOKS` + `LDP_A11Y_DUMP` | 只有要 UIA 树时 | 只影响读数；`LDP_A11Y_DUMP` 没有默认值，必须显式给 |
+
+要看 UIA 结构树（判据用）再加三个（`$FX=~/.local/share/ldp/dotnet/shared/Microsoft.WindowsDesktop.App/10.0.11`）：
+
+```bash
+DOTNET_STARTUP_HOOKS=$FX/LdpA11y.dll LDP_A11Y_DUMP=/tmp/tree.json LDP_A11Y_REPEAT=1
+```
+
+**WPF 与 WinForms 的差别**：安装阶段**没有任何差别**（WinForms 的 `System.Windows.Forms.dll` 与
+`System.Drawing.Common.dll` 就在同一个框架包里；`build-port`/`build-pack` 的工程列表里没有
+WinForms 工程）。运行阶段只有两处：
+
+1. **WinForms 依赖框架目录里的 Win32 同名软链**（`USER32.dll` 等，由
+   [`40-build/install-shims.sh`](../40-build/install-shims.sh) 建）。实测：移走全部软链后
+   WPF 照常出窗口 5 个，WinForms 直接 `DllNotFoundException`。原因：WPF 用 `[DllImport]` 走
+   `NativeLibrary.SetDllImportResolver`；WinForms 的 CsWin32 生成码用 `[LibraryImport]`，
+   resolver 对它不生效，只能靠默认探测找同名文件（K-014）。
+2. **能跑到的深度不同**：WinForms 能启动、建窗、控件位置正确（ACC-028），但 `System.Drawing`
+   自绘抛 `EntryPointNotFoundException @ System.Drawing.IGraphicsContextInfo.GetHdc`
+   （K-249/K-250），画面靠 shim 的 `BeginPaint` 兜底；双缓冲 `RenderInternal` 在 Unix 后端是
+   `throw new NotImplementedException()`。
+
+**跑不起来先看**：
+
+| 现象 | 先查 |
+|---|---|
+| `BadImageFormatException at ApplicationInit` | 没设 `DOTNET_ReadyToRun=0`（D-005）|
+| `DllNotFoundException: USER32.dll` 一类 | 框架目录缺 Win32 软链：`sh 40-build/install-shims.sh --check` |
+| `You must install or update .NET` | 用了系统 `dotnet` 而非 `$D/dotnet`；跨 major（.NET 6/8 编译的）加 `--roll-forward Major` |
+| 进程在但没窗口 | 没有 X；或 `source env.sh` 之后 DISPLAY 被脚本里的 `unset DISPLAY` 清掉 |
+
+外部程序集的产物与证据在 [`50-verify/external/`](../50-verify/external/)，验证器是
+[`verify-win-built.mjs`](../50-verify/external/verify-win-built.mjs)。
 
 ## 4. 怎么验
 
