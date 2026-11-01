@@ -400,3 +400,44 @@ int GetROP2(void *hdc)
     (void)hdc;
     return g_last_rop2;
 }
+
+// ── 【K-317】`MoveToEx` / `LineTo` ───────────────────────────────────────────
+//   WinForms 画边框/分隔线时会 `MoveToEx` 设起点、再 `LineTo` 画到终点。
+//   本仓已有 `wpf_draw_line(hdc, x1,y1, x2,y2, color)`（`win32_gdi_dc.c:292`，落到 X11 `XDrawLine`）
+//   ⇒ 这两个可以**真实现**，不用桩。
+//
+//   画笔位置按调用记账（单线程 UI 场景足够；多线程绘制不在 WinForms 的常规路径上）。
+static int32_t g_pen_x = 0, g_pen_y = 0;
+
+int MoveToEx(void *hdc, int32_t x, int32_t y, void *old)
+{
+    (void)hdc;
+    if (old) {                                  // POINT { LONG x; LONG y; }
+        int32_t *p = (int32_t *)old;
+        p[0] = g_pen_x;
+        p[1] = g_pen_y;
+    }
+    g_pen_x = x;
+    g_pen_y = y;
+    return 1;
+}
+
+int LineTo(void *hdc, int32_t x, int32_t y)
+{
+    // 画笔颜色：本仓暂无"DC 当前画笔"的查询接口 ⇒ 用黑色（WinForms 默认边框色）。
+    // ⚠️ 这是**已知的简化**：如果将来需要按 `SelectObject(HPEN)` 的真颜色画，
+    //   应给 `wpf_hdc` 加 `pen_color` 字段并在 `SelectObject` 时更新。
+    wpf_draw_line((HDC)hdc, g_pen_x, g_pen_y, x, y, 0x000000u);
+    g_pen_x = x;
+    g_pen_y = y;
+    return 1;
+}
+
+// `SetPixelV(HDC, x, y, COLORREF) -> BOOL`：单点绘制（1x1 的 FillRect 即可）
+int SetPixelV(void *hdc, int32_t x, int32_t y, uint32_t color)
+{
+    WPF_RECT rc;
+    rc.left = x; rc.top = y; rc.right = x + 1; rc.bottom = y + 1;
+    wpf_draw_fill_rect((HDC)hdc, &rc, color & 0x00FFFFFFu);
+    return 1;
+}
