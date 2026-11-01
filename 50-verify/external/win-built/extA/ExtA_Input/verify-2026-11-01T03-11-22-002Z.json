@@ -1,0 +1,30 @@
+{
+ "name": "extA/ExtA_Input",
+ "dll": "50-verify/external/win-built/extA/ExtA_Input/ExtA_Input.dll",
+ "display": ":136",
+ "windowFound": true,
+ "window": {
+  "id": "0x400005",
+  "title": "ExtA Input [EXT-12]"
+ },
+ "shot": "50-verify/external/win-built/extA/ExtA_Input/shot-2026-11-01T03-11-22-002Z.png",
+ "shotBytes": 12299,
+ "uiaNodeCount": 6,
+ "uiaSample": [
+  "frame:ExtA Input [EXT-12]",
+  "entry:field-a",
+  "entry:field-b",
+  "push button:go-btn",
+  "label:focus=none",
+  "label:typed="
+ ],
+ "exited": null,
+ "logTail": [
+  "[A11Y-DUMP] 开始 03:11:29.608",
+  "[A11Y-DUMP] 结束 耗时=0ms",
+  "[A11Y-REPEAT] dumped",
+  "[A11Y-DUMP] 开始 03:11:30.010",
+  "[A11Y-DUMP] 结束 耗时=1ms",
+  "[A11Y-REPEAT] dumped"
+ ]
+}
