@@ -3,8 +3,8 @@
 # 列：lib	symbol	status	owner	since[	note]（note 为可选列；为空时省略，行尾不留制表符）
 # status 判定：impl=实现侧有该符号；stub=函数体仅常量返回；gap=声明有实现无（note 写替代路径）
 # lib 列：若实现将落在哪个自产 .so（概设 §2.4）；status=gap 表示当前无实现，不是没登记
-# 规模：1285 行（impl 978 / stub 103 / gap 204）
-# 输入：上游 1534 条 DllImport 声明（另有 0 条属性块后无 extern 声明被跳过）、native-shim 880 个导出、milcore 109 个导出
+# 规模：1285 行（impl 984 / stub 103 / gap 198）
+# 输入：上游 1534 条 DllImport 声明（另有 0 条属性块后无 extern 声明被跳过）、native-shim 886 个导出、milcore 109 个导出
 # 排除：wpf_*（shim 内部件）、WpfLinuxWin32_*（桥件，非 Win32 契约入口）
 libwpfgfx_linux.so	GetNextPerfElementId	impl	MOD-25	10.0.11
 libwpfgfx_linux.so	IWICColorContext_GetExifColorSpace_Proxy	impl	MOD-25	10.0.11
@@ -319,7 +319,7 @@ libwpfwin32.so	CreateFontIndirect	impl	MOD-02	10.0.11	shim 额外导出（上游
 libwpfwin32.so	CreateFontIndirectA	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
 libwpfwin32.so	CreateFontIndirectW	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
 libwpfwin32.so	CreateFontW	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
-libwpfwin32.so	CreateICW	gap	MOD-13	10.0.11	无实现（gdi32）
+libwpfwin32.so	CreateICW	impl	MOD-13	10.0.11
 libwpfwin32.so	CreateIcon	impl	MOD-11	10.0.11
 libwpfwin32.so	CreateIconIndirect	impl	MOD-11	10.0.11
 libwpfwin32.so	CreateInstalledObjectsInfo	impl	MOD-16	10.0.11
@@ -429,7 +429,7 @@ libwpfwin32.so	DrawTextW	impl	MOD-02	10.0.11	shim 额外导出（上游未声明
 libwpfwin32.so	DrawThemeBackground	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
 libwpfwin32.so	DrawThemeTextEx	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
 libwpfwin32.so	DuplicateHandle	impl	MOD-15	10.0.11
-libwpfwin32.so	DwmDefWindowProc	gap	MOD-11	10.0.11	无实现（dwmapi）
+libwpfwin32.so	DwmDefWindowProc	impl	MOD-11	10.0.11
 libwpfwin32.so	DwmEnableBlurBehindWindow	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
 libwpfwin32.so	DwmExtendFrameIntoClientArea	impl	MOD-11	10.0.11
 libwpfwin32.so	DwmGetColorizationColor	gap	MOD-11	10.0.11	无实现（dwmapi）
@@ -708,7 +708,7 @@ libwpfwin32.so	GetProcAddress	impl	MOD-15	10.0.11
 libwpfwin32.so	GetProcAddressA	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
 libwpfwin32.so	GetProcAddressNoThrow	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
 libwpfwin32.so	GetProcAddressW	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
-libwpfwin32.so	GetProcessDpiAwareness	gap	MOD-13	10.0.11	无实现（shcore）
+libwpfwin32.so	GetProcessDpiAwareness	impl	MOD-13	10.0.11
 libwpfwin32.so	GetProcessHandleFromHwnd	gap	MOD-63	10.0.11	无实现（oleacc）
 libwpfwin32.so	GetProcessImageFileName	gap	MOD-15	10.0.11	无实现（psapi）
 libwpfwin32.so	GetProcessWindowStation	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
@@ -971,8 +971,8 @@ libwpfwin32.so	PeekMessage	impl	MOD-11	10.0.11
 libwpfwin32.so	PeekMessageA	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
 libwpfwin32.so	PeekMessageW	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
 libwpfwin32.so	PhysicalToLogicalPoint	impl	MOD-11	10.0.11
-libwpfwin32.so	PlaySound	gap	MOD-83	10.0.11	无实现（winmm）
-libwpfwin32.so	PlaySoundW	gap	MOD-83	10.0.11	无实现（winmm）
+libwpfwin32.so	PlaySound	impl	MOD-83	10.0.11
+libwpfwin32.so	PlaySoundW	impl	MOD-83	10.0.11
 libwpfwin32.so	PostMessage	impl	MOD-11	10.0.11
 libwpfwin32.so	PostMessageA	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
 libwpfwin32.so	PostMessageW	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
@@ -986,7 +986,7 @@ libwpfwin32.so	ProcessBufferedPacketsInteractionContext	gap	MOD-84	10.0.11	Windo
 libwpfwin32.so	ProcessIdToSessionId	impl	MOD-15	10.0.11
 libwpfwin32.so	ProcessUnhandledException	gap	MOD-51	10.0.11	ClickOnce/XBAP 宿主件；不在 V1 范围
 libwpfwin32.so	PropVariantClear	impl	MOD-63	10.0.11
-libwpfwin32.so	PtInRegion	gap	MOD-13	10.0.11	无实现（gdi32）
+libwpfwin32.so	PtInRegion	impl	MOD-13	10.0.11
 libwpfwin32.so	QueryPerformanceCounter	impl	MOD-15	10.0.11
 libwpfwin32.so	QueryPerformanceFrequency	impl	MOD-15	10.0.11
 libwpfwin32.so	RaiseResetEvent	impl	MOD-84	10.0.11
