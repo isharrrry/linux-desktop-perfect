@@ -62,6 +62,62 @@ WPF 源码 → 自产 Ref pack 编译 → 自产 Runtime pack 加载
 
 ---
 
+## 怎么用
+
+本仓交付的是**一份 Linux 版 `Microsoft.WindowsDesktop.App` 运行时**。用法分两步：先把它装到用户目录，再用它跑程序。
+
+### ① 装（一次性）
+
+```bash
+node 40-build/appliers/apply.mjs                 # 派生树（上游快照 → 可编译的树）
+make -C 40-build/native-shim                     # 原生 shim（另四个原生件同理）
+node 40-build/wpf-port/build-port.mjs --map      # 自产 WPF 程序集
+node 40-build/pack/build-pack.mjs                # Runtime pack
+node 40-build/pack/install-runtime.mjs           # 装到 ~/.local/share/ldp/dotnet
+node 40-build/milcore-bridge/build-bridge.mjs --install ~/.local/share/ldp/dotnet   # 必须最后
+sh 40-build/install-shims.sh                     # 三个 .so + Win32 别名链接
+```
+
+顺序不能换（`install-runtime` 会删框架目录，K-003）。**仓库里不含任何二进制产物与上游源码快照**，
+首次构建前要先补齐 4 样外部输入；每一步的输入、输出、有无替代方式见
+[`60-deliver/外部程序集运行手册.md`](60-deliver/外部程序集运行手册.md) §2–§3。
+
+### ② 跑（两条路）
+
+| 你手上是什么 | 怎么做 | 对应需求 |
+|---|---|---|
+| **应用源码工程** | 只把 `TargetFramework` 改成 `net10.0`，`dotnet build -c Release`，再用下面的环境启动 | REQ-FN-001 / REQ-FN-002（ACC-001 / ACC-002）|
+| **Windows 上编好的程序集** | 拷 `.dll` + `.deps.json` + `.runtimeconfig.json` 三个文件，**不做任何重编** | 实测扩展，见手册 §4 |
+
+两条路共用同一套运行环境：
+
+```bash
+D=~/.local/share/ldp/dotnet
+env -i DISPLAY=:91 HOME=$HOME DOTNET_ReadyToRun=0 $D/dotnet /path/to/App.dll
+```
+
+`DOTNET_ReadyToRun=0` 是唯一省不掉的环境变量（D-005）；环境变量逐项实测与 WPF/WinForms 差异见手册 §5–§6。
+WinForms 另需框架目录里的 Win32 同名软链（K-014），由 `install-shims.sh` 建。
+
+### ③ 需求与用法的对应
+
+| 需求 | 用法上意味着什么 | 判据 |
+|---|---|---|
+| REQ-FN-001 应用源码在 Linux 重编 | 改 TFM → build → 启动 | ACC-001 |
+| REQ-FN-002 不改工程文件解析到自产 pack | 保留 `<UseWPF>true</UseWPF>`，只改 `TargetFramework` | ACC-002 |
+| ADR-001 不做二进制兼容 | 不承诺 Windows 宿主仿真与 PE 加载；但**托管程序集是 IL**，实测可免编运行（手册 §6）| — |
+
+### ④ 验
+
+```bash
+node 50-verify/index/gen-index.mjs     # 汇总全部判据读数
+```
+
+30 条验收准则各有唯一入口，见 [`50-verify/index/索引表.md`](50-verify/index/索引表.md)；读数落 `50-verify/读数/`。
+装/改环境的完整流程与回滚见 [`60-deliver/README.md`](60-deliver/README.md) §2、§6。
+
+---
+
 ## 仓库结构
 
 ```text
