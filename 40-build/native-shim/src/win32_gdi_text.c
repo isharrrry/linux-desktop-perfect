@@ -441,3 +441,37 @@ int SetPixelV(void *hdc, int32_t x, int32_t y, uint32_t color)
     wpf_draw_fill_rect((HDC)hdc, &rc, color & 0x00FFFFFFu);
     return 1;
 }
+
+// ── 【K-321】`DrawFrameControl` ──────────────────────────────────────────────
+//   `BOOL DrawFrameControl(HDC hdc, RECT *lprc, UINT uType, UINT uState)`
+//   WinForms 的 `ControlPaint.DrawBorder3D` / 按钮边框会调它（USER32 导出）。
+//
+//   本仓的实现取舍：**画 2px 的凹陷/凸起边框**（用 `wpf_draw_fill_rect` 拼 4 条边）。
+//   `uType` 的常见值（DFC_BUTTON=4 / DFC_CAPTION=1 / DFC_MENU=2 / DFC_SCROLL=3）
+//   在本仓没有主题引擎差异，统一按"浅灰底 + 深灰边"处理 —— 与 `GetSysColor` 的调色板一致。
+//   不猜 `uState` 的位组合，只区分"按下"（`DFCS_PUSHED=0x0200`）与"正常"两档颜色。
+int DrawFrameControl(void *hdc, const WPF_RECT *lprc, unsigned int uType, unsigned int uState)
+{
+    (void)uType;
+    if (!lprc) return 0;
+    int pushed = (uState & 0x0200u) != 0;      // DFCS_PUSHED
+    uint32_t dark  = pushed ? 0xFFFFFFu : 0xA0A0A0u;
+    uint32_t light = pushed ? 0xA0A0A0u : 0xFFFFFFu;
+
+    WPF_RECT r = *lprc;
+    WPF_RECT top, bot, lft, rgt;
+    // 上边（2px）
+    top.left = r.left; top.top = r.top; top.right = r.right; top.bottom = r.top + 2;
+    // 左边（2px）
+    lft.left = r.left; lft.top = r.top; lft.right = r.left + 2; lft.bottom = r.bottom;
+    // 下边（2px）
+    bot.left = r.left; bot.top = r.bottom - 2; bot.right = r.right; bot.bottom = r.bottom;
+    // 右边（2px）
+    rgt.left = r.right - 2; rgt.top = r.top; rgt.right = r.right; rgt.bottom = r.bottom;
+
+    wpf_draw_fill_rect((HDC)hdc, &top, dark);
+    wpf_draw_fill_rect((HDC)hdc, &lft, dark);
+    wpf_draw_fill_rect((HDC)hdc, &bot, light);
+    wpf_draw_fill_rect((HDC)hdc, &rgt, light);
+    return 1;
+}
