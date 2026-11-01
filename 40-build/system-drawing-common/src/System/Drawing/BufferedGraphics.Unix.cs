@@ -107,6 +107,21 @@ namespace System.Drawing
         private static extern int NativeDrawImage(IntPtr hdc, int x, int y, int w, int h,
                                                   IntPtr bgra, int stride);
 
+        // 判断位图是否有"实质内容"：抽样扫一遍，只要有一个像素的 A 通道非 0 就算有。
+        //   为什么抽样：640x460 = 29 万像素，全扫不慢但没必要；每 7x7 取一个点已经足够判断
+        //   "这是不是一张空图"（`BufferedGraphics` 的成员位图如果没被画过就是全 0）。
+        private static unsafe bool BitmapHasContent(BitmapData data, int w, int h)
+        {
+            byte* p0 = (byte *)data.Scan0;
+            for (int y = 0; y < h; y += 7) {
+                byte *row = p0 + y * data.Stride;
+                for (int x = 0; x < w; x += 7) {
+                    if (row[x * 4 + 3] != 0) return true;    // A != 0
+                }
+            }
+            return false;
+        }
+
         private void RenderInternal(HandleRef refTargetDC)
         {
             if (refTargetDC.Handle == IntPtr.Zero || membmp == null)
@@ -122,6 +137,17 @@ namespace System.Drawing
                 data = membmp.LockBits(new Rectangle(0, 0, w, h),
                                        ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb);
                 if (data == null || data.Scan0 == IntPtr.Zero) throw new NotImplementedException();
+                // 【K-358】**先判断 `membmp` 是否有内容** ——
+                //   实测（K-355）：不判断就直接贴，会把 `DEFPAINT` 兜底画的控件背景+标题**覆盖成空白**
+                //   （截图从原版的 7046 字节掉到 921 字节）。那是"擦掉别人画的东西"。
+                //   ⇒ 只在 `membmp` **确实有非零像素**时才贴；全零（全透明/未初始化）就跳过，
+                //     让 `DEFPAINT` 的兜底内容保留。
+                if (!BitmapHasContent(data, w, h)) {
+                    if (Environment.GetEnvironmentVariable("LDP_BG_TRACE") == "1") {
+                        try { Console.Error.WriteLine("[BG] membmp 全零，跳过贴图（保留 DEFPAINT 兜底）"); } catch { }
+                    }
+                    return;
+                }
                 NativeDrawImage(refTargetDC.Handle, 0, 0, w, h, data.Scan0, data.Stride);
             } finally {
                 if (data != null) membmp.UnlockBits(data);
