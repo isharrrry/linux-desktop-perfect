@@ -356,3 +356,25 @@ void *GetSysColorBrush(int nIndex)
     }
     return cache[nIndex];
 }
+
+// ── 【K-315】`CreatePen` / `CreatePenIndirect` / `CreateSolidBrush` 补缺 ───────
+//   WinForms 画控件边框时会 `CreatePen` 再 `SelectObject` 到 DC。
+//   与 `GetSysColorBrush` 同构：建一个 GDI 对象并登记到表里，各绘制函数按表取属性。
+//   `kind`：1=brush、2=pen（见 `win32_gdi_dc.c` 的 `wpf_gdi_obj`）。
+void *CreatePen(int iStyle, int cWidth, uint32_t color)
+{
+    return wpf_gdi_alloc(/*kind=pen*/2, color, cWidth > 0 ? cWidth : 1, iStyle);
+}
+
+void *CreatePenIndirect(const void *lplgpn)
+{
+    // LOGPEN 结构：lopnStyle(4) + POINT lopnWidth(8) + COLORREF lopnColor(4)
+    const unsigned char *p = (const unsigned char *)lplgpn;
+    if (!p) return NULL;
+    int style = (int)*(const int32_t *)p;
+    int width = (int)*(const int32_t *)(p + 8);
+    uint32_t color = *(const uint32_t *)(p + 16);
+    return CreatePen(style, width, color);
+}
+
+// 注意：`CreateSolidBrush` 已在 `win32_misc.c` 实现，**不要重复定义**（K-316 的链接错误就是它）。
