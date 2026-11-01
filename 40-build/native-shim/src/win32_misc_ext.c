@@ -34,7 +34,16 @@ HDC CreateICW(const uint16_t *driver, const uint16_t *device, const uint16_t *po
 int32_t GetProcessDpiAwareness(void *hprocess, int32_t *value)
 {
     (void)hprocess;
-    if (value) *value = 0;   // PROCESS_DPI_UNAWARE
+    // 【清算 / K-242】**返回 SYSTEM_AWARE(1)，不是 UNAWARE(0)。**
+    //   取值：0 = UNAWARE, 1 = SYSTEM_AWARE, 2 = PER_MONITOR_AWARE。
+    //   **这是一个真实的 bug 修复**：原来返回 0(UNAWARE)，含义是"应用不做 DPI 缩放、
+    //   由系统代劳"。而在 X11 上**没有任何东西会代劳**（不像 Windows 的 DWM 会拉伸）⇒
+    //   WPF 因此把 `Width=960`(DIP) 原样当像素传给 `CreateWindowEx` ⇒ 窗口 960 而非 1440
+    //   ⇒ ACC-011（DPI 缩放）永远差 1.5 倍（实测：期望 1440，得到 960）。
+    //   返回 **SYSTEM_AWARE** 是 X11 上的正确口径：**应用自己做缩放，系统（X server）不缩放。**
+    //   （不用 PER_MONITOR_AWARE(2)：X11 core protocol 没有 per-monitor DPI，那是 RS1 特性，
+    //     K-170/K-233 的判断在这一点上仍然成立。）
+    if (value) *value = 1;   // PROCESS_SYSTEM_DPI_AWARE
     return 0;                // S_OK
 }
 
