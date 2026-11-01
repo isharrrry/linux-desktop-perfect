@@ -54,6 +54,7 @@ BOOL CreateResetEvent(intptr_t *pHandle)
     if (pthread_cond_init(&e->cv, NULL) != 0) { pthread_mutex_destroy(&e->mtx); free(e); return 0; }
     if (!wpf_ev_register(e)) { pthread_cond_destroy(&e->cv); pthread_mutex_destroy(&e->mtx); free(e); return 0; }
     *pHandle = (intptr_t)e;
+    if (getenv("WPF_LINUX_KEY_DIAG")) { fprintf(stderr, "[PENIMC] CreateResetEvent -> %p\n", (void*)e); fflush(stderr); }
     return 1;   // TRUE
 }
 
@@ -65,6 +66,7 @@ BOOL RaiseResetEvent(intptr_t handle)
     e->signaled = 1;
     pthread_cond_signal(&e->cv);
     pthread_mutex_unlock(&e->mtx);
+    if (getenv("WPF_LINUX_KEY_DIAG")) { fprintf(stderr, "[PENIMC] RaiseResetEvent %p\n", (void*)e); fflush(stderr); }
     return 1;   // TRUE
 }
 
