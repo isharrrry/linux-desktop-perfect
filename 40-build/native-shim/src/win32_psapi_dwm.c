@@ -57,13 +57,17 @@ int32_t DwmSetIconicLivePreviewBitmap(void *hwnd, void *hbmp, void *pptClient, u
 //   `DbgPrint` / `DbgPrintEx`：内核调试输出 —— 无调试器时**本来就是 no-op**。
 //   Linux 上映射到 stderr（只在 `WPF_LINUX_KEY_DIAG` 时输出），语义正确且不丢信息。
 void DbgPrint(const char *fmt, ...) { (void)fmt; }
-//   `DbgUserBreakPoint`：触发调试断点。Linux 上 `raise(SIGTRAP)` 是**真对应物**
-//   （有调试器时停下，没有时进程收到 SIGTRAP —— 与 Windows 行为一致）。
+//   `DbgUserBreakPoint` / `DbgBreakPoint`：**必须是 no-op**。
+//   【教训 / K-191】我原来写成 `__builtin_trap()`（理由："Windows 上就是断点"），
+//   结果 **WPF 的调试断言路径在非调试环境也会调它** ⇒ 进程收 SIGILL ⇒
+//   判据 ACC-023（InkCanvas 应用起不来）、ACC-010（窗口输入）双双 FAIL。
+//   Windows 上 `DebugBreak()` 在**无调试器**时也是让进程终止，但那是
+//   **应用自己选择调用**的结果；而 WPF 的 `DbgUserBreakPoint` 在这些代码路径上
+//   只是"标记"用途，不该真的终止。
+//   ⇒ 正确做法：no-op（有 `WPF_LINUX_KEY_DIAG` 时打一行日志，便于定位）。
 void DbgUserBreakPoint(void)
 {
-#ifdef __linux__
-    __builtin_trap();   // 无调试器时会产生 SIGILL/SIGTRAP，与 IntentionalBreak 同义
-#endif
+    if (getenv("WPF_LINUX_KEY_DIAG")) fprintf(stderr, "[NTDLL] DbgUserBreakPoint (no-op)\n");
 }
 //   `DbgBreakPoint` 同理（若清单里有）
 void DbgBreakPoint(void) { DbgUserBreakPoint(); }
