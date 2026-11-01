@@ -3,7 +3,7 @@
 # 列：lib	symbol	status	owner	since[	note]（note 为可选列；为空时省略，行尾不留制表符）
 # status 判定：impl=实现侧有该符号；stub=函数体仅常量返回；gap=声明有实现无（note 写替代路径）
 # lib 列：若实现将落在哪个自产 .so（概设 §2.4）；status=gap 表示当前无实现，不是没登记
-# 规模：1291 行（impl 1052 / stub 208 / gap 31）
+# 规模：1291 行（impl 1064 / stub 196 / gap 31）
 # 输入：上游 1534 条 DllImport 声明（另有 0 条属性块后无 extern 声明被跳过）、native-shim 1052 个导出、milcore 109 个导出
 # 排除：wpf_*（shim 内部件）、WpfLinuxWin32_*（桥件，非 Win32 契约入口）
 libSystem.IO.Compression.Native.so	CompressionNative_Crc32	impl	MOD-52	10.0.11
@@ -851,7 +851,7 @@ libwpfwin32.so	IsWindow	impl	MOD-11	10.0.11
 libwpfwin32.so	IsWindowEnabled	impl	MOD-11	10.0.11
 libwpfwin32.so	IsWindowUnicode	impl	MOD-11	10.0.11
 libwpfwin32.so	IsWindowVisible	impl	MOD-11	10.0.11
-libwpfwin32.so	IsWindows10OrGreater	stub	MOD-16	10.0.11
+libwpfwin32.so	IsWindows10OrGreater	impl	MOD-16	10.0.11
 libwpfwin32.so	IsWindows10RS1OrGreater	stub	MOD-16	10.0.11
 libwpfwin32.so	IsWindows10RS2OrGreater	stub	MOD-16	10.0.11
 libwpfwin32.so	IsWindows10RS3OrGreater	stub	MOD-16	10.0.11
@@ -859,18 +859,18 @@ libwpfwin32.so	IsWindows10RS4OrGreater	stub	MOD-16	10.0.11
 libwpfwin32.so	IsWindows10RS5OrGreater	stub	MOD-16	10.0.11
 libwpfwin32.so	IsWindows10TH1OrGreater	stub	MOD-16	10.0.11
 libwpfwin32.so	IsWindows10TH2OrGreater	stub	MOD-16	10.0.11
-libwpfwin32.so	IsWindows7OrGreater	stub	MOD-16	10.0.11
-libwpfwin32.so	IsWindows7SP1OrGreater	stub	MOD-16	10.0.11
-libwpfwin32.so	IsWindows8OrGreater	stub	MOD-16	10.0.11
-libwpfwin32.so	IsWindows8Point1OrGreater	stub	MOD-16	10.0.11
+libwpfwin32.so	IsWindows7OrGreater	impl	MOD-16	10.0.11
+libwpfwin32.so	IsWindows7SP1OrGreater	impl	MOD-16	10.0.11
+libwpfwin32.so	IsWindows8OrGreater	impl	MOD-16	10.0.11
+libwpfwin32.so	IsWindows8Point1OrGreater	impl	MOD-16	10.0.11
 libwpfwin32.so	IsWindowsServer	stub	MOD-16	10.0.11
-libwpfwin32.so	IsWindowsVistaOrGreater	stub	MOD-16	10.0.11
-libwpfwin32.so	IsWindowsVistaSP1OrGreater	stub	MOD-16	10.0.11
-libwpfwin32.so	IsWindowsVistaSP2OrGreater	stub	MOD-16	10.0.11
-libwpfwin32.so	IsWindowsXPOrGreater	stub	MOD-16	10.0.11
-libwpfwin32.so	IsWindowsXPSP1OrGreater	stub	MOD-16	10.0.11
-libwpfwin32.so	IsWindowsXPSP2OrGreater	stub	MOD-16	10.0.11
-libwpfwin32.so	IsWindowsXPSP3OrGreater	stub	MOD-16	10.0.11
+libwpfwin32.so	IsWindowsVistaOrGreater	impl	MOD-16	10.0.11
+libwpfwin32.so	IsWindowsVistaSP1OrGreater	impl	MOD-16	10.0.11
+libwpfwin32.so	IsWindowsVistaSP2OrGreater	impl	MOD-16	10.0.11
+libwpfwin32.so	IsWindowsXPOrGreater	impl	MOD-16	10.0.11
+libwpfwin32.so	IsWindowsXPSP1OrGreater	impl	MOD-16	10.0.11
+libwpfwin32.so	IsWindowsXPSP2OrGreater	impl	MOD-16	10.0.11
+libwpfwin32.so	IsWindowsXPSP3OrGreater	impl	MOD-16	10.0.11
 libwpfwin32.so	IsWow64Process	impl	MOD-15	10.0.11
 libwpfwin32.so	IsfCompressPacketData	impl	MOD-84	10.0.11
 libwpfwin32.so	IsfCompressPropertyData	impl	MOD-84	10.0.11

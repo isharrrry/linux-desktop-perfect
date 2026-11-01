@@ -332,6 +332,10 @@ function parseShimExports() {
     'WPF_DRM_STUB': 'return (int32_t)0x80004001;',
     // 【清算 / K-198】B 类安全桩：`WPF_UNIMPL(name)` → `intptr_t name(void) { return 0; }`
     'WPF_UNIMPL': 'return 0;',
+    // 【K-245】`WPF_OSVERSION_TRUE(name)` → `int name(void) { return 1; }`
+    //   K-233 加了这批（Vista..Win10 共 13 个返回 TRUE），但没同步进本表
+    //   ⇒ 重新生成 exports.txt 后它们从 impl/stub 掉回 gap（12 个）。
+    'WPF_OSVERSION_TRUE': 'return 1;',
   };
   for (const file of walk(SHIM_SRC, '.c')) {
     const text = stripComments(read(file));
