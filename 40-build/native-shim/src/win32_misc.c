@@ -240,7 +240,17 @@ BOOL BeginPaint(HWND h, WPF_PAINTSTRUCT *ps)
             wpf_window *pw0 = wpf_window_find(h);
             const char *cname = NULL;
             if (pw0) { wpf_class *pc0 = wpf_class_find_atom(pw0->class_atom); if (pc0) cname = pc0->name; }
-            if (!cname || !strstr(cname, "WindowsForms")) return 1;
+            // 【死锁修复 / K-221】**这里原来直接 `return 1`，但此时正持有 `g_wpf.lock`**
+            //   （`BeginPaint` 的锁从上面 `wpf_lock()` 一直到函数末尾的 `pthread_mutex_unlock`）。
+            //   `WpfMediaInk` 不是 WinForms 应用 ⇒ `cname` 不含 "WindowsForms" ⇒ 走这个分支
+            //   ⇒ **带着锁返回**。而主线程此时正在 `RegisterClassExW` 里等同一把锁
+            //   ⇒ 跨线程死锁 ⇒ `ShowWindow` 永远到不了 ⇒ 窗口从未 map
+            //   ⇒ `wmctrl -l` 看不到 ⇒ ACC-022/ACC-023 FAIL（K-212～K-220 十四轮追踪的终点）。
+            //   **修法：返回前必须释放锁。**（可重入锁只解决同线程重入，救不了"带锁返回"。）
+            if (!cname || !strstr(cname, "WindowsForms")) {
+                pthread_mutex_unlock(&g_wpf.lock);
+                return 1;
+            }
         }
         if (ps->hdc != WPF_FAKE_DC) {
             wpf_window *pw2 = wpf_window_find(h);
