@@ -130,12 +130,43 @@ int ExtTextOutA(void *hdc, int32_t x, int32_t y, uint32_t opts, const void *rect
 
 int DrawTextW(void *hdc, const uint16_t *s, int32_t len, void *rect, uint32_t fmt)
 {
-    (void)fmt;
-    // 【ACC-028 / K-144】DrawText 简化成"在 rect 内垂直居中画一行"（够 Button/Label 用）
+    // 【K-356】从「只做垂直居中画一行」升级为**支持对齐标志**的单行绘制。
+    //   原实现（K-144）忽略全部 `fmt`，一律「rect 内垂直居中 + 左对齐 + 2px 内边距」
+    //   —— 够 Button/Label 用，但：
+    //     · `DT_CENTER`/`DT_RIGHT` 的文本会在错误位置（比如 CheckBox 的居中标题、标题栏）
+    //     · `DT_TOP`/`DT_BOTTOM` 同理
+    //   现在按 `fmt` 分派。**默认行为与旧实现完全一致**（都没设时仍垂直居中 + 左对齐）。
+    //
+    //   仍未做（诚实登记）：`DT_WORDBREAK` 多行自动换行、`DT_END_ELLIPSIS` 省略号、
+    //   `DT_CALCRECT` 只量不画 —— 这些需要真实的字体度量，本仓的 `WPF_FAKE_FONT_HEIGHT`
+    //   是固定 16（K-144 的简化），做不了。
     if (!rect) return 1;
     const WPF_RECT *r = (const WPF_RECT *)rect;
-    int32_t ty = r->top + (r->bottom - r->top + WPF_FAKE_FONT_HEIGHT) / 2;
-    TextOutW(hdc, r->left + 2, ty, s, len);
+    const uint32_t DT_LEFT = 0x0000, DT_CENTER = 0x0001, DT_RIGHT = 0x0002,
+                   DT_VCENTER = 0x0004, DT_BOTTOM = 0x0008, DT_TOP = 0x0000;
+    int w = r->right - r->left, h = r->bottom - r->top;
+    if (w <= 0 || h <= 0) return 1;
+
+    // 水平位置
+    int32_t tx = r->left + 2;                       // 默认左对齐 + 2px 内边距（与旧实现一致）
+    if (fmt & (DT_CENTER | DT_RIGHT)) {
+        int32_t tw = 0;
+        uint32_t sz[2] = {0, 0};                    // SIZE {cx, cy}
+        extern int GetTextExtentPoint32W(void *, const uint16_t *, int32_t, void *);
+        GetTextExtentPoint32W(hdc, s, len, sz);
+        tw = (int32_t)sz[0];
+        if (fmt & DT_CENTER) tx = r->left + (w - tw) / 2;
+        else                 tx = r->right - tw - 2;
+        if (tx < r->left) tx = r->left;             // 防越界
+    }
+    // 垂直位置
+    int32_t ty = r->top + (h + WPF_FAKE_FONT_HEIGHT) / 2;   // 默认垂直居中（与旧实现一致）
+    if (fmt & DT_VCENTER)      ty = r->top + (h + WPF_FAKE_FONT_HEIGHT) / 2;
+    else if (fmt & DT_BOTTOM)  ty = r->bottom - 2;
+    else if (fmt & DT_TOP)     ty = r->top + WPF_FAKE_FONT_HEIGHT;
+    // 注意：旧实现用的是 `(h + FONT_HEIGHT) / 2`，这里保持**完全一致**（不 +1、不 -1）
+
+    TextOutW(hdc, tx, ty, s, len);
     return 1;
 }
 int DrawTextA(void *hdc, const char *s, int32_t len, void *rect, uint32_t fmt) { (void)hdc; (void)s; (void)len; (void)rect; (void)fmt; return 1; }
