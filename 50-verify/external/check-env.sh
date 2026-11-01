@@ -12,8 +12,8 @@ check() {
 }
 check "WindowsBase.dll"             1113088 1109504
 check "System.Drawing.Common.dll"   392192  393728
-check "DirectWrite.Linux.Provider.dll" ""  103424
+check "DirectWrite.Linux.Provider.dll" 103936 103424
 check "SkiaSharp.dll"               437808 ""
 check "System.Private.Windows.GdiPlus.dll" 427816 ""
 check "libwpfwic.so"                ""      81512
-check "libwpfwin32.so"              ""      ""
+check "libwpfwin32.so"              ""      769008
