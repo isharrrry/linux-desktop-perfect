@@ -445,7 +445,11 @@ UINT GetDpiForWindow(HWND h)
 }
 UINT GetDpiForSystem(void)
 {
-    if (getenv("WPF_LINUX_KEY_DIAG")) { fprintf(stderr, "[DPIQ] GetDpiForSystem\n"); fflush(stderr); }
+    if (getenv("WPF_LINUX_KEY_DIAG")) {
+        wpf_screen_metrics mm; wpf_x11_screen_metrics(&mm);
+        fprintf(stderr, "[DPIQ] GetDpiForSystem -> %d (legacy=%d)\n", (int)mm.dpi_x, wpf_legacy_dpi());
+        fflush(stderr);
+    }
     if (wpf_legacy_dpi()) return 96;
     wpf_screen_metrics m; wpf_x11_screen_metrics(&m); return (UINT)m.dpi_x;
 }
