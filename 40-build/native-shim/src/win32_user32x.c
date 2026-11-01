@@ -354,7 +354,14 @@ BOOL PostThreadMessage(DWORD threadId, UINT msg, WPARAM wp, LPARAM lp)
 
 // [降级] 本仓没有"正在跨线程 SendMessage"的标记位（`SendMessage` 是直接调用）。
 //   ⇒ 语义上等价于 FALSE（不在发送中）。若将来加了跨线程排队，这里要改。
-BOOL InSendMessage(void) { return 0; }
+// 【清算 / K-170】**真实现**（原来是 `return 0`）。
+//   本 shim 的 `SendMessageW` 是**同步直调**（`win32_msg.c`），所以"是否正在处理 SendMessage"
+//   就等于"嵌套计数是否 > 0"。计数由 `wpf_in_send_message_depth()` 提供。
+BOOL InSendMessage(void)
+{
+    extern int wpf_in_send_message_depth(void);
+    return wpf_in_send_message_depth() > 0 ? 1 : 0;
+}
 
 // ══════════════════════════════════════════════════════════════════════════
 //  4) 矩形运算 —— 纯计算，真实现

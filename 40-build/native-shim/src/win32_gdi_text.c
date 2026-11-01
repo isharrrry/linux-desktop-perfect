@@ -293,7 +293,16 @@ void GetStartupInfoA(void *si) { GetStartupInfoW((WPF_STARTUPINFOW *)si); }
 //   实测：不补它，`Application.Run` 抛 `EntryPointNotFoundException: OleInitialize`，
 //   被 `ThreadException` 接住后弹出「Unhandled exception…」对话框（标题里带这条消息，见 K-025）。
 int32_t OleInitialize(void *reserved) { (void)reserved; return 0; }   // S_OK
-int32_t OleUninitialize(void) { return 0; }
+// 【清算 / K-170】**真实现**（原来是 `return 0` 空壳）。
+//   `OleUninitialize` 的语义就是释放 OLE/COM 单元 —— 本 shim 的 COM 单元由
+//   `CoInitialize`/`CoInitializeEx`（`win32_oem.c`，返回 S_OK）与 `CoUninitialize` 维护
+//   （当前它们是空实现，因为没有真正的 COM 单元）。这里如实转发，不再假装"做了事"。
+int32_t OleUninitialize(void)
+{
+    extern void CoUninitialize(void);
+    CoUninitialize();
+    return 0;   /* S_OK */
+}
 
 // ── `GetHdc` / `ReleaseHdc`（GDI32 的"设备上下文内容"转换）─────────────────────
 //   WinForms 的 `IHdcContext.GetHdc()`（CsWin32）走的是 **GDI32 的 `GetHdc`**，

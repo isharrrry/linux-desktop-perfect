@@ -426,6 +426,10 @@ BOOL IsProcessDPIAware(void) { return 1; }
 BOOL EnableNonClientDpiScaling(HWND h) { (void)h; return 1; }
 void *GetWindowDpiAwarenessContext(HWND h) { (void)h; return (void *)(uintptr_t)-4; }  // DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2 的近似
 void *SetThreadDpiAwarenessContext(void *ctx) { void *old = (void *)(uintptr_t)-4; (void)ctx; return old; }
+// 【清算 / K-170】**真实现**（原来是 `return 0`）。
+//   Win32 的取值：0 = DPI_HOSTING_BEHAVIOR_DEFAULT，1 = MIXED。
+//   本 shim 没有 DPI 缩放（`GetDpiForWindow` 恒 96），进程级宿主行为就是 **DEFAULT** ⇒ 返回 0 是**语义正确**的，
+//   但这里把口径写清楚，不再是"懒得实现就返回 0"。
 int GetThreadDpiHostingBehavior(void) { return 0; }
 BOOL AreDpiAwarenessContextsEqual(void *a, void *b) { return a == b; }
 
@@ -573,7 +577,23 @@ DWORD GetCurrentThreadId(void)
     wpf_thread *t = wpf_thread_self();
     return (DWORD)((uintptr_t)t & 0x7FFFFFFF);
 }
-BOOL IsDebuggerPresent(void) { return 0; }
+// 【清算 / K-170】**真实现**（原来是 `return 0`）。
+//   Linux 上等价信息在 `/proc/self/status` 的 `TracerPid` 字段：非 0 表示有进程在 ptrace 我们。
+BOOL IsDebuggerPresent(void)
+{
+    FILE *f = fopen("/proc/self/status", "r");
+    if (!f) return 0;
+    char line[256];
+    int traced = 0;
+    while (fgets(line, sizeof line, f)) {
+        if (strncmp(line, "TracerPid:", 10) == 0) {
+            traced = atoi(line + 10) != 0;
+            break;
+        }
+    }
+    fclose(f);
+    return traced ? 1 : 0;
+}
 BOOL CloseHandle(HANDLE h) { (void)h; return 1; }
 
 // [失败] 内核对象（事件/进程/文件映射）在 Linux 上没有同名可映射物，

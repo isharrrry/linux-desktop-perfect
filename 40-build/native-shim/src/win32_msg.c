@@ -1121,10 +1121,17 @@ void PostQuitMessage(int exitCode)
 // HwndSubclass 自我解绑、ManagedWndProcTracker 清理）都在同一线程上，
 // 语义等价。跨线程 SendMessage 未实现（登记为限制，不静默改变行为：
 // 目标确实收到了消息，只是执行线程不同）。
+// 【清算 / K-170】`SendMessage` 嵌套计数 —— 供 `InSendMessage()` 使用（原来它恒返回 FALSE）。
+static int g_in_send_message = 0;
+int wpf_in_send_message_depth(void) { return g_in_send_message; }
+
 LRESULT SendMessageW(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
 {
     wpf_global_init();
-    return wpf_dispatch_to_window(hwnd, msg, wp, lp);
+    ++g_in_send_message;
+    LRESULT r = wpf_dispatch_to_window(hwnd, msg, wp, lp);
+    --g_in_send_message;
+    return r;
 }
 LRESULT SendMessageA(HWND h, UINT m, WPARAM w, LPARAM l) { return SendMessageW(h, m, w, l); }
 LRESULT SendMessage(HWND h, UINT m, WPARAM w, LPARAM l) { return SendMessageW(h, m, w, l); }
