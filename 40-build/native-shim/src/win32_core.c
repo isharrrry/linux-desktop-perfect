@@ -138,6 +138,26 @@ static void wpf_win_diag_selftest(void)
 void wpf_lock(void)
 {
     wpf_global_init();
+    // 【诊断 / K-220】**等锁超过 500ms 就打印调用点** —— 死锁排查的最后一招。
+    //   背景：`WpfMediaInk` 卡在 `RegisterClassExW` 的 `wpf_lock()`，锁是可重入的 ⇒ 必是别的线程一直持有。
+    //   靠读代码已排除 4 个假设（K-216～K-219），必须让运行时自己说出"谁在等、等了多久"。
+    //   `__builtin_return_address(0)` 给出调用点地址，配 `addr2line -e libwpfwin32.so <addr>` 能定位到行。
+    //   只在 `WPF_LINUX_KEY_DIAG` 下启用，避免正常路径多一次时钟调用。
+    if (getenv("WPF_LINUX_KEY_DIAG")) {
+        struct timespec ts;
+        clock_gettime(CLOCK_REALTIME, &ts);
+        ts.tv_nsec += 500000000L;
+        if (ts.tv_nsec >= 1000000000L) { ts.tv_sec += 1; ts.tv_nsec -= 1000000000L; }
+        int rc = pthread_mutex_timedlock(&g_wpf.lock, &ts);
+        if (rc == ETIMEDOUT) {
+            fprintf(stderr, "[LOCK] 等锁超时 500ms！调用点=%p\n", __builtin_return_address(0));
+            fflush(stderr);
+            pthread_mutex_lock(&g_wpf.lock);   /* 继续等，不改变语义 */
+        } else if (rc == EOWNERDEAD) {
+            pthread_mutex_consistent(&g_wpf.lock);
+        }
+        return;
+    }
     pthread_mutex_lock(&g_wpf.lock);
 }
 
