@@ -1192,6 +1192,15 @@ LRESULT SendMessageW(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
             if (it && it->count < LDP_MAX_ITEMS) {
                 ldp_utf16_to_utf8((const uint16_t *)lp, it->items[it->count], LDP_MAX_ITEMLEN);
                 if (getenv("LDP_WIC_TRACE")) { fprintf(stderr, "[ITEMS] ADD %p #%d '%s'\n", (void *)hwnd, it->count, it->items[it->count]); fflush(stderr); }
+                // 【K-454】加完项后**强制重绘** —— 否则 `WM_PAINT` 可能已经在添加项之前发生过了
+                //   （K-453 的实测：逐项绘制代码没生效，因为窗口先绘制、后加项）。
+                //   `InvalidateRect` 标记脏区，`UpdateWindow` 立即触发 `WM_PAINT`。
+                {
+                    extern int InvalidateRect(void *, const void *, int);
+                    extern int UpdateWindow(void *);
+                    InvalidateRect(hwnd, NULL, 1);
+                    UpdateWindow(hwnd);
+                }
                 return it->count++;
             }
             return -1;
