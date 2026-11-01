@@ -207,6 +207,14 @@ BOOL BeginPaint(HWND h, WPF_PAINTSTRUCT *ps)
     { wpf_hdc *d = wpf_hdc_get(h);
       ps->hdc = d ? (HDC)d : WPF_FAKE_DC; }
     ps->fErase = 0;
+    // 【清算 / K-219】**死锁修复**：`wpf_x11_query_title` 是**同步往返 X server** 的调用，
+    //   必须在**锁外**执行。原来它在 `wpf_lock()` 之后调用 ⇒ 若此时 X server 阻塞
+    //   （另一线程正等这把锁、而锁持有者又在等 X），就形成跨线程死锁。
+    //   实测症状：`WpfMediaInk` 卡在 `RegisterClassExW` 的 `wpf_lock()` 上，`ShowWindow` 永远到不了
+    //   ⇒ 窗口从未 map ⇒ `wmctrl -l` 看不到 ⇒ ACC-022/023 FAIL（K-212～K-218 的 14 轮追踪终点）。
+    char wpf_title_pre[128];
+    wpf_title_pre[0] = 0;
+    wpf_x11_query_title(h, wpf_title_pre, sizeof(wpf_title_pre));
     {
         wpf_lock();
         wpf_window *w = wpf_window_find(h);
@@ -261,7 +269,9 @@ BOOL BeginPaint(HWND h, WPF_PAINTSTRUCT *ps)
                 //   不依赖 WinForms 的 `OnPaint`（那条路被 `paintBackground` 挡住了，K-151/K-163）。
                 if (is_child) {
                     char tbuf[128];
-                    wpf_x11_query_title(h, tbuf, sizeof(tbuf));
+                    // 【K-219】用锁外预读的标题，**不再在持锁时做同步往返**。
+                    strncpy(tbuf, wpf_title_pre, sizeof(tbuf) - 1);
+                    tbuf[sizeof(tbuf) - 1] = 0;
                     if (tbuf[0]) {
                         uint16_t wbuf[128]; int wn = 0;
                         for (const unsigned char *p8 = (const unsigned char *)tbuf; *p8 && wn < 127; ) {
