@@ -24,7 +24,7 @@ WARN     = -Wall -Wextra -Wno-unused-parameter -Wno-cast-function-type
 DEFS    ?= -DWPF_PTS_FSP_PL_M1=1 -DWPF_PTS_FSP_PL_M2=1
 CFLAGS  ?= $(CSTD) $(OPT) $(WARN) -fPIC -fvisibility=default $(DEFS)
 CFLAGS   += $(shell pkg-config --cflags dbus-1 2>/dev/null)
-LDLIBS   = -lX11 -ldl -lpthread $(shell pkg-config --libs dbus-1 2>/dev/null)
+LDLIBS   = -lX11 -ldl -lpthread -lz $(shell pkg-config --libs dbus-1 2>/dev/null)
 
 SRCDIR   = src
 OBJDIR   = obj
