@@ -21,6 +21,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/mman.h>
 #include "png_decode.h"
 
 // 统一的分派：按文件头选解码器（PNG 签名 / BMP "BM"）。新增格式在这里加一行。
@@ -164,9 +165,36 @@ int32_t IWICBitmapDecoder_GetFrame_Proxy(void *decoder, uint32_t index, void **f
 //   两者共用同一个对象头（wic_object），所以这里只按"头 + 载荷布局"分派。
 typedef struct { wic_object hdr; uint8_t *bgra; uint32_t width, height; } ldp_ct_view;
 
+// ── 【K-422】指针可读性检查 ──────────────────────────────────────────────
+//   WPF 托管侧会通过 dlsym 调这些 `_Proxy` 入口并把「native 句柄」当第一个参数传进来。
+//   实测（K-417）：Ink 样本里传进来的 `source = 0x20000005` —— 一个**明显不是堆指针**的值
+//   （`0x20000000 | 0x5`，像是标志位/枚举值被误当成指针），而 `*_Proxy` 直接做
+//   `o->magic` 解引用 ⇒ SIGSEGV（`si_code=1 SEGV_MAPERR`）。
+//
+//   ⇒ 在**每个** `_Proxy` 入口先调本函数：地址必须是「可能有效的用户态指针」。
+//     这不能替代上游修复（真正的 bug 在 WPF 托管的句柄生成），但能让
+//     **坏参数变成干净的 HRESULT 失败**，而不是进程崩溃。
+//
+//   判定用 `mincore(2)`：它对未映射页返回 ENOMEM，且**不会**触发 SIGSEGV。
+static int wic_ptr_readable(const void *p)
+{
+    if (!p) return 0;
+    uintptr_t a = (uintptr_t)p;
+    // 用户态指针的粗略范围：排除 0 附近、内核空间、以及明显的小整数
+    if (a < 0x10000u) return 0;                 // 前 64KB（含 0x20000005 之外的常见小值）
+    if (a > 0x7fffffffffffULL) return 0;         // 超过用户态上限
+    // 按页检查：p 所在页必须已映射
+    long ps = sysconf(_SC_PAGESIZE);
+    if (ps <= 0) ps = 4096;
+    void *page = (void *)(a & ~((uintptr_t)ps - 1));
+    unsigned char vec = 0;
+    if (mincore(page, (size_t)ps, &vec) != 0) return 0;   // ENOMEM = 未映射
+    return 1;
+}
+
 int32_t IWICBitmapSource_GetSize_Proxy(void *source, uint32_t *w, uint32_t *h)
 {
-    if (!source) return 0x80070057;
+    if (!wic_ptr_readable(source)) return 0x80070057;
     wic_object *o = (wic_object *)source;
     if (o->magic == WIC_DECODER_MAGIC) {
         wic_decoder *d = (wic_decoder *)source;
@@ -185,7 +213,7 @@ int32_t IWICBitmapSource_GetSize_Proxy(void *source, uint32_t *w, uint32_t *h)
 
 int32_t IWICBitmapSource_GetPixelFormat_Proxy(void *source, void *guid)
 {
-    if (!source) return 0x80070057;
+    if (!wic_ptr_readable(source)) return 0x80070057;
     wic_object *o = (wic_object *)source;
     if (o->magic != WIC_DECODER_MAGIC && o->magic != COLOR_TRANSFORM_MAGIC_) return 0x80070057;
     // GUID_WICPixelFormat32bppBGRA = {6fddc324-4e03-4bfe-b185-3d77768dc90f}
@@ -802,7 +830,7 @@ int32_t IWICBitmapFrameDecode_GetThumbnail_Proxy(void *decoder, void **thumb)
 // ── 分辨率（UpdateCachedSettings 会问；PNG 没存 DPI 时按 WIC 的默认 96）────────────
 int32_t IWICBitmapSource_GetResolution_Proxy(void *source, double *dpiX, double *dpiY)
 {
-    if (!source) return 0x80070057;
+    if (!wic_ptr_readable(source)) return 0x80070057;
     wic_object *o = (wic_object *)source;
     // 解码器与色彩转换对象都按 96 DPI 报（transform 没有自己的 DPI 概念）
     if (o->magic != WIC_DECODER_MAGIC && o->magic != COLOR_TRANSFORM_MAGIC_) return 0x80070057;
