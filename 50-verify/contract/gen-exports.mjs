@@ -302,7 +302,17 @@ function parseShimExports() {
     while ((m = re.exec(text))) {
       const ret = m[1].trim();
       const name = m[2];
-      if (['if', 'for', 'while', 'switch', 'return', 'sizeof', 'else', 'case'].includes(ret)) continue;
+      // 【K-207】排除被误认成"返回类型"的控制流关键字（原逻辑）。
+      //   ⚠️ 注意：`ret` 是**返回类型**（m[1]），不是函数名 —— 绝不能把 `int`/`int32_t`
+      //   这类**合法返回类型**放进这里，否则所有返回 int 的函数都会被排掉
+      //   （我第一次就这么干了，impl 从 846 掉到 220，gap 从 0 涨到 501）。
+      if (['if', 'for', 'while', 'switch', 'return', 'sizeof', 'else', 'case', 'do'].includes(ret)) continue;
+      //   真要排除的是"**函数名**恰好是类型名"的误报。实测冒出 `int` / `int32_t`
+      //   两个假符号，来源是函数体内缩进的多行声明被行首正则命中。
+      if (['int', 'char', 'short', 'long', 'float', 'double', 'void', 'unsigned', 'signed',
+           'int8_t', 'int16_t', 'int32_t', 'int64_t',
+           'uint8_t', 'uint16_t', 'uint32_t', 'uint64_t',
+           'intptr_t', 'uintptr_t', 'size_t', 'ssize_t'].includes(name)) continue;
       if (name.startsWith('wpf_') || name.startsWith('WpfLinuxWin32_')) continue; // 内部件/桥件，不进 Win32 契约
       // 提取函数体（找配对的 { }
       let i = text.indexOf('{', m.index + m[0].length);
