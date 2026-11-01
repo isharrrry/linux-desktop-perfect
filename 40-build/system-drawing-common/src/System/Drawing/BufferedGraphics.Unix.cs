@@ -86,9 +86,22 @@ namespace System.Drawing
             target.DrawImage(membmp, size);
         }
 
+        // 【K-330】实现 `RenderInternal` —— WinForms 的双缓冲合成路径。
+        //   背景：`Control.PaintBackground` 走 `BufferedGraphics`，最终调
+        //   `RenderInternal(HandleRef refTargetDC)`。Unix 后端原来是**字面 throw**，
+        //   于是每个控件每次绘制都抛 `NotImplementedException`（实测 4 个），
+        //   **最终合成那一步被丢掉** ⇒ 控件看起来是"死的"。
+        //
+        //   实现方式：复用同文件里**已经可用**的 `Render(Graphics target)`
+        //   （它做 `target.DrawImage(membmp, size)`）。
+        //   而 `Graphics.FromHdc(hdc)` 在本仓是可用的 —— 子代理实测
+        //   `GetHdc()` 返回的 `GpGraphics*` 能被 `FromHdc` 消费并画出真像素。
         private void RenderInternal(HandleRef refTargetDC)
         {
-            throw new NotImplementedException();
+            if (refTargetDC.Handle == IntPtr.Zero)
+                return;
+            using (Graphics g = Graphics.FromHdc(refTargetDC.Handle))
+                Render(g);
         }
     }
 }
