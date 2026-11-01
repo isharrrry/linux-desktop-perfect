@@ -2005,6 +2005,13 @@ LRESULT DefWindowProcW(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
             GetClientRect(hwnd, &rc);
             // 【K-453】ListBox / ComboBox：**逐项**画（用 K-451/K-452 存的项列表）
             ldp_items *it = ldp_items_of(hwnd, 0);
+            // 【K-455 诊断】确认三件事：WM_PAINT 到了？it 找到了？count 多少？
+            if (getenv("LDP_WIC_TRACE")) {
+                fprintf(stderr, "[PAINT-IT] hwnd=%p it=%p count=%d rc=%d,%d,%d,%d\n",
+                        (void *)hwnd, (void *)it, it ? it->count : -1,
+                        rc.left, rc.top, rc.right, rc.bottom);
+                fflush(stderr);
+            }
             if (it && it->count > 0) {
                 int lineH = 18;                       // 行高（与 WPF_FAKE_FONT_HEIGHT 一致）
                 for (int i = 0; i < it->count; ++i) {
