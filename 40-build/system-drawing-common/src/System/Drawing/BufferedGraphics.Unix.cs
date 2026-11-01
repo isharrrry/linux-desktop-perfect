@@ -86,22 +86,20 @@ namespace System.Drawing
             target.DrawImage(membmp, size);
         }
 
-        // 【K-330】实现 `RenderInternal` —— WinForms 的双缓冲合成路径。
-        //   背景：`Control.PaintBackground` 走 `BufferedGraphics`，最终调
-        //   `RenderInternal(HandleRef refTargetDC)`。Unix 后端原来是**字面 throw**，
-        //   于是每个控件每次绘制都抛 `NotImplementedException`（实测 4 个），
-        //   **最终合成那一步被丢掉** ⇒ 控件看起来是"死的"。
-        //
-        //   实现方式：复用同文件里**已经可用**的 `Render(Graphics target)`
-        //   （它做 `target.DrawImage(membmp, size)`）。
-        //   而 `Graphics.FromHdc(hdc)` 在本仓是可用的 —— 子代理实测
-        //   `GetHdc()` 返回的 `GpGraphics*` 能被 `FromHdc` 消费并画出真像素。
+        // 【K-332】**暂不实现** `RenderInternal`（K-331 的尝试导致段错误）。
+        //   试过的实现：
+        //     `using (Graphics g = Graphics.FromHdc(refTargetDC.Handle)) Render(g);`
+        //   ⇒ **进程直接 core dump**（日志只有 1 行就 SIGSEGV）。
+        //   原因（推测）：`refTargetDC.Handle` 在 Unix 上不是有效的 `GpGraphics*`
+        //   （它是 Win32 HDC 语义的句柄，可能为 0 或别的指针），`FromHdc` 拿它去解引用就崩。
+        //   **⇒ 这条路需要先查清 `refTargetDC.Handle` 在 Unix 上的实际值，才能安全实现。**
+        //   在此之前保持抛异常（WinForms 会捕获，走 `DEFPAINT` 兜底，至少画面可见）。
         private void RenderInternal(HandleRef refTargetDC)
         {
-            if (refTargetDC.Handle == IntPtr.Zero)
-                return;
-            using (Graphics g = Graphics.FromHdc(refTargetDC.Handle))
-                Render(g);
+            if (Environment.GetEnvironmentVariable("LDP_BG_TRACE") == "1") {
+                try { Console.Error.WriteLine("[BG] RenderInternal hdc=0x" + refTargetDC.Handle.ToString("x")); } catch { }
+            }
+            throw new NotImplementedException();
         }
     }
 }
