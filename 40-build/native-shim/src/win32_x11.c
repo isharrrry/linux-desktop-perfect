@@ -800,8 +800,22 @@ uint64_t wpf_x11_create_window(wpf_window *w, const char *title)
     unsigned long black = BlackPixel(d, g_wpf.screen);
     unsigned long white = WhitePixel(d, g_wpf.screen);
 
+    // 【清算 / K-274】**子窗口必须挂在父窗口下，不能用 root。**
+    //   原实现恒用 `g_wpf.root` 作 parent ⇒ WinForms 的每个控件窗口都成了"顶层窗口"：
+    //     ① `wmctrl -l` 能列出它们（`_NET_CLIENT_LIST` 只含顶层）；
+    //     ② **openbox 会接管并按 smart placement 重新定位** ⇒ 传入的 `(16,310)` 被丢，
+    //        实测最终落在 `(490,536)`，且各控件"毫无规律"（K-271/K-272）。
+    //   修法：`w->parent` 非空且**确实在窗口表里**时，用它作 parent
+    //   （`w->hwnd` 就是 X11 Window，见 `wpf_window.hwnd` 的注释）。
+    //   防御：父窗口不存在 / 是 message-only（不是真 X 窗口）时退回 root，
+    //   否则 `XCreateSimpleWindow` 会因 BadWindow 失败。
+    Window parent_xid = g_wpf.root;
+    if (w->parent && !w->is_message_only) {
+        wpf_window *pw = wpf_window_find(w->parent);
+        if (pw && pw->hwnd) parent_xid = (Window)pw->hwnd;
+    }
     XLOCK();
-    Window xid = XCreateSimpleWindow(d, g_wpf.root,
+    Window xid = XCreateSimpleWindow(d, parent_xid,
                                      w->x, w->y,
                                      (unsigned int)width, (unsigned int)height,
                                      0, black, white);

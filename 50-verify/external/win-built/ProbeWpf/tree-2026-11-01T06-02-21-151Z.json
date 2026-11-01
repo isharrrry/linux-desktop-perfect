@@ -1,0 +1,13 @@
+{
+  "app": {"name": "ProbeWpf [EXT-01]"},
+  "window": {"title": "ProbeWpf [EXT-01]", "scr": ""},
+  "env": {"runner": "uia-startup-hook", "dpi": 100, "theme": "(none)", "wm": true, "note": "UIA 树（AutomationPeer），非 AT-SPI 总线"},
+  "seq": 3,
+  "nodes": [
+    {"path": "0", "role": "frame", "name": "ProbeWpf [EXT-01]", "states": ["!iconified", "active", "focused", "showing"], "actions": ["focus"], "bounds": [160, 137, 960, 768], "value": null, "relations": [], "child_count": 4},
+    {"path": "0/0", "role": "label", "name": "hello", "states": ["visible"], "actions": [], "bounds": [177, 154, 927, 13], "value": null, "relations": [], "child_count": 0},
+    {"path": "0/1", "role": "entry", "name": "edit", "states": ["editable", "enabled", "focusable", "sensitive", "visible"], "actions": ["set-text", "focus"], "bounds": [515, 167, 250, 20], "value": "typed", "relations": [], "child_count": 0},
+    {"path": "0/2", "role": "push button", "name": "btn", "states": ["enabled", "sensitive", "visible"], "actions": ["click"], "bounds": [578, 187, 125, 21], "value": null, "relations": [], "child_count": 0},
+    {"path": "0/3", "role": "label", "name": "count", "states": ["visible"], "actions": [], "bounds": [177, 207, 927, 13], "value": null, "relations": [], "child_count": 0}
+  ]
+}
