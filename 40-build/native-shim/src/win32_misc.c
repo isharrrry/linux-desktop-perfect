@@ -246,7 +246,14 @@ BOOL BeginPaint(HWND h, WPF_PAINTSTRUCT *ps)
                 WPF_RECT brc;
                 brc.left = 0; brc.top = 0;
                 brc.right = pw2->width; brc.bottom = pw2->height;
-                wpf_draw_fill_rect(ps->hdc, &brc, bgc);
+                // 【清算 / K-177】优先用 libgdiplus（cairo）画 —— 抗锯齿。
+                //   不可用（没装/WPF_LINUX_GDIP 未开/创建失败）时回退到原来的 XFillRectangle。
+                {
+                    extern int  wpf_gdip_try_fill_rect(HWND, int32_t, int32_t, int32_t, int32_t, uint32_t);
+                    uint32_t argb = 0xFF000000u | (wpf_colorref_to_x(bgc) & 0x00FFFFFFu);
+                    if (!wpf_gdip_try_fill_rect(h, 0, 0, pw2->width, pw2->height, argb))
+                        wpf_draw_fill_rect(ps->hdc, &brc, bgc);
+                }
 
                 // 【ACC-028 / K-164】**画窗口文字**。
                 //   标题在 `SetWindowTextW` 时被 `wpf_x11_set_title` 存下来了，这里读回来画。
