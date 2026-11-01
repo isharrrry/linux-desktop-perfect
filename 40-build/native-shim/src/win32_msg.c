@@ -1128,6 +1128,21 @@ int wpf_in_send_message_depth(void) { return g_in_send_message; }
 LRESULT SendMessageW(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
 {
     wpf_global_init();
+    // 【K-450 探针】WinForms 的原生控件（EDIT/COMBOBOX/LISTBOX）项是否走 `SendMessage`？
+    //   K-359 用「探针 0 条」得出「WinForms 不发 LB_ADDSTRING」的结论 —— 但那次的探针
+    //   可能没覆盖全。这里在**唯一的入口**（`SendMessageW`）打点，覆盖所有调用方。
+    //   只在 `LDP_WIC_TRACE` 时打印，避免污染正常日志。
+    if (getenv("LDP_WIC_TRACE")) {
+        // LB_* = 0x0180..0x01B0, CB_* = 0x0140..0x0170, WM_DRAWITEM = 0x002B
+        if ((msg >= 0x0180 && msg <= 0x01B0) || (msg >= 0x0140 && msg <= 0x0170) || msg == 0x002B) {
+            static int n = 0;
+            if (n++ < 60) {
+                fprintf(stderr, "[SENDMSG] hwnd=%p msg=0x%04x wp=0x%lx lp=0x%lx\n",
+                        (void *)hwnd, msg, (unsigned long)wp, (unsigned long)lp);
+                fflush(stderr);
+            }
+        }
+    }
     ++g_in_send_message;
     LRESULT r = wpf_dispatch_to_window(hwnd, msg, wp, lp);
     --g_in_send_message;
