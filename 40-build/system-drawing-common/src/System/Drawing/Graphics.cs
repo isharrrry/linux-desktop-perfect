@@ -354,6 +354,32 @@ namespace System.Drawing
         }
 
         [EditorBrowsable(EditorBrowsableState.Advanced)]
+
+        // ══ 【K-305】为「Windows Forms 自绘」补齐 GDI+ 上下文接口的**占位实现** ═══════
+        //   背景：WinForms 的 `Control.PaintBackColor` 会走 `DeviceContextHdcScope..ctor`，
+        //   要求 `Graphics` 实现 `System.Drawing.IGraphicsContextInfo`（GdiPlus 里的 internal 接口）。
+        //   直接实现不了（类型 internal、且 .NET 不允许给已有类型追加接口）。
+        //   做法：**在源码里用占位类型写方法**（编译器生成正确的元数据签名），
+        //   再由 `40-build/appliers/` 的 Cecil 脚本把占位类型的 TypeRef **重定向**到官方类型。
+        //   关键：签名 blob 只记 TypeDefOrRef 索引，不记字段 ⇒ 重定向后签名就是官方的。
+        internal global::System.ValueTuple<LdpPlaceholders.GpHdcStub, int> GetHdcContext(LdpPlaceholders.GpApplyGraphicsStub apply, bool alwaysSaveState)
+        {
+            return new global::System.ValueTuple<LdpPlaceholders.GpHdcStub, int>(new LdpPlaceholders.GpHdcStub { Value = NativeGraphics }, 0);
+        }
+
+        internal global::System.IntPtr GetPointerGpGraphics()
+        {
+            return NativeGraphics;
+        }
+
+        internal LdpPlaceholders.GpHdcStub GetHdcCtx()
+        {
+            return new LdpPlaceholders.GpHdcStub { Value = NativeGraphics };
+        }
+
+        internal void ReleaseHdcCtx()
+        {
+        }
         public void ReleaseHdc(IntPtr hdc) => ReleaseHdcInternal(hdc);
 
         public void ReleaseHdc() => ReleaseHdcInternal(_nativeHdc);
@@ -595,4 +621,20 @@ namespace System.Drawing
             Gdip.CheckStatus(Gdip.GdipRotateWorldTransform(new HandleRef(this, NativeGraphics), angle, order));
         }
     }
+
+// ══ 【K-305】占位类型（由 Cecil 脚本重定向 TypeRef 到官方类型）═══════════════
+//   `GpHdcStub`   → `Windows.Win32.Graphics.Gdi.HDC`            (System.Private.Windows.Core)
+//   `GpApplyGraphicsStub` → `System.Drawing.ApplyGraphicsProperties` (System.Private.Windows.GdiPlus)
+namespace LdpPlaceholders
+{
+    internal struct GpHdcStub
+    {
+        public global::System.IntPtr Value;
+    }
+
+    internal enum GpApplyGraphicsStub
+    {
+        None = 0,
+    }
+}
 }
