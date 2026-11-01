@@ -3,8 +3,8 @@
 # 列：lib	symbol	status	owner	since[	note]（note 为可选列；为空时省略，行尾不留制表符）
 # status 判定：impl=实现侧有该符号；stub=函数体仅常量返回；gap=声明有实现无（note 写替代路径）
 # lib 列：若实现将落在哪个自产 .so（概设 §2.4）；status=gap 表示当前无实现，不是没登记
-# 规模：1285 行（impl 991 / stub 103 / gap 191）
-# 输入：上游 1534 条 DllImport 声明（另有 0 条属性块后无 extern 声明被跳过）、native-shim 886 个导出、milcore 109 个导出
+# 规模：1288 行（impl 1000 / stub 103 / gap 185）
+# 输入：上游 1534 条 DllImport 声明（另有 0 条属性块后无 extern 声明被跳过）、native-shim 895 个导出、milcore 109 个导出
 # 排除：wpf_*（shim 内部件）、WpfLinuxWin32_*（桥件，非 Win32 契约入口）
 libSystem.IO.Compression.Native.so	CompressionNative_Crc32	impl	MOD-52	10.0.11
 libSystem.IO.Compression.Native.so	CompressionNative_Deflate	impl	MOD-52	10.0.11
@@ -280,11 +280,14 @@ libwpfwin32.so	CoGetObjectContext	gap	MOD-02	10.0.11	无实现（api-ms-win-core
 libwpfwin32.so	CoIncrementMTAUsage	gap	MOD-02	10.0.11	无实现（api-ms-win-core-com）
 libwpfwin32.so	CoInitialize	impl	MOD-63	10.0.11
 libwpfwin32.so	CoInitializeEx	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
-libwpfwin32.so	CoInternetCreateSecurityManager	gap	MOD-15	10.0.11	无实现（urlmon）
-libwpfwin32.so	CoInternetIsFeatureEnabled	gap	MOD-15	10.0.11	无实现（urlmon）
-libwpfwin32.so	CoInternetIsFeatureZoneElevationEnabled	gap	MOD-15	10.0.11	无实现（urlmon）
-libwpfwin32.so	CoInternetSetFeatureEnabled	gap	MOD-15	10.0.11	无实现（urlmon）
+libwpfwin32.so	CoInternetCreateSecurityManager	impl	MOD-15	10.0.11
+libwpfwin32.so	CoInternetIsFeatureEnabled	impl	MOD-15	10.0.11
+libwpfwin32.so	CoInternetIsFeatureZoneElevationEnabled	impl	MOD-15	10.0.11
+libwpfwin32.so	CoInternetSetFeatureEnabled	impl	MOD-15	10.0.11
 libwpfwin32.so	CoRegisterPSClsid	impl	MOD-63	10.0.11
+libwpfwin32.so	CoTaskMemAlloc	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	CoTaskMemFree	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	CoTaskMemRealloc	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
 libwpfwin32.so	CoUninitialize	impl	MOD-63	10.0.11
 libwpfwin32.so	CombineRgn	impl	MOD-13	10.0.11
 libwpfwin32.so	CommDlgExtendedError	gap	MOD-62	10.0.11	无实现（comdlg32）
@@ -476,7 +479,7 @@ libwpfwin32.so	FindClose	impl	MOD-15	10.0.11
 libwpfwin32.so	FindFirstFile	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
 libwpfwin32.so	FindFirstFileA	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
 libwpfwin32.so	FindFirstFileW	impl	MOD-15	10.0.11
-libwpfwin32.so	FindMimeFromData	gap	MOD-15	10.0.11	无实现（urlmon）
+libwpfwin32.so	FindMimeFromData	impl	MOD-15	10.0.11
 libwpfwin32.so	FindNLSString	impl	MOD-15	10.0.11
 libwpfwin32.so	FindNLSStringW	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
 libwpfwin32.so	FindNextFileA	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
@@ -944,7 +947,7 @@ libwpfwin32.so	NlUnload	gap	MOD-16	10.0.11	无实现（presentationnative）
 libwpfwin32.so	NotifyWinEvent	impl	MOD-11	10.0.11
 libwpfwin32.so	NtQueryInformationProcess	gap	MOD-15	10.0.11	无实现（ntdll）
 libwpfwin32.so	ObjectFromLresult	gap	MOD-63	10.0.11	无实现（oleacc）
-libwpfwin32.so	ObtainUserAgentString	gap	MOD-15	10.0.11	无实现（urlmon）
+libwpfwin32.so	ObtainUserAgentString	impl	MOD-15	10.0.11
 libwpfwin32.so	OleFlushClipboard	impl	MOD-63	10.0.11
 libwpfwin32.so	OleGetClipboard	impl	MOD-63	10.0.11
 libwpfwin32.so	OleInitialize	impl	MOD-63	10.0.11
