@@ -372,3 +372,22 @@ BOOL BitBlt(HDC hdcDest, int32_t x, int32_t y, int32_t w, int32_t h,
     }
     return 0;
 }
+
+// ── 【清算 / K-202】`GdipCreateHICONFromBitmap` —— 如实降级，但**必须导出** ─────
+//   它是 GDI+ 的函数（`gdiplus.dll`），签名 `GpStatus GdipCreateHICONFromBitmap(GpBitmap*, HICON*)`。
+//   **为什么不做真实现**：参数 `GpBitmap*` 是 **libgdiplus 的内部结构**（不是 Win32 的 HBITMAP），
+//   它的像素数据布局没有公开文档；而 HICON 在 Linux 上也没有对应物（图标是窗口管理器的事）。
+//   ⇒ 要把 bitmap 像素取出来需要 `GdipGetImageWidth/Height` + `GdipBitmapLockBits`
+//     （这两个 libgdiplus 都有），再做一张 X11 `Pixmap` —— **技术上可行，但收益极低**：
+//     本仓没有任何调用方（`grep` 上游无引用），且 WPF 的图标走 `BitmapFrame`/`IconBitmapDecoder`，
+//     不走这条 GDI+ 路径。
+//   **⇒ 折中：导出 + 返回 `GdiplusNotImplemented(1)`**，
+//     这满足「不可实现路径必须返回明确错误码」的硬约束，也不会让调用方崩。
+//   如果将来真需要：`GdipGetImageWidth` + `GdipBitmapLockBits` 取像素 → `XCreatePixmap` +
+//   `XPutImage` → 把 Pixmap 当 HICON 返回（本 shim 的 HICON 约定本来就是 X11 Pixmap）。
+int32_t GdipCreateHICONFromBitmap(void *bitmap, void **hIcon)
+{
+    (void)bitmap;
+    if (hIcon) *hIcon = NULL;
+    return 1;   // GdiplusNotImplemented
+}

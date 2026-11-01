@@ -3,8 +3,8 @@
 # 列：lib	symbol	status	owner	since[	note]（note 为可选列；为空时省略，行尾不留制表符）
 # status 判定：impl=实现侧有该符号；stub=函数体仅常量返回；gap=声明有实现无（note 写替代路径）
 # lib 列：若实现将落在哪个自产 .so（概设 §2.4）；status=gap 表示当前无实现，不是没登记
-# 规模：1292 行（impl 1046 / stub 214 / gap 32）
-# 输入：上游 1534 条 DllImport 声明（另有 0 条属性块后无 extern 声明被跳过）、native-shim 1052 个导出、milcore 109 个导出
+# 规模：1292 行（impl 1047 / stub 214 / gap 31）
+# 输入：上游 1534 条 DllImport 声明（另有 0 条属性块后无 extern 声明被跳过）、native-shim 1053 个导出、milcore 109 个导出
 # 排除：wpf_*（shim 内部件）、WpfLinuxWin32_*（桥件，非 Win32 契约入口）
 libSystem.IO.Compression.Native.so	CompressionNative_Crc32	impl	MOD-52	10.0.11
 libSystem.IO.Compression.Native.so	CompressionNative_Deflate	impl	MOD-52	10.0.11
@@ -566,7 +566,7 @@ libwpfwin32.so	GdipCreateBitmapFromHBITMAP	impl	MOD-02	10.0.11	shim 额外导出
 libwpfwin32.so	GdipCreateBitmapFromScan0	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
 libwpfwin32.so	GdipCreateBitmapFromStream	impl	MOD-14	10.0.11
 libwpfwin32.so	GdipCreateHBITMAPFromBitmap	impl	MOD-14	10.0.11
-libwpfwin32.so	GdipCreateHICONFromBitmap	gap	MOD-14	10.0.11	无实现（gdiplus）
+libwpfwin32.so	GdipCreateHICONFromBitmap	impl	MOD-14	10.0.11
 libwpfwin32.so	GdipDisposeImage	impl	MOD-14	10.0.11
 libwpfwin32.so	GdipGetImageDecoders	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
 libwpfwin32.so	GdipGetImageDecodersSize	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
