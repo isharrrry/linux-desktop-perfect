@@ -1506,18 +1506,25 @@ HDC CreateDC(const char *driver, const char *device, const char *port, const voi
 //   注：托管侧声明的是 `bool` 返回（P/Invoke 默认 marshalling 为 4 字节 Win32 BOOL），
 //   所以这里一律用 `int` 返回、值取 0。
 #define WPF_OSVERSION_FALSE(name) int name(void) { return 0; }
-WPF_OSVERSION_FALSE(IsWindowsXPOrGreater)
-WPF_OSVERSION_FALSE(IsWindowsXPSP1OrGreater)
-WPF_OSVERSION_FALSE(IsWindowsXPSP2OrGreater)
-WPF_OSVERSION_FALSE(IsWindowsXPSP3OrGreater)
-WPF_OSVERSION_FALSE(IsWindowsVistaOrGreater)
-WPF_OSVERSION_FALSE(IsWindowsVistaSP1OrGreater)
-WPF_OSVERSION_FALSE(IsWindowsVistaSP2OrGreater)
-WPF_OSVERSION_FALSE(IsWindows7OrGreater)
-WPF_OSVERSION_FALSE(IsWindows7SP1OrGreater)
-WPF_OSVERSION_FALSE(IsWindows8OrGreater)
-WPF_OSVERSION_FALSE(IsWindows8Point1OrGreater)
-WPF_OSVERSION_FALSE(IsWindows10OrGreater)
+// 【清算 / K-233】**分层取值**：从 Vista 到 Windows 10 返回 TRUE，RS1 及以上返回 FALSE。
+//   为什么不能全 FALSE：WPF 的 DPI 感知链会看 `IsOsWindows10OrGreater`，
+//   一看到"不是 Win10"就整体退回 96 DPI 布局 ⇒ `GetDpiForWindow` 报 144 但窗口按 96 算
+//   ⇒ ACC-011（DPI 缩放）必然 FAIL（实测：期望 1440 宽，得到 800）。
+//   为什么 RS1+ 保持 FALSE：Per-Monitor-V2 DPI 是 RS1 特性，X11 core protocol 没有
+//   per-monitor DPI ⇒ 保持关闭是**语义正确**的（K-170 的原判断在这一点上没错）。
+#define WPF_OSVERSION_TRUE(name)  int name(void) { return 1; }
+WPF_OSVERSION_TRUE(IsWindowsXPOrGreater)
+WPF_OSVERSION_TRUE(IsWindowsXPSP1OrGreater)
+WPF_OSVERSION_TRUE(IsWindowsXPSP2OrGreater)
+WPF_OSVERSION_TRUE(IsWindowsXPSP3OrGreater)
+WPF_OSVERSION_TRUE(IsWindowsVistaOrGreater)
+WPF_OSVERSION_TRUE(IsWindowsVistaSP1OrGreater)
+WPF_OSVERSION_TRUE(IsWindowsVistaSP2OrGreater)
+WPF_OSVERSION_TRUE(IsWindows7OrGreater)
+WPF_OSVERSION_TRUE(IsWindows7SP1OrGreater)
+WPF_OSVERSION_TRUE(IsWindows8OrGreater)
+WPF_OSVERSION_TRUE(IsWindows8Point1OrGreater)
+WPF_OSVERSION_TRUE(IsWindows10OrGreater)
 WPF_OSVERSION_FALSE(IsWindows10TH1OrGreater)
 WPF_OSVERSION_FALSE(IsWindows10TH2OrGreater)
 WPF_OSVERSION_FALSE(IsWindows10RS1OrGreater)
