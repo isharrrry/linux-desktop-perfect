@@ -1194,7 +1194,7 @@ LRESULT SendMessageW(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
     }
     // 【K-451】拦截 ListBox / ComboBox 的项管理消息（K-450 实测 WinForms 会发这些）
     switch (msg) {
-        case 0x0143: /* CB_ADDSTRING */ case 0x0183: /* LB_ADDSTRING */ {
+        case 0x0143: /* CB_ADDSTRING */ case 0x0180: /* LB_ADDSTRING */ {
             ldp_items *it = ldp_items_of(hwnd, 1);
             if (it && it->count < LDP_MAX_ITEMS) {
                 ldp_utf16_to_utf8((const uint16_t *)lp, it->items[it->count], LDP_MAX_ITEMLEN);
@@ -1203,11 +1203,11 @@ LRESULT SendMessageW(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
             }
             return -1;
         }
-        case 0x0146: /* CB_GETCOUNT */ case 0x0180: /* LB_GETCOUNT */ {
+        case 0x0146: /* CB_GETCOUNT */ case 0x018B: /* LB_GETCOUNT */ {
             ldp_items *it = ldp_items_of(hwnd, 0);
             return it ? it->count : 0;
         }
-        case 0x0149: /* CB_GETLBTEXT */ case 0x0189: /* LB_GETTEXT */ {
+        case 0x0148: /* CB_GETLBTEXT */ case 0x0189: /* LB_GETTEXT */ {
             ldp_items *it = ldp_items_of(hwnd, 0);
             if (!it || (int)wp >= it->count || !lp) return 0;
             uint16_t *dst = (uint16_t *)lp;
