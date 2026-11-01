@@ -307,6 +307,23 @@ function parseShimExports() {
       set.set(name, { file: path.relative(ROOT, file), body });
     }
   }
+  // 【清算 / K-180】**宏生成的导出**：`WPF_OSVERSION_FALSE(IsWindowsXxx)` 展开后是
+  //   `int IsWindowsXxx(void) { return 0; }`，但上面的行首正则扫不到宏调用。
+  //   实测：`.so` 里 `nm -D` 明明有 20 个 `IsWindows*`，清单却全标 `gap` —— **假 gap**。
+  //   这里按宏名把它们补进导出表，body 用宏展开后的实际函数体，让 isStub 如实判定。
+  const MACRO_DEFS = { 'WPF_OSVERSION_FALSE': 'return 0;' };
+  for (const file of walk(SHIM_SRC, '.c')) {
+    const text = stripComments(read(file));
+    for (const macro of Object.keys(MACRO_DEFS)) {
+      const mre = new RegExp('\\b' + macro + '\\s*\\(\\s*([A-Za-z_]\\w*)\\s*\\)', 'g');
+      let mm;
+      while ((mm = mre.exec(text))) {
+        const name = mm[1];
+        if (!set.has(name)) set.set(name, { file: path.relative(ROOT, file), body: MACRO_DEFS[macro] });
+      }
+    }
+  }
+
   return set;
 }
 
