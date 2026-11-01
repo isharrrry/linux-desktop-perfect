@@ -350,3 +350,25 @@ void *wpf_hdc_drawable(void *hdc)
 HGDIOBJ wpf_gdi_new_brush(uint32_t colorref) { return (HGDIOBJ)wpf_gdi_alloc(1, colorref, 0, 0); }
 HGDIOBJ wpf_gdi_new_pen(uint32_t colorref, int32_t width, int style) { return (HGDIOBJ)wpf_gdi_alloc(2, colorref, width, style); }
 uint32_t wpf_gdi_color(HGDIOBJ o, uint32_t dflt) { wpf_gdi_obj *p = wpf_gdi_of(o); return p ? p->color : dflt; }
+
+// ── 【清算 / K-201】`BitBlt` —— 用 X11 的 `XCopyArea` 真实现 ────────────────────
+//   `BitBlt(HDC hdcDest, int x, int y, int w, int h, HDC hdcSrc, int x1, int y1, DWORD rop)`
+//   我们的 HDC 背后就是 X11 `Window`/`Pixmap` + `GC`（K-144）⇒ 直接 `XCopyArea`。
+//   只支持 `SRCCOPY`(0x00CC0020) 与其等价 ROP；其它 ROP 返回 FALSE（不猜）。
+BOOL BitBlt(HDC hdcDest, int32_t x, int32_t y, int32_t w, int32_t h,
+            HDC hdcSrc, int32_t x1, int32_t y1, uint32_t rop)
+{
+    wpf_hdc *d = wpf_hdc_of(hdcDest);
+    wpf_hdc *s = wpf_hdc_of(hdcSrc);
+    if (!d || !s || w <= 0 || h <= 0) return 0;
+    if (rop != 0x00CC0020u) return 0;   // 只做 SRCCOPY
+    Drawable src = s->drawable ? s->drawable : s->pixmap;
+    Drawable dst = d->drawable ? d->drawable : d->pixmap;
+    if (!src || !dst) return 0;
+    if (g_wpf.dpy) {
+        XCopyArea(g_wpf.dpy, src, dst, d->gc, x1, y1, (unsigned)w, (unsigned)h, x, y);
+        XFlush(g_wpf.dpy);
+        return 1;
+    }
+    return 0;
+}

@@ -98,3 +98,92 @@ int32_t mmioRead(void *hMIO, void *buf, int32_t cch)
 //   ⇒ 与其写一个会崩的空壳，不如保持 gap 并写清原因。
 //   ⇒ 如果将来确认了布局（标准 Win32 的 `MMCKINFO` 是 20 字节：4+4+4+4+4），
 //     补起来只要三十行：`fseek` 到 `dwDataOffset`、读 chunk 头、填结构。
+
+// ── 【清算 / K-201】`mmioDescend` / `mmioAscend` —— 按**标准 Win32 `MMCKINFO`** 实现 ──
+//
+// K-188 里我因为"没找到托管侧的 `MMCKINFO` 定义"而跳过了这两个。**那是过度谨慎**：
+// `MMCKINFO` 是**公开规范**（RIFF 文件格式的一部分），不是私有格式：
+//     typedef struct {
+//         FOURCC ckid;         // +0   本 chunk 的 id（如 'fmt ' / 'data'）
+//         DWORD  cksize;       // +4   本 chunk 的数据大小
+//         FOURCC fccType;      // +8   父 chunk 的类型（'RIFF'/'LIST'）
+//         DWORD  dwDataOffset; // +12  数据相对文件开头的偏移
+//         DWORD  dwFlags;      // +16  MMIO_FINDCHUNK / MMIO_FINDRIFF 等
+//     } MMCKINFO;              // 20 字节，无填充（全是 4 字节字段）
+//
+// 上游 `[MarshalAs(UnmanagedType.LPStruct)] MMCKINFO` 会按这个布局按值 marshal ⇒ 可以安全实现。
+typedef struct {
+    uint32_t ckid;
+    uint32_t cksize;
+    uint32_t fccType;
+    uint32_t dwDataOffset;
+    uint32_t dwFlags;
+} wpf_mmckinfo;
+
+#define WPF_MMIO_FINDCHUNK  0x10
+#define WPF_MMIO_FINDRIFF   0x20
+#define WPF_MMIO_FINDLIST   0x40
+#define WPF_MMIO_FINDRIFF4  0x100
+
+static FILE *wpf_mmio_fp(void *hMIO)
+{
+    for (wpf_mmio *h = g_mmio; h; h = h->next) if ((void *)h == hMIO) return h->fp;
+    return NULL;
+}
+
+static uint32_t wpf_le32(const uint8_t *b)
+{
+    return (uint32_t)b[0] | ((uint32_t)b[1] << 8) | ((uint32_t)b[2] << 16) | ((uint32_t)b[3] << 24);
+}
+
+// `mmioDescend(hmmio, lpck, lpckParent, flags)`：进入下一个 chunk。
+//   · `lpck->ckid` 非 0 ⇒ 查找该 id 的 chunk；为 0 ⇒ 读当前位置的 chunk 头
+//   · `lpckParent` 非 NULL ⇒ 限制在父 chunk 范围内
+// 返回值：0 = 成功，非 0 = 失败（MMSYSERR_INVALPARAM / MMIOERR_CHUNKNOTFOUND）
+int32_t mmioDescend(void *hMIO, wpf_mmckinfo *lpck, const wpf_mmckinfo *lpckParent, uint32_t flags)
+{
+    FILE *fp = wpf_mmio_fp(hMIO);
+    if (!fp || !lpck) return 5;   // MMSYSERR_INVALPARAM
+    (void)flags;
+
+    long start = ftell(fp);
+    if (start < 0) return 5;
+
+    uint8_t hdr[8];
+    while (fread(hdr, 1, 8, fp) == 8) {
+        uint32_t id  = wpf_le32(hdr);
+        uint32_t sz  = wpf_le32(hdr + 4);
+        long dataOff = ftell(fp);
+
+        // 父范围检查
+        if (lpckParent) {
+            long pOff = (long)lpckParent->dwDataOffset;
+            if (dataOff + (long)sz > pOff + (long)lpckParent->cksize) return 0x100;  // MMIOERR_CHUNKNOTFOUND
+        }
+        // 若指定了 ckid，跳过不匹配的
+        if (lpck->ckid != 0 && id != lpck->ckid) {
+            long next = dataOff + (long)sz;
+            if (sz & 1) ++next;   // RIFF chunk 按 2 字节对齐
+            if (fseek(fp, next, SEEK_SET) != 0) return 0x100;
+            continue;
+        }
+
+        lpck->ckid         = id;
+        lpck->cksize       = sz;
+        lpck->dwDataOffset = (uint32_t)dataOff;
+        return 0;   // 成功（文件位置已在数据起点）
+    }
+    fseek(fp, start, SEEK_SET);
+    return 0x100;   // MMIOERR_CHUNKNOTFOUND
+}
+
+// `mmioAscend(hmmio, lpck, flags)`：从当前 chunk 出来，定位到它的末尾之后。
+int32_t mmioAscend(void *hMIO, wpf_mmckinfo *lpck, uint32_t flags)
+{
+    FILE *fp = wpf_mmio_fp(hMIO);
+    if (!fp || !lpck) return 5;
+    (void)flags;
+    long next = (long)lpck->dwDataOffset + (long)lpck->cksize;
+    if (lpck->cksize & 1) ++next;   // RIFF 2 字节对齐
+    return fseek(fp, next, SEEK_SET) == 0 ? 0 : 5;
+}
