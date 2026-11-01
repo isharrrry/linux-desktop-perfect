@@ -1,0 +1,19 @@
+{
+ "name": "extInk/PureInk",
+ "windowFound": true,
+ "win": {
+  "id": "0x200005",
+  "title": "ExtInk Pure [EXT-41]"
+ },
+ "shotBefore": 328,
+ "shotAfter": 328,
+ "pixelDiff": 0,
+ "alive": false,
+ "exited": {
+  "code": null,
+  "sig": "SIGSEGV"
+ },
+ "uia0": [],
+ "uia1": [],
+ "ink": null
+}
