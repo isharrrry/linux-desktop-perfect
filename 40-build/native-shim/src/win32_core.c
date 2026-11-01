@@ -986,6 +986,14 @@ static HWND create_window_utf8(uint32_t dwExStyle, const char *cls,
                                int32_t X, int32_t Y, int32_t nWidth, int32_t nHeight,
                                HWND hWndParent, HMENU hMenu, HINSTANCE hInstance, void *lpParam)
 {
+    // 【诊断 / K-238】`CreateWindowExA`/`CreateWindowEx` 直接转发到这里、**没有各自日志**，
+    //   而 WPF 实际走的就是无后缀那条 ⇒ 之前 `[CreateWindowExW]` 一条都没有，误以为"没建窗"。
+    //   这里统一打一条，尺寸/样式一目了然。
+    if (getenv("WPF_LINUX_KEY_DIAG")) {
+        fprintf(stderr, "[create_window_utf8] cls=%s style=0x%x size=%dx%d parent=%p\n",
+                cls ? cls : "(null)", dwStyle, nWidth, nHeight, (void *)hWndParent);
+        fflush(stderr);
+    }
     wpf_global_init();
     (void)hMenu; (void)hInstance; (void)lpParam;
 
