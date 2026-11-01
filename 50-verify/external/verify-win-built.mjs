@@ -27,6 +27,8 @@ if (!name) {
 }
 const titlePrefix = arg('title', '');
 const seconds = Number(arg('seconds', '15'));
+// 【K-254】`--display` 复用已有 display（如 `-dpi 144` 起的高 DPI 会话）
+const reuseDisplay = arg('display', null);
 
 const dir = path.join(OUT, name);
 if (!fs.existsSync(dir)) { console.error('目录不存在: ' + dir); process.exit(2); }
@@ -40,11 +42,16 @@ const shot = path.join(dir, 'shot-' + ts + '.png');
 const treePath = path.join(dir, 'tree-' + ts + '.json');
 const logPath = path.join(dir, 'run-' + ts + '.log');
 
-const xvfb = startXvfb();
-const ok = await waitDisplay(xvfb.display, 15000);
-if (!ok) { console.error('Xvfb 未就绪'); xvfb.kill(); process.exit(1); }
+let xvfb = null;
+let display = reuseDisplay;
+if (!display) {
+  xvfb = startXvfb();
+  const ok = await waitDisplay(xvfb.display, 15000);
+  if (!ok) { console.error('Xvfb 未就绪'); xvfb.kill(); process.exit(1); }
+  display = xvfb.display;
+}
 await sleep(900);
-spawnSync('sh', ['-c', 'DISPLAY=' + xvfb.display + ' xsetroot -solid "#3050a0" 2>/dev/null']);
+spawnSync('sh', ['-c', 'DISPLAY=' + display + ' xsetroot -solid "#3050a0" 2>/dev/null']);
 
 const out = fs.openSync(logPath, 'w');
 const proc = spawn(path.join(DOTNET_ROOT, 'dotnet'), [dll], {
@@ -65,11 +72,11 @@ const proc = spawn(path.join(DOTNET_ROOT, 'dotnet'), [dll], {
 let exited = null;
 proc.on('exit', (code, sig) => { exited = { code, sig }; });
 
-const win = titlePrefix ? await findWindow(xvfb.display, titlePrefix, seconds * 1000) : null;
+const win = titlePrefix ? await findWindow(display, titlePrefix, seconds * 1000) : null;
 for (let i = 0; i < 80 && !fs.existsSync(treePath); ++i) await sleep(250);
 await sleep(600);
 
-spawnSync('sh', ['-c', 'DISPLAY=' + xvfb.display + ' import -window root ' + JSON.stringify(shot) + ' 2>/dev/null']);
+spawnSync('sh', ['-c', 'DISPLAY=' + display + ' import -window root ' + JSON.stringify(shot) + ' 2>/dev/null']);
 const shotBytes = fs.existsSync(shot) ? fs.statSync(shot).size : 0;
 
 let uia = [];
@@ -81,13 +88,13 @@ if (fs.existsSync(treePath)) {
 }
 
 if (exited == null) { try { proc.kill('SIGTERM'); } catch {} }
-try { xvfb.kill(); } catch {}
+if (xvfb) { try { xvfb.kill(); } catch {} }
 try { fs.closeSync(out); } catch {}
 
 const logTail = fs.existsSync(logPath) ? fs.readFileSync(logPath, 'utf8').split('\n').filter(Boolean).slice(-6) : [];
 
 const result = {
-  name, dll: path.relative(ROOT, dll), display: xvfb.display,
+  name, dll: path.relative(ROOT, dll), display: display,
   windowFound: !!win,
   window: win ? { id: win.id, title: win.title } : null,
   shot: path.relative(ROOT, shot), shotBytes,
