@@ -904,13 +904,39 @@ void wpf_x11_map(HWND hwnd, int map)
     }
 }
 
+int wpf_x11_moveresize_window(HWND hwnd, int x, int y, int w, int h);  /* 定义在下方 */
+
 void wpf_x11_move_resize(HWND hwnd, int x, int y, int w, int h)
 {
     if (!g_wpf.dpy || !hwnd) return;
     Window win = (Window)(uintptr_t)hwnd;
+
+    // 【清算 / K-227】**有 EWMH 窗口管理器时必须走 `_NET_MOVERESIZE_WINDOW`。**
+    //   实测（ACC-009 的 `move` 步骤）：装 openbox 之后，裸 `XMoveWindow` **不生效** ——
+    //   WM 连"无装饰"窗口也 reparent 到一个同尺寸 frame 里，裸移客户窗只会让内容在
+    //   frame 内部滑动，视觉上"窗户没动"；而且 WM 会按自己记的位置把它摆回去。
+    //   K-191 时之所以没暴露：**那时机器上根本没有 WM**（K-208/K-209 才发现）。
+    //   ⇒ 复用已有的 `wpf_x11_moveresize_window`（它已经处理了 EWMH 与无 WM 的回退）。
+    if (w > 0 && h > 0) {
+        wpf_x11_moveresize_window(hwnd, x, y, w, h);
+        return;
+    }
+    // 只移动、不改尺寸：用当前尺寸发给 WM（EWMH 的 flags 允许只改位置，
+    // 但复用现有函数更简单，且它内部会按 WM 与否二选一）。
+    int cw = 0, ch = 0;
+    {
+        wpf_lock();
+        wpf_window *ww = wpf_window_find(hwnd);
+        if (ww) { cw = ww->width; ch = ww->height; }
+        pthread_mutex_unlock(&g_wpf.lock);
+    }
+    if (cw > 0 && ch > 0) {
+        wpf_x11_moveresize_window(hwnd, x, y, cw, ch);
+        return;
+    }
+    // 拿不到尺寸时才退回裸移（无 WM 的裸 Xvfb 上这是唯一可行的方式）
     XLOCK();
-    if (w > 0 && h > 0) XMoveResizeWindow(g_wpf.dpy, win, x, y, (unsigned)w, (unsigned)h);
-    else                XMoveWindow(g_wpf.dpy, win, x, y);
+    XMoveWindow(g_wpf.dpy, win, x, y);
     XFlush(g_wpf.dpy);
     XUNLOCK();
 }
