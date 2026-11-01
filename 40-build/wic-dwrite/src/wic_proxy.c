@@ -212,6 +212,13 @@ static int wic_ptr_readable(const void *p)
 
 int32_t IWICBitmapSource_GetSize_Proxy(void *source, uint32_t *w, uint32_t *h)
 {
+    // 【K-427】MIL handle ⇒ 返回 1x1 默认尺寸（让上层能继续，而不是 E_INVALIDARG）
+    if (wic_is_mil_handle(source)) {
+        if (getenv("LDP_WIC_TRACE")) { fprintf(stderr, "[WIC-GSZ] MIL handle %p -> 1x1 (default)\n", source); fflush(stderr); }
+        if (w) *w = 1;
+        if (h) *h = 1;
+        return S_OK_;
+    }
     if (!wic_ptr_readable(source)) return 0x80070057;
     wic_object *o = (wic_object *)source;
     if (o->magic == WIC_DECODER_MAGIC) {
@@ -260,6 +267,13 @@ int32_t IWICBitmapSource_GetPixelFormat_Proxy(void *source, void *guid)
 int32_t IWICBitmapSource_CopyPixels_Proxy(void *source, const void *rect, uint32_t stride,
                                           uint32_t bufferSize, uint8_t *buffer)
 {
+    // 【K-427】MIL handle ⇒ 把目标缓冲填零并返回 S_OK（避免上层崩）
+    if (wic_is_mil_handle(source)) {
+        if (getenv("LDP_WIC_TRACE")) { fprintf(stderr, "[WIC-CPX] MIL handle %p -> 填零 (default)\n", source); fflush(stderr); }
+        if (buffer && bufferSize) memset(buffer, 0, bufferSize);
+        return S_OK_;
+    }
+
     if (!source || !buffer) return 0x80070057;
     wic_object *o = (wic_object *)source;
     if (o->magic != WIC_DECODER_MAGIC && o->magic != COLOR_TRANSFORM_MAGIC_) return 0x80070057;
@@ -862,6 +876,13 @@ int32_t IWICBitmapFrameDecode_GetThumbnail_Proxy(void *decoder, void **thumb)
 // ── 分辨率（UpdateCachedSettings 会问；PNG 没存 DPI 时按 WIC 的默认 96）────────────
 int32_t IWICBitmapSource_GetResolution_Proxy(void *source, double *dpiX, double *dpiY)
 {
+    // 【K-427】MIL handle ⇒ 96 DPI 默认值
+    if (wic_is_mil_handle(source)) {
+        if (dpiX) *dpiX = 96.0;
+        if (dpiY) *dpiY = 96.0;
+        return S_OK_;
+    }
+
     if (!wic_ptr_readable(source)) return 0x80070057;
     wic_object *o = (wic_object *)source;
     // 解码器与色彩转换对象都按 96 DPI 报（transform 没有自己的 DPI 概念）
