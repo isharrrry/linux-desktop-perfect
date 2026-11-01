@@ -1,0 +1,27 @@
+{
+ "name": "extB/ExtB_InkMedia_InkOnly",
+ "dll": "50-verify/external/win-built/extB/ExtB_InkMedia_InkOnly/ExtB_InkMedia_InkOnly.dll",
+ "display": ":170",
+ "windowFound": true,
+ "window": {
+  "id": "0x200005",
+  "title": "ExtB InkOnly [EXT-21b]"
+ },
+ "shot": "50-verify/external/win-built/extB/ExtB_InkMedia_InkOnly/shot-2026-11-01T03-06-44-515Z.png",
+ "shotBytes": 12837,
+ "uiaNodeCount": 3,
+ "uiaSample": [
+  "frame:ExtB InkOnly [EXT-21b]",
+  "drawing area:inkcanvas",
+  "label:strokes=0"
+ ],
+ "exited": null,
+ "logTail": [
+  "[A11Y-DUMP] 开始 03:06:50.634",
+  "[A11Y-DUMP] 结束 耗时=0ms",
+  "[A11Y-REPEAT] dumped",
+  "[A11Y-DUMP] 开始 03:06:51.036",
+  "[A11Y-DUMP] 结束 耗时=11ms",
+  "[A11Y-REPEAT] dumped"
+ ]
+}

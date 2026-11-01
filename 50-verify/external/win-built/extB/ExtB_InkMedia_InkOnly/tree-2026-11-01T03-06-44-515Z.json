@@ -1,0 +1,11 @@
+{
+  "app": {"name": "ExtB InkOnly [EXT-21b]"},
+  "window": {"title": "ExtB InkOnly [EXT-21b]", "scr": ""},
+  "env": {"runner": "uia-startup-hook", "dpi": 100, "theme": "(none)", "wm": true, "note": "UIA 树（AutomationPeer），非 AT-SPI 总线"},
+  "seq": 3,
+  "nodes": [
+    {"path": "0", "role": "frame", "name": "ExtB InkOnly [EXT-21b]", "states": ["!iconified", "active", "focused", "showing"], "actions": ["focus"], "bounds": [160, 137, 960, 768], "value": null, "relations": [], "child_count": 2},
+    {"path": "0/0", "role": "drawing area", "name": "inkcanvas", "states": ["visible"], "actions": [], "bounds": [160, 137, 960, 312], "value": null, "relations": [], "child_count": 0},
+    {"path": "0/1", "role": "label", "name": "strokes=0", "states": ["visible"], "actions": [], "bounds": [168, 458, 943, 439], "value": null, "relations": [], "child_count": 0}
+  ]
+}

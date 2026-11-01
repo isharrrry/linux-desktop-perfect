@@ -1,0 +1,26 @@
+{
+ "name": "extC/ExtC_Dpi",
+ "dll": "50-verify/external/win-built/extC/ExtC_Dpi/ExtC_Dpi.dll",
+ "display": ":159",
+ "windowFound": true,
+ "window": {
+  "id": "0x200005",
+  "title": "ExtC Dpi [EXT-32]"
+ },
+ "shot": "50-verify/external/win-built/extC/ExtC_Dpi/shot-2026-11-01T03-07-31-085Z.png",
+ "shotBytes": 25735,
+ "uiaNodeCount": 2,
+ "uiaSample": [
+  "frame:ExtC Dpi [EXT-32]",
+  "label:dpiinfo"
+ ],
+ "exited": null,
+ "logTail": [
+  "[A11Y-DUMP] 开始 03:07:37.363",
+  "[A11Y-DUMP] 结束 耗时=0ms",
+  "[A11Y-REPEAT] dumped",
+  "[A11Y-DUMP] 开始 03:07:37.764",
+  "[A11Y-DUMP] 结束 耗时=0ms",
+  "[A11Y-REPEAT] dumped"
+ ]
+}
