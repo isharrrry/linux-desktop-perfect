@@ -53,6 +53,9 @@ int Shell_NotifyIconW(uint32_t dwMessage, const void *lpData)
     (void)dwMessage; (void)lpData;
     return 1;   // TRUE
 }
+// 【清算 / K-171】无后缀别名（清单条目是 `Shell_NotifyIcon`，不含 W）
+int Shell_NotifyIcon(uint32_t dwMessage, const void *lpData)
+{ return Shell_NotifyIconW(dwMessage, lpData); }
 
 // 【WinForms 用】取进程令牌（`SystemInformation`/权限判断）。
 //   Linux 无 Windows 访问令牌 ⇒ 标准失败 + ERROR_CALL_NOT_IMPLEMENTED（120）。

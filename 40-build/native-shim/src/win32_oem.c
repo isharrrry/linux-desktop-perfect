@@ -152,9 +152,48 @@ UINT_PTR SHGetFileInfoW(const uint16_t *path, DWORD attrs, SHFILEINFOW *fi, UINT
 { (void)path; (void)attrs; (void)fi; (void)cb; (void)flags; wpf_set_last_error(E_NOTIMPL_CODE); return 0; }
 UINT_PTR SHGetFileInfoA(const char *path, DWORD attrs, SHFILEINFOW *fi, UINT cb, UINT flags)
 { (void)path; (void)attrs; (void)fi; (void)cb; (void)flags; wpf_set_last_error(E_NOTIMPL_CODE); return 0; }
+// 【清算 / K-171】**真实现**（原来恒返回 32 = 失败 + E_NOTIMPL，是典型的"假值"）。
+//   Linux 上 `ShellExecute` 的对应物就是 `xdg-open`。成功返回 > 32 的值（Win32 约定）。
 HANDLE ShellExecuteW(void *hwnd, const uint16_t *op, const uint16_t *file, const uint16_t *params,
                      const uint16_t *dir, int32_t show)
-{ (void)hwnd;(void)op;(void)file;(void)params;(void)dir;(void)show; wpf_set_last_error(E_NOTIMPL_CODE); return (HANDLE)(intptr_t)32; }
+{
+    (void)hwnd; (void)op; (void)params; (void)dir; (void)show;
+    if (!file) { wpf_set_last_error(2); return (HANDLE)(intptr_t)2; }   // ERROR_FILE_NOT_FOUND
+    char buf[2048]; size_t oi = 0;
+    for (const uint16_t *q = file; *q && oi + 4 < sizeof buf; ++q) {
+        uint32_t cp = *q;
+        if (cp < 0x80) buf[oi++] = (char)cp;
+        else if (cp < 0x800) { buf[oi++] = (char)(0xC0 | (cp >> 6)); buf[oi++] = (char)(0x80 | (cp & 0x3F)); }
+        else { buf[oi++] = (char)(0xE0 | (cp >> 12)); buf[oi++] = (char)(0x80 | ((cp >> 6) & 0x3F)); buf[oi++] = (char)(0x80 | (cp & 0x3F)); }
+    }
+    buf[oi] = 0;
+    pid_t pid = fork();
+    if (pid < 0) { wpf_set_last_error(8); return (HANDLE)(intptr_t)8; }   // ERROR_NOT_ENOUGH_MEMORY
+    if (pid == 0) {
+        freopen("/dev/null", "w", stdout);
+        freopen("/dev/null", "w", stderr);
+        execlp("xdg-open", "xdg-open", buf, (char *)NULL);
+        _exit(127);
+    }
+    int st = 0;
+    waitpid(pid, &st, 0);
+    if (WIFEXITED(st) && WEXITSTATUS(st) == 0) return (HANDLE)(intptr_t)42;   // > 32 = 成功
+    wpf_set_last_error(2);
+    return (HANDLE)(intptr_t)2;
+}
+
+// 【清算 / K-171】无后缀别名（清单里这几条上游 DllImport 不带 W/A 后缀）
+HANDLE ShellExecute(void *hwnd, const uint16_t *op, const uint16_t *file,
+                    const uint16_t *params, const uint16_t *dir, int32_t show)
+{ return ShellExecuteW(hwnd, op, file, params, dir, show); }
+int32_t ShellExecuteEx(void *seiW)
+{
+    if (!seiW) return 0;
+    void **p = (void **)seiW;
+    HANDLE r = ShellExecuteW(NULL, NULL, (const uint16_t *)p[5], NULL, NULL, 1);
+    p[0] = r;
+    return ((intptr_t)r > 32) ? 1 : 0;
+}
 int32_t SHCreateItemFromParsingName(const uint16_t *path, void *bc, const void *iid, void **out)
 { (void)path; (void)bc; (void)iid; if (out) *out = NULL; return (int32_t)0x80004005; }   /* E_FAIL */
 // ── ★`TASK-0747`（`D-G124` 的 `F-A` 最小修法）· shell32：补 `SHAppBarMessage` ─────
