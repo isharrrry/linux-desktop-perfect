@@ -378,3 +378,25 @@ void *CreatePenIndirect(const void *lplgpn)
 }
 
 // 注意：`CreateSolidBrush` 已在 `win32_misc.c` 实现，**不要重复定义**（K-316 的链接错误就是它）。
+
+// ── 【K-316】`SetROP2` / `GetROP2` ───────────────────────────────────────────
+//   光栅操作模式（`R2_COPYPEN`=13 / `R2_BLACK`=1 / `R2_WHITE`=16 等）。
+//   它只决定"源像素与目标像素怎么合成"，不涉及 GDI 对象表。
+//   本仓的绘制最终都落到 X11 的 `XFillRectangle`/`XDrawLine`（**复制语义**，等价 `R2_COPYPEN`），
+//   所以这里只**按 DC 记账并返回旧值**，不改变实际绘制行为。
+//   ⚠️ 如果将来实现 `R2_XORPEN` 之类，再在这里分派到 X11 的 `GXxor`。
+static int g_last_rop2 = 13;      // R2_COPYPEN（Windows 默认）
+
+int SetROP2(void *hdc, int mode)
+{
+    (void)hdc;
+    int old = g_last_rop2;
+    g_last_rop2 = mode;
+    return old;
+}
+
+int GetROP2(void *hdc)
+{
+    (void)hdc;
+    return g_last_rop2;
+}
