@@ -317,3 +317,20 @@ void *GetHdcW(void *hdc) { return hdc; }
 int  ReleaseHdc(void *hdc) { (void)hdc; return 1; }
 int  ReleaseHdcA(void *hdc) { (void)hdc; return 1; }
 int  ReleaseHdcW(void *hdc) { (void)hdc; return 1; }
+
+// ── 【K-311】`GetNearestColor` ────────────────────────────────────────────────
+//   WinForms 的 `Control.PaintBackColor` 每次都调它：
+//     `DeviceContextExtensions.FindNearestColor(hdc, color)` → `PInvoke::GetNearestColor`
+//   语义：把一个 32 位 COLORREF 映射到设备能显示的"最接近颜色"。
+//
+//   Linux 上的取舍：**直通返回原值**。理由：
+//     ① X11 的真彩色视觉（TrueColor，24/32 位）能显示任意 RGB ⇒ 没有"最近色"可降级；
+//     ② 这是纯查询函数，不做绘制，直通不影响正确性；
+//     ③ 如果将来要支持 8 位伪彩色视觉，再在这里做量化。
+//   参数 `hdc` 可能是我们的 `GpGraphics*` 假句柄（K-292 已确认 `FillRect` 就是这么用的），
+//   本函数**不看 hdc 内容**，与 `FillRect` 的处置一致。
+uint32_t GetNearestColor(void *hdc, uint32_t color)
+{
+    (void)hdc;
+    return color;
+}
