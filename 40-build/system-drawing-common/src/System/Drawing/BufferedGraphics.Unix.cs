@@ -103,7 +103,7 @@ namespace System.Drawing
         //   实现方式：**不再尝试 `Graphics.FromHdc(0x1)`**（那会解引用地址 1 ⇒ SIGSEGV，K-332 实测），
         //   而是用 `LockBits` 拿 `membmp` 的像素，经 shim 的 `WpfLinuxWin32_DrawImage`
         //   用 `XPutImage` **一次贴到屏幕**（K-340 已实现该 API）。
-        [DllImport("WPF_LINUX_WIN32_SHIM", EntryPoint = "WpfLinuxWin32_DrawImage")]
+        [DllImport("USER32.dll", EntryPoint = "WpfLinuxWin32_DrawImage")]
         private static extern int NativeDrawImage(IntPtr hdc, int x, int y, int w, int h,
                                                   IntPtr bgra, int stride);
 
