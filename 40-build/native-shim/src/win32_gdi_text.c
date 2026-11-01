@@ -334,3 +334,25 @@ uint32_t GetNearestColor(void *hdc, uint32_t color)
     (void)hdc;
     return color;
 }
+
+// ── 【K-313】`GetSysColorBrush` ──────────────────────────────────────────────
+//   WinForms 画控件背景时会调 `GetSysColorBrush(COLOR_BTNFACE)` 之类拿系统颜色画刷，
+//   再传给 `FillRect`。Linux 上没有"系统画刷"，但我们有 GDI 对象表：
+//     `wpf_gdi_alloc(kind, color, width, style)` 建对象，`wpf_gdi_of(handle)` 查表，
+//     `wpf_gdi_color(handle, dflt)` 取颜色 —— `FillRect` 就是这么取色的（K-313）。
+//
+//   **颜色查 `GetSysColor(index)`**（已在 `win32_core.c:2484` 实现，31 个 COLOR_* 索引，
+//   Win10 默认调色板）—— **不要在这里重复定义 `GetSysColor`**（K-315 的链接错误就是它）。
+//
+//   同一索引必须返回**同一句柄**（WinForms 会 cache 并比较），所以用静态数组缓存。
+extern int GetSysColor(int index);          // 定义在 win32_core.c
+
+void *GetSysColorBrush(int nIndex)
+{
+    static void *cache[32];
+    if (nIndex < 0 || nIndex >= 32) nIndex = 0;
+    if (!cache[nIndex]) {
+        cache[nIndex] = wpf_gdi_alloc(/*kind=brush*/1, (uint32_t)GetSysColor(nIndex), 0, 0);
+    }
+    return cache[nIndex];
+}
