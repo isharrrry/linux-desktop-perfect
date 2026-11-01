@@ -64,4 +64,23 @@ for pair in "$@"; do
     fi
 done
 
+# ── 【K-345】Win32 库名 → libwpfwin32.so 的符号链接 ──────────────────────────
+#   背景：WinForms 的 `[DllImport("USER32.dll")]` 之类在 Linux 上要能找到库。
+#   本仓的做法是**在 $FX 里建同名符号链接**（不是 resolver 转发）——
+#   因为 `NativeLibrary.SetDllImportResolver` 只对**装了 resolver 的程序集**生效，
+#   而官方 `System.Windows.Forms.dll` 没装（K-014）。
+#
+#   `SHLWAPI.dll` 是 K-345 补的：`SHAutoComplete` 在这个库里，WinForms 的 TextBox 自动完成会调。
+WIN32_ALIASES="USER32.dll USER32 GDI32.dll GDI32 KERNEL32.dll KERNEL32
+COMCTL32.dll COMCTL32 SHELL32.dll SHELL32 SHLWAPI.dll SHLWAPI
+OLE32.dll OLE32 UxTheme.dll UXTHEME WINMM.dll WINMM"
+for alias in $WIN32_ALIASES; do
+    if [ "$CHECK" = "1" ]; then
+        [ -e "$FX/$alias" ] || { echo "缺   链接 $alias → libwpfwin32.so" >&2; fail=1; }
+    else
+        ln -sf libwpfwin32.so "$FX/$alias"
+    fi
+done
+[ "$CHECK" = "1" ] && echo "OK   Win32 库名链接（$WIN32_ALIASES）"
+
 exit $fail

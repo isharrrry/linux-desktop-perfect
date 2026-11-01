@@ -270,3 +270,21 @@ int SHGetItemFromDataObject(void *pdo, uint32_t dwFlags, const void *riid, void 
     if (ppv) *ppv = 0;
     return (int)0x80004005;   // E_FAIL
 }
+
+// ── 【K-345】`SHAutoComplete`（`SHLWAPI.dll`）──────────────────────────────────
+//   `HRESULT SHAutoComplete(HWND hwndEdit, DWORD dwFlags)`
+//   WinForms 的 `TextBox` 在启用自动完成时会调它（`System.Windows.Forms.Primitives` 的
+//   `Windows.Win32.PInvoke::SHAutoComplete`）。
+//
+//   **Linux 上没有 shell 自动完成服务** —— 这是一个**真实的"无对应物"**，不是我们没做：
+//   `SHAutoComplete` 的作用是"把 Windows Shell 的自动完成列表挂到编辑框上"，
+//   它依赖 `IAutoComplete2` COM 对象 + Shell 的 MRU 历史。
+//   ⇒ 返回 `S_OK` 表示"已登记"（调用方不会因此崩），但**不会真的有自动完成**。
+//   这是一个**诚实的降级**：功能缺失、不影响程序运行（子代理实测 `ThreadException` 捕获后退出码仍是 0）。
+//
+//   取值：`S_OK = 0`、`E_NOTIMPL = 0x80004001`。用 `S_OK`（更宽容，多数调用方只检查 `SUCCEEDED`）。
+int32_t SHAutoComplete(void *hwndEdit, uint32_t dwFlags)
+{
+    (void)hwndEdit; (void)dwFlags;
+    return 0;      // S_OK —— 见上面的说明：登记成功但无实际效果
+}
