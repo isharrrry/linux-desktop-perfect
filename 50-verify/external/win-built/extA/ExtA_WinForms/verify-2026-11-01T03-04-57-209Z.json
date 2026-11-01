@@ -1,0 +1,23 @@
+{
+ "name": "extA/ExtA_WinForms",
+ "dll": "50-verify/external/win-built/extA/ExtA_WinForms/ExtA_WinForms.dll",
+ "display": ":112",
+ "windowFound": true,
+ "window": {
+  "id": "0x00200008",
+  "title": "ExtA WinForms [EXT-11]"
+ },
+ "shot": "50-verify/external/win-built/extA/ExtA_WinForms/shot-2026-11-01T03-04-57-209Z.png",
+ "shotBytes": 2328,
+ "uiaNodeCount": 0,
+ "uiaSample": [],
+ "exited": null,
+ "logTail": [
+  "[FCE] PaintEventArgs=System.Windows.Forms, Version=10.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089",
+  "[FCE] IDeviceContext=System.Drawing.Common, Version=10.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51",
+  "[FCE] InterfaceMap 长度=2",
+  "[FCE]   GetHdc -> System.Drawing.IDeviceContext.GetHdc",
+  "[FCE]   ReleaseHdc -> System.Drawing.IDeviceContext.ReleaseHdc",
+  "[SHIM-COVER] 映射 USER32.dll → shim（请求方 System.Windows.Forms.Primitives）"
+ ]
+}

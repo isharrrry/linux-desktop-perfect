@@ -1,0 +1,27 @@
+{
+ "name": "extB/ExtB_Print",
+ "dll": "50-verify/external/win-built/extB/ExtB_Print/ExtB_Print.dll",
+ "display": ":148",
+ "windowFound": true,
+ "window": {
+  "id": "0x200005",
+  "title": "ExtB Print [EXT-22]"
+ },
+ "shot": "50-verify/external/win-built/extB/ExtB_Print/shot-2026-11-01T03-05-21-387Z.png",
+ "shotBytes": 12511,
+ "uiaNodeCount": 3,
+ "uiaSample": [
+  "frame:ExtB Print [EXT-22]",
+  "push button:btnPrint",
+  "label:printed=pending"
+ ],
+ "exited": null,
+ "logTail": [
+  "[A11Y-DUMP] 开始 03:05:28.686",
+  "[A11Y-DUMP] 结束 耗时=0ms",
+  "[A11Y-REPEAT] dumped",
+  "[A11Y-DUMP] 开始 03:05:29.087",
+  "[A11Y-DUMP] 结束 耗时=1ms",
+  "[A11Y-REPEAT] dumped"
+ ]
+}

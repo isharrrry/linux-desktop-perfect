@@ -1,0 +1,28 @@
+{
+ "name": "extC/ExtC_BindStyle",
+ "dll": "50-verify/external/win-built/extC/ExtC_BindStyle/ExtC_BindStyle.dll",
+ "display": ":122",
+ "windowFound": true,
+ "window": {
+  "id": "0x200005",
+  "title": "ExtC BindStyle [EXT-31]"
+ },
+ "shot": "50-verify/external/win-built/extC/ExtC_BindStyle/shot-2026-11-01T03-04-51-054Z.png",
+ "shotBytes": 14912,
+ "uiaNodeCount": 4,
+ "uiaSample": [
+  "frame:ExtC BindStyle [EXT-31]",
+  "label:bindtext",
+  "push button:btnchange",
+  "push button:btnstyled"
+ ],
+ "exited": null,
+ "logTail": [
+  "[A11Y-DUMP] 结束 耗时=42ms",
+  "[A11Y-REPEAT] StartRepeat 开始（400ms 周期）pid=1508427",
+  "[A11Y-HB] 心跳已启动（1s）",
+  "[A11Y-DUMP] 开始 03:04:58.089",
+  "[A11Y-DUMP] 结束 耗时=0ms",
+  "[A11Y-REPEAT] dumped"
+ ]
+}

@@ -1,0 +1,12 @@
+{
+  "app": {"name": "ExtC BindStyle [EXT-31]"},
+  "window": {"title": "ExtC BindStyle [EXT-31]", "scr": ""},
+  "env": {"runner": "uia-startup-hook", "dpi": 100, "theme": "(none)", "wm": true, "note": "UIA 树（AutomationPeer），非 AT-SPI 总线"},
+  "seq": 2,
+  "nodes": [
+    {"path": "0", "role": "frame", "name": "ExtC BindStyle [EXT-31]", "states": ["!iconified", "active", "focused", "showing"], "actions": ["focus"], "bounds": [160, 137, 960, 768], "value": null, "relations": [], "child_count": 3},
+    {"path": "0/0", "role": "label", "name": "bindtext", "states": ["visible"], "actions": [], "bounds": [177, 154, 927, 24], "value": null, "relations": [], "child_count": 0},
+    {"path": "0/1", "role": "push button", "name": "btnchange", "states": ["enabled", "sensitive", "visible"], "actions": ["click"], "bounds": [177, 186, 125, 33], "value": null, "relations": [], "child_count": 0},
+    {"path": "0/2", "role": "push button", "name": "btnstyled", "states": ["enabled", "sensitive", "visible"], "actions": ["click"], "bounds": [177, 232, 208, 46], "value": null, "relations": [], "child_count": 0}
+  ]
+}
