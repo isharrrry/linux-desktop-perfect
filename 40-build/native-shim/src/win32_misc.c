@@ -439,21 +439,23 @@ UINT GetDpiForWindow(HWND h)
     wpf_screen_metrics m; wpf_x11_screen_metrics(&m);
     if (getenv("WPF_LINUX_KEY_DIAG")) {
         static int n = 0;
-        if (++n <= 6) { fprintf(stderr, "[DPI] GetDpiForWindow -> %d (screen dpi_x=%d)\n", (int)m.dpi_x, (int)m.dpi_x); fflush(stderr); }
+        if (++n <= 6) { fprintf(stderr, "[DPIQ] GetDpiForWindow = %d\n", (int)m.dpi_x); fflush(stderr); }
     }
     return (UINT)m.dpi_x;
 }
 UINT GetDpiForSystem(void)
 {
+    if (getenv("WPF_LINUX_KEY_DIAG")) { fprintf(stderr, "[DPIQ] GetDpiForSystem\n"); fflush(stderr); }
     if (wpf_legacy_dpi()) return 96;
     wpf_screen_metrics m; wpf_x11_screen_metrics(&m); return (UINT)m.dpi_x;
 }
 UINT GetDpiForMonitor(void *mon, int type, UINT *dpiX, UINT *dpiY)
-{ (void)mon; (void)type;
+{
+    if (getenv("WPF_LINUX_KEY_DIAG")) { fprintf(stderr, "[DPIQ] GetDpiForMonitor type=%d\n", type); fflush(stderr); } (void)mon; (void)type;
   wpf_screen_metrics m; wpf_x11_screen_metrics(&m);
   if (dpiX) *dpiX = (UINT)m.dpi_x; if (dpiY) *dpiY = (UINT)m.dpi_y;
   return 0; }  // S_OK，值是真的（X server 报的屏幕 DPI）
-BOOL SetProcessDPIAware(void) { return 1; }        // 已经是「不缩放」，设置成功
+BOOL SetProcessDPIAware(void) { if (getenv("WPF_LINUX_KEY_DIAG")) { fprintf(stderr, "[DPIQ] SetProcessDPIAware\n"); fflush(stderr); } return 1; }        // 已经是「不缩放」，设置成功
 BOOL IsProcessDPIAware(void) { return 1; }
 BOOL EnableNonClientDpiScaling(HWND h) { (void)h; return 1; }
 void *GetWindowDpiAwarenessContext(HWND h) { (void)h; return (void *)(uintptr_t)-4; }  // DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2 的近似
