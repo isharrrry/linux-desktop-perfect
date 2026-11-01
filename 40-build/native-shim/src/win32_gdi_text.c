@@ -483,11 +483,22 @@ int SetPixelV(void *hdc, int32_t x, int32_t y, uint32_t color)
 //   不猜 `uState` 的位组合，只区分"按下"（`DFCS_PUSHED=0x0200`）与"正常"两档颜色。
 int DrawFrameControl(void *hdc, const WPF_RECT *lprc, unsigned int uType, unsigned int uState)
 {
-    (void)uType;
+    // 【K-364】从「只区分 pushed」升级为支持 `DFCS_*` 的主要状态位。
+    //   参考 Win32 的 `DFCS_*` 常量（`winuser.h`）：
+    //     DFCS_BUTTONCHECK 0x0000 / DFCS_BUTTONPUSH 0x0010 / DFCS_BUTTONRADIO 0x0004
+    //     DFCS_CHECKED     0x0400 / DFCS_INACTIVE    0x0100 / DFCS_PUSHED     0x0200
+    //     DFCS_FLAT        0x4000 / DFCS_MONO        0x8000
+    //   本仓的取舍（诚实）：**只画"凹陷/凸起边框 + 选中标记"**，不画完整主题外观。
+    //   `DFCS_CHECKED` 用一个小方块（而不是对勾）—— 因为本仓没有矢量路径绘制能力。
     if (!lprc) return 0;
-    int pushed = (uState & 0x0200u) != 0;      // DFCS_PUSHED
+    int pushed   = (uState & 0x0200u) != 0;    // DFCS_PUSHED
+    int inactive = (uState & 0x0100u) != 0;    // DFCS_INACTIVE
+    int checked  = (uState & 0x0400u) != 0;    // DFCS_CHECKED
+    int flat     = (uState & 0x4000u) != 0;    // DFCS_FLAT
     uint32_t dark  = pushed ? 0xFFFFFFu : 0xA0A0A0u;
     uint32_t light = pushed ? 0xA0A0A0u : 0xFFFFFFu;
+    if (inactive) { dark = 0xC8C8C8u; light = 0xF0F0F0u; }   // 灰化：边框对比度降低
+    if (flat)     { dark = 0xD0D0D0u; light = 0xE8E8E8u; }   // 平面：几乎无对比
 
     WPF_RECT r = *lprc;
     WPF_RECT top, bot, lft, rgt;
@@ -504,5 +515,18 @@ int DrawFrameControl(void *hdc, const WPF_RECT *lprc, unsigned int uType, unsign
     wpf_draw_fill_rect((HDC)hdc, &lft, dark);
     wpf_draw_fill_rect((HDC)hdc, &bot, light);
     wpf_draw_fill_rect((HDC)hdc, &rgt, light);
+
+    // 选中标记：在中心画一个小方块（Win32 的 DFCS_CHECKED 是对勾/圆点，本仓用方块代替）
+    if (checked) {
+        int w = r.right - r.left, h = r.bottom - r.top;
+        int m = (w < h ? w : h) / 3;            // 边长 = 短边的 1/3
+        if (m < 2) m = 2;
+        WPF_RECT ck;
+        ck.left   = r.left + (w - m) / 2;
+        ck.top    = r.top  + (h - m) / 2;
+        ck.right  = ck.left + m;
+        ck.bottom = ck.top  + m;
+        wpf_draw_fill_rect((HDC)hdc, &ck, 0x000000u);   // 黑色方块（与 BTNTEXT 一致）
+    }
     return 1;
 }
