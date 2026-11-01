@@ -1125,6 +1125,55 @@ void PostQuitMessage(int exitCode)
 static int g_in_send_message = 0;
 int wpf_in_send_message_depth(void) { return g_in_send_message; }
 
+// ── 【K-451】原生控件项存储（ListBox / ComboBox）────────────────────────────
+//   K-450 探针实测：WinForms **确实发** `CB_ADDSTRING`(0x0143)、`LB_GETCOUNT`(0x0180)、
+//   `LB_GETTEXT`(0x01A5) 等消息（推翻了 K-359 的「探针 0 条」）。
+//   ⇒ 这里维护「窗口 → 项列表」的简单存储，并在 `WM_PAINT` 里逐项画。
+//
+//   局限（诚实）：只存**前 32 个窗口 / 每个 64 项 / 每项 128 字节**，
+//   足够覆盖本仓的样本（`ExtA_WinForms` 只有 2 项）。
+#define LDP_MAX_WINDOWS  32
+#define LDP_MAX_ITEMS    64
+#define LDP_MAX_ITEMLEN  128
+typedef struct {
+    HWND hwnd;
+    int  count;
+    char items[LDP_MAX_ITEMS][LDP_MAX_ITEMLEN];
+} ldp_items;
+static ldp_items g_items[LDP_MAX_WINDOWS];
+static pthread_mutex_t g_items_lock = PTHREAD_MUTEX_INITIALIZER;
+
+static ldp_items *ldp_items_of(HWND hwnd, int create)
+{
+    pthread_mutex_lock(&g_items_lock);
+    ldp_items *free_slot = NULL;
+    for (int i = 0; i < LDP_MAX_WINDOWS; ++i) {
+        if (g_items[i].hwnd == hwnd) { pthread_mutex_unlock(&g_items_lock); return &g_items[i]; }
+        if (!free_slot && g_items[i].hwnd == 0) free_slot = &g_items[i];
+    }
+    if (create && free_slot) {
+        free_slot->hwnd = hwnd;
+        free_slot->count = 0;
+        pthread_mutex_unlock(&g_items_lock);
+        return free_slot;
+    }
+    pthread_mutex_unlock(&g_items_lock);
+    return NULL;
+}
+
+// 把 UTF-16（来自 WinForms 的 LPARAM）拷成 UTF-8（供 DrawTextW 用）
+static void ldp_utf16_to_utf8(const uint16_t *src, char *dst, int dstlen)
+{
+    int j = 0;
+    for (int i = 0; src && src[i] && j < dstlen - 1; ++i) {
+        uint32_t c = src[i];
+        if (c < 0x80) dst[j++] = (char)c;
+        else if (c < 0x800) { dst[j++] = (char)(0xC0 | (c >> 6)); dst[j++] = (char)(0x80 | (c & 0x3F)); }
+        else { dst[j++] = (char)(0xE0 | (c >> 12)); dst[j++] = (char)(0x80 | ((c >> 6) & 0x3F)); dst[j++] = (char)(0x80 | (c & 0x3F)); }
+    }
+    dst[j] = 0;
+}
+
 LRESULT SendMessageW(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
 {
     wpf_global_init();
@@ -1142,6 +1191,33 @@ LRESULT SendMessageW(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
                 fflush(stderr);
             }
         }
+    }
+    // 【K-451】拦截 ListBox / ComboBox 的项管理消息（K-450 实测 WinForms 会发这些）
+    switch (msg) {
+        case 0x0143: /* CB_ADDSTRING */ case 0x0183: /* LB_ADDSTRING */ {
+            ldp_items *it = ldp_items_of(hwnd, 1);
+            if (it && it->count < LDP_MAX_ITEMS) {
+                ldp_utf16_to_utf8((const uint16_t *)lp, it->items[it->count], LDP_MAX_ITEMLEN);
+                if (getenv("LDP_WIC_TRACE")) { fprintf(stderr, "[ITEMS] ADD %p #%d '%s'\n", (void *)hwnd, it->count, it->items[it->count]); fflush(stderr); }
+                return it->count++;
+            }
+            return -1;
+        }
+        case 0x0146: /* CB_GETCOUNT */ case 0x0180: /* LB_GETCOUNT */ {
+            ldp_items *it = ldp_items_of(hwnd, 0);
+            return it ? it->count : 0;
+        }
+        case 0x0149: /* CB_GETLBTEXT */ case 0x0189: /* LB_GETTEXT */ {
+            ldp_items *it = ldp_items_of(hwnd, 0);
+            if (!it || (int)wp >= it->count || !lp) return 0;
+            uint16_t *dst = (uint16_t *)lp;
+            const char *src = it->items[wp];
+            int n = 0;
+            while (src[n] && n < LDP_MAX_ITEMLEN - 1) { dst[n] = (uint16_t)(unsigned char)src[n]; ++n; }
+            dst[n] = 0;
+            return n;
+        }
+        default: break;
     }
     ++g_in_send_message;
     LRESULT r = wpf_dispatch_to_window(hwnd, msg, wp, lp);
