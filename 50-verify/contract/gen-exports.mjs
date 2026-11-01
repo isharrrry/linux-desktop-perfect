@@ -220,7 +220,6 @@ const LIBS = {
   // 【清算 / K-185】.NET 的 System.IO.Compression 走 `[DllImport("libSystem.IO.Compression.Native")]`
   //   —— 库名带 `lib` 前缀，所以这 8 个符号**不在 libwpfwin32.so 里**，在独立构建的
   //   `40-build/zlib-native/bin/libSystem.IO.Compression.Native.so`（zlib 适配层）。
-  'system.io.compression.native': ['libSystem.IO.Compression.Native.so', 'MOD-52'],
   windowscodecsext: ['libwpfwic.so', 'MOD-41'],
   mscms: ['libwpfwic.so', 'MOD-42'],
   uiautomationcore: ['libwpfwin32.so', 'MOD-81'],
@@ -435,6 +434,7 @@ const SO_IMPL = {
   'libwpfwin32.so': parseShimExports(),
   'libwpfgfx_linux.so': parseMilcoreExports(),
   'libwpfwic.so': parseWicExports(),
+  'libSystem.IO.Compression.Native.so': parseZlibExports(),
 };
 
 function statusFor(so, symbol) {

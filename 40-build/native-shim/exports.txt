@@ -3,16 +3,16 @@
 # 列：lib	symbol	status	owner	since[	note]（note 为可选列；为空时省略，行尾不留制表符）
 # status 判定：impl=实现侧有该符号；stub=函数体仅常量返回；gap=声明有实现无（note 写替代路径）
 # lib 列：若实现将落在哪个自产 .so（概设 §2.4）；status=gap 表示当前无实现，不是没登记
-# 规模：1285 行（impl 984 / stub 103 / gap 198）
+# 规模：1285 行（impl 991 / stub 103 / gap 191）
 # 输入：上游 1534 条 DllImport 声明（另有 0 条属性块后无 extern 声明被跳过）、native-shim 886 个导出、milcore 109 个导出
 # 排除：wpf_*（shim 内部件）、WpfLinuxWin32_*（桥件，非 Win32 契约入口）
-libSystem.IO.Compression.Native.so	CompressionNative_Crc32	gap	MOD-52	10.0.11	无实现（system.io.compression.native）
-libSystem.IO.Compression.Native.so	CompressionNative_Deflate	gap	MOD-52	10.0.11	无实现（system.io.compression.native）
-libSystem.IO.Compression.Native.so	CompressionNative_DeflateEnd	gap	MOD-52	10.0.11	无实现（system.io.compression.native）
-libSystem.IO.Compression.Native.so	CompressionNative_DeflateInit2_	gap	MOD-52	10.0.11	无实现（system.io.compression.native）
-libSystem.IO.Compression.Native.so	CompressionNative_Inflate	gap	MOD-52	10.0.11	无实现（system.io.compression.native）
-libSystem.IO.Compression.Native.so	CompressionNative_InflateEnd	gap	MOD-52	10.0.11	无实现（system.io.compression.native）
-libSystem.IO.Compression.Native.so	CompressionNative_InflateInit2_	gap	MOD-52	10.0.11	无实现（system.io.compression.native）
+libSystem.IO.Compression.Native.so	CompressionNative_Crc32	impl	MOD-52	10.0.11
+libSystem.IO.Compression.Native.so	CompressionNative_Deflate	impl	MOD-52	10.0.11
+libSystem.IO.Compression.Native.so	CompressionNative_DeflateEnd	impl	MOD-52	10.0.11
+libSystem.IO.Compression.Native.so	CompressionNative_DeflateInit2_	impl	MOD-52	10.0.11
+libSystem.IO.Compression.Native.so	CompressionNative_Inflate	impl	MOD-52	10.0.11
+libSystem.IO.Compression.Native.so	CompressionNative_InflateEnd	impl	MOD-52	10.0.11
+libSystem.IO.Compression.Native.so	CompressionNative_InflateInit2_	impl	MOD-52	10.0.11
 libwpfgfx_linux.so	GetNextPerfElementId	impl	MOD-25	10.0.11
 libwpfgfx_linux.so	IWICColorContext_GetExifColorSpace_Proxy	impl	MOD-25	10.0.11
 libwpfgfx_linux.so	IWICColorContext_GetProfileBytes_Proxy	impl	MOD-25	10.0.11
