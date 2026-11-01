@@ -989,9 +989,25 @@ static HWND create_window_utf8(uint32_t dwExStyle, const char *cls,
     // 【诊断 / K-238】`CreateWindowExA`/`CreateWindowEx` 直接转发到这里、**没有各自日志**，
     //   而 WPF 实际走的就是无后缀那条 ⇒ 之前 `[CreateWindowExW]` 一条都没有，误以为"没建窗"。
     //   这里统一打一条，尺寸/样式一目了然。
+    // 【清算 / K-239】**解析 `CW_USEDEFAULT`。**
+    //   Win32 的 `CW_USEDEFAULT`(0x80000000) 意思是"让系统选默认位置/尺寸"，
+    //   典型实现是"重叠窗口 = 屏幕的 3/4 并居中"。**绝不能原样传给 X11**
+    //   （原样传会让窗口被建成 800x600 之类，且掩盖真实的 XAML Width/Height）。
+    //   实测（K-238）：`MainWindow.xaml` 的 `Width=960 Height=640` 到 shim 时变成
+    //   `size=-2147483648x-2147483648` ⇒ 窗口 800x600 ⇒ ACC-011（DPI）期望 1440 得到 800。
+    if (nWidth == (int32_t)0x80000000) {
+        wpf_screen_metrics sm; wpf_x11_screen_metrics(&sm);
+        nWidth = (sm.pixels_wide > 0) ? (sm.pixels_wide * 3 / 4) : 800;
+        if (X == (int32_t)0x80000000) X = (sm.pixels_wide - nWidth) / 2;
+    }
+    if (nHeight == (int32_t)0x80000000) {
+        wpf_screen_metrics sm; wpf_x11_screen_metrics(&sm);
+        nHeight = (sm.pixels_high > 0) ? (sm.pixels_high * 3 / 4) : 600;
+        if (Y == (int32_t)0x80000000) Y = (sm.pixels_high - nHeight) / 2;
+    }
     if (getenv("WPF_LINUX_KEY_DIAG")) {
-        fprintf(stderr, "[create_window_utf8] cls=%s style=0x%x size=%dx%d parent=%p\n",
-                cls ? cls : "(null)", dwStyle, nWidth, nHeight, (void *)hWndParent);
+        fprintf(stderr, "[create_window_utf8] cls=%s style=0x%x size=%dx%d at=%d,%d parent=%p\n",
+                cls ? cls : "(null)", dwStyle, nWidth, nHeight, X, Y, (void *)hWndParent);
         fflush(stderr);
     }
     wpf_global_init();
