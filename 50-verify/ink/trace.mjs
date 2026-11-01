@@ -48,11 +48,57 @@ try {
       if (ink && Array.isArray(ink.bounds) && ink.bounds[2] > 0) {
         const [x, y, w, h] = ink.bounds;
         const cx = x + Math.floor(w / 2), cy = y + Math.floor(h / 2);
-        spawnSync('sh', ['-c', `DISPLAY=${xvfb.display} xdotool mousemove ${cx} ${cy} mousedown 1 mousemove ${cx + 60} ${cy + 30} mouseup 1`], { encoding: 'utf8', timeout: 20000 });
+        // 【K-264/K-265 修复】画一笔前后各截一张图，用**像素差**判定是否真的画出东西。
+        //   为什么必须改：原来的判定是
+        //     `strokeLike = nodes.filter(n => /stroke|ink/i.test(n.name) || /ink/i.test(n.role))`
+        //   而根窗口名是 `WpfMediaInk` —— `/ink/i` 匹配了 "Media**Ink**" ⇒ **恒为真**（假阳性，K-264）。
+        //   而且 `WpfMediaInk` 含 `<MediaElement>` ⇒ 命中官方 MIL 限制（K-257）⇒ **整个画面空白**
+        //   ⇒ 连「InkCanvas 有没有画上」都观测不到（K-265）。
+        //   ⇒ 改用像素差（不受 UIA 节点名巧合影响）+ 保留 UIA 作为辅助证据。
+        const shotBefore = path.join(os.tmpdir(), `acc023-before-${Date.now()}.png`);
+        const shotAfter = path.join(os.tmpdir(), `acc023-after-${Date.now()}.png`);
+        spawnSync('sh', ['-c', `DISPLAY=${xvfb.display} import -window root ${JSON.stringify(shotBefore)}`], { timeout: 20000 });
+        spawnSync('sh', ['-c', `DISPLAY=${xvfb.display} xdotool mousemove ${cx} ${cy} mousedown 1 mousemove ${cx + 60} ${cy + 30} mousemove ${cx + 120} ${cy + 60} mouseup 1`], { encoding: 'utf8', timeout: 20000 });
         await sleep(1200);
+        spawnSync('sh', ['-c', `DISPLAY=${xvfb.display} import -window root ${JSON.stringify(shotAfter)}`], { timeout: 20000 });
+        // `compare -metric AE` 输出"不同像素数"到 stderr（ImageMagick 的惯例）
+        let pxDiff = -1;
+        if (fs.existsSync(shotBefore) && fs.existsSync(shotAfter)) {
+          const cmp = spawnSync('sh', ['-c', `compare -metric AE ${JSON.stringify(shotBefore)} ${JSON.stringify(shotAfter)} null: 2>&1`], { encoding: 'utf8', timeout: 20000 });
+          const m = String(cmp.stdout || '').trim().match(/^(\d+)/);
+          if (m) pxDiff = Number(m[1]);
+        }
         const after = JSON.parse(fs.readFileSync(treePath, 'utf8'));
-        const strokeLike = (after.nodes || []).filter((n) => /stroke|ink/i.test(String(n.name || '')) || /ink/i.test(String(n.role || '')));
-        steps.push({ step: 'stroke_recorded', ok: strokeLike.length > 0, strokes: strokeLike.map((n) => ({ path: n.path, role: n.role, name: n.name })) });
+        const inkAfter = (after.nodes || []).find((n) => n.name === '墨迹');
+        // 【排除示例名】只认"墨迹"节点本身及其子节点，不再用 /ink/i 匹配任意节点
+        const strokesUnderInk = inkAfter && Array.isArray(inkAfter.children) ? inkAfter.children.length : 0;
+        const childCount = inkAfter ? Number(inkAfter.child_count || 0) : 0;
+        // 【K-268 二次修正】**`pxDiff > 0` 不够** —— 实测 `WpfMediaInk` 画一笔后
+        //   截图从 **13988 字节掉到 324 字节**（= 整个画面被打空），像素差 819388。
+        //   那是"画面消失"而不是"笔画出现"。⇒ 判定必须同时满足：
+        //     ① 像素差 > 0（有变化）
+        //     ② **画后仍有实质内容**（`shot_after_bytes` 不低于画前的 60%）
+        //   ②是关键：真正的笔画只会在局部增加像素，不会让整屏变空。
+        const beforeB = fs.existsSync(shotBefore) ? fs.statSync(shotBefore).size : 0;
+        const afterB  = fs.existsSync(shotAfter)  ? fs.statSync(shotAfter).size  : 0;
+        const contentKept = beforeB > 0 && afterB >= Math.floor(beforeB * 0.6);
+        const strokeOk = pxDiff > 0 && contentKept;
+        steps.push({
+          step: 'stroke_recorded',
+          ok: strokeOk,
+          pixel_diff: pxDiff,
+          content_kept: contentKept,
+          shot_before_bytes: beforeB,
+          shot_after_bytes: afterB,
+          ink_child_count: childCount,
+          strokes_under_ink: strokesUnderInk,
+          note: strokeOk ? '画面有变化且内容保留 ⇒ 笔画生效'
+                : (pxDiff > 0 && !contentKept ? '**画面被打空**（画后截图骤降）⇒ 不是笔画生效'
+                : '画面无变化 ⇒ **笔画没画上**'),
+        });
+        // 【附加证据】应用是否存活（区分"画不上"与"崩了"）
+        steps.push({ step: 'app_alive_after_stroke', ok: !!(app && app.ok && app.proc && app.proc.exitCode === null),
+                     exitCode: app && app.proc ? app.proc.exitCode : null });
       } else {
         steps.push({ step: 'stroke_recorded', ok: false, note: 'InkCanvas 没有可画的 bounds' });
       }
