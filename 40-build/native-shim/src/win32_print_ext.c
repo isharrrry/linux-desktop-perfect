@@ -65,15 +65,5 @@ int32_t DocumentPropertiesW(void *hwnd, void *hPrinter, uint16_t *pDeviceName,
 //   ⇒ 与其写一个读错字段的实现，不如让调用方拿到 `E_NOTIMPL` 走它的回退路径。
 //   （`PTReleaseMemory` 例外：它只是释放 `PTOpenProviderEx` 给的内存，而我们从没分配过，
 //     返回 S_OK 是正确的 —— 释放一个空集合是成功的。）
-int32_t PTOpenProviderEx(void *a, uint32_t b, uint32_t c, void **d)
-{ (void)a;(void)b;(void)c; if (d) *d = NULL; return (int32_t)0x80004001; }
 int32_t PTCloseProvider(void *a) { (void)a; return 0; }
-int32_t PTConvertDevModeToPrintTicket(void *a, uint32_t b, void *c, uint32_t d, uint32_t *e)
-{ (void)a;(void)b;(void)c;(void)d;(void)e; return (int32_t)0x80004001; }
-int32_t PTConvertPrintTicketToDevMode(void *a, void *b, uint32_t c, uint32_t *d, uint32_t *e, void *f)
-{ (void)a;(void)b;(void)c;(void)d;(void)e;(void)f; return (int32_t)0x80004001; }
-int32_t PTGetPrintCapabilities(void *a, void *b, void *c, uint32_t *d)
-{ (void)a;(void)b;(void)c;(void)d; return (int32_t)0x80004001; }
-int32_t PTMergeAndValidatePrintTicket(void *a, void *b, void *c, uint32_t d, void *e, uint32_t *f)
-{ (void)a;(void)b;(void)c;(void)d;(void)e;(void)f; return (int32_t)0x80004001; }
 int32_t PTReleaseMemory(void *a) { (void)a; return 0; }   // S_OK：释放空集合是成功的
