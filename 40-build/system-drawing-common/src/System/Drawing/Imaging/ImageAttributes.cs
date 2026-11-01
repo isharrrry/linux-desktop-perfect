@@ -442,6 +442,25 @@ namespace System.Drawing.Imaging
             SetRemapTable(map, ColorAdjustType.Default);
         }
 
+        // 【K-319】.NET 8+ 新增的 `ReadOnlySpan` 重载 —— WinForms 的 `Control.PaintBackground`
+        //   在图像调色路径上会调它（实测 `MissingMethodException`）：
+        //     `SetRemapTable(ColorAdjustType, ReadOnlySpan<ValueTuple<Color,Color>>)`
+        //   本仓的老实现只有 `ColorMap[]` 版，这里做**转发**（转成数组再走老路）。
+        public void SetRemapTable(ColorAdjustType type, ReadOnlySpan<(Color OldColor, Color NewColor)> map)
+        {
+            if (map.Length == 0) { SetRemapTable(Array.Empty<ColorMap>(), type); return; }
+            var arr = new ColorMap[map.Length];
+            for (int i = 0; i < map.Length; ++i) {
+                arr[i] = new ColorMap { OldColor = map[i].OldColor, NewColor = map[i].NewColor };
+            }
+            SetRemapTable(arr, type);
+        }
+
+        public void SetRemapTable(ReadOnlySpan<(Color OldColor, Color NewColor)> map)
+        {
+            SetRemapTable(ColorAdjustType.Default, map);
+        }
+
         public void SetRemapTable(ColorMap[] map, ColorAdjustType type)
         {
             int index = 0;
