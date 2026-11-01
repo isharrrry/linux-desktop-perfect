@@ -214,6 +214,9 @@ int32_t IWICBitmapSource_GetSize_Proxy(void *source, uint32_t *w, uint32_t *h)
 {
     // 【K-427】MIL handle ⇒ 返回 1x1 默认尺寸（让上层能继续，而不是 E_INVALIDARG）
     if (wic_is_mil_handle(source)) {
+        // 【K-434 结论】`E_NOTIMPL` 会**倒退**（WPF 直接抛 NotImplementedException，
+        //   退回 `set_WicSourceHandle`）⇒ **`1x1` 默认值更好**（K-427 证明能推进到 `Render`）。
+        //   所以保留 `1x1`，不试大值（大值会让 WPF 分配不必要的大缓冲）。
         if (getenv("LDP_WIC_TRACE")) { fprintf(stderr, "[WIC-GSZ] MIL handle %p -> 1x1 (default)\n", source); fflush(stderr); }
         if (w) *w = 1;
         if (h) *h = 1;
