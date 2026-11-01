@@ -170,6 +170,13 @@ namespace System.Drawing
 
             internal static void CheckStatus(int status)
             {
+                // 【K-328 诊断】`WinForms` 的绘制路径会拿到 `GdiplusNotImplemented`(6)，
+                //   而 `StatusException` 把它转成 `NotImplementedException` 时**不带调用点**。
+                //   这里在 status==6 时打印托管栈，用来定位**是哪个 `Gdip*` 返回了 6**。
+                //   只在设置了 `LDP_GDIP6_TRACE=1` 时启用，避免污染正常运行日志。
+                if (status == 6 && Environment.GetEnvironmentVariable("LDP_GDIP6_TRACE") == "1") {
+                    try { Console.Error.WriteLine("[GDIP6-TRACE] " + Environment.StackTrace); } catch { }
+                }
                 if (status != Ok)
                     throw StatusException(status);
             }
