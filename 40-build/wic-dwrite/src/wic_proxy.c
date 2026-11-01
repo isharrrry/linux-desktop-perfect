@@ -245,13 +245,18 @@ int32_t IWICBitmapSource_GetPixelFormat_Proxy(void *source, void *guid)
     //   让 `PixelFormat.GetPixelFormat` 能通过，从而 `RenderTargetBitmap` 能继续。
     //   这不是"修好"，而是"让类型不匹配的句柄走一条合理的默认路径"。
     if (wic_is_mil_handle(source)) {
-        if (getenv("LDP_WIC_TRACE")) { fprintf(stderr, "[WIC-GPF] MIL handle %p -> 32bppBGRA (default)\n", source); fflush(stderr); }
+        // 【K-444 决定性修复】WPF 的 `PenCursorManager.RenderVisualToBitmap` 用的是
+        //   `PixelFormats.Pbgra32`（premultiplied BGRA），**不是** `Bgra32`。
+        //   返回 `Bgra32`（`...c90f`）会让 `FormatConvertedBitmap`（源码 :302）找不到
+        //   Pbgra32→Bgra32 的转换路径 ⇒ `E_FAIL` ⇒ `HRESULT.Check` 抛异常。
+        //   ⇒ 改返回 `GUID_WICPixelFormat32bppPBGRA`（`...c910`，只差最后一字节）。
+        if (getenv("LDP_WIC_TRACE")) { fprintf(stderr, "[WIC-GPF] MIL handle %p -> 32bppPBGRA (K-444)\n", source); fflush(stderr); }
         if (guid) {
-            static const uint8_t bgra[16] = {
+            static const uint8_t pgra[16] = {
                 0x24, 0xc3, 0xdd, 0x6f, 0x03, 0x4e, 0xfe, 0x4b,
-                0xb1, 0x85, 0x3d, 0x77, 0x76, 0x8d, 0xc9, 0x0f
+                0xb1, 0x85, 0x3d, 0x77, 0x76, 0x8d, 0xc9, 0x10
             };
-            memcpy(guid, bgra, 16);
+            memcpy(guid, pgra, 16);
         }
         return S_OK_;
     }
