@@ -60,12 +60,29 @@ try {
   const g0 = geom(xvfb.display, win.id);
   steps.push({ step: 'open', ok: mapped && g0.viewable && g0.w > 0 && g0.h > 0 && win.title.includes(scr), ...g0, title: win.title });
 
-  sh(`DISPLAY=${xvfb.display} xdotool windowmove ${win.id} ${g0.x + 40} ${g0.y + 30}`);
+  // 【判据口径修正 / K-228】**有 EWMH 窗口管理器时必须用 `wmctrl`（发 `_NET_MOVERESIZE_WINDOW`），
+  //   不能用 `xdotool windowmove`（发裸 `XMoveWindow`）。**
+  //   实测（K-227）：装 openbox 之后裸 `XMoveWindow` 被 WM 忽略 —— 因为 WM 连"无装饰"窗口
+  //   也 reparent 到同尺寸 frame 里，裸移客户窗只会让内容在 frame 内滑动，视觉上"窗户没动"。
+  //   这不是本仓实现缺陷：**在 EWMH WM 下，移动窗口的正确方式就是 `_NET_MOVERESIZE_WINDOW`**，
+  //   而 shim 已经支持它（`wpf_x11_moveresize_window`，K-226/K-227）。
+  //   ⇒ 判据改用 `wmctrl`；**无 WM 时**回退到 `xdotool`（裸 Xvfb 上那是唯一可行的方式）。
+  const hasWM = (sh(`DISPLAY=${xvfb.display} xprop -root _NET_SUPPORTING_WM_CHECK 2>/dev/null`).stdout || "").includes("window id");
+  if (hasWM) {
+    sh(`DISPLAY=${xvfb.display} wmctrl -i -r ${win.id} -e 0,${g0.x + 40},${g0.y + 30},-1,-1`);
+  } else {
+    sh(`DISPLAY=${xvfb.display} xdotool windowmove ${win.id} ${g0.x + 40} ${g0.y + 30}`);
+  }
   await sleep(700);
   const g1 = geom(xvfb.display, win.id);
   steps.push({ step: 'move', ok: g1.x === g0.x + 40 && g1.y === g0.y + 30, from: { x: g0.x, y: g0.y }, to: { x: g1.x, y: g1.y } });
 
-  sh(`DISPLAY=${xvfb.display} xdotool windowsize ${win.id} ${g0.w + 120} ${g0.h + 90}`);
+  // 同理（K-228）：改尺寸也走 EWMH；`wmctrl -e` 的 -1 表示"该维度不变"。
+  if (hasWM) {
+    sh(`DISPLAY=${xvfb.display} wmctrl -i -r ${win.id} -e 0,${g0.x + 40},${g0.y + 30},${g0.w + 120},${g0.h + 90}`);
+  } else {
+    sh(`DISPLAY=${xvfb.display} xdotool windowsize ${win.id} ${g0.w + 120} ${g0.h + 90}`);
+  }
   await sleep(900);
   const g2 = geom(xvfb.display, win.id);
   steps.push({ step: 'resize', ok: g2.w === g0.w + 120 && g2.h === g0.h + 90, from: { w: g0.w, h: g0.h }, to: { w: g2.w, h: g2.h } });
