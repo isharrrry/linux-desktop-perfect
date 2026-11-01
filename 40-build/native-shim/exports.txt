@@ -3,8 +3,8 @@
 # 列：lib	symbol	status	owner	since[	note]（note 为可选列；为空时省略，行尾不留制表符）
 # status 判定：impl=实现侧有该符号；stub=函数体仅常量返回；gap=声明有实现无（note 写替代路径）
 # lib 列：若实现将落在哪个自产 .so（概设 §2.4）；status=gap 表示当前无实现，不是没登记
-# 规模：1290 行（impl 1024 / stub 103 / gap 163）
-# 输入：上游 1534 条 DllImport 声明（另有 0 条属性块后无 extern 声明被跳过）、native-shim 919 个导出、milcore 109 个导出
+# 规模：1290 行（impl 1024 / stub 213 / gap 53）
+# 输入：上游 1534 条 DllImport 声明（另有 0 条属性块后无 extern 声明被跳过）、native-shim 1029 个导出、milcore 109 个导出
 # 排除：wpf_*（shim 内部件）、WpfLinuxWin32_*（桥件，非 Win32 契约入口）
 libSystem.IO.Compression.Native.so	CompressionNative_Crc32	impl	MOD-52	10.0.11
 libSystem.IO.Compression.Native.so	CompressionNative_Deflate	impl	MOD-52	10.0.11
@@ -245,13 +245,13 @@ libwpfwic.so	WICCreateImagingFactory_Proxy	impl	MOD-41	10.0.11
 libwpfwic.so	WICMapGuidToShortName	impl	MOD-41	10.0.11
 libwpfwic.so	WICMapShortNameToGuid	impl	MOD-41	10.0.11
 libwpfwic.so	WICSetEncoderFormat_Proxy	impl	MOD-41	10.0.11
-libwpfwin32.so	AccessibleChildren	gap	MOD-63	10.0.11	无实现（oleacc）
-libwpfwin32.so	AccessibleObjectFromEvent	gap	MOD-63	10.0.11	无实现（oleacc）
-libwpfwin32.so	AccessibleObjectFromWindow	gap	MOD-63	10.0.11	无实现（oleacc）
+libwpfwin32.so	AccessibleChildren	stub	MOD-63	10.0.11
+libwpfwin32.so	AccessibleObjectFromEvent	stub	MOD-63	10.0.11
+libwpfwin32.so	AccessibleObjectFromWindow	stub	MOD-63	10.0.11
 libwpfwin32.so	ActivateActCtx	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
 libwpfwin32.so	ActivateKeyboardLayout	impl	MOD-11	10.0.11
 libwpfwin32.so	AddRefActCtx	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
-libwpfwin32.so	AddStroke	gap	MOD-83	10.0.11	无实现（mshwgst）
+libwpfwin32.so	AddStroke	stub	MOD-83	10.0.11
 libwpfwin32.so	AdjustWindowRectEx	impl	MOD-11	10.0.11
 libwpfwin32.so	AlphaBlend	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
 libwpfwin32.so	AreDpiAwarenessContextsEqual	impl	MOD-11	10.0.11
@@ -261,7 +261,7 @@ libwpfwin32.so	BeginPanningFeedbackW	impl	MOD-02	10.0.11	shim 额外导出（上
 libwpfwin32.so	BitBlt	gap	MOD-13	10.0.11	无实现（gdi32）
 libwpfwin32.so	BlockInput	impl	MOD-11	10.0.11
 libwpfwin32.so	BringWindowToTop	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
-libwpfwin32.so	BufferPointerPacketsInteractionContext	gap	MOD-84	10.0.11	Windows Ink 面；未迁移
+libwpfwin32.so	BufferPointerPacketsInteractionContext	stub	MOD-84	10.0.11
 libwpfwin32.so	CallNextHookEx	impl	MOD-11	10.0.11
 libwpfwin32.so	CallWindowProc	impl	MOD-11	10.0.11
 libwpfwin32.so	CallWindowProcA	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
@@ -292,7 +292,7 @@ libwpfwin32.so	CoUninitialize	impl	MOD-63	10.0.11
 libwpfwin32.so	CombineRgn	impl	MOD-13	10.0.11
 libwpfwin32.so	CommDlgExtendedError	gap	MOD-62	10.0.11	无实现（comdlg32）
 libwpfwin32.so	CommandLineToArgvW	impl	MOD-15	10.0.11
-libwpfwin32.so	ConvertStringSecurityDescriptorToSecurityDescriptor	gap	MOD-15	10.0.11	无实现（advapi32）
+libwpfwin32.so	ConvertStringSecurityDescriptorToSecurityDescriptor	stub	MOD-15	10.0.11
 libwpfwin32.so	CountClipboardFormats	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
 libwpfwin32.so	CreateActCtx	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
 libwpfwin32.so	CreateActCtxA	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
@@ -302,7 +302,7 @@ libwpfwin32.so	CreateCaret	impl	MOD-11	10.0.11
 libwpfwin32.so	CreateCompatibleBitmap	impl	MOD-13	10.0.11
 libwpfwin32.so	CreateCompatibleDC	impl	MOD-13	10.0.11
 libwpfwin32.so	CreateCompatibleDCW	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
-libwpfwin32.so	CreateContext	gap	MOD-83	10.0.11	无实现（mshwgst）
+libwpfwin32.so	CreateContext	stub	MOD-83	10.0.11
 libwpfwin32.so	CreateDC	impl	MOD-13	10.0.11
 libwpfwin32.so	CreateDCA	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
 libwpfwin32.so	CreateDCW	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
@@ -326,16 +326,16 @@ libwpfwin32.so	CreateICW	impl	MOD-13	10.0.11
 libwpfwin32.so	CreateIcon	impl	MOD-11	10.0.11
 libwpfwin32.so	CreateIconIndirect	impl	MOD-11	10.0.11
 libwpfwin32.so	CreateInstalledObjectsInfo	impl	MOD-16	10.0.11
-libwpfwin32.so	CreateInteractionContext	gap	MOD-84	10.0.11	Windows Ink 面；未迁移
-libwpfwin32.so	CreateRecognizer	gap	MOD-83	10.0.11	无实现（mshwgst）
+libwpfwin32.so	CreateInteractionContext	stub	MOD-84	10.0.11
+libwpfwin32.so	CreateRecognizer	stub	MOD-83	10.0.11
 libwpfwin32.so	CreateRectRgn	impl	MOD-13	10.0.11
 libwpfwin32.so	CreateRectRgnIndirect	impl	MOD-13	10.0.11
 libwpfwin32.so	CreateResetEvent	impl	MOD-84	10.0.11
 libwpfwin32.so	CreateRoundRectRgn	impl	MOD-13	10.0.11
 libwpfwin32.so	CreateSolidBrush	impl	MOD-13	10.0.11
 libwpfwin32.so	CreateStreamOnHGlobal	impl	MOD-63	10.0.11
-libwpfwin32.so	CreateTextAnalysisSink	gap	MOD-16	10.0.11	无实现（presentationnative）
-libwpfwin32.so	CreateTextAnalysisSource	gap	MOD-16	10.0.11	无实现（presentationnative）
+libwpfwin32.so	CreateTextAnalysisSink	stub	MOD-16	10.0.11
+libwpfwin32.so	CreateTextAnalysisSource	stub	MOD-16	10.0.11
 libwpfwin32.so	CreateWindowEx	impl	MOD-11	10.0.11
 libwpfwin32.so	CreateWindowExA	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
 libwpfwin32.so	CreateWindowExW	impl	MOD-11	10.0.11
@@ -402,15 +402,15 @@ libwpfwin32.so	DefWindowProcW	impl	MOD-11	10.0.11
 libwpfwin32.so	DefWindowProcWorker	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
 libwpfwin32.so	DeleteDC	impl	MOD-13	10.0.11
 libwpfwin32.so	DeleteObject	impl	MOD-13	10.0.11
-libwpfwin32.so	DestroyAlternate	gap	MOD-83	10.0.11	无实现（mshwgst）
+libwpfwin32.so	DestroyAlternate	stub	MOD-83	10.0.11
 libwpfwin32.so	DestroyCaret	impl	MOD-11	10.0.11
-libwpfwin32.so	DestroyContext	gap	MOD-83	10.0.11	无实现（mshwgst）
+libwpfwin32.so	DestroyContext	stub	MOD-83	10.0.11
 libwpfwin32.so	DestroyCursor	impl	MOD-11	10.0.11
 libwpfwin32.so	DestroyDocContext	impl	MOD-16	10.0.11
 libwpfwin32.so	DestroyIcon	impl	MOD-11	10.0.11
 libwpfwin32.so	DestroyInstalledObjectsInfo	impl	MOD-16	10.0.11
-libwpfwin32.so	DestroyInteractionContext	gap	MOD-84	10.0.11	Windows Ink 面；未迁移
-libwpfwin32.so	DestroyRecognizer	gap	MOD-83	10.0.11	无实现（mshwgst）
+libwpfwin32.so	DestroyInteractionContext	stub	MOD-84	10.0.11
+libwpfwin32.so	DestroyRecognizer	stub	MOD-83	10.0.11
 libwpfwin32.so	DestroyResetEvent	impl	MOD-84	10.0.11
 libwpfwin32.so	DestroyWindow	impl	MOD-11	10.0.11
 libwpfwin32.so	DeviceCapabilitiesW	impl	MOD-82	10.0.11
@@ -451,7 +451,7 @@ libwpfwin32.so	EnableWindow	impl	MOD-02	10.0.11	shim 额外导出（上游未声
 libwpfwin32.so	EnableWindowWrapper	impl	MOD-16	10.0.11
 libwpfwin32.so	EndDoc	impl	MOD-13	10.0.11
 libwpfwin32.so	EndDocPrinter	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
-libwpfwin32.so	EndInkInput	gap	MOD-83	10.0.11	无实现（mshwgst）
+libwpfwin32.so	EndInkInput	stub	MOD-83	10.0.11
 libwpfwin32.so	EndPage	impl	MOD-13	10.0.11
 libwpfwin32.so	EndPagePrinter	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
 libwpfwin32.so	EndPaint	impl	MOD-11	10.0.11
@@ -464,9 +464,9 @@ libwpfwin32.so	EnumPrinters	impl	MOD-02	10.0.11	shim 额外导出（上游未声
 libwpfwin32.so	EnumPrintersA	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
 libwpfwin32.so	EnumPrintersW	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
 libwpfwin32.so	EnumThreadWindows	impl	MOD-11	10.0.11
-libwpfwin32.so	EventRegister	gap	MOD-15	10.0.11	无实现（advapi32）
-libwpfwin32.so	EventUnregister	gap	MOD-15	10.0.11	无实现（advapi32）
-libwpfwin32.so	EventWrite	gap	MOD-15	10.0.11	无实现（advapi32）
+libwpfwin32.so	EventRegister	stub	MOD-15	10.0.11
+libwpfwin32.so	EventUnregister	stub	MOD-15	10.0.11
+libwpfwin32.so	EventWrite	stub	MOD-15	10.0.11
 libwpfwin32.so	ExpandCollapsePattern_Collapse	stub	MOD-81	10.0.11
 libwpfwin32.so	ExpandCollapsePattern_Expand	stub	MOD-81	10.0.11
 libwpfwin32.so	ExtEscape	impl	MOD-13	10.0.11
@@ -499,44 +499,44 @@ libwpfwin32.so	FsCompareSubpages	impl	MOD-16	10.0.11
 libwpfwin32.so	FsCompareSubtrack	impl	MOD-16	10.0.11
 libwpfwin32.so	FsCreatePageBottomless	impl	MOD-16	10.0.11
 libwpfwin32.so	FsCreatePageFinite	impl	MOD-16	10.0.11
-libwpfwin32.so	FsCreateSubpageBottomless	gap	MOD-16	10.0.11	无实现（presentationnative）
+libwpfwin32.so	FsCreateSubpageBottomless	stub	MOD-16	10.0.11
 libwpfwin32.so	FsCreateSubpageFinite	impl	MOD-16	10.0.11
 libwpfwin32.so	FsDestroyPage	impl	MOD-16	10.0.11
 libwpfwin32.so	FsDestroyPageBreakRecord	impl	MOD-16	10.0.11
 libwpfwin32.so	FsDestroySubpage	impl	MOD-16	10.0.11
-libwpfwin32.so	FsDestroySubpageBreakRecord	gap	MOD-16	10.0.11	无实现（presentationnative）
+libwpfwin32.so	FsDestroySubpageBreakRecord	stub	MOD-16	10.0.11
 libwpfwin32.so	FsDestroySubtrack	impl	MOD-16	10.0.11
-libwpfwin32.so	FsDestroySubtrackBreakRecord	gap	MOD-16	10.0.11	无实现（presentationnative）
-libwpfwin32.so	FsDuplicatePageBreakRecord	gap	MOD-16	10.0.11	无实现（presentationnative）
-libwpfwin32.so	FsDuplicateSubpageBreakRecord	gap	MOD-16	10.0.11	无实现（presentationnative）
-libwpfwin32.so	FsDuplicateSubtrackBreakRecord	gap	MOD-16	10.0.11	无实现（presentationnative）
-libwpfwin32.so	FsFormatSubtrackBottomless	gap	MOD-16	10.0.11	无实现（presentationnative）
+libwpfwin32.so	FsDestroySubtrackBreakRecord	stub	MOD-16	10.0.11
+libwpfwin32.so	FsDuplicatePageBreakRecord	stub	MOD-16	10.0.11
+libwpfwin32.so	FsDuplicateSubpageBreakRecord	stub	MOD-16	10.0.11
+libwpfwin32.so	FsDuplicateSubtrackBreakRecord	stub	MOD-16	10.0.11
+libwpfwin32.so	FsFormatSubtrackBottomless	stub	MOD-16	10.0.11
 libwpfwin32.so	FsFormatSubtrackFinite	impl	MOD-16	10.0.11
-libwpfwin32.so	FsGetEmptySpaces	gap	MOD-16	10.0.11	无实现（presentationnative）
-libwpfwin32.so	FsGetMaxNumberEmptySpaces	gap	MOD-16	10.0.11	无实现（presentationnative）
-libwpfwin32.so	FsGetNextTick	gap	MOD-16	10.0.11	无实现（presentationnative）
-libwpfwin32.so	FsGetNumberSubpageFootnotes	gap	MOD-16	10.0.11	无实现（presentationnative）
-libwpfwin32.so	FsGetNumberSubtrackFootnotes	gap	MOD-16	10.0.11	无实现（presentationnative）
+libwpfwin32.so	FsGetEmptySpaces	stub	MOD-16	10.0.11
+libwpfwin32.so	FsGetMaxNumberEmptySpaces	stub	MOD-16	10.0.11
+libwpfwin32.so	FsGetNextTick	stub	MOD-16	10.0.11
+libwpfwin32.so	FsGetNumberSubpageFootnotes	stub	MOD-16	10.0.11
+libwpfwin32.so	FsGetNumberSubtrackFootnotes	stub	MOD-16	10.0.11
 libwpfwin32.so	FsGetSubpageColumnBalancingInfo	impl	MOD-16	10.0.11
-libwpfwin32.so	FsGetSubpageFootnoteInfo	gap	MOD-16	10.0.11	无实现（presentationnative）
+libwpfwin32.so	FsGetSubpageFootnoteInfo	stub	MOD-16	10.0.11
 libwpfwin32.so	FsGetSubtrackColumnBalancingInfo	impl	MOD-16	10.0.11
 libwpfwin32.so	FsQueryAttachedObjectList	impl	MOD-16	10.0.11
-libwpfwin32.so	FsQueryDcpLineVariantsFromCachedTextPara	gap	MOD-16	10.0.11	无实现（presentationnative）
+libwpfwin32.so	FsQueryDcpLineVariantsFromCachedTextPara	stub	MOD-16	10.0.11
 libwpfwin32.so	FsQueryFigureObjectDetails	impl	MOD-16	10.0.11
 libwpfwin32.so	FsQueryFloaterDetails	impl	MOD-16	10.0.11
-libwpfwin32.so	FsQueryHeightDefinedColumnSpanAreaList	gap	MOD-16	10.0.11	无实现（presentationnative）
+libwpfwin32.so	FsQueryHeightDefinedColumnSpanAreaList	stub	MOD-16	10.0.11
 libwpfwin32.so	FsQueryLineCompositeElementList	impl	MOD-16	10.0.11
 libwpfwin32.so	FsQueryLineListComposite	impl	MOD-16	10.0.11
 libwpfwin32.so	FsQueryLineListSingle	impl	MOD-16	10.0.11
 libwpfwin32.so	FsQueryPageDetails	impl	MOD-16	10.0.11
-libwpfwin32.so	FsQueryPageSectionList	gap	MOD-16	10.0.11	无实现（presentationnative）
-libwpfwin32.so	FsQuerySectionBasicColumnList	gap	MOD-16	10.0.11	无实现（presentationnative）
-libwpfwin32.so	FsQuerySectionDetails	gap	MOD-16	10.0.11	无实现（presentationnative）
-libwpfwin32.so	FsQuerySegmentDefinedColumnSpanAreaList	gap	MOD-16	10.0.11	无实现（presentationnative）
-libwpfwin32.so	FsQuerySubpageBasicColumnList	gap	MOD-16	10.0.11	无实现（presentationnative）
+libwpfwin32.so	FsQueryPageSectionList	stub	MOD-16	10.0.11
+libwpfwin32.so	FsQuerySectionBasicColumnList	stub	MOD-16	10.0.11
+libwpfwin32.so	FsQuerySectionDetails	stub	MOD-16	10.0.11
+libwpfwin32.so	FsQuerySegmentDefinedColumnSpanAreaList	stub	MOD-16	10.0.11
+libwpfwin32.so	FsQuerySubpageBasicColumnList	stub	MOD-16	10.0.11
 libwpfwin32.so	FsQuerySubpageDetails	impl	MOD-16	10.0.11
-libwpfwin32.so	FsQuerySubpageHeightDefinedColumnSpanAreaList	gap	MOD-16	10.0.11	无实现（presentationnative）
-libwpfwin32.so	FsQuerySubpageSegmentDefinedColumnSpanAreaList	gap	MOD-16	10.0.11	无实现（presentationnative）
+libwpfwin32.so	FsQuerySubpageHeightDefinedColumnSpanAreaList	stub	MOD-16	10.0.11
+libwpfwin32.so	FsQuerySubpageSegmentDefinedColumnSpanAreaList	stub	MOD-16	10.0.11
 libwpfwin32.so	FsQuerySubtrackDetails	impl	MOD-16	10.0.11
 libwpfwin32.so	FsQuerySubtrackParaList	impl	MOD-16	10.0.11
 libwpfwin32.so	FsQueryTableObjCellList	impl	MOD-16	10.0.11
@@ -547,16 +547,16 @@ libwpfwin32.so	FsQueryTableObjTableProperDetails	impl	MOD-16	10.0.11
 libwpfwin32.so	FsQueryTextDetails	impl	MOD-16	10.0.11
 libwpfwin32.so	FsQueryTrackDetails	impl	MOD-16	10.0.11
 libwpfwin32.so	FsQueryTrackParaList	impl	MOD-16	10.0.11
-libwpfwin32.so	FsRegisterFloatObstacle	gap	MOD-16	10.0.11	无实现（presentationnative）
-libwpfwin32.so	FsSetDebugFlags	gap	MOD-16	10.0.11	无实现（presentationnative）
+libwpfwin32.so	FsRegisterFloatObstacle	stub	MOD-16	10.0.11
+libwpfwin32.so	FsSetDebugFlags	stub	MOD-16	10.0.11
 libwpfwin32.so	FsSynchronizeBottomlessSubtrack	impl	MOD-16	10.0.11
 libwpfwin32.so	FsTransferDisplayInfoSubpage	impl	MOD-16	10.0.11
 libwpfwin32.so	FsTransferDisplayInfoSubtrack	impl	MOD-16	10.0.11
-libwpfwin32.so	FsTransformBbox	gap	MOD-16	10.0.11	无实现（presentationnative）
-libwpfwin32.so	FsTransformRectangle	gap	MOD-16	10.0.11	无实现（presentationnative）
+libwpfwin32.so	FsTransformBbox	stub	MOD-16	10.0.11
+libwpfwin32.so	FsTransformRectangle	stub	MOD-16	10.0.11
 libwpfwin32.so	FsUpdateBottomlessPage	impl	MOD-16	10.0.11
-libwpfwin32.so	FsUpdateBottomlessSubpage	gap	MOD-16	10.0.11	无实现（presentationnative）
-libwpfwin32.so	FsUpdateBottomlessSubtrack	gap	MOD-16	10.0.11	无实现（presentationnative）
+libwpfwin32.so	FsUpdateBottomlessSubpage	stub	MOD-16	10.0.11
+libwpfwin32.so	FsUpdateBottomlessSubtrack	stub	MOD-16	10.0.11
 libwpfwin32.so	FsUpdateFinitePage	impl	MOD-16	10.0.11
 libwpfwin32.so	GdipBitmapGetPixel	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
 libwpfwin32.so	GdipBitmapLockBits	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
@@ -591,7 +591,7 @@ libwpfwin32.so	GdiplusStartup	impl	MOD-14	10.0.11
 libwpfwin32.so	GetACP	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
 libwpfwin32.so	GetActiveWindow	impl	MOD-11	10.0.11
 libwpfwin32.so	GetAltTabInfo	impl	MOD-11	10.0.11
-libwpfwin32.so	GetAlternateList	gap	MOD-83	10.0.11	无实现（mshwgst）
+libwpfwin32.so	GetAlternateList	stub	MOD-83	10.0.11
 libwpfwin32.so	GetAncestor	impl	MOD-11	10.0.11
 libwpfwin32.so	GetAncestorWrapper	impl	MOD-16	10.0.11
 libwpfwin32.so	GetAsyncKeyState	impl	MOD-11	10.0.11
@@ -612,7 +612,7 @@ libwpfwin32.so	GetClientRect	impl	MOD-11	10.0.11
 libwpfwin32.so	GetClipboardData	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
 libwpfwin32.so	GetClipboardFormatName	impl	MOD-11	10.0.11
 libwpfwin32.so	GetComboBoxInfo	impl	MOD-11	10.0.11
-libwpfwin32.so	GetConfidenceLevel	gap	MOD-83	10.0.11	无实现（mshwgst）
+libwpfwin32.so	GetConfidenceLevel	stub	MOD-83	10.0.11
 libwpfwin32.so	GetCurrentActCtx	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
 libwpfwin32.so	GetCurrentApplicationUserModelId	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
 libwpfwin32.so	GetCurrentProcess	impl	MOD-15	10.0.11
@@ -653,14 +653,14 @@ libwpfwin32.so	GetKeyboardLayoutList	impl	MOD-02	10.0.11	shim 额外导出（上
 libwpfwin32.so	GetKeyboardLayoutListWrapper	impl	MOD-16	10.0.11
 libwpfwin32.so	GetKeyboardState	impl	MOD-11	10.0.11
 libwpfwin32.so	GetLastInputInfo	impl	MOD-11	10.0.11
-libwpfwin32.so	GetLastSystemEventData	gap	MOD-84	10.0.11	PenImc 替身（MOD-84，libinput/XInput2）；未实现
-libwpfwin32.so	GetLatticePtr	gap	MOD-83	10.0.11	无实现（mshwgst）
+libwpfwin32.so	GetLastSystemEventData	stub	MOD-84	10.0.11
+libwpfwin32.so	GetLatticePtr	stub	MOD-83	10.0.11
 libwpfwin32.so	GetLayeredWindowAttributes	impl	MOD-11	10.0.11
 libwpfwin32.so	GetLocaleInfo	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
 libwpfwin32.so	GetLocaleInfoA	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
 libwpfwin32.so	GetLocaleInfoW	impl	MOD-15	10.0.11
 libwpfwin32.so	GetMenu	impl	MOD-11	10.0.11
-libwpfwin32.so	GetMenuBarInfoWrapper	gap	MOD-16	10.0.11	无实现（presentationnative）
+libwpfwin32.so	GetMenuBarInfoWrapper	stub	MOD-16	10.0.11
 libwpfwin32.so	GetMenuItemCount	impl	MOD-11	10.0.11
 libwpfwin32.so	GetMenuItemID	impl	MOD-11	10.0.11
 libwpfwin32.so	GetMenuItemInfo	impl	MOD-11	10.0.11
@@ -686,17 +686,17 @@ libwpfwin32.so	GetMonitorInfo	impl	MOD-11	10.0.11
 libwpfwin32.so	GetMonitorInfoA	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
 libwpfwin32.so	GetMonitorInfoW	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
 libwpfwin32.so	GetMouseMovePointsEx	impl	MOD-11	10.0.11
-libwpfwin32.so	GetNumberSubstitutionList	gap	MOD-16	10.0.11	无实现（presentationnative）
+libwpfwin32.so	GetNumberSubstitutionList	stub	MOD-16	10.0.11
 libwpfwin32.so	GetOEMCP	impl	MOD-15	10.0.11
 libwpfwin32.so	GetObject	impl	MOD-13	10.0.11
 libwpfwin32.so	GetObjectA	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
 libwpfwin32.so	GetObjectW	impl	MOD-13	10.0.11
-libwpfwin32.so	GetOpenFileName	gap	MOD-62	10.0.11	无实现（comdlg32）
+libwpfwin32.so	GetOpenFileName	stub	MOD-62	10.0.11
 libwpfwin32.so	GetOutlineTextMetricsW	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
 libwpfwin32.so	GetParent	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
 libwpfwin32.so	GetParentWrapper	impl	MOD-16	10.0.11
-libwpfwin32.so	GetPenEvent	gap	MOD-84	10.0.11	PenImc 替身（MOD-84，libinput/XInput2）；未实现
-libwpfwin32.so	GetPenEventMultiple	gap	MOD-84	10.0.11	PenImc 替身（MOD-84，libinput/XInput2）；未实现
+libwpfwin32.so	GetPenEvent	stub	MOD-84	10.0.11
+libwpfwin32.so	GetPenEventMultiple	stub	MOD-84	10.0.11
 libwpfwin32.so	GetPhysicalCursorPos	impl	MOD-11	10.0.11
 libwpfwin32.so	GetPointerCursorId	impl	MOD-11	10.0.11
 libwpfwin32.so	GetPointerDeviceCursors	impl	MOD-11	10.0.11
@@ -726,15 +726,15 @@ libwpfwin32.so	GetRawInputDeviceInfoA	impl	MOD-02	10.0.11	shim 额外导出（�
 libwpfwin32.so	GetRawInputDeviceInfoW	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
 libwpfwin32.so	GetRawInputDeviceList	impl	MOD-11	10.0.11
 libwpfwin32.so	GetRawPointerDeviceData	impl	MOD-11	10.0.11
-libwpfwin32.so	GetSaveFileName	gap	MOD-62	10.0.11	无实现（comdlg32）
-libwpfwin32.so	GetScriptAnalysisList	gap	MOD-16	10.0.11	无实现（presentationnative）
+libwpfwin32.so	GetSaveFileName	stub	MOD-62	10.0.11
+libwpfwin32.so	GetScriptAnalysisList	stub	MOD-16	10.0.11
 libwpfwin32.so	GetScrollBarInfo	impl	MOD-11	10.0.11
 libwpfwin32.so	GetScrollInfo	impl	MOD-11	10.0.11
 libwpfwin32.so	GetShellWindow	stub	MOD-11	10.0.11
 libwpfwin32.so	GetStartupInfoA	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
 libwpfwin32.so	GetStartupInfoW	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
 libwpfwin32.so	GetStockObject	impl	MOD-13	10.0.11
-libwpfwin32.so	GetString	gap	MOD-83	10.0.11	无实现（mshwgst）
+libwpfwin32.so	GetString	stub	MOD-83	10.0.11
 libwpfwin32.so	GetStringTypeEx	impl	MOD-15	10.0.11
 libwpfwin32.so	GetStringTypeExA	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
 libwpfwin32.so	GetStringTypeExW	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
@@ -751,7 +751,7 @@ libwpfwin32.so	GetTempFileNameW	impl	MOD-02	10.0.11	shim 额外导出（上游�
 libwpfwin32.so	GetTextAlign	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
 libwpfwin32.so	GetTextExtentPoint32A	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
 libwpfwin32.so	GetTextExtentPoint32W	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
-libwpfwin32.so	GetTextExtentPoint32Wrapper	gap	MOD-16	10.0.11	无实现（presentationnative）
+libwpfwin32.so	GetTextExtentPoint32Wrapper	stub	MOD-16	10.0.11
 libwpfwin32.so	GetTextExtentPointW	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
 libwpfwin32.so	GetTextMetrics	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
 libwpfwin32.so	GetTextMetricsA	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
@@ -770,8 +770,8 @@ libwpfwin32.so	GetTickCount	impl	MOD-15	10.0.11
 libwpfwin32.so	GetTickCount64	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
 libwpfwin32.so	GetTitleBarInfo	impl	MOD-11	10.0.11
 libwpfwin32.so	GetTokenInformation	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
-libwpfwin32.so	GetTraceEnableFlags	gap	MOD-15	10.0.11	无实现（advapi32）
-libwpfwin32.so	GetTraceEnableLevel	gap	MOD-15	10.0.11	无实现（advapi32）
+libwpfwin32.so	GetTraceEnableFlags	stub	MOD-15	10.0.11
+libwpfwin32.so	GetTraceEnableLevel	stub	MOD-15	10.0.11
 libwpfwin32.so	GetUrlCacheConfigInfoW	gap	MOD-15	10.0.11	无实现（wininet）
 libwpfwin32.so	GetUserObjectInformationA	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
 libwpfwin32.so	GetUserObjectInformationW	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
@@ -827,8 +827,8 @@ libwpfwin32.so	ImmSetConversionStatus	impl	MOD-36	10.0.11
 libwpfwin32.so	ImmSetOpenStatus	impl	MOD-36	10.0.11
 libwpfwin32.so	InSendMessage	impl	MOD-11	10.0.11
 libwpfwin32.so	IntGetProcAddress	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
-libwpfwin32.so	InternetGetCookieExW	gap	MOD-15	10.0.11	无实现（wininet）
-libwpfwin32.so	InternetSetCookieExW	gap	MOD-15	10.0.11	无实现（wininet）
+libwpfwin32.so	InternetGetCookieExW	stub	MOD-15	10.0.11
+libwpfwin32.so	InternetSetCookieExW	stub	MOD-15	10.0.11
 libwpfwin32.so	IntersectRect	impl	MOD-11	10.0.11
 libwpfwin32.so	InvalidateRect	impl	MOD-11	10.0.11
 libwpfwin32.so	InvalidateRgn	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
@@ -871,34 +871,34 @@ libwpfwin32.so	IsWindowsXPSP1OrGreater	stub	MOD-16	10.0.11
 libwpfwin32.so	IsWindowsXPSP2OrGreater	stub	MOD-16	10.0.11
 libwpfwin32.so	IsWindowsXPSP3OrGreater	stub	MOD-16	10.0.11
 libwpfwin32.so	IsWow64Process	impl	MOD-15	10.0.11
-libwpfwin32.so	IsfCompressPacketData	gap	MOD-84	10.0.11	PenImc 替身（MOD-84，libinput/XInput2）；未实现
-libwpfwin32.so	IsfCompressPropertyData	gap	MOD-84	10.0.11	PenImc 替身（MOD-84，libinput/XInput2）；未实现
-libwpfwin32.so	IsfDecompressPacketData	gap	MOD-84	10.0.11	PenImc 替身（MOD-84，libinput/XInput2）；未实现
-libwpfwin32.so	IsfDecompressPropertyData	gap	MOD-84	10.0.11	PenImc 替身（MOD-84，libinput/XInput2）；未实现
-libwpfwin32.so	IsfLoadCompressor	gap	MOD-84	10.0.11	PenImc 替身（MOD-84，libinput/XInput2）；未实现
-libwpfwin32.so	IsfReleaseCompressor	gap	MOD-84	10.0.11	PenImc 替身（MOD-84，libinput/XInput2）；未实现
+libwpfwin32.so	IsfCompressPacketData	stub	MOD-84	10.0.11
+libwpfwin32.so	IsfCompressPropertyData	stub	MOD-84	10.0.11
+libwpfwin32.so	IsfDecompressPacketData	stub	MOD-84	10.0.11
+libwpfwin32.so	IsfDecompressPropertyData	stub	MOD-84	10.0.11
+libwpfwin32.so	IsfLoadCompressor	stub	MOD-84	10.0.11
+libwpfwin32.so	IsfReleaseCompressor	stub	MOD-84	10.0.11
 libwpfwin32.so	ItemContainerPattern_FindItemByProperty	stub	MOD-81	10.0.11
 libwpfwin32.so	KillTimer	impl	MOD-11	10.0.11
 libwpfwin32.so	LdrGetDllHandle	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
-libwpfwin32.so	LoAcquireBreakRecord	gap	MOD-16	10.0.11	无实现（presentationnative）
+libwpfwin32.so	LoAcquireBreakRecord	stub	MOD-16	10.0.11
 libwpfwin32.so	LoAcquirePenaltyModule	impl	MOD-16	10.0.11
-libwpfwin32.so	LoCloneBreakRecord	gap	MOD-16	10.0.11	无实现（presentationnative）
-libwpfwin32.so	LoCreateBreaks	gap	MOD-16	10.0.11	无实现（presentationnative）
+libwpfwin32.so	LoCloneBreakRecord	stub	MOD-16	10.0.11
+libwpfwin32.so	LoCreateBreaks	stub	MOD-16	10.0.11
 libwpfwin32.so	LoCreateContext	impl	MOD-16	10.0.11
-libwpfwin32.so	LoCreateLine	gap	MOD-16	10.0.11	无实现（presentationnative）
+libwpfwin32.so	LoCreateLine	stub	MOD-16	10.0.11
 libwpfwin32.so	LoCreateParaBreakingSession	impl	MOD-16	10.0.11
 libwpfwin32.so	LoDestroyContext	impl	MOD-16	10.0.11
-libwpfwin32.so	LoDisplayLine	gap	MOD-16	10.0.11	无实现（presentationnative）
-libwpfwin32.so	LoDisposeBreakRecord	gap	MOD-16	10.0.11	无实现（presentationnative）
-libwpfwin32.so	LoDisposeLine	gap	MOD-16	10.0.11	无实现（presentationnative）
+libwpfwin32.so	LoDisplayLine	stub	MOD-16	10.0.11
+libwpfwin32.so	LoDisposeBreakRecord	stub	MOD-16	10.0.11
+libwpfwin32.so	LoDisposeLine	stub	MOD-16	10.0.11
 libwpfwin32.so	LoDisposeParaBreakingSession	impl	MOD-16	10.0.11
 libwpfwin32.so	LoDisposePenaltyModule	impl	MOD-16	10.0.11
-libwpfwin32.so	LoEnumLine	gap	MOD-16	10.0.11	无实现（presentationnative）
+libwpfwin32.so	LoEnumLine	stub	MOD-16	10.0.11
 libwpfwin32.so	LoGetEscString	impl	MOD-16	10.0.11
 libwpfwin32.so	LoGetPenaltyModuleInternalHandle	impl	MOD-16	10.0.11
-libwpfwin32.so	LoQueryLineCpPpoint	gap	MOD-16	10.0.11	无实现（presentationnative）
-libwpfwin32.so	LoQueryLinePointPcp	gap	MOD-16	10.0.11	无实现（presentationnative）
-libwpfwin32.so	LoRelievePenaltyResource	gap	MOD-16	10.0.11	无实现（presentationnative）
+libwpfwin32.so	LoQueryLineCpPpoint	stub	MOD-16	10.0.11
+libwpfwin32.so	LoQueryLinePointPcp	stub	MOD-16	10.0.11
+libwpfwin32.so	LoRelievePenaltyResource	stub	MOD-16	10.0.11
 libwpfwin32.so	LoSetBreaking	impl	MOD-16	10.0.11
 libwpfwin32.so	LoSetDoc	impl	MOD-16	10.0.11
 libwpfwin32.so	LoSetTabs	impl	MOD-16	10.0.11
@@ -917,8 +917,8 @@ libwpfwin32.so	LoadLibraryExW	impl	MOD-15	10.0.11
 libwpfwin32.so	LoadLibraryW	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
 libwpfwin32.so	LoadStringW	impl	MOD-11	10.0.11
 libwpfwin32.so	LocalFree	impl	MOD-15	10.0.11
-libwpfwin32.so	LocbkGetObjectHandlerInfo	gap	MOD-16	10.0.11	无实现（presentationnative）
-libwpfwin32.so	LockWispObjectFromGit	gap	MOD-84	10.0.11	PenImc 替身（MOD-84，libinput/XInput2）；未实现
+libwpfwin32.so	LocbkGetObjectHandlerInfo	stub	MOD-16	10.0.11
+libwpfwin32.so	LockWispObjectFromGit	stub	MOD-84	10.0.11
 libwpfwin32.so	LsDisableSpecialCharacterLigature	impl	MOD-16	10.0.11
 libwpfwin32.so	MILGetClassificationTables	impl	MOD-16	10.0.11
 libwpfwin32.so	MapViewOfFileEx	impl	MOD-15	10.0.11
@@ -940,15 +940,15 @@ libwpfwin32.so	MsgWaitForMultipleObjectsEx	impl	MOD-11	10.0.11
 libwpfwin32.so	MultiByteToWideChar	impl	MOD-15	10.0.11
 libwpfwin32.so	MultipleViewPattern_GetViewName	stub	MOD-81	10.0.11
 libwpfwin32.so	MultipleViewPattern_SetCurrentView	stub	MOD-81	10.0.11
-libwpfwin32.so	NlCreateHyphenator	gap	MOD-16	10.0.11	无实现（presentationnative）
-libwpfwin32.so	NlDestroyHyphenator	gap	MOD-16	10.0.11	无实现（presentationnative）
-libwpfwin32.so	NlGetClassObject	gap	MOD-16	10.0.11	无实现（presentationnative）
-libwpfwin32.so	NlHyphenate	gap	MOD-16	10.0.11	无实现（presentationnative）
-libwpfwin32.so	NlLoad	gap	MOD-16	10.0.11	无实现（presentationnative）
-libwpfwin32.so	NlUnload	gap	MOD-16	10.0.11	无实现（presentationnative）
+libwpfwin32.so	NlCreateHyphenator	stub	MOD-16	10.0.11
+libwpfwin32.so	NlDestroyHyphenator	stub	MOD-16	10.0.11
+libwpfwin32.so	NlGetClassObject	stub	MOD-16	10.0.11
+libwpfwin32.so	NlHyphenate	stub	MOD-16	10.0.11
+libwpfwin32.so	NlLoad	stub	MOD-16	10.0.11
+libwpfwin32.so	NlUnload	stub	MOD-16	10.0.11
 libwpfwin32.so	NotifyWinEvent	impl	MOD-11	10.0.11
 libwpfwin32.so	NtQueryInformationProcess	gap	MOD-15	10.0.11	无实现（ntdll）
-libwpfwin32.so	ObjectFromLresult	gap	MOD-63	10.0.11	无实现（oleacc）
+libwpfwin32.so	ObjectFromLresult	stub	MOD-63	10.0.11
 libwpfwin32.so	ObtainUserAgentString	impl	MOD-15	10.0.11
 libwpfwin32.so	OleFlushClipboard	impl	MOD-63	10.0.11
 libwpfwin32.so	OleGetClipboard	impl	MOD-63	10.0.11
@@ -984,12 +984,12 @@ libwpfwin32.so	PostMessageW	impl	MOD-02	10.0.11	shim 额外导出（上游未声
 libwpfwin32.so	PostQuitMessage	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
 libwpfwin32.so	PostThreadMessage	impl	MOD-11	10.0.11
 libwpfwin32.so	PostThreadMessageW	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
-libwpfwin32.so	PrintDlgEx	gap	MOD-62	10.0.11	无实现（comdlg32）
+libwpfwin32.so	PrintDlgEx	stub	MOD-62	10.0.11
 libwpfwin32.so	PrintWindow	impl	MOD-11	10.0.11
-libwpfwin32.so	Process	gap	MOD-83	10.0.11	无实现（mshwgst）
-libwpfwin32.so	ProcessBufferedPacketsInteractionContext	gap	MOD-84	10.0.11	Windows Ink 面；未迁移
+libwpfwin32.so	Process	stub	MOD-83	10.0.11
+libwpfwin32.so	ProcessBufferedPacketsInteractionContext	stub	MOD-84	10.0.11
 libwpfwin32.so	ProcessIdToSessionId	impl	MOD-15	10.0.11
-libwpfwin32.so	ProcessUnhandledException	gap	MOD-51	10.0.11	ClickOnce/XBAP 宿主件；不在 V1 范围
+libwpfwin32.so	ProcessUnhandledException	stub	MOD-51	10.0.11
 libwpfwin32.so	PropVariantClear	impl	MOD-63	10.0.11
 libwpfwin32.so	PtInRegion	impl	MOD-13	10.0.11
 libwpfwin32.so	QueryPerformanceCounter	impl	MOD-15	10.0.11
@@ -1011,9 +1011,9 @@ libwpfwin32.so	RegisterClipboardFormatW	impl	MOD-02	10.0.11	shim 额外导出（
 libwpfwin32.so	RegisterDllForSxSCOM	stub	MOD-84	10.0.11
 libwpfwin32.so	RegisterDragDrop	impl	MOD-63	10.0.11
 libwpfwin32.so	RegisterHotKey	impl	MOD-11	10.0.11
-libwpfwin32.so	RegisterOutputCallbackInteractionContext	gap	MOD-84	10.0.11	Windows Ink 面；未迁移
+libwpfwin32.so	RegisterOutputCallbackInteractionContext	stub	MOD-84	10.0.11
 libwpfwin32.so	RegisterPowerSettingNotification	impl	MOD-11	10.0.11
-libwpfwin32.so	RegisterTraceGuidsW	gap	MOD-15	10.0.11	无实现（advapi32）
+libwpfwin32.so	RegisterTraceGuidsW	stub	MOD-15	10.0.11
 libwpfwin32.so	RegisterWindowMessage	impl	MOD-11	10.0.11
 libwpfwin32.so	RegisterWindowMessageA	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
 libwpfwin32.so	RegisterWindowMessageW	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
@@ -1028,12 +1028,12 @@ libwpfwin32.so	RemoveMenu	impl	MOD-11	10.0.11
 libwpfwin32.so	RemoveProp	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
 libwpfwin32.so	RemovePropA	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
 libwpfwin32.so	RemovePropW	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
-libwpfwin32.so	ResetContext	gap	MOD-83	10.0.11	无实现（mshwgst）
+libwpfwin32.so	ResetContext	stub	MOD-83	10.0.11
 libwpfwin32.so	ResetEvent	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
 libwpfwin32.so	RestoreDC	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
 libwpfwin32.so	RevokeDragDrop	impl	MOD-63	10.0.11
-libwpfwin32.so	RoActivateInstance	gap	MOD-02	10.0.11	无实现（api-ms-win-core-winrt）
-libwpfwin32.so	RoGetActivationFactory	gap	MOD-02	10.0.11	无实现（api-ms-win-core-winrt）
+libwpfwin32.so	RoActivateInstance	stub	MOD-02	10.0.11
+libwpfwin32.so	RoGetActivationFactory	stub	MOD-02	10.0.11
 libwpfwin32.so	RtlGetVersion	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
 libwpfwin32.so	RtlGetVersionA	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
 libwpfwin32.so	RtlMoveMemory	impl	MOD-15	10.0.11
@@ -1081,7 +1081,7 @@ libwpfwin32.so	SetConsoleCtrlHandler	impl	MOD-02	10.0.11	shim 额外导出（上
 libwpfwin32.so	SetCurrentProcessExplicitAppUserModelID	impl	MOD-15	10.0.11
 libwpfwin32.so	SetCursor	impl	MOD-11	10.0.11
 libwpfwin32.so	SetDisablePenImcBoundsCheckProtection	impl	MOD-84	10.0.11
-libwpfwin32.so	SetEnabledUnicodeRanges	gap	MOD-83	10.0.11	无实现（mshwgst）
+libwpfwin32.so	SetEnabledUnicodeRanges	stub	MOD-83	10.0.11
 libwpfwin32.so	SetEnhMetaFileBits	impl	MOD-13	10.0.11
 libwpfwin32.so	SetErrorInfo	gap	MOD-63	10.0.11	无实现（oleaut32）
 libwpfwin32.so	SetErrorMode	impl	MOD-15	10.0.11
@@ -1090,7 +1090,7 @@ libwpfwin32.so	SetFocus	impl	MOD-02	10.0.11	shim 额外导出（上游未声明�
 libwpfwin32.so	SetFocusWrapper	impl	MOD-16	10.0.11
 libwpfwin32.so	SetForegroundWindow	impl	MOD-11	10.0.11
 libwpfwin32.so	SetGraphicsMode	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
-libwpfwin32.so	SetInteractionConfigurationInteractionContext	gap	MOD-84	10.0.11	Windows Ink 面；未迁移
+libwpfwin32.so	SetInteractionConfigurationInteractionContext	stub	MOD-84	10.0.11
 libwpfwin32.so	SetLastError	impl	MOD-15	10.0.11
 libwpfwin32.so	SetLayeredWindowAttributes	impl	MOD-11	10.0.11
 libwpfwin32.so	SetMapMode	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
@@ -1101,7 +1101,7 @@ libwpfwin32.so	SetProcessWorkingSetSize	impl	MOD-15	10.0.11
 libwpfwin32.so	SetProp	impl	MOD-11	10.0.11
 libwpfwin32.so	SetPropA	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
 libwpfwin32.so	SetPropW	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
-libwpfwin32.so	SetPropertyInteractionContext	gap	MOD-84	10.0.11	Windows Ink 面；未迁移
+libwpfwin32.so	SetPropertyInteractionContext	stub	MOD-84	10.0.11
 libwpfwin32.so	SetScrollPosWrapper	impl	MOD-16	10.0.11
 libwpfwin32.so	SetTextAlign	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
 libwpfwin32.so	SetTextColor	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
@@ -1163,10 +1163,10 @@ libwpfwin32.so	SysFreeString	gap	MOD-63	10.0.11	无实现（oleaut32）
 libwpfwin32.so	SystemParametersInfo	impl	MOD-11	10.0.11
 libwpfwin32.so	SystemParametersInfoA	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
 libwpfwin32.so	SystemParametersInfoW	impl	MOD-11	10.0.11
-libwpfwin32.so	TF_CreateCategoryMgr	gap	MOD-36	10.0.11	无实现（msctf）
-libwpfwin32.so	TF_CreateDisplayAttributeMgr	gap	MOD-36	10.0.11	无实现（msctf）
-libwpfwin32.so	TF_CreateInputProcessorProfiles	gap	MOD-36	10.0.11	无实现（msctf）
-libwpfwin32.so	TF_CreateThreadMgr	gap	MOD-36	10.0.11	无实现（msctf）
+libwpfwin32.so	TF_CreateCategoryMgr	stub	MOD-36	10.0.11
+libwpfwin32.so	TF_CreateDisplayAttributeMgr	stub	MOD-36	10.0.11
+libwpfwin32.so	TF_CreateInputProcessorProfiles	stub	MOD-36	10.0.11
+libwpfwin32.so	TF_CreateThreadMgr	stub	MOD-36	10.0.11
 libwpfwin32.so	TextOutA	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
 libwpfwin32.so	TextOutW	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
 libwpfwin32.so	TextPattern_GetSelection	stub	MOD-81	10.0.11
@@ -1195,7 +1195,7 @@ libwpfwin32.so	TextRange_ScrollIntoView	stub	MOD-81	10.0.11
 libwpfwin32.so	TextRange_Select	stub	MOD-81	10.0.11
 libwpfwin32.so	ToUnicode	impl	MOD-11	10.0.11
 libwpfwin32.so	TogglePattern_Toggle	stub	MOD-81	10.0.11
-libwpfwin32.so	TraceEvent	gap	MOD-15	10.0.11	无实现（advapi32）
+libwpfwin32.so	TraceEvent	stub	MOD-15	10.0.11
 libwpfwin32.so	TrackMouseEvent	impl	MOD-11	10.0.11
 libwpfwin32.so	TrackPopupMenuEx	impl	MOD-11	10.0.11
 libwpfwin32.so	TransformPattern_Move	stub	MOD-81	10.0.11
@@ -1243,14 +1243,14 @@ libwpfwin32.so	UiaTextRangeRelease	stub	MOD-81	10.0.11
 libwpfwin32.so	UnhookWinEvent	impl	MOD-11	10.0.11
 libwpfwin32.so	UnhookWindowsHookEx	impl	MOD-11	10.0.11
 libwpfwin32.so	UnionRect	impl	MOD-11	10.0.11
-libwpfwin32.so	UnlockWispObjectFromGit	gap	MOD-84	10.0.11	PenImc 替身（MOD-84，libinput/XInput2）；未实现
+libwpfwin32.so	UnlockWispObjectFromGit	stub	MOD-84	10.0.11
 libwpfwin32.so	UnmapViewOfFile	impl	MOD-15	10.0.11
 libwpfwin32.so	UnregisterClass	impl	MOD-11	10.0.11
 libwpfwin32.so	UnregisterClassA	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
 libwpfwin32.so	UnregisterClassW	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
 libwpfwin32.so	UnregisterHotKey	impl	MOD-11	10.0.11
 libwpfwin32.so	UnregisterPowerSettingNotification	impl	MOD-11	10.0.11
-libwpfwin32.so	UnregisterTraceGuids	gap	MOD-15	10.0.11	无实现（advapi32）
+libwpfwin32.so	UnregisterTraceGuids	stub	MOD-15	10.0.11
 libwpfwin32.so	UpdateLayeredWindow	impl	MOD-11	10.0.11
 libwpfwin32.so	UpdatePanningFeedback	impl	MOD-04	10.0.11
 libwpfwin32.so	UpdatePanningFeedbackW	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
@@ -1274,7 +1274,7 @@ libwpfwin32.so	WaitForMultipleObjectsEx	impl	MOD-15	10.0.11
 libwpfwin32.so	WaitForSingleObject	impl	MOD-15	10.0.11
 libwpfwin32.so	WaitMessage	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
 libwpfwin32.so	WideCharToMultiByte	impl	MOD-15	10.0.11
-libwpfwin32.so	WindowFromAccessibleObject	gap	MOD-63	10.0.11	无实现（oleacc）
+libwpfwin32.so	WindowFromAccessibleObject	stub	MOD-63	10.0.11
 libwpfwin32.so	WindowFromPhysicalPoint	impl	MOD-11	10.0.11
 libwpfwin32.so	WindowFromPoint	impl	MOD-11	10.0.11
 libwpfwin32.so	WindowPattern_Close	stub	MOD-81	10.0.11

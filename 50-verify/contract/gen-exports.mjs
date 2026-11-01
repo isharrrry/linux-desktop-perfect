@@ -320,6 +320,8 @@ function parseShimExports() {
     // 【清算 / K-181】DRM 桩：宏体是 \`return (int32_t)0x80004001;\` —— 不是常量返回 FALSE/0，
     // 所以 isStub 会判成 impl。但它确实是'诚实降级'（返回 E_NOTIMPL 错误码），保留为 impl 没错。
     'WPF_DRM_STUB': 'return (int32_t)0x80004001;',
+    // 【清算 / K-198】B 类安全桩：`WPF_UNIMPL(name)` → `intptr_t name(void) { return 0; }`
+    'WPF_UNIMPL': 'return 0;',
   };
   for (const file of walk(SHIM_SRC, '.c')) {
     const text = stripComments(read(file));
