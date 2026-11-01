@@ -311,13 +311,22 @@ function parseShimExports() {
   //   `int IsWindowsXxx(void) { return 0; }`，但上面的行首正则扫不到宏调用。
   //   实测：`.so` 里 `nm -D` 明明有 20 个 `IsWindows*`，清单却全标 `gap` —— **假 gap**。
   //   这里按宏名把它们补进导出表，body 用宏展开后的实际函数体，让 isStub 如实判定。
-  const MACRO_DEFS = { 'WPF_OSVERSION_FALSE': 'return 0;' };
+  const MACRO_DEFS = {
+    'WPF_OSVERSION_FALSE': 'return 0;',
+    // 【清算 / K-181】DRM 桩：宏体是 \`return (int32_t)0x80004001;\` —— 不是常量返回 FALSE/0，
+    // 所以 isStub 会判成 impl。但它确实是'诚实降级'（返回 E_NOTIMPL 错误码），保留为 impl 没错。
+    'WPF_DRM_STUB': 'return (int32_t)0x80004001;',
+  };
   for (const file of walk(SHIM_SRC, '.c')) {
     const text = stripComments(read(file));
     for (const macro of Object.keys(MACRO_DEFS)) {
       const mre = new RegExp('\\b' + macro + '\\s*\\(\\s*([A-Za-z_]\\w*)\\s*\\)', 'g');
       let mm;
       while ((mm = mre.exec(text))) {
+        // 【K-181 修正】跳过 `#define XXX(name) ...` 这一行 —— 否则宏定义里的形参 `name` 会被当成符号，
+        // 实测正是这么冒出 `int` / `name` 两个假符号（check-symbols 报「清单 impl 未导出：2」）。
+        const lineStart = text.lastIndexOf('\n', mm.index) + 1;
+        if (text.slice(lineStart, mm.index).includes('#define')) continue;
         const name = mm[1];
         if (!set.has(name)) set.set(name, { file: path.relative(ROOT, file), body: MACRO_DEFS[macro] });
       }

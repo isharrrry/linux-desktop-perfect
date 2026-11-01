@@ -3,8 +3,8 @@
 # 列：lib	symbol	status	owner	since[	note]（note 为可选列；为空时省略，行尾不留制表符）
 # status 判定：impl=实现侧有该符号；stub=函数体仅常量返回；gap=声明有实现无（note 写替代路径）
 # lib 列：若实现将落在哪个自产 .so（概设 §2.4）；status=gap 表示当前无实现，不是没登记
-# 规模：1286 行（impl 928 / stub 104 / gap 254）
-# 输入：上游 1534 条 DllImport 声明（另有 0 条属性块后无 extern 声明被跳过）、native-shim 831 个导出、milcore 109 个导出
+# 规模：1285 行（impl 978 / stub 103 / gap 204）
+# 输入：上游 1534 条 DllImport 声明（另有 0 条属性块后无 extern 声明被跳过）、native-shim 880 个导出、milcore 109 个导出
 # 排除：wpf_*（shim 内部件）、WpfLinuxWin32_*（桥件，非 Win32 契约入口）
 libwpfgfx_linux.so	GetNextPerfElementId	impl	MOD-25	10.0.11
 libwpfgfx_linux.so	IWICColorContext_GetExifColorSpace_Proxy	impl	MOD-25	10.0.11
@@ -339,56 +339,56 @@ libwpfwin32.so	CreateWindowExW	impl	MOD-11	10.0.11
 libwpfwin32.so	CriticalCreateCompatibleBitmap	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
 libwpfwin32.so	CriticalGetStockObject	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
 libwpfwin32.so	CriticalSetWindowTheme	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
-libwpfwin32.so	DRMAcquireLicense	gap	MOD-85	10.0.11	明确降级 D-001（E_NOTIMPL）
-libwpfwin32.so	DRMActivate	gap	MOD-85	10.0.11	明确降级 D-001（E_NOTIMPL）
-libwpfwin32.so	DRMAddRightWithUser	gap	MOD-85	10.0.11	明确降级 D-001（E_NOTIMPL）
-libwpfwin32.so	DRMCloseEnvironmentHandle	gap	MOD-85	10.0.11	明确降级 D-001（E_NOTIMPL）
-libwpfwin32.so	DRMCloseHandle	gap	MOD-85	10.0.11	明确降级 D-001（E_NOTIMPL）
-libwpfwin32.so	DRMClosePubHandle	gap	MOD-85	10.0.11	明确降级 D-001（E_NOTIMPL）
-libwpfwin32.so	DRMCloseQueryHandle	gap	MOD-85	10.0.11	明确降级 D-001（E_NOTIMPL）
-libwpfwin32.so	DRMCloseSession	gap	MOD-85	10.0.11	明确降级 D-001（E_NOTIMPL）
-libwpfwin32.so	DRMCreateBoundLicense	gap	MOD-85	10.0.11	明确降级 D-001（E_NOTIMPL）
-libwpfwin32.so	DRMCreateClientSession	gap	MOD-85	10.0.11	明确降级 D-001（E_NOTIMPL）
-libwpfwin32.so	DRMCreateEnablingBitsDecryptor	gap	MOD-85	10.0.11	明确降级 D-001（E_NOTIMPL）
-libwpfwin32.so	DRMCreateEnablingBitsEncryptor	gap	MOD-85	10.0.11	明确降级 D-001（E_NOTIMPL）
-libwpfwin32.so	DRMCreateIssuanceLicense	gap	MOD-85	10.0.11	明确降级 D-001（E_NOTIMPL）
-libwpfwin32.so	DRMCreateLicenseStorageSession	gap	MOD-85	10.0.11	明确降级 D-001（E_NOTIMPL）
-libwpfwin32.so	DRMCreateRight	gap	MOD-85	10.0.11	明确降级 D-001（E_NOTIMPL）
-libwpfwin32.so	DRMCreateUser	gap	MOD-85	10.0.11	明确降级 D-001（E_NOTIMPL）
-libwpfwin32.so	DRMDeconstructCertificateChain	gap	MOD-85	10.0.11	明确降级 D-001（E_NOTIMPL）
-libwpfwin32.so	DRMDecrypt	gap	MOD-85	10.0.11	明确降级 D-001（E_NOTIMPL）
-libwpfwin32.so	DRMDeleteLicense	gap	MOD-85	10.0.11	明确降级 D-001（E_NOTIMPL）
-libwpfwin32.so	DRMEncrypt	gap	MOD-85	10.0.11	明确降级 D-001（E_NOTIMPL）
-libwpfwin32.so	DRMEnumerateLicense	gap	MOD-85	10.0.11	明确降级 D-001（E_NOTIMPL）
-libwpfwin32.so	DRMGetApplicationSpecificData	gap	MOD-85	10.0.11	明确降级 D-001（E_NOTIMPL）
-libwpfwin32.so	DRMGetBoundLicenseAttribute	gap	MOD-85	10.0.11	明确降级 D-001（E_NOTIMPL）
-libwpfwin32.so	DRMGetBoundLicenseObject	gap	MOD-85	10.0.11	明确降级 D-001（E_NOTIMPL）
-libwpfwin32.so	DRMGetInfo	gap	MOD-85	10.0.11	明确降级 D-001（E_NOTIMPL）
-libwpfwin32.so	DRMGetIntervalTime	gap	MOD-85	10.0.11	明确降级 D-001（E_NOTIMPL）
-libwpfwin32.so	DRMGetIssuanceLicenseInfo	gap	MOD-85	10.0.11	明确降级 D-001（E_NOTIMPL）
-libwpfwin32.so	DRMGetIssuanceLicenseTemplate	gap	MOD-85	10.0.11	明确降级 D-001（E_NOTIMPL）
-libwpfwin32.so	DRMGetNameAndDescription	gap	MOD-85	10.0.11	明确降级 D-001（E_NOTIMPL）
-libwpfwin32.so	DRMGetOwnerLicense	gap	MOD-85	10.0.11	明确降级 D-001（E_NOTIMPL）
-libwpfwin32.so	DRMGetRevocationPoint	gap	MOD-85	10.0.11	明确降级 D-001（E_NOTIMPL）
-libwpfwin32.so	DRMGetRightInfo	gap	MOD-85	10.0.11	明确降级 D-001（E_NOTIMPL）
-libwpfwin32.so	DRMGetSecurityProvider	gap	MOD-85	10.0.11	明确降级 D-001（E_NOTIMPL）
-libwpfwin32.so	DRMGetServiceLocation	gap	MOD-85	10.0.11	明确降级 D-001（E_NOTIMPL）
-libwpfwin32.so	DRMGetSignedIssuanceLicense	gap	MOD-85	10.0.11	明确降级 D-001（E_NOTIMPL）
-libwpfwin32.so	DRMGetUnboundLicenseAttribute	gap	MOD-85	10.0.11	明确降级 D-001（E_NOTIMPL）
-libwpfwin32.so	DRMGetUnboundLicenseObject	gap	MOD-85	10.0.11	明确降级 D-001（E_NOTIMPL）
-libwpfwin32.so	DRMGetUnboundLicenseObjectCount	gap	MOD-85	10.0.11	明确降级 D-001（E_NOTIMPL）
-libwpfwin32.so	DRMGetUserInfo	gap	MOD-85	10.0.11	明确降级 D-001（E_NOTIMPL）
-libwpfwin32.so	DRMGetUserRights	gap	MOD-85	10.0.11	明确降级 D-001（E_NOTIMPL）
-libwpfwin32.so	DRMGetUsers	gap	MOD-85	10.0.11	明确降级 D-001（E_NOTIMPL）
-libwpfwin32.so	DRMInitEnvironment	gap	MOD-85	10.0.11	明确降级 D-001（E_NOTIMPL）
-libwpfwin32.so	DRMIsActivated	gap	MOD-85	10.0.11	明确降级 D-001（E_NOTIMPL）
-libwpfwin32.so	DRMParseUnboundLicense	gap	MOD-85	10.0.11	明确降级 D-001（E_NOTIMPL）
-libwpfwin32.so	DRMRegisterContent	gap	MOD-85	10.0.11	明确降级 D-001（E_NOTIMPL）
-libwpfwin32.so	DRMSetApplicationSpecificData	gap	MOD-85	10.0.11	明确降级 D-001（E_NOTIMPL）
-libwpfwin32.so	DRMSetIntervalTime	gap	MOD-85	10.0.11	明确降级 D-001（E_NOTIMPL）
-libwpfwin32.so	DRMSetMetaData	gap	MOD-85	10.0.11	明确降级 D-001（E_NOTIMPL）
-libwpfwin32.so	DRMSetNameAndDescription	gap	MOD-85	10.0.11	明确降级 D-001（E_NOTIMPL）
-libwpfwin32.so	DRMSetRevocationPoint	gap	MOD-85	10.0.11	明确降级 D-001（E_NOTIMPL）
+libwpfwin32.so	DRMAcquireLicense	impl	MOD-85	10.0.11
+libwpfwin32.so	DRMActivate	impl	MOD-85	10.0.11
+libwpfwin32.so	DRMAddRightWithUser	impl	MOD-85	10.0.11
+libwpfwin32.so	DRMCloseEnvironmentHandle	impl	MOD-85	10.0.11
+libwpfwin32.so	DRMCloseHandle	impl	MOD-85	10.0.11
+libwpfwin32.so	DRMClosePubHandle	impl	MOD-85	10.0.11
+libwpfwin32.so	DRMCloseQueryHandle	impl	MOD-85	10.0.11
+libwpfwin32.so	DRMCloseSession	impl	MOD-85	10.0.11
+libwpfwin32.so	DRMCreateBoundLicense	impl	MOD-85	10.0.11
+libwpfwin32.so	DRMCreateClientSession	impl	MOD-85	10.0.11
+libwpfwin32.so	DRMCreateEnablingBitsDecryptor	impl	MOD-85	10.0.11
+libwpfwin32.so	DRMCreateEnablingBitsEncryptor	impl	MOD-85	10.0.11
+libwpfwin32.so	DRMCreateIssuanceLicense	impl	MOD-85	10.0.11
+libwpfwin32.so	DRMCreateLicenseStorageSession	impl	MOD-85	10.0.11
+libwpfwin32.so	DRMCreateRight	impl	MOD-85	10.0.11
+libwpfwin32.so	DRMCreateUser	impl	MOD-85	10.0.11
+libwpfwin32.so	DRMDeconstructCertificateChain	impl	MOD-85	10.0.11
+libwpfwin32.so	DRMDecrypt	impl	MOD-85	10.0.11
+libwpfwin32.so	DRMDeleteLicense	impl	MOD-85	10.0.11
+libwpfwin32.so	DRMEncrypt	impl	MOD-85	10.0.11
+libwpfwin32.so	DRMEnumerateLicense	impl	MOD-85	10.0.11
+libwpfwin32.so	DRMGetApplicationSpecificData	impl	MOD-85	10.0.11
+libwpfwin32.so	DRMGetBoundLicenseAttribute	impl	MOD-85	10.0.11
+libwpfwin32.so	DRMGetBoundLicenseObject	impl	MOD-85	10.0.11
+libwpfwin32.so	DRMGetInfo	impl	MOD-85	10.0.11
+libwpfwin32.so	DRMGetIntervalTime	impl	MOD-85	10.0.11
+libwpfwin32.so	DRMGetIssuanceLicenseInfo	impl	MOD-85	10.0.11
+libwpfwin32.so	DRMGetIssuanceLicenseTemplate	impl	MOD-85	10.0.11
+libwpfwin32.so	DRMGetNameAndDescription	impl	MOD-85	10.0.11
+libwpfwin32.so	DRMGetOwnerLicense	impl	MOD-85	10.0.11
+libwpfwin32.so	DRMGetRevocationPoint	impl	MOD-85	10.0.11
+libwpfwin32.so	DRMGetRightInfo	impl	MOD-85	10.0.11
+libwpfwin32.so	DRMGetSecurityProvider	impl	MOD-85	10.0.11
+libwpfwin32.so	DRMGetServiceLocation	impl	MOD-85	10.0.11
+libwpfwin32.so	DRMGetSignedIssuanceLicense	impl	MOD-85	10.0.11
+libwpfwin32.so	DRMGetUnboundLicenseAttribute	impl	MOD-85	10.0.11
+libwpfwin32.so	DRMGetUnboundLicenseObject	impl	MOD-85	10.0.11
+libwpfwin32.so	DRMGetUnboundLicenseObjectCount	impl	MOD-85	10.0.11
+libwpfwin32.so	DRMGetUserInfo	impl	MOD-85	10.0.11
+libwpfwin32.so	DRMGetUserRights	impl	MOD-85	10.0.11
+libwpfwin32.so	DRMGetUsers	impl	MOD-85	10.0.11
+libwpfwin32.so	DRMInitEnvironment	impl	MOD-85	10.0.11
+libwpfwin32.so	DRMIsActivated	impl	MOD-85	10.0.11
+libwpfwin32.so	DRMParseUnboundLicense	impl	MOD-85	10.0.11
+libwpfwin32.so	DRMRegisterContent	impl	MOD-85	10.0.11
+libwpfwin32.so	DRMSetApplicationSpecificData	impl	MOD-85	10.0.11
+libwpfwin32.so	DRMSetIntervalTime	impl	MOD-85	10.0.11
+libwpfwin32.so	DRMSetMetaData	impl	MOD-85	10.0.11
+libwpfwin32.so	DRMSetNameAndDescription	impl	MOD-85	10.0.11
+libwpfwin32.so	DRMSetRevocationPoint	impl	MOD-85	10.0.11
 libwpfwin32.so	DbgPrint	gap	MOD-15	10.0.11	无实现（ntdll）
 libwpfwin32.so	DbgUserBreakPoint	gap	MOD-15	10.0.11	无实现（ntdll）
 libwpfwin32.so	DeactivateActCtx	impl	MOD-15	10.0.11
@@ -1291,4 +1291,3 @@ libwpfwin32.so	mmioDescend	gap	MOD-83	10.0.11	无实现（winmm）
 libwpfwin32.so	mmioOpenW	gap	MOD-83	10.0.11	无实现（winmm）
 libwpfwin32.so	mmioRead	gap	MOD-83	10.0.11	无实现（winmm）
 libwpfwin32.so	mouse_event	impl	MOD-11	10.0.11
-libwpfwin32.so	name	stub	MOD-02	10.0.11	shim 额外导出（上游未声明）
