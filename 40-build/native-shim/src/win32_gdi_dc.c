@@ -391,3 +391,45 @@ int32_t GdipCreateHICONFromBitmap(void *bitmap, void **hIcon)
     if (hIcon) *hIcon = NULL;
     return 1;   // GdiplusNotImplemented
 }
+
+// ── 【K-339】`WpfLinuxWin32_DrawImage` —— 把一块 BGRA 像素贴到 DC 上 ───────────
+//   用途：`BufferedGraphics.RenderInternal` 的实现（K-330/K-338）。
+//   WinForms 的双缓冲把内容画到成员的 `Bitmap`（`membmp`）里，最后一步要"贴到屏幕"。
+//   原实现（Unix 后端）是 `throw new NotImplementedException()`（K-330），
+//   而 Windows 版走 `BitBlt`。**本函数就是那个缺失的"贴图"动作**。
+//
+//   为什么不用逐像素 `SetPixelV`：640×460 = 29 万次 P/Invoke，太慢。
+//   这里用 `XCreateImage` + `XPutImage` **一次**把整块贴上去。
+//
+//   参数：
+//     dc     目标 DC（`0x1` 这种伪句柄也行 —— `wpf_hdc_of` 会解析，与 `FillRect` 一致）
+//     x,y    目标左上角
+//     w,h    图像尺寸
+//     bgra   像素数据，**每像素 4 字节，顺序 B,G,R,A**（与 `Format32bppArgb` 在
+//            小端机上的内存布局一致）
+//     stride 行字节数（可 > w*4，支持 padding）
+//   返回 1 成功，0 失败。
+int WpfLinuxWin32_DrawImage(HDC dc, int32_t x, int32_t y, int32_t w, int32_t h,
+                            const void *bgra, int32_t stride)
+{
+    wpf_hdc *d = wpf_hdc_of(dc);
+    if (!d || !bgra || !g_wpf.dpy || w <= 0 || h <= 0 || stride < w * 4) return 0;
+    if (!d->drawable) return 0;
+
+    // XCreateImage 要求数据生命周期覆盖 XPutImage；这里**不复制**（直接引用），
+    // 调用方保证在 XPutImage 返回前不释放（`LockBits` 的 finally 在之后才 Unlock）。
+    // `wpf_global` 里没有 visual/depth 字段（K-340），从 screen 取默认值。
+    Visual *visual = DefaultVisual(g_wpf.dpy, g_wpf.screen);
+    int depth = DefaultDepth(g_wpf.dpy, g_wpf.screen);
+    XImage *img = XCreateImage(g_wpf.dpy, visual, (unsigned)depth, ZPixmap,
+                               0, (char *)bgra, (unsigned)w, (unsigned)h,
+                               32, (int)stride);
+    if (!img) return 0;
+
+    XPutImage(g_wpf.dpy, d->drawable, d->gc, img, 0, 0, x, y, (unsigned)w, (unsigned)h);
+    // XCreateImage 不拥有 data（data 是我们传进去的），但会分配 XImage 结构本身。
+    // 用 `img->data = NULL` 再 XDestroyImage，避免它 free 掉调用方的缓冲区。
+    img->data = NULL;
+    XDestroyImage(img);
+    return 1;
+}
