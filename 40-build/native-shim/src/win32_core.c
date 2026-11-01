@@ -1999,7 +1999,13 @@ LRESULT DefWindowProcW(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
         extern int DrawTextW(void *, const uint16_t *, int32_t, void *, uint32_t);
         WPF_PAINTSTRUCT ps;
         memset(&ps, 0, sizeof ps);
-        HDC dc = (HDC)BeginPaint(hwnd, &ps);
+        // 【K-458 决定性修复】`BeginPaint` 返回 **BOOL**（成功=1），不是 HDC！
+        //   原来写成 `HDC dc = (HDC)BeginPaint(hwnd, &ps)` ⇒ `dc = 0x1` ⇒
+        //   `wpf_draw_text` 里 `wpf_hdc_of(0x1)` 返回 NULL ⇒ **一个像素都没画**。
+        //   真正的 HDC 在 `ps.hdc` 里（`BeginPaint` 已经填好）。
+        //   这个 bug 让 K-453/K-454 的「逐项绘制」全部静默失效。
+        (void)BeginPaint(hwnd, &ps);
+        HDC dc = ps.hdc;
         if (dc) {
             WPF_RECT rc;
             GetClientRect(hwnd, &rc);

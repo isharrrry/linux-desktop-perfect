@@ -146,9 +146,19 @@ wpf_hdc *wpf_hdc_get(HWND hwnd)
     wpf_unlock();
 
     wpf_window *w = wpf_window_find(hwnd);
+    // 【K-458 诊断】`BeginPaint` 拿到的 `dc` 是 `WPF_FAKE_DC`（0x1），说明这里返回了 NULL。
+    //   区分两种可能：① 窗口没注册（`wpf_window_find` 返回 NULL）；② `wpf_hdc_new` 失败。
+    if (getenv("LDP_WIC_TRACE")) {
+        fprintf(stderr, "[HDC-GET] hwnd=%p window_find=%p\n", (void *)hwnd, (void *)w);
+        fflush(stderr);
+    }
     if (!w) return NULL;
 
     wpf_hdc *h = wpf_hdc_new();
+    if (getenv("LDP_WIC_TRACE")) {
+        fprintf(stderr, "[HDC-GET] hwnd=%p new_hdc=%p\n", (void *)hwnd, (void *)h);
+        fflush(stderr);
+    }
     if (!h) return NULL;
     h->hwnd = hwnd;
     h->drawable = (Drawable)(uintptr_t)hwnd;   // shim 里 HWND 就是 X11 Window
