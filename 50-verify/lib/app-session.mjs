@@ -63,7 +63,23 @@ export function startXvfb(display = pickFreeDisplay(), opts = {}) {
   // Xvfb 的 -dpi 决定 X server 报告的 screen DPI —— shim 的 GetDpiForWindow 就是读它（ACC-011 的三档来源）
   if (opts.dpi) args.push('-dpi', String(opts.dpi));
   const proc = spawn('Xvfb', args, { stdio: 'ignore' });
-  return { display, proc, dpi: opts.dpi || 96, kill: () => { try { proc.kill('SIGTERM'); } catch {} } };
+  // 【环境缺口修复 / K-208-K-209】**Xvfb 只是 X server，它不提供窗口管理器。**
+  //   而 `findWindow()` 靠 `wmctrl -l` 找窗口，`wmctrl` 需要 EWMH 的 `_NET_CLIENT_LIST`，
+  //   **那个属性只能由窗口管理器提供**。没有 WM 时 `wmctrl -l` 返回空 ⇒ `findWindow` 永远超时
+  //   ⇒ ACC-022（媒体）/ ACC-023（Ink）永远 FAIL —— 而应用其实完全正常
+  //   （`xwininfo -root -children` 能看到 `WpfMediaInk [SCR-06]` 784×560）。
+  //   ⇒ 这里在 Xvfb 起来后**再起一个轻量 EWMH WM**（openbox）。它只做 EWMH 记账，不接管绘制。
+  let wm = null;
+  if (opts.wm !== false) {
+    wm = spawn('openbox', [], { stdio: 'ignore', env: { ...process.env, DISPLAY: display } });
+  }
+  return {
+    display, proc, wm, dpi: opts.dpi || 96,
+    kill: () => {
+      try { if (wm) wm.kill('SIGTERM'); } catch {}
+      try { proc.kill('SIGTERM'); } catch {}
+    },
+  };
 }
 
 export async function waitDisplay(display, timeoutMs = 15000) {
