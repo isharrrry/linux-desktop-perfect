@@ -1132,18 +1132,11 @@ int wpf_in_send_message_depth(void) { return g_in_send_message; }
 //
 //   局限（诚实）：只存**前 32 个窗口 / 每个 64 项 / 每项 128 字节**，
 //   足够覆盖本仓的样本（`ExtA_WinForms` 只有 2 项）。
-#define LDP_MAX_WINDOWS  32
-#define LDP_MAX_ITEMS    64
-#define LDP_MAX_ITEMLEN  128
-typedef struct {
-    HWND hwnd;
-    int  count;
-    char items[LDP_MAX_ITEMS][LDP_MAX_ITEMLEN];
-} ldp_items;
-static ldp_items g_items[LDP_MAX_WINDOWS];
+// 类型和 `LDP_MAX_*` 已在 `win32_internal.h` 定义（K-453）
+ldp_items g_items[LDP_MAX_WINDOWS];
 static pthread_mutex_t g_items_lock = PTHREAD_MUTEX_INITIALIZER;
 
-static ldp_items *ldp_items_of(HWND hwnd, int create)
+ldp_items *ldp_items_of(HWND hwnd, int create)
 {
     pthread_mutex_lock(&g_items_lock);
     ldp_items *free_slot = NULL;

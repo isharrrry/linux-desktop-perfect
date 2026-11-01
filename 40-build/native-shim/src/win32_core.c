@@ -2001,12 +2001,29 @@ LRESULT DefWindowProcW(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
         memset(&ps, 0, sizeof ps);
         HDC dc = (HDC)BeginPaint(hwnd, &ps);
         if (dc) {
-            uint16_t text[512];
-            int n = GetWindowTextW(hwnd, text, 511);
-            if (n > 0) {
-                WPF_RECT rc;
-                GetClientRect(hwnd, &rc);
-                DrawTextW((void *)dc, text, n, &rc, 0);
+            WPF_RECT rc;
+            GetClientRect(hwnd, &rc);
+            // 【K-453】ListBox / ComboBox：**逐项**画（用 K-451/K-452 存的项列表）
+            ldp_items *it = ldp_items_of(hwnd, 0);
+            if (it && it->count > 0) {
+                int lineH = 18;                       // 行高（与 WPF_FAKE_FONT_HEIGHT 一致）
+                for (int i = 0; i < it->count; ++i) {
+                    int32_t y = rc.top + i * lineH;
+                    if (y + lineH > rc.bottom) break;  // 超出客户区就停
+                    WPF_RECT line = { rc.left, y, rc.right, y + lineH };
+                    // 把存储的 UTF-8 转成 UTF-16（DrawTextW 要 UTF-16）
+                    uint16_t u16[LDP_MAX_ITEMLEN];
+                    int n = 0;
+                    const char *src = it->items[i];
+                    while (src[n] && n < LDP_MAX_ITEMLEN - 1) { u16[n] = (uint16_t)(unsigned char)src[n]; ++n; }
+                    u16[n] = 0;
+                    if (n > 0) DrawTextW((void *)dc, u16, n, &line, 0);
+                }
+            } else {
+                // 其他控件：保持旧行为（画窗口文字）
+                uint16_t text[512];
+                int n = GetWindowTextW(hwnd, text, 511);
+                if (n > 0) DrawTextW((void *)dc, text, n, &rc, 0);
             }
             EndPaint(hwnd, &ps);
         }

@@ -705,3 +705,16 @@ void    wpf_timer_fire_due(wpf_thread *t);     // 到期的定时器 → WM_TIME
 LRESULT wpf_dispatch_to_window(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp);
 
 #endif // WPFWIN32_INTERNAL_H
+
+// ── 【K-453】原生控件项存储（`win32_msg.c` 实现，`win32_core.c` 的 WM_PAINT 消费）──
+#define LDP_MAX_WINDOWS  32
+#define LDP_MAX_ITEMS    64
+#define LDP_MAX_ITEMLEN  128
+typedef struct {
+    HWND hwnd;
+    int  count;
+    char items[LDP_MAX_ITEMS][LDP_MAX_ITEMLEN];
+} ldp_items;
+extern ldp_items g_items[LDP_MAX_WINDOWS];
+ldp_items *ldp_items_of(HWND hwnd, int create);
+
