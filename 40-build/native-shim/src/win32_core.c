@@ -1773,6 +1773,10 @@ BOOL SetWindowText(HWND h, const char *t) { return SetWindowTextA(h, t); }
 BOOL SetWindowTextW(HWND hwnd, const uint16_t *text)
 {
     char *t = wpf_utf16_to_utf8_dup(text);
+    if (getenv("WPF_LINUX_KEY_DIAG")) {
+        fprintf(stderr, "[SETTEXT] hwnd=%p text=%s\n", (void *)hwnd, t ? t : "(null)");
+        fflush(stderr);
+    }
     BOOL r = SetWindowTextA(hwnd, t ? t : "");
     free(t);
     return r;
