@@ -1981,6 +1981,38 @@ uint32_t wpf_thread_id_of_window(HWND hwnd)
 // 都落在这里，返回错误值会直接改变上层可见行为。
 LRESULT DefWindowProcW(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
+    // ── 【K-349】`WM_PAINT` —— 原生控件（EDIT/COMBOBOX/LISTBOX）的文字绘制 ────────
+    //   实测（K-349）：`ExtA_WinForms` 里三个空白控件（TextBox/ComboBox/ListBox）的
+    //   `WM_PAINT` **确实到达这里**，正好 3 次，hwnd 与 wmctrl 列的窗口 ID 对应。
+    //   而本函数原来**没有 WM_PAINT 的 case** ⇒ 落到 `default: return 0` ⇒ 只画底色不画字。
+    //
+    //   实现：`BeginPaint` 拿 DC → `GetWindowTextW` 拿文字 → `DrawTextW` 画 →
+    //   `EndPaint`。这三个 API 本仓都已实现（`win32_gdi_text.c` / `win32_core.c`）。
+    //
+    //   局限（诚实）：`ComboBox`/`ListBox` 的**项列表**不在窗口文字里（`GetWindowTextW`
+    //   只返回"选中项"或空），所以它们的多行项还画不全 —— 那需要 `LB_GETCOUNT`/`LB_GETTEXT`
+    //   （见 K-350 的后续工作）。但 `TextBox` 的内容能完整画出来。
+    if (msg == 0x000F /*WM_PAINT*/) {
+        extern int BeginPaint(HWND, WPF_PAINTSTRUCT *);
+        extern int EndPaint(HWND, const void *);
+        extern int GetWindowTextW(HWND, uint16_t *, int);
+        extern int DrawTextW(void *, const uint16_t *, int32_t, void *, uint32_t);
+        WPF_PAINTSTRUCT ps;
+        memset(&ps, 0, sizeof ps);
+        HDC dc = (HDC)BeginPaint(hwnd, &ps);
+        if (dc) {
+            uint16_t text[512];
+            int n = GetWindowTextW(hwnd, text, 511);
+            if (n > 0) {
+                WPF_RECT rc;
+                GetClientRect(hwnd, &rc);
+                DrawTextW((void *)dc, text, n, &rc, 0);
+            }
+            EndPaint(hwnd, &ps);
+        }
+        return 0;
+    }
+
     // 【K-348 诊断】看原生控件的 WM_PAINT 是否真的到达这里（WinForms 会把原生控件的
     //   绘制转发给 DefWindowProc）。只在 WPF_LINUX_KEY_DIAG=1 时打印前 40 条。
     if (getenv("WPF_LINUX_KEY_DIAG") && (msg == 0x000F /*WM_PAINT*/ || msg == 0x0318 /*WM_THEMECHANGED*/)) {
