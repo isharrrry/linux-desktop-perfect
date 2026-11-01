@@ -1,0 +1,11 @@
+{
+  "app": {"name": "ExtB Print [EXT-22]"},
+  "window": {"title": "ExtB Print [EXT-22]", "scr": ""},
+  "env": {"runner": "uia-startup-hook", "dpi": 100, "theme": "(none)", "wm": true, "note": "UIA 树（AutomationPeer），非 AT-SPI 总线"},
+  "seq": 3,
+  "nodes": [
+    {"path": "0", "role": "frame", "name": "ExtB Print [EXT-22]", "states": ["!iconified", "active", "focused", "showing"], "actions": ["focus"], "bounds": [160, 137, 960, 768], "value": null, "relations": [], "child_count": 2},
+    {"path": "0/0", "role": "push button", "name": "btnPrint", "states": ["enabled", "sensitive", "visible"], "actions": ["click"], "bounds": [173, 150, 167, 42], "value": null, "relations": [], "child_count": 0},
+    {"path": "0/1", "role": "label", "name": "printed=pending", "states": ["visible"], "actions": [], "bounds": [173, 208, 935, 24], "value": null, "relations": [], "child_count": 0}
+  ]
+}

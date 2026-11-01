@@ -1,0 +1,26 @@
+{
+ "name": "extB/ExtB_InkMedia",
+ "dll": "50-verify/external/win-built/extB/ExtB_InkMedia/ExtB_InkMedia.dll",
+ "display": ":110",
+ "windowFound": true,
+ "window": {
+  "id": "0x200005",
+  "title": "ExtB InkMedia [EXT-21]"
+ },
+ "shot": "50-verify/external/win-built/extB/ExtB_InkMedia/shot-2026-11-01T03-10-39-141Z.png",
+ "shotBytes": 328,
+ "uiaNodeCount": 0,
+ "uiaSample": [],
+ "exited": {
+  "code": null,
+  "sig": "SIGABRT"
+ },
+ "logTail": [
+  "   at System.Windows.Threading.ExceptionWrapper.InternalRealCall(Delegate callback, Object args, Int32 numArgs)",
+  "   at System.Windows.Threading.ExceptionWrapper.TryCatchWhen(Object source, Delegate callback, Object args, Int32 numArgs, Delegate catchHandler)",
+  "   at System.Windows.Threading.Dispatcher.WrappedInvoke(Delegate callback, Object args, Int32 numArgs, Delegate catchHandler)",
+  "   at System.Windows.Threading.Dispatcher.LegacyInvokeImpl(DispatcherPriority priority, TimeSpan timeout, Delegate method, Object args, Int32 numArgs)",
+  "   at System.Windows.Threading.Dispatcher.Invoke(DispatcherPriority priority, Delegate method, Object arg)",
+  "   at MS.Win32.HwndSubclass.SubclassWndProc(IntPtr hwnd, Int32 msg, IntPtr wParam, IntPtr lParam)"
+ ]
+}
