@@ -24,6 +24,7 @@ typedef void GpBrush;
 typedef struct {
     int  inited;
     int  available;                 /* 1 = libgdiplus 可用 */
+    int  (*startup)(void *, const void *, void *);     /* GdiplusStartup(&token, input, NULL) */
     int *(*createFromX)(unsigned long, void *, GpGraphics **);
     int  (*createSolidFill)(unsigned int, GpBrush **);
     int  (*fillRectangle)(GpGraphics *, GpBrush *, float, float, float, float);
@@ -61,6 +62,7 @@ static void wpf_gdip_init(void)
         if (getenv("WPF_LINUX_KEY_DIAG")) fprintf(stderr, "[GDIP-R] dlopen libgdiplus 失败\n");
         return;
     }
+    g_gdip.startup         = (int  (*)(void *, const void *, void *))dlsym(lib, "GdiplusStartup");
     g_gdip.createFromX     = (int *(*)(unsigned long, void *, GpGraphics **))dlsym(lib, "GdipCreateFromXDrawable_linux");
     g_gdip.createSolidFill = (int  (*)(unsigned int, GpBrush **))dlsym(lib, "GdipCreateSolidFill");
     g_gdip.fillRectangle   = (int  (*)(GpGraphics *, GpBrush *, float, float, float, float))dlsym(lib, "GdipFillRectangle");
@@ -69,6 +71,19 @@ static void wpf_gdip_init(void)
     if (!g_gdip.createFromX || !g_gdip.createSolidFill || !g_gdip.fillRectangle) {
         if (getenv("WPF_LINUX_KEY_DIAG")) fprintf(stderr, "[GDIP-R] 关键符号缺失\n");
         return;
+    }
+    // 【清算 / K-179】**必须自己 GdiplusStartup** —— 实测：不 startup 时
+    //   `GdipCreateFromXDrawable_linux` 返回 0（能建 GpGraphics），
+    //   但 `GdipFillRectangle` 返回 **1**（GenericError），什么都画不出来。
+    //   参数顺序（K-172 的教训）：`GdiplusStartup(&token, input, NULL)` —— token 在前！
+    if (g_gdip.startup) {
+        unsigned char input[24]; memset(input, 0, sizeof input);
+        *(unsigned int *)input = 1;                       /* GdiplusVersion = 1 */
+        unsigned long long token = 0;
+        int rc = g_gdip.startup(&token, input, NULL);
+        if (getenv("WPF_LINUX_KEY_DIAG")) fprintf(stderr, "[GDIP-R] GdiplusStartup -> %d\n", rc);
+        /* 0=Ok；17=已被初始化过（正常，SDC 可能先启动过）—— 两者都算可用 */
+        if (rc != 0 && rc != 17 && rc != 2) { if (getenv("WPF_LINUX_KEY_DIAG")) fprintf(stderr, "[GDIP-R] startup 失败，禁用\n"); return; }
     }
     g_gdip.available = 1;
     if (getenv("WPF_LINUX_KEY_DIAG")) fprintf(stderr, "[GDIP-R] libgdiplus 已就绪\n");
@@ -98,6 +113,27 @@ int wpf_gdip_try_fill_rect(HWND hwnd, int32_t x, int32_t y, int32_t w, int32_t h
     if (!wpf_gdip_enabled()) return 0;
     wpf_gdip_init();
     if (!g_gdip.available) return 0;
+    // 【清算 / K-178】不信任调用方传的尺寸 —— 实测有窗口的 `pw->width/height` 是 `INT_MAX`
+    //   （WinForms 用 `CW_USEDEFAULT`(0x80000000) 建窗，我们直接存进 wpf_window 了）。
+    //   ⇒ 直接用 `XGetGeometry` 查 X11 的**真实**几何，这是唯一可靠的来源。
+    if (g_wpf.dpy) {
+        int32_t gx = 0, gy = 0; unsigned int gw = 0, gh = 0, gb = 0, gd = 0;
+        Window groot = 0;
+        if (XGetGeometry(g_wpf.dpy, (Window)(uintptr_t)hwnd, &groot, &gx, &gy, &gw, &gh, &gb, &gd)) {
+            if ((int32_t)gw > 0 && (int32_t)gh > 0) { w = (int32_t)gw; h = (int32_t)gh; }
+        }
+    }
+    // 【清算 / K-178】**clamp**：还没 resize 的 X11 窗口可能是 65535x65535，
+    //   cairo 建不了那么大的 surface（`GdipFillRectangle` 返回 1 = 失败）。
+    //   这里按「屏幕尺寸上界」截断，超出的部分本来也画不到。
+    if (g_wpf.dpy) {
+        int sw = DisplayWidth(g_wpf.dpy, DefaultScreen(g_wpf.dpy));
+        int sh = DisplayHeight(g_wpf.dpy, DefaultScreen(g_wpf.dpy));
+        if (sw > 0 && w > sw) w = sw;
+        if (sh > 0 && h > sh) h = sh;
+    }
+    if (getenv("WPF_LINUX_KEY_DIAG"))
+        fprintf(stderr, "[GDIP-R] try hwnd=%p size=%dx%d argb=0x%08x\n", (void*)(uintptr_t)hwnd, w, h, argb);
     if (w <= 0 || h <= 0) return 0;
     GpGraphics *g = wpf_gdip_for_hwnd((void *)(uintptr_t)hwnd);
     if (!g) return 0;
