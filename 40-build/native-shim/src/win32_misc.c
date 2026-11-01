@@ -436,7 +436,12 @@ UINT GetCaretBlinkTime(void) { return 500; }
 UINT GetDpiForWindow(HWND h)
 {
     if (wpf_legacy_dpi()) { (void)h; return 96; }
-    wpf_screen_metrics m; wpf_x11_screen_metrics(&m); return (UINT)m.dpi_x;
+    wpf_screen_metrics m; wpf_x11_screen_metrics(&m);
+    if (getenv("WPF_LINUX_KEY_DIAG")) {
+        static int n = 0;
+        if (++n <= 6) { fprintf(stderr, "[DPI] GetDpiForWindow -> %d (screen dpi_x=%d)\n", (int)m.dpi_x, (int)m.dpi_x); fflush(stderr); }
+    }
+    return (UINT)m.dpi_x;
 }
 UINT GetDpiForSystem(void)
 {
