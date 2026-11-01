@@ -9,6 +9,8 @@
 //     这一点必须诚实：WinForms 控件的**文字不会出现在屏幕上**，除非将来接到 Skia 那条链上。
 //     本文件的每个绘制桩都带这一句注释，避免后来者误以为"已经渲染了"。
 #include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include "win32_abi.h"
 #include "win32_gdi_dc.h"
@@ -141,6 +143,13 @@ int DrawTextW(void *hdc, const uint16_t *s, int32_t len, void *rect, uint32_t fm
     //   `DT_CALCRECT` 只量不画 —— 这些需要真实的字体度量，本仓的 `WPF_FAKE_FONT_HEIGHT`
     //   是固定 16（K-144 的简化），做不了。
     if (!rect) return 1;
+    // 【K-456 诊断】确认 `DrawTextW` 是否真的被调用、`dc` 是什么
+    if (getenv("LDP_WIC_TRACE")) {
+        const WPF_RECT *rr = (const WPF_RECT *)rect;
+        fprintf(stderr, "[DRAWTEXT] dc=%p len=%d rect=%d,%d,%d,%d\n",
+                hdc, len, rr->left, rr->top, rr->right, rr->bottom);
+        fflush(stderr);
+    }
     const WPF_RECT *r = (const WPF_RECT *)rect;
     const uint32_t DT_LEFT = 0x0000, DT_CENTER = 0x0001, DT_RIGHT = 0x0002,
                    DT_VCENTER = 0x0004, DT_BOTTOM = 0x0008, DT_TOP = 0x0000;
