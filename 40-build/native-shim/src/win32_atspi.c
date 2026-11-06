@@ -156,6 +156,14 @@ static int atspi_ensure(void)
      *   后完成的那次覆盖 `g_bus` ⇒ 前一条连接上的 well-known 名字丢失。
      *   加锁保证只建一次。 */
     static int call_n = 0;
+    /* 【K-619】**关键**：libdbus 默认**不是线程安全的**。本实现有「主线程 create_window_utf8
+     *   调 atspi_ensure + 后台泵线程 read_write_dispatch」的并发 ⇒ 必须先调
+     *   `dbus_threads_init_default()`，否则 `dbus_bus_request_name` 的内部状态可能被破坏：
+     *   **返回 PRIMARY_OWNER 但名字实际没注册到 bus 上**（实测症状）。 */
+    {
+        static int dbus_threads_inited = 0;
+        if (!dbus_threads_inited) { dbus_threads_init_default(); dbus_threads_inited = 1; }
+    }
     pthread_mutex_lock(&g_atspi_lock);
     int my_call = ++call_n;
     if (g_bus_state != 0) {
