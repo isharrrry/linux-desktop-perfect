@@ -1,21 +1,28 @@
 {
-  "generated_at": "2026-11-07T02:05:00+08:00",
+  "generated_at": "2026-11-07T02:07:19+08:00",
   "method": "gdbus call org.a11y.atspi.Accessible.{GetName,GetRoleName,GetChildren}",
-  "bus": "unix:path=$HOME/.cache/at-spi/bus_303",
   "dest": "org.a11y.atspi.SourceTree",
   "root_path": "/org/a11y/atspi/accessible/wpf/root",
   "controls": [
-    {"role": "application", "name": "SourceTree", "path": "/org/a11y/atspi/accessible/wpf/root", "has_name": true},
-    {"role": "frame", "name": "", "path": "/org/a11y/atspi/accessible/wpf/win_800001", "has_name": false},
-    {"role": "frame", "name": "SystemResourceNotifyWindow", "path": "/org/a11y/atspi/accessible/wpf/win_800002", "has_name": true},
-    {"role": "frame", "name": "", "path": "/org/a11y/atspi/accessible/wpf/win_800003", "has_name": false},
-    {"role": "frame", "name": "", "path": "/org/a11y/atspi/accessible/wpf/win_800004", "has_name": false},
-    {"role": "frame", "name": "Sourcetree", "path": "/org/a11y/atspi/accessible/wpf/win_800005", "has_name": true},
-    {"role": "frame", "name": "", "path": "/org/a11y/atspi/accessible/wpf/win_800006", "has_name": false},
-    {"role": "frame", "name": "MediaContextNotificationWindow", "path": "/org/a11y/atspi/accessible/wpf/win_800007", "has_name": true},
-    {"role": "frame", "name": "", "path": "/org/a11y/atspi/accessible/wpf/win_80000a", "has_name": false},
-    {"role": "frame", "name": ".NET-BroadcastEventWindow.30c4a4.0", "path": "/org/a11y/atspi/accessible/wpf/win_80000b", "has_name": true}
+    {"role": "application", "name": "SourceTree", "path": "/org/a11y/atspi/accessible/wpf/root"}
+    ,
+    {"role": "frame", "name": "", "path": "/org/a11y/atspi/accessible/wpf/win_800001"}
+    ,
+    {"role": "frame", "name": "SystemResourceNotifyWindow", "path": "/org/a11y/atspi/accessible/wpf/win_800002"}
+    ,
+    {"role": "frame", "name": "", "path": "/org/a11y/atspi/accessible/wpf/win_800003"}
+    ,
+    {"role": "frame", "name": "", "path": "/org/a11y/atspi/accessible/wpf/win_800004"}
+    ,
+    {"role": "frame", "name": "Sourcetree", "path": "/org/a11y/atspi/accessible/wpf/win_800005"}
+    ,
+    {"role": "frame", "name": "", "path": "/org/a11y/atspi/accessible/wpf/win_800006"}
+    ,
+    {"role": "frame", "name": "MediaContextNotificationWindow", "path": "/org/a11y/atspi/accessible/wpf/win_800007"}
+    ,
+    {"role": "frame", "name": "", "path": "/org/a11y/atspi/accessible/wpf/win_80000a"}
+    ,
+    {"role": "frame", "name": ".NET-BroadcastEventWindow.30c4a4.0", "path": "/org/a11y/atspi/accessible/wpf/win_80000b"}
   ],
-  "summary": {"total": 10, "with_name": 5, "roles": ["application", "frame"]},
-  "source_log": "[ATSPI] 注册节点 x10 (st285.log)"
+  "summary": {"total": 10, "with_name": 5, "roles": ["application", "frame"]}
 }
