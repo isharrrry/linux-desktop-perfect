@@ -3,8 +3,8 @@
 # 列：lib	symbol	status	owner	since[	note]（note 为可选列；为空时省略，行尾不留制表符）
 # status 判定：impl=实现侧有该符号；stub=函数体仅常量返回；gap=声明有实现无（note 写替代路径）
 # lib 列：若实现将落在哪个自产 .so（概设 §2.4）；status=gap 表示当前无实现，不是没登记
-# 规模：1303 行（impl 1076 / stub 196 / gap 31）
-# 输入：上游 1534 条 DllImport 声明（另有 0 条属性块后无 extern 声明被跳过）、native-shim 1064 个导出、milcore 109 个导出
+# 规模：1307 行（impl 1080 / stub 196 / gap 31）
+# 输入：上游 1534 条 DllImport 声明（另有 0 条属性块后无 extern 声明被跳过）、native-shim 1068 个导出、milcore 109 个导出
 # 排除：wpf_*（shim 内部件）、WpfLinuxWin32_*（桥件，非 Win32 契约入口）
 libSystem.IO.Compression.Native.so	CompressionNative_Crc32	impl	MOD-52	10.0.11
 libSystem.IO.Compression.Native.so	CompressionNative_Deflate	impl	MOD-52	10.0.11
@@ -618,6 +618,7 @@ libwpfwin32.so	GetComboBoxInfo	impl	MOD-11	10.0.11
 libwpfwin32.so	GetConfidenceLevel	stub	MOD-83	10.0.11
 libwpfwin32.so	GetCurrentActCtx	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
 libwpfwin32.so	GetCurrentApplicationUserModelId	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	GetCurrentPackageFullName	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
 libwpfwin32.so	GetCurrentProcess	impl	MOD-15	10.0.11
 libwpfwin32.so	GetCurrentProcessExplicitAppUserModelID	impl	MOD-15	10.0.11
 libwpfwin32.so	GetCurrentProcessId	impl	MOD-15	10.0.11
@@ -929,6 +930,7 @@ libwpfwin32.so	LocbkGetObjectHandlerInfo	stub	MOD-16	10.0.11
 libwpfwin32.so	LockWispObjectFromGit	stub	MOD-84	10.0.11
 libwpfwin32.so	LsDisableSpecialCharacterLigature	impl	MOD-16	10.0.11
 libwpfwin32.so	MILGetClassificationTables	impl	MOD-16	10.0.11
+libwpfwin32.so	MILQueryInterface	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
 libwpfwin32.so	MapViewOfFileEx	impl	MOD-15	10.0.11
 libwpfwin32.so	MapVirtualKey	impl	MOD-11	10.0.11
 libwpfwin32.so	MapVirtualKeyA	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
@@ -1300,6 +1302,8 @@ libwpfwin32.so	WindowsDuplicateString	impl	MOD-02	10.0.11
 libwpfwin32.so	WindowsGetStringRawBuffer	impl	MOD-02	10.0.11
 libwpfwin32.so	WritePrinter	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
 libwpfwin32.so	WriteProcessMemory	impl	MOD-15	10.0.11
+libwpfwin32.so	dlsym	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
+libwpfwin32.so	dlvsym	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
 libwpfwin32.so	keybd_event	impl	MOD-11	10.0.11
 libwpfwin32.so	ldp_items_of	impl	MOD-02	10.0.11	shim 额外导出（上游未声明）
 libwpfwin32.so	lstrlen	impl	MOD-15	10.0.11
