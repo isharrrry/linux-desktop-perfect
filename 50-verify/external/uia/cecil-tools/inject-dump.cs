@@ -22,6 +22,8 @@ class P {
     var createPeerRef = asm.MainModule.ImportReference(uap.Methods.First(x => x.Name == "CreatePeerForElement"));
     var peerType = pc.MainModule.Types.SelectMany(Flat).First(x => x.Name == "AutomationPeer" && x.Namespace == "System.Windows.Automation.Peers");
     var peerTypeRef = asm.MainModule.ImportReference(peerType);
+    var getPeerNameRef = asm.MainModule.ImportReference(peerType.Methods.First(x => x.Name == "GetName"));
+    var getPeerTypeRef2 = asm.MainModule.ImportReference(peerType.Methods.First(x => x.Name == "GetAutomationControlType"));
     var wlO = asm.MainModule.ImportReference(typeof(Console).GetMethod("WriteLine", new[]{typeof(object)}));
     var wlS = asm.MainModule.ImportReference(typeof(Console).GetMethod("WriteLine", new[]{typeof(string)}));
     var objGetType = asm.MainModule.ImportReference(typeof(object).GetMethod("GetType"));
