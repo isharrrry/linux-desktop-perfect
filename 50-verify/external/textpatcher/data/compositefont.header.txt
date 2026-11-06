@@ -1,0 +1,33 @@
+// ⚠️ 本文件由 src/WpfGfx.Linux.Native/tools/patch-presentationcore-compositefont.py **生成**，不要手改。
+//
+// 内容 = 上游 `upstream/wpf/src/Microsoft.DotNet.Wpf/src/PresentationCore/MS/internal/FontCache/FamilyCollection.cs`
+//        逐字复制 + 9 处修改（7 处 M7d 补丁 J：非 Windows 上短路系统复合字体 + 把回退交给 provider；
+//        2 处 T1c 方案 A：按码点覆盖感知的回退包装 + 它的两个新类）。
+// 每次运行该脚本都会从上游重读重生成；锚点找不到 / 计数不符时**报错退出**，不会静默产出未打补丁的副本。
+//
+// 为什么要打：
+//   `GlobalUserInterface.CompositeFont` 是 4 个系统复合字体里唯一根为 <FontFamilyCollection> 的
+//   （4 个 OS 段），`CompositeFontParser.ParseFontFamilyCollectionElement` 按 `OS` 挑段，
+//   本移植上 DeviceFamily/IsWindows* 一律 false ⇒ 一段都挑不中 ⇒ Fail(...)
+//   ⇒ 消息要 OSVersionHelper.GetOsVersion() ⇒ **抛** "Could not detect OS!"。
+//   入口是"任何找不到的字体名"（`FontFamily="Arial"` 这种最常见写法），与字体装没装无关。
+// 修法语义：**不伪造 OS 版本**（OS 用来挑平台专属族链表，里面是 Windows 的字体名 ⇒ 谎报 = 造假换安静），
+//   而是：① 非 Windows 上系统复合字体一律不加载（短路，连 LoadXml 都不执行）；
+//          ② "系统回退族"（#GLOBAL USER INTERFACE，Typeface 的 FallbackFontFamily）改由
+//             **provider 的首个可用族**回答 —— 不做 ② 的话 Typeface.cs:786 会解引用 null 抛 NRE
+//             （实测见 src/Linux/build/MilBridge/T1-report.md 的 M7d 段；这条链上"诚实失败"被
+//              CachedTypeface.cs:42 的 Invariant.Assert 堵死）。
+//          ③④ 枚举循环 null 守卫 + FamilyCount 同步（否则尾部 null / Debug.Assert 失败）；
+//          ⑤ FindFamily 返回类型 → IFontFamily（② 要返回 PhysicalFontFamily）。
+// Windows 分支逐字不变（只在方法/属性最前面加非 Windows 判断，或改私有方法的返回类型）。
+//
+// 机械证据：生成物里的 `throw` 条数与上游**逐字相同**（脚本每次断言）⇒ 是短路 + 代偿，不是把异常换地方冒。
+//
+// ⚠️ T1c（方案 A）实测结论：新增的覆盖感知回退（`HbCoverageFallback` / `HbCoverageFallbackFamily`）
+//    **当前不在 CJK 的活路上** —— 包装族被创建（`Wrap` 有自报）但它的按区间选族钩子
+//    `IFontFamily.GetMapTargetFamilyNameAndScale` **一次都没被问到**（`WrapperMapCalls=0`），
+//    因为喂 `TypefaceMap` 的 `GetShapeableText` 在本移植里**没有托管调用者**（LS 已被托管 shim 取代），
+//    而 shim 是"一段一个字体文件"（无覆盖回退）。⇒ **不要**把本文件当成"CJK 已修好"。
+//    真正的修法在 `src/Microsoft.DotNet.Wpf.Linux/src/shims/PresentationCore.HbTextLine.cs` 的字体解析那一层（别的车道）。
+//
+// ↓↓↓ 以下为上游原文（仅 9 处标记：7 处 M7d 补丁 J + 2 处 T1c 方案 A）↓↓↓
