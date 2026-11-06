@@ -323,5 +323,5 @@ int SHGetStockIconInfo(int siid, unsigned int uFlags, void *psii)
         *(int *)(p + 16) = -1;
         *(int *)(p + 20) = -1;
     }
-    return 0; // S_OK
+    return 1; // S_FALSE（K-1152：让调用方走"无图标"分支而非报错）
 }
