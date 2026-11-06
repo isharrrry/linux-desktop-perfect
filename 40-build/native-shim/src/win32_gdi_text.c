@@ -252,6 +252,28 @@ typedef struct {
 /* VARIANT 最小布局（x86_64）：vt(2) + wReserved(2) + wReserved1..3 + data(8/16) */
 typedef struct { unsigned short vt; unsigned short r1, r2, r3; unsigned long long data; } wpf_variant_min;
 
+// ── 【K-937】`wpf_uia_register_provider` —— 托管侧通过 `GCHandle` 传 `IRawElementProviderSimple`
+//   为什么需要它：`UiaReturnRawElementProvider` 的第 4 参数是 **COM 接口**
+//   （`IRawElementProviderSimple`），.NET 在 Linux 上**不支持 COM marshaling**
+//   （`MarshalDirectiveException`，K-936）⇒ 托管侧改用 `GCHandle.Alloc(el)` 得到 `IntPtr`
+//   后调本函数（`intptr_t` 参数，无 marshaling 问题）。
+//   AT-SPI 桥接后续可用 `GCHandle.FromIntPtr` 取回对象（需托管侧支持）。
+intptr_t wpf_uia_register_provider(void *hwnd, intptr_t gcHandle)
+{
+    if (gcHandle == 0) return 0;
+    if (getenv("WPF_LINUX_UIA_DIAG")) {
+        fprintf(stderr, "[UIA] REGISTER hwnd=%p gcHandle=0x%lx\n", hwnd, (long)gcHandle);
+        fflush(stderr);
+    }
+    if (g_uia_provider_count < WPF_UIA_MAX_PROVIDERS) {
+        g_uia_providers[g_uia_provider_count].hwnd = hwnd;
+        g_uia_providers[g_uia_provider_count].el = (void *)gcHandle;
+        ++g_uia_provider_count;
+        return 1;
+    }
+    return 0;
+}
+
 intptr_t UiaReturnRawElementProvider(void *hwnd, intptr_t wParam, intptr_t lParam, void *el)
 {
     (void)wParam; (void)lParam;
