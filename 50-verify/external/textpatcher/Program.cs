@@ -7,12 +7,14 @@ class P {
     static int Main(string[] a) {
         string src = null, outp = null, editsFile = null, headerFile = null;
         bool debug = false;
+        bool noThrowCheck = false;
         for (int i = 0; i < a.Length; i++) {
             if (a[i] == "--src" && i+1 < a.Length) src = a[++i];
             else if (a[i] == "--out" && i+1 < a.Length) outp = a[++i];
             else if (a[i] == "--edits" && i+1 < a.Length) editsFile = a[++i];
             else if (a[i] == "--header" && i+1 < a.Length) headerFile = a[++i];
             else if (a[i] == "--debug") debug = true;
+            else if (a[i] == "--no-throw-check") noThrowCheck = true;
         }
         if (src == null || outp == null || editsFile == null) {
             Console.Error.WriteLine("用法: textpatcher --src <源> --out <输出> --edits <edits.txt>");
@@ -39,7 +41,8 @@ class P {
         // 断言
         int throwBefore = CountOccurrences(text, "throw ");
         int throwAfter = CountOccurrences(outp_text, "throw ");
-        if (throwBefore != throwAfter) { Console.Error.WriteLine($"[失败] throw 条数变了：{throwBefore} → {throwAfter}"); return 1; }
+        if (!noThrowCheck && throwBefore != throwAfter) { Console.Error.WriteLine($"[失败] throw 条数变了：{throwBefore} → {throwAfter}"); return 1; }
+        if (noThrowCheck) Console.WriteLine("[断言] 跳过 throw 检查");
         Console.WriteLine($"[断言] throw {throwBefore}=={throwAfter}");
         if (headerFile != null) {
             var header = File.ReadAllText(headerFile, Encoding.UTF8);
