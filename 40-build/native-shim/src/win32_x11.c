@@ -1012,6 +1012,10 @@ void wpf_x11_set_title(HWND hwnd, const char *title)
                     (const unsigned char *)t, (int)strlen(t));
     XFlush(g_wpf.dpy);
     XUNLOCK();
+    /* 【K-657】把标题同步到 AT-SPI node（修 frame 的 name 空串）。
+       WPF 设窗口标题走的是本函数（`XStoreName`），不是 `SetWindowTextW`。
+       **必须在 XUNLOCK 之后调**（`wpf_atspi_update_name` 会走 D-Bus，可能阻塞）。 */
+    if (t && *t) wpf_atspi_update_name((uint64_t)(uintptr_t)hwnd, t);
 }
 
 void wpf_x11_query_title(HWND hwnd, char *buf, size_t cap)
