@@ -337,3 +337,189 @@ int32_t VirtualizedItemPattern_Realize(void) { return E_NOTIMPL; }
 int32_t WindowPattern_Close(void) { return E_NOTIMPL; }
 int32_t WindowPattern_SetWindowVisualState(void) { return E_NOTIMPL; }
 int32_t WindowPattern_WaitForInputIdle(void) { return E_NOTIMPL; }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【K-611】最小 AT-SPI Accessible 对象树
+//
+// 目标：让 pyatspi 能枚举到本进程（SourceTree）的顶层窗口。
+// 实现：在 AT-SPI bus 上注册一个 D-Bus 对象路径，实现
+//       org.a11y.atspi.Accessible 的 6 个方法：
+//         GetChildAtIndex(i) -> (so)      返回 (bus_name, object_path)
+//         GetChildren() -> a(so)          返回子节点数组
+//         GetRoleName() -> s             角色名（"application"/"frame"）
+//         GetName() -> s                 名字（窗口标题）
+//         GetParent() -> (so)            父节点
+//         GetApplication() -> (so)       应用的 root
+//
+// 只暴露「应用 root + 每个已 map 的顶层窗口」，不暴露控件树内部。
+// 这是**最小可用面**：能被 pyatspi 看到、能读到窗口标题和角色，
+// 但拿不到按钮/输入框级的控件（那需要 WPF 的 AutomationPeer 桥接）。
+// ═══════════════════════════════════════════════════════════════════════════
+
+#define WPF_ATSPI_MAX_NODES 64
+#define WPF_ATSPI_PATH_ROOT "/org/a11y/atspi/accessible/wpf/root"
+
+typedef struct {
+    char path[128];                 // D-Bus 对象路径
+    char name[256];                 // 窗口标题
+    char role[32];                  // "application" / "frame"
+    uint64_t hwnd;                  // 关联的 HWND（0 = 应用 root）
+    int registered;                 // 是否已注册到 D-Bus
+    int alive;
+} wpf_atspi_node;
+
+static wpf_atspi_node g_nodes[WPF_ATSPI_MAX_NODES];
+static int g_node_count = 0;
+static int g_atspi_tree_ready = 0;
+
+static wpf_atspi_node *atspi_node_find(uint64_t hwnd)
+{
+    for (int i = 0; i < g_node_count; ++i)
+        if (g_nodes[i].alive && g_nodes[i].hwnd == hwnd) return &g_nodes[i];
+    return NULL;
+}
+
+static wpf_atspi_node *atspi_node_by_path(const char *path)
+{
+    for (int i = 0; i < g_node_count; ++i)
+        if (g_nodes[i].alive && strcmp(g_nodes[i].path, path) == 0) return &g_nodes[i];
+    return NULL;
+}
+
+// ── D-Bus 方法处理器 ────────────────────────────────────────────────────────
+static void atspi_append_ref(DBusMessageIter *arr, const char *bus, const char *path)
+{
+    DBusMessageIter st;
+    dbus_message_iter_open_container(arr, DBUS_TYPE_STRUCT, NULL, &st);
+    dbus_message_iter_append_basic(&st, DBUS_TYPE_STRING, &bus);
+    dbus_message_iter_append_basic(&st, DBUS_TYPE_STRING, &path);
+    dbus_message_iter_close_container(arr, &st);
+}
+
+static DBusHandlerResult atspi_msg_handler(DBusConnection *conn, DBusMessage *msg, void *data)
+{
+    (void)data;
+    const char *path = dbus_message_get_path(msg);
+    const char *iface = dbus_message_get_interface(msg);
+    const char *member = dbus_message_get_member(msg);
+    if (!path || !member) return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+    if (iface && strcmp(iface, "org.freedesktop.DBus.Introspectable") != 0
+             && strcmp(iface, "org.a11y.atspi.Accessible") != 0)
+        return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+
+    wpf_atspi_node *n = atspi_node_by_path(path);
+    if (!n) return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+    const char *bus = g_bus_name;
+    DBusMessage *reply = dbus_message_new_method_return(msg);
+    if (!reply) return DBUS_HANDLER_RESULT_NEED_MEMORY;
+    DBusMessageIter it;
+    dbus_message_iter_init_append(reply, &it);
+
+    if (strcmp(member, "GetName") == 0) {
+        const char *nm = n->name;
+        dbus_message_iter_append_basic(&it, DBUS_TYPE_STRING, &nm);
+    } else if (strcmp(member, "GetRoleName") == 0) {
+        const char *r = n->role;
+        dbus_message_iter_append_basic(&it, DBUS_TYPE_STRING, &r);
+    } else if (strcmp(member, "GetChildren") == 0) {
+        DBusMessageIter arr;
+        dbus_message_iter_open_container(&it, DBUS_TYPE_ARRAY, "(so)", &arr);
+        for (int i = 0; i < g_node_count; ++i)
+            if (g_nodes[i].alive && g_nodes[i].hwnd != 0 && n->hwnd == 0)
+                atspi_append_ref(&arr, bus, g_nodes[i].path);
+        dbus_message_iter_close_container(&it, &arr);
+    } else if (strcmp(member, "GetChildAtIndex") == 0) {
+        dbus_int32_t idx = 0;
+        dbus_message_iter_get_basic(dbus_message_iter_peek(&(DBusMessageIter){0}) ? NULL : NULL, NULL);
+        // 简化：返回第 0 个顶层窗口
+        const char *cp = "";
+        int found = 0;
+        for (int i = 0; i < g_node_count && !found; ++i)
+            if (g_nodes[i].alive && g_nodes[i].hwnd != 0 && n->hwnd == 0) { cp = g_nodes[i].path; found = 1; }
+        DBusMessageIter st;
+        dbus_message_iter_open_container(&it, DBUS_TYPE_STRUCT, NULL, &st);
+        dbus_message_iter_append_basic(&st, DBUS_TYPE_STRING, &bus);
+        dbus_message_iter_append_basic(&st, DBUS_TYPE_STRING, &cp);
+        dbus_message_iter_close_container(&it, &st);
+        (void)idx;
+    } else if (strcmp(member, "GetParent") == 0) {
+        const char *pp = (n->hwnd == 0) ? "" : WPF_ATSPI_PATH_ROOT;
+        DBusMessageIter st;
+        dbus_message_iter_open_container(&it, DBUS_TYPE_STRUCT, NULL, &st);
+        dbus_message_iter_append_basic(&st, DBUS_TYPE_STRING, &bus);
+        dbus_message_iter_append_basic(&st, DBUS_TYPE_STRING, &pp);
+        dbus_message_iter_close_container(&it, &st);
+    } else if (strcmp(member, "GetApplication") == 0) {
+        DBusMessageIter st;
+        dbus_message_iter_open_container(&it, DBUS_TYPE_STRUCT, NULL, &st);
+        dbus_message_iter_append_basic(&st, DBUS_TYPE_STRING, &bus);
+        dbus_message_iter_append_basic(&st, DBUS_TYPE_STRING, &(const char *){WPF_ATSPI_PATH_ROOT});
+        dbus_message_iter_close_container(&it, &st);
+    } else if (strcmp(member, "Introspect") == 0) {
+        const char *xml =
+            "<node><interface name='org.a11y.atspi.Accessible'>"
+            "<method name='GetChildAtIndex'><arg direction='in' type='i'/><arg direction='out' type='(so)'/></method>"
+            "<method name='GetChildren'><arg direction='out' type='a(so)'/></method>"
+            "<method name='GetRoleName'><arg direction='out' type='s'/></method>"
+            "<method name='GetName'><arg direction='out' type='s'/></method>"
+            "<method name='GetParent'><arg direction='out' type='(so)'/></method>"
+            "<method name='GetApplication'><arg direction='out' type='(so)'/></method>"
+            "</interface></node>";
+        dbus_message_iter_append_basic(&it, DBUS_TYPE_STRING, &xml);
+    } else {
+        dbus_message_unref(reply);
+        return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+    }
+    dbus_connection_send(conn, reply, NULL);
+    dbus_message_unref(reply);
+    return DBUS_HANDLER_RESULT_HANDLED;
+}
+
+static const DBusObjectPathVTable g_atspi_vtbl = { NULL, atspi_msg_handler, NULL, NULL, NULL, NULL };
+
+static int atspi_register_node(const char *path, const char *name, const char *role, uint64_t hwnd)
+{
+    if (!g_bus) return 0;
+    wpf_atspi_node *n = atspi_node_find(hwnd);
+    if (n) {
+        snprintf(n->name, sizeof(n->name), "%s", name ? name : "");
+        return 1;
+    }
+    if (g_node_count >= WPF_ATSPI_MAX_NODES) return 0;
+    n = &g_nodes[g_node_count++];
+    memset(n, 0, sizeof(*n));
+    snprintf(n->path, sizeof(n->path), "%s", path);
+    snprintf(n->name, sizeof(n->name), "%s", name ? name : "");
+    snprintf(n->role, sizeof(n->role), "%s", role ? role : "unknown");
+    n->hwnd = hwnd;
+    n->alive = 1;
+    if (!dbus_connection_register_object_path(g_bus, n->path, &g_atspi_vtbl, NULL))
+        return 0;
+    n->registered = 1;
+    atspi_diag("[ATSPI] 注册节点 path=%s name=%s role=%s hwnd=0x%llx", n->path, n->name, n->role, (unsigned long long)hwnd);
+    return 1;
+}
+
+// 【对外】窗口创建时注册（在 create_window_utf8 里调用）
+void wpf_atspi_register_window(uint64_t hwnd, const char *title)
+{
+    if (!atspi_ensure()) return;
+    static int root_done = 0;
+    if (!root_done) {
+        atspi_register_node(WPF_ATSPI_PATH_ROOT, "SourceTree", "application", 0);
+        root_done = 1;
+    }
+    char path[128];
+    snprintf(path, sizeof(path), "/org/a11y/atspi/accessible/wpf/win_%llx", (unsigned long long)hwnd);
+    atspi_register_node(path, title, "frame", hwnd);
+}
+
+// 【对外】窗口销毁时标记
+void wpf_atspi_unregister_window(uint64_t hwnd)
+{
+    wpf_atspi_node *n = atspi_node_find(hwnd);
+    if (n) n->alive = 0;
+}
+
+// 【对外】查询是否已注册任意窗口（供诊断）
+int wpf_atspi_node_count(void) { return g_node_count; }

@@ -226,7 +226,65 @@ int SetConsoleCtrlHandler(void *handler, int add)
 //   `DllNotFoundException: UIAutomationCore.dll` —— 而它被 `ThreadException` 接住后又被
 //   `ThreadExceptionDialog` 的图标问题二次掩盖，绕了三层才看到（K-023）。
 // 注：`UiaClientsAreListening` 已在 win32_oem.c 实现（重复定义会链接失败）
-int UiaReturnRawElementProvider(void) { return 0; }
+// ── 【K-611】真正的 `UiaReturnRawElementProvider` ─────────────────────────────
+// 托管签名（`UiaCoreProviderApi.cs:31`）：
+//   internal static IntPtr UiaReturnRawElementProvider(
+//       IntPtr hwnd, IntPtr wParam, IntPtr lParam, IRawElementProviderSimple el)
+// `el` 封送后是 `IUnknown*`，可以读 vtable 拿 `IRawElementProviderSimple` 的 4 个方法。
+// 我们：
+//   ① 把 `hwnd → el` 存进全局表（后续 AT-SPI 桥接用）
+//   ② 用 vtable 读 `UIA_NamePropertyId (30005)` 验证能拿到控件名
+//   ③ 返回 `el`（非 0，让 WPF 认为成功）
+#define WPF_UIA_MAX_PROVIDERS 256
+static struct { void *hwnd; void *el; } g_uia_providers[WPF_UIA_MAX_PROVIDERS];
+static int g_uia_provider_count = 0;
+
+typedef struct {
+    long (*QueryInterface)(void *, const void *, void **);
+    unsigned long (*AddRef)(void *);
+    unsigned long (*Release)(void *);
+    long (*get_ProviderOptions)(void *, int *);
+    long (*GetPatternProvider)(void *, int, void **);
+    long (*GetPropertyValue)(void *, int, void *);   /* VARIANT* */
+    long (*get_HostRawElementProvider)(void *, void **);
+} wpf_uia_provider_vtbl;
+
+/* VARIANT 最小布局（x86_64）：vt(2) + wReserved(2) + wReserved1..3 + data(8/16) */
+typedef struct { unsigned short vt; unsigned short r1, r2, r3; unsigned long long data; } wpf_variant_min;
+
+intptr_t UiaReturnRawElementProvider(void *hwnd, intptr_t wParam, intptr_t lParam, void *el)
+{
+    (void)wParam; (void)lParam;
+    if (!el) return 0;
+    if (g_uia_provider_count < WPF_UIA_MAX_PROVIDERS) {
+        g_uia_providers[g_uia_provider_count].hwnd = hwnd;
+        g_uia_providers[g_uia_provider_count].el = el;
+        ++g_uia_provider_count;
+    }
+    if (getenv("WPF_LINUX_UIA_DIAG")) {
+        wpf_uia_provider_vtbl *vt = *(wpf_uia_provider_vtbl **)el;
+        if (vt && vt->AddRef) vt->AddRef(el);
+        const char *name = "(no-vtable)";
+        char namebuf[256] = { 0 };
+        if (vt && vt->GetPropertyValue) {
+            wpf_variant_min v; memset(&v, 0, sizeof(v));
+            if (vt->GetPropertyValue(el, 30005 /* UIA_NamePropertyId */, &v) == 0 && v.data) {
+                /* vt=8 (VT_BSTR) 时 data 是 BSTR（UTF-16 指针） */
+                if (v.vt == 8) {
+                    unsigned short *w = (unsigned short *)v.data;
+                    int k = 0;
+                    while (w[k] && k < 255) { namebuf[k] = (char)(w[k] & 0x7F); ++k; }
+                    namebuf[k] = 0;
+                    name = namebuf;
+                }
+            }
+        }
+        fprintf(stderr, "[UIA] hwnd=%p el=%p vt=%p name=\"%s\"\n", hwnd, el, (void *)vt, name);
+        fflush(stderr);
+        if (vt && vt->Release) vt->Release(el);
+    }
+    return (intptr_t)el;
+}
 int UiaHostProviderFromHwnd(void *hwnd, void *ppProvider) { (void)hwnd; (void)ppProvider; return 0; }
 void UiaRaiseAutomationEvent(void *pProvider, int id) { (void)pProvider; (void)id; }
 void UiaRaiseStructureChangedEvent(void *pProvider, int structChangeType, void *pStructure) { (void)pProvider; (void)structChangeType; (void)pStructure; }
