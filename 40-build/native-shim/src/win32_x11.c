@@ -746,7 +746,7 @@ static int wpf_create_diag_on(void)
 static void wpf_create_diag(const char *where, wpf_window *w, uint64_t xid)
 {
     static int n = 0;
-    if (!wpf_create_diag_on() || n++ >= 40) return;
+    if (!wpf_create_diag_on() || n++ >= 300) return;
     fprintf(stderr, "[CREATE_DIAG] %s xid=0x%llx atom=%u style=0x%llx ex=0x%llx xywh=%d,%d,%dx%d msgonly=%d mapped=%d\n",
             where, (unsigned long long)xid, (unsigned)(w ? w->class_atom : 0),
             (unsigned long long)(w ? w->style : 0), (unsigned long long)(w ? w->exstyle : 0),
@@ -899,6 +899,20 @@ void wpf_x11_map(HWND hwnd, int map)
     //   判定见 `wpf_core_custom_chrome`（应用自报：`SetWindowPos(SWP_FRAMECHANGED)`）。
     if (map && wpf_core_custom_chrome(hwnd)) wpf_x11_set_decorations(hwnd, 0);
     XLOCK();
+    // 【K-519 诊断】`xwininfo` 查不到 `xid` ⇒ 从**程序内部**用 `XQueryTree` 确认它是否在 root 的 children 里。
+    if (getenv("WPF_LINUX_CREATE_DIAG")) {
+        Window root_r = 0, parent_r = 0, *children = NULL;
+        unsigned int nch = 0;
+        if (XQueryTree(g_wpf.dpy, (Window)(uintptr_t)hwnd, &root_r, &parent_r, &children, &nch)) {
+            fprintf(stderr, "[QT] hwnd=0x%llx root=0x%lx parent=0x%lx nchildren=%u  (g_wpf.root=0x%lx screen=%d)\n",
+                    (unsigned long long)(uintptr_t)hwnd, (unsigned long)root_r, (unsigned long)parent_r, nch,
+                    (unsigned long)g_wpf.root, g_wpf.screen);
+            if (children) XFree(children);
+        } else {
+            fprintf(stderr, "[QT] hwnd=0x%llx XQueryTree FAILED（窗口不存在！）\n", (unsigned long long)(uintptr_t)hwnd);
+        }
+        fflush(stderr);
+    }
     if (map) XMapWindow(g_wpf.dpy, (Window)(uintptr_t)hwnd);
     else     XUnmapWindow(g_wpf.dpy, (Window)(uintptr_t)hwnd);
     XFlush(g_wpf.dpy);
