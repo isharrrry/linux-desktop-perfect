@@ -115,9 +115,19 @@ static void *atspi_pump_thread(void *arg)
 {
     (void)arg;
     if (!g_bus) return NULL;
+    atspi_diag("[ATSPI] 泵线程开始");
     while (g_bus_state > 0) {
-        dbus_connection_read_write_dispatch(g_bus, 500);
+        dbus_bool_t ok = dbus_connection_read_write_dispatch(g_bus, 500);
+        if (!ok) {
+            atspi_diag("[ATSPI] **泵线程检测到连接断开**（read_write_dispatch 返回 FALSE）");
+            break;
+        }
+        if (!dbus_connection_get_is_connected(g_bus)) {
+            atspi_diag("[ATSPI] **泵线程检测到 is_connected=FALSE**");
+            break;
+        }
     }
+    atspi_diag("[ATSPI] 泵线程退出");
     return NULL;
 }
 
