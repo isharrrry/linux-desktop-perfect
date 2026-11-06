@@ -561,10 +561,15 @@ static wpf_atspi_node *atspi_node_by_path(const char *path)
 // ── D-Bus 方法处理器 ────────────────────────────────────────────────────────
 static void atspi_append_ref(DBusMessageIter *arr, const char *bus, const char *path)
 {
+    /* 【K-626】**关键**：AT-SPI 的 `(so)` 里第二个字段是 **object_path**，
+     *   不是 string。用 `DBUS_TYPE_STRING` 写会让 libdbus **abort**
+     *   （`Array or variant type requires that type object_path be written`），
+     *   进而把整个进程 Core dump —— 这是「名字注册后又消失」的真正原因，
+     *   因为在 `GetChildren` 被调用时进程直接崩了。 */
     DBusMessageIter st;
     dbus_message_iter_open_container(arr, DBUS_TYPE_STRUCT, NULL, &st);
     dbus_message_iter_append_basic(&st, DBUS_TYPE_STRING, &bus);
-    dbus_message_iter_append_basic(&st, DBUS_TYPE_STRING, &path);
+    dbus_message_iter_append_basic(&st, DBUS_TYPE_OBJECT_PATH, &path);
     dbus_message_iter_close_container(arr, &st);
 }
 
@@ -621,7 +626,7 @@ static DBusHandlerResult atspi_msg_handler(DBusConnection *conn, DBusMessage *ms
         DBusMessageIter st;
         dbus_message_iter_open_container(&it, DBUS_TYPE_STRUCT, NULL, &st);
         dbus_message_iter_append_basic(&st, DBUS_TYPE_STRING, &bus);
-        dbus_message_iter_append_basic(&st, DBUS_TYPE_STRING, &cp);
+        dbus_message_iter_append_basic(&st, DBUS_TYPE_OBJECT_PATH, &cp);
         dbus_message_iter_close_container(&it, &st);
         (void)idx;
     } else if (strcmp(member, "GetParent") == 0) {
@@ -629,7 +634,7 @@ static DBusHandlerResult atspi_msg_handler(DBusConnection *conn, DBusMessage *ms
         DBusMessageIter st;
         dbus_message_iter_open_container(&it, DBUS_TYPE_STRUCT, NULL, &st);
         dbus_message_iter_append_basic(&st, DBUS_TYPE_STRING, &bus);
-        dbus_message_iter_append_basic(&st, DBUS_TYPE_STRING, &pp);
+        dbus_message_iter_append_basic(&st, DBUS_TYPE_OBJECT_PATH, &pp);
         dbus_message_iter_close_container(&it, &st);
     } else if (strcmp(member, "GetApplication") == 0) {
         DBusMessageIter st;
