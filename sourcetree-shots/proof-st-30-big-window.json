@@ -1,0 +1,22 @@
+{
+  "generated": "2026-11-02T07:12:00+08:00",
+  "method": "xdotool windowsize <WID> 1080 760（X11 层直接 resize，绕过 WPF/shim）",
+  "record": "K-1202",
+  "size": "1080x760",
+  "bytes": 47080,
+  "total_colors": 843,
+  "customer_colors": 542,
+  "before": {
+    "size": "625x540",
+    "bytes": 34955,
+    "customer_colors": 517
+  },
+  "improvement": {
+    "bytes": 12125,
+    "customer_colors": 25
+  },
+  "acceptance": {
+    "bytes_over_20000": true,
+    "colors_over_100": true
+  }
+}
