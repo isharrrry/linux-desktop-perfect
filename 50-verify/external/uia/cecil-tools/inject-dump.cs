@@ -37,6 +37,8 @@ class P {
     var helper = AssemblyDefinition.ReadAssembly(System.IO.Path.Combine(a.Length > 3 ? a[3] : ".", "UiaInvokeHelper.dll"));
     var helperType = helper.MainModule.Types.First(x => x.Name == "Helper");
     var dumpTextRef = asm.MainModule.ImportReference(helperType.Methods.First(x => x.Name == "DumpText"));
+    /* K-1181：SetupAtspiActionNoInvoker（填真实 action，让 pyatspi 的 nActions>0） */
+    var setupAtspiRef = asm.MainModule.ImportReference(helperType.Methods.First(x => x.Name == "SetupAtspiActionNoInvoker"));
     var dv = new TypeDefinition("UiaProbe", "GeomHelper", TypeAttributes.Public | TypeAttributes.Abstract | TypeAttributes.Sealed, asm.MainModule.TypeSystem.Object);
     asm.MainModule.Types.Add(dv);
     var depthField = new FieldDefinition("_depth", FieldAttributes.Public | FieldAttributes.Static, asm.MainModule.TypeSystem.Int32);
@@ -108,6 +110,15 @@ class P {
     A(il.Create(OpCodes.Ldloc, vChild));
     A(il.Create(OpCodes.Call, createPeerRef));
     A(il.Create(OpCodes.Stloc, vPeer));
+    /* K-1181：有 peer 就 SetupAtspiActionNoInvoker(hwnd=0, peer) */
+    var skipSetup = il.Create(OpCodes.Nop);
+    A(il.Create(OpCodes.Ldloc, vPeer));
+    A(il.Create(OpCodes.Brfalse, skipSetup));
+    A(il.Create(OpCodes.Ldc_I4_0));
+    A(il.Create(OpCodes.Conv_U8));
+    A(il.Create(OpCodes.Ldloc, vPeer));
+    A(il.Create(OpCodes.Call, setupAtspiRef));
+    A(skipSetup);
     A(il.Create(OpCodes.Ldloc, vPeer));
     A(il.Create(OpCodes.Brfalse, incrStart));
     A(il.Create(OpCodes.Ldstr, "[LOOP] peer="));

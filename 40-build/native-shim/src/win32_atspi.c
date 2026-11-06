@@ -740,8 +740,18 @@ static DBusHandlerResult atspi_msg_handler(DBusConnection *conn, DBusMessage *ms
         /* K-1161：返回 node 上真实设置的 action（WPF 侧通过 wpf_atspi_set_action 提供） */
         DBusMessageIter arr;
         dbus_message_iter_open_container(&it, DBUS_TYPE_ARRAY, "(ss)", &arr);
+        /* K-1181：恢复真实返回（K-1165 已证明崩溃不是 GetActions 导致的） */
+        atspi_diag("[ATSPI] GetActions path=%s n=%p has=%d name=%s", path, (void*)n, n ? n->has_action : -1, (n && n->has_action) ? n->action_name : "");
+        if (n && n->has_action) {
+            DBusMessageIter st;
+            const char *an = n->action_name;
+            const char *ad = n->action_desc;
+            dbus_message_iter_open_container(&arr, DBUS_TYPE_STRUCT, NULL, &st);
+            dbus_message_iter_append_basic(&st, DBUS_TYPE_STRING, &an);
+            dbus_message_iter_append_basic(&st, DBUS_TYPE_STRING, &ad);
+            dbus_message_iter_close_container(&arr, &st);
+        }
         dbus_message_iter_close_container(&it, &arr);
-        /* K-1163：暂时回退到空列表（带 action 的版本会崩，待排查） */
     } else if (strcmp(member, "DoAction") == 0) {
         /* K-1163：回退到 false（带回调的版本崩溃，待排查） */
         dbus_bool_t r = FALSE;
