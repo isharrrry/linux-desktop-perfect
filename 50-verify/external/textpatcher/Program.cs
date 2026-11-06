@@ -6,11 +6,13 @@ using System; using System.IO; using System.Text; using System.Collections.Gener
 class P {
     static int Main(string[] a) {
         string src = null, outp = null, editsFile = null, headerFile = null;
+        bool debug = false;
         for (int i = 0; i < a.Length; i++) {
             if (a[i] == "--src" && i+1 < a.Length) src = a[++i];
             else if (a[i] == "--out" && i+1 < a.Length) outp = a[++i];
             else if (a[i] == "--edits" && i+1 < a.Length) editsFile = a[++i];
             else if (a[i] == "--header" && i+1 < a.Length) headerFile = a[++i];
+            else if (a[i] == "--debug") debug = true;
         }
         if (src == null || outp == null || editsFile == null) {
             Console.Error.WriteLine("用法: textpatcher --src <源> --out <输出> --edits <edits.txt>");
@@ -23,6 +25,11 @@ class P {
         var outp_text = text;
         int applied = 0;
         foreach (var (name, anchor, repl) in edits) {
+            if (debug) {
+                Console.WriteLine($"  [DEBUG] {name} anchor.Length={anchor.Length}");
+                Console.WriteLine($"  [DEBUG] {name} anchor[0..80]=[{anchor.Substring(0, Math.Min(80, anchor.Length)).Replace("\n", "\\n")}]");
+                Console.WriteLine($"  [DEBUG] {name} 原始包含? {outp_text.Contains(anchor)}");
+            }
             int n = CountOccurrences(outp_text, anchor);
             Console.WriteLine($"  [{name}] 锚点出现 {n} 次");
             if (n != 1) { Console.Error.WriteLine($"  [失败] 锚点 {name} 出现 {n} 次（要求 1）"); return 1; }
