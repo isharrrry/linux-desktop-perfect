@@ -4,19 +4,24 @@ import re, sys, io
 src, out = sys.argv[1], sys.argv[2]
 s = io.open(src, encoding='utf-8').read()
 
+def _unescape(s):
+    """把源码文本里的字面 \\n / \\t / \\\\ 转成真实字符"""
+    return s.replace('\\\\', '\\').replace('\\n', '\n').replace('\\t', '\t')
+
+
 def parse_const(name):
     """解析 NAME = '''...''' 或 NAME = ( '...' '...' ) 或 NAME = "..." 或 NAME = "..." "..." """
     # 单块三引号
     m = re.search(rf'^{name}\s*=\s*[rR]?\'\'\'(.*?)\'\'\'', s, re.S | re.M)
-    if m: return m.group(1)
+    if m: return _unescape(m.group(1))
     # 多行拼接（括号内单引号或双引号，可带 \n）
     m = re.search(rf'^{name}\s*=\s*\(\s*((?:\s*(?:\'[^\']*\'|"[^"]*")\s*)+)\)', s, re.S | re.M)
     if m:
         parts = re.findall(r"(?:'([^']*)'|\"([^\"]*)\")", m.group(1))
-        return ''.join(a if a else b for a, b in parts)
+        return _unescape(''.join(a if a else b for a, b in parts))
     # 单行双引号
     m = re.search(rf'^{name}\s*=\s*"((?:[^"\\]|\\.)*)"', s, re.M)
-    if m: return m.group(1)
+    if m: return _unescape(m.group(1))
     return None
 
 # 提取 EDITS 块
