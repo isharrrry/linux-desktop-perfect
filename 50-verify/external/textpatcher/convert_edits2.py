@@ -7,7 +7,7 @@ s = io.open(src, encoding='utf-8').read()
 def parse_const(name):
     """解析 NAME = '''...''' 或 NAME = ( '...' '...' ) 或 NAME = "..." 或 NAME = "..." "..." """
     # 单块三引号
-    m = re.search(rf'^{name}\s*=\s*\'\'\'(.*?)\'\'\'', s, re.S | re.M)
+    m = re.search(rf'^{name}\s*=\s*[rR]?\'\'\'(.*?)\'\'\'', s, re.S | re.M)
     if m: return m.group(1)
     # 多行拼接（括号内单引号或双引号，可带 \n）
     m = re.search(rf'^{name}\s*=\s*\(\s*((?:\s*(?:\'[^\']*\'|"[^"]*")\s*)+)\)', s, re.S | re.M)
