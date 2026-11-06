@@ -147,7 +147,14 @@ int32_t DwmGetWindowAttribute(void *hwnd, DWORD attr, void *val, DWORD cb)
 // 【K-611】改成 TRUE：让 WPF 认为有 UIA 客户端在监听 ⇒ 它会把 AutomationPeer 交给
 // `UiaReturnRawElementProvider`（我们实现它来读控件名）。这是「能被辅助技术看到」的前提。
 // 代价：WPF 会多发一些 UIA 事件（我们实现了 `UiaRaise*` 桩，不会崩）。
-int32_t UiaClientsAreListening(void) { return 1; }   /* TRUE：假装有 UIA 客户端在听 */
+int32_t UiaClientsAreListening(void)
+{
+    if (getenv("WPF_LINUX_UIA_DIAG")) {
+        static int n = 0;
+        if (n++ < 5) { fprintf(stderr, "[UIA] UiaClientsAreListening 被调用 -> TRUE (第 %d 次)\n", n); fflush(stderr); }
+    }
+    return 1;   /* TRUE：假装有 UIA 客户端在听 */
+}
 
 // ── shell32：只补"调用方真的会碰"的三个 + ExtractIconEx 的别名已在 win32_misc.c ──
 typedef struct { void *hIcon; int32_t iIcon; DWORD dwAttributes; uint16_t szDisplayName[260]; uint16_t szTypeName[80]; } SHFILEINFOW;
