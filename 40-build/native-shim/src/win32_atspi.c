@@ -63,6 +63,11 @@ static void wpf_dbus_threads_init_early(void)
 
 static DBusConnection *g_bus = NULL;
 static int g_bus_state = 0;     /* 0=未尝试 1=可用 -1=已放弃 */
+/* 【K-624】**关键**：泵线程不能用 `g_bus_state` 做循环条件 ——
+ *   它启动时 `g_bus_state` 还是 `-1`（「初始化中」），`while (-1 > 0)` 立即为假
+ *   ⇒ **泵线程刚启动就退出，之后所有 D-Bus 方法调用都没人应答**（pyatspi 显示 None）。
+ *   用独立的 `g_atspi_running`（初始 1），只在连接真断开时置 0。 */
+static volatile int g_atspi_running = 1;
 static char g_bus_name[128];
 static pthread_mutex_t g_atspi_lock = PTHREAD_MUTEX_INITIALIZER;
 
@@ -143,14 +148,16 @@ static void *atspi_pump_thread(void *arg)
     (void)arg;
     if (!g_bus) return NULL;
     atspi_diag("[ATSPI] 泵线程开始");
-    while (g_bus_state > 0) {
+    while (g_atspi_running) {
         dbus_bool_t ok = dbus_connection_read_write_dispatch(g_bus, 500);
         if (!ok) {
             atspi_diag("[ATSPI] **泵线程检测到连接断开**（read_write_dispatch 返回 FALSE）");
+            g_atspi_running = 0;
             break;
         }
         if (!dbus_connection_get_is_connected(g_bus)) {
             atspi_diag("[ATSPI] **泵线程检测到 is_connected=FALSE**");
+            g_atspi_running = 0;
             break;
         }
     }
