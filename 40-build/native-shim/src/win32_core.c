@@ -1567,6 +1567,9 @@ INT_PTR SetWindowLongPtrW(HWND hwnd, int nIndex, INT_PTR dwNewLong)
     wpf_lock();
     wpf_window *w = wpf_window_find(hwnd);
     if (!w) { pthread_mutex_unlock(&g_wpf.lock);
+              /* 【K-883】诊断：哪个 hwnd 不在窗口表（1400 来源，非热路径） */
+              if (getenv("WPF_LINUX_UIA_DIAG"))
+                  fprintf(stderr, "[SETWNDLONG-FAIL] hwnd=%p nIndex=%d (窗口不在表)\n", (void *)hwnd, nIndex);
               wpf_set_last_error(ERROR_INVALID_WINDOW_HANDLE); return 0; }
     if (nIndex == GWL_WNDPROC) {
         INT_PTR old = (INT_PTR)w->wndproc;
