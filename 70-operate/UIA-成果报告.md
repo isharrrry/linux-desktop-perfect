@@ -30,7 +30,8 @@
 
 | 项 | 原因 |
 |---|---|
-| **像素截图** | `wpfgfx` 的 `Present` 无 Linux 输出（L-1/L-6）；`RenderTargetBitmap` 也不可用（K-1007）|
+| **像素截图** | **架构性不可达（L-11 / K-1087）**：`wpfgfx_cor3.so` 没有任何 Linux 图形后端符号（x11/drm/egl/vulkan/gl = 0 个）⇒ 它是 Windows 二进制改扩展名；`RenderTargetBitmap` 4 次尝试全失败（K-418/K-1006/K-1007/K-1037）|
+| **截图存证（`st-*`）** | 仓库里只有 `st-20-main-window-9172.png`（4 色空白）；`st-18`/`st-19`/「9 张达标截图」均不存在（**L-10 / K-1084 / K-1085**）|
 | **`AutomationPeer.GetName()`** | 崩溃（K-989）⇒ name 只能用 `GetType().FullName` |
 | **`AutomationPeer.Invoke()`** | IL 构造反复失败（K-1019/K-1021/K-1024/K-1025），`GetPattern` 本身可用（K-1022）|
 
