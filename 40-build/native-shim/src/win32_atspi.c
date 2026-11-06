@@ -84,6 +84,23 @@ static int atspi_address(char *out, size_t outsz)
     const char *home = getenv("HOME");
     if (home) {
         char p[512];
+        /* 【K-618】**终极修复**：AT-SPI bus 的真实命名是 `bus_<display_number>`。
+         *   实测 `DISPLAY=:303` ⇒ `pyatspi` 连的是 `$HOME/.cache/at-spi/bus_303`。
+         *   修前本函数只找 `bus0~bus3` 和 `bus`（无后缀），全都不是 pyatspi 用的那个
+         *   ⇒ 注册到了**错误的 bus** ⇒ pyatspi 永远看不到本应用。 */
+        const char *disp = getenv("DISPLAY");
+        if (disp) {
+            const char *colon = strrchr(disp, ':');
+            if (colon) {
+                int num = atoi(colon + 1);
+                snprintf(p, sizeof(p), "%s/.cache/at-spi/bus_%d", home, num);
+                if (access(p, F_OK) == 0) {
+                    snprintf(out, outsz, "unix:path=%s", p);
+                    atspi_diag("[ATSPI] 地址来自 %s（display 专用）", p);
+                    return 1;
+                }
+            }
+        }
         for (int i = 0; i < 4; ++i) {
             snprintf(p, sizeof(p), "%s/.cache/at-spi/bus%d", home, i);
             if (access(p, F_OK) == 0) { snprintf(out, outsz, "unix:path=%s", p); atspi_diag("[ATSPI] 地址来自 %s", p); return 1; }
