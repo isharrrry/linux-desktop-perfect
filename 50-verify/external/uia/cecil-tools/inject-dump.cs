@@ -1,3 +1,6 @@
+// inject-dump.cs —— 把 UIA 控件树遍历（含几何）注入 SourceTree.exe 的 MainWindow_Loaded
+// 用法：rre <SourceTree.exe> <output.dll> <PresentationFramework.dll>
+// 生成后替换 app 目录的 SourceTree.exe，用 WPF_LINUX_KEY_DIAG=1 启动，stdout 里看 [LOOP]/[GEO]
 using System;
 using System.Linq;
 using Mono.Cecil;
@@ -7,13 +10,17 @@ class P {
   static void Main(string[] a) {
     var asm = AssemblyDefinition.ReadAssembly(a[0]);
     var t = asm.MainModule.Types.First(x => x.FullName == "SourceTree.MainWindow");
-    var m = t.Methods.First(x => x.Name == "OnContentRendered");
+    var m = t.Methods.First(x => x.Name == "MainWindow_Loaded");
     var pf = AssemblyDefinition.ReadAssembly(a[2]);
     var pc = AssemblyDefinition.ReadAssembly(System.IO.Path.Combine(System.IO.Path.GetDirectoryName(a[2]), "PresentationCore.dll"));
     var cc = pf.MainModule.Types.SelectMany(Flat).First(x => x.Name == "ContentControl" && x.Namespace == "System.Windows.Controls");
     var getContentRef = asm.MainModule.ImportReference(cc.Methods.First(x => x.Name == "get_Content"));
     var uiElement = pc.MainModule.Types.SelectMany(Flat).First(x => x.Name == "UIElement" && x.Namespace == "System.Windows");
     var uiElementRef = asm.MainModule.ImportReference(uiElement);
+    var fe = pf.MainModule.Types.SelectMany(Flat).First(x => x.Name == "FrameworkElement" && x.Namespace == "System.Windows");
+    var feRef = asm.MainModule.ImportReference(fe);
+    var getAW = asm.MainModule.ImportReference(fe.Methods.First(x => x.Name == "get_ActualWidth"));
+    var getAH = asm.MainModule.ImportReference(fe.Methods.First(x => x.Name == "get_ActualHeight"));
     var vth = pc.MainModule.Types.SelectMany(Flat).First(x => x.Name == "VisualTreeHelper");
     var getCountRef = asm.MainModule.ImportReference(vth.Methods.First(x => x.Name == "GetChildrenCount"));
     var getChildRef = asm.MainModule.ImportReference(vth.Methods.First(x => x.Name == "GetChild" && x.Parameters.Count == 2));
@@ -22,14 +29,14 @@ class P {
     var createPeerRef = asm.MainModule.ImportReference(uap.Methods.First(x => x.Name == "CreatePeerForElement"));
     var peerType = pc.MainModule.Types.SelectMany(Flat).First(x => x.Name == "AutomationPeer" && x.Namespace == "System.Windows.Automation.Peers");
     var peerTypeRef = asm.MainModule.ImportReference(peerType);
-    var getPeerNameRef = asm.MainModule.ImportReference(peerType.Methods.First(x => x.Name == "GetName"));
-    var getPeerTypeRef2 = asm.MainModule.ImportReference(peerType.Methods.First(x => x.Name == "GetAutomationControlType"));
-    var wlO = asm.MainModule.ImportReference(typeof(Console).GetMethod("WriteLine", new[]{typeof(object)}));
-    var wlS = asm.MainModule.ImportReference(typeof(Console).GetMethod("WriteLine", new[]{typeof(string)}));
     var objGetType = asm.MainModule.ImportReference(typeof(object).GetMethod("GetType"));
     var typeName = asm.MainModule.ImportReference(typeof(Type).GetProperty("FullName").GetGetMethod());
-    var dv = new TypeDefinition("UiaProbe", "DumpHelper", TypeAttributes.Public | TypeAttributes.Abstract | TypeAttributes.Sealed, asm.MainModule.TypeSystem.Object);
+    var wlO = asm.MainModule.ImportReference(typeof(Console).GetMethod("WriteLine", new[]{typeof(object)}));
+    var wlS = asm.MainModule.ImportReference(typeof(Console).GetMethod("WriteLine", new[]{typeof(string)}));
+    var dv = new TypeDefinition("UiaProbe", "GeomHelper", TypeAttributes.Public | TypeAttributes.Abstract | TypeAttributes.Sealed, asm.MainModule.TypeSystem.Object);
     asm.MainModule.Types.Add(dv);
+    var depthField = new FieldDefinition("_depth", FieldAttributes.Public | FieldAttributes.Static, asm.MainModule.TypeSystem.Int32);
+    dv.Fields.Add(depthField);
     var dump = new MethodDefinition("Dump", MethodAttributes.Public | MethodAttributes.Static, asm.MainModule.TypeSystem.Void);
     dump.Parameters.Add(new ParameterDefinition(uiElementRef));
     dv.Methods.Add(dump);
@@ -40,21 +47,23 @@ class P {
     var vChild = new VariableDefinition(uiElementRef); dump.Body.Variables.Add(vChild);
     var vPeer = new VariableDefinition(peerTypeRef); dump.Body.Variables.Add(vPeer);
     void A(Instruction i) => il.Append(i);
+    var retInstr = il.Create(OpCodes.Ret);
     var bodyStart = il.Create(OpCodes.Ldstr, "[LOOP] i=");
     var incrStart = il.Create(OpCodes.Ldloc, vI);
     var condStart = il.Create(OpCodes.Ldloc, vI);
+    A(il.Create(OpCodes.Ldsfld, depthField));
+    A(il.Create(OpCodes.Ldc_I4, 12));
+    A(il.Create(OpCodes.Bge, retInstr));
+    A(il.Create(OpCodes.Ldsfld, depthField));
+    A(il.Create(OpCodes.Ldc_I4_1));
+    A(il.Create(OpCodes.Add));
+    A(il.Create(OpCodes.Stsfld, depthField));
     A(il.Create(OpCodes.Ldarg_0));
     A(il.Create(OpCodes.Call, getCountRef));
     A(il.Create(OpCodes.Stloc, vCount));
-    A(il.Create(OpCodes.Ldstr, "[DUMP] count="));
-    A(il.Create(OpCodes.Call, wlS));
-    A(il.Create(OpCodes.Ldloc, vCount));
-    A(il.Create(OpCodes.Box, asm.MainModule.TypeSystem.Int32));
-    A(il.Create(OpCodes.Call, wlO));
     A(il.Create(OpCodes.Ldc_I4_0));
     A(il.Create(OpCodes.Stloc, vI));
     A(il.Create(OpCodes.Br, condStart));
-    /* body */
     A(bodyStart);
     A(il.Create(OpCodes.Call, wlS));
     A(il.Create(OpCodes.Ldloc, vI));
@@ -73,6 +82,22 @@ class P {
     A(il.Create(OpCodes.Callvirt, objGetType));
     A(il.Create(OpCodes.Callvirt, typeName));
     A(il.Create(OpCodes.Call, wlS));
+    A(il.Create(OpCodes.Ldstr, "[GEO] W="));
+    A(il.Create(OpCodes.Call, wlS));
+    A(il.Create(OpCodes.Ldloc, vChild));
+    A(il.Create(OpCodes.Castclass, feRef));
+    A(il.Create(OpCodes.Callvirt, getAW));
+    A(il.Create(OpCodes.Box, asm.MainModule.TypeSystem.Double));
+    A(il.Create(OpCodes.Call, wlO));
+    A(il.Create(OpCodes.Ldstr, "[GEO] H="));
+    A(il.Create(OpCodes.Call, wlS));
+    A(il.Create(OpCodes.Ldloc, vChild));
+    A(il.Create(OpCodes.Castclass, feRef));
+    A(il.Create(OpCodes.Callvirt, getAH));
+    A(il.Create(OpCodes.Box, asm.MainModule.TypeSystem.Double));
+    A(il.Create(OpCodes.Call, wlO));
+    A(il.Create(OpCodes.Ldloc, vChild));
+    A(il.Create(OpCodes.Call, dump));
     A(il.Create(OpCodes.Ldloc, vChild));
     A(il.Create(OpCodes.Call, createPeerRef));
     A(il.Create(OpCodes.Stloc, vPeer));
@@ -82,27 +107,26 @@ class P {
     A(il.Create(OpCodes.Call, wlS));
     A(il.Create(OpCodes.Ldloc, vPeer));
     A(il.Create(OpCodes.Call, wlO));
-    /* incr */
     A(incrStart);
     A(il.Create(OpCodes.Ldc_I4_1));
     A(il.Create(OpCodes.Add));
     A(il.Create(OpCodes.Stloc, vI));
-    /* cond */
     A(condStart);
     A(il.Create(OpCodes.Ldloc, vCount));
     A(il.Create(OpCodes.Blt, bodyStart));
-    A(il.Create(OpCodes.Ret));
-    /* 调用 */
+    A(il.Create(OpCodes.Ldsfld, depthField));
+    A(il.Create(OpCodes.Ldc_I4_1));
+    A(il.Create(OpCodes.Sub));
+    A(il.Create(OpCodes.Stsfld, depthField));
+    A(retInstr);
     var il2 = m.Body.GetILProcessor();
     var first2 = m.Body.Instructions[0];
-    il2.InsertBefore(first2, il2.Create(OpCodes.Ldstr, "[CP] ENTER"));
-    il2.InsertBefore(first2, il2.Create(OpCodes.Call, wlS));
+    il2.InsertBefore(first2, il2.Create(OpCodes.Ldc_I4_0));
+    il2.InsertBefore(first2, il2.Create(OpCodes.Stsfld, depthField));
     il2.InsertBefore(first2, il2.Create(OpCodes.Ldarg_0));
     il2.InsertBefore(first2, il2.Create(OpCodes.Callvirt, getContentRef));
     il2.InsertBefore(first2, il2.Create(OpCodes.Castclass, uiElementRef));
     il2.InsertBefore(first2, il2.Create(OpCodes.Call, dump));
-    il2.InsertBefore(first2, il2.Create(OpCodes.Ldstr, "[CP] EXIT"));
-    il2.InsertBefore(first2, il2.Create(OpCodes.Call, wlS));
     asm.Write(a[1]);
     Console.WriteLine("patched -> " + a[1]);
   }
