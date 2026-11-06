@@ -5,11 +5,12 @@ using System; using System.IO; using System.Text; using System.Collections.Gener
 
 class P {
     static int Main(string[] a) {
-        string src = null, outp = null, editsFile = null;
+        string src = null, outp = null, editsFile = null, headerFile = null;
         for (int i = 0; i < a.Length; i++) {
             if (a[i] == "--src" && i+1 < a.Length) src = a[++i];
             else if (a[i] == "--out" && i+1 < a.Length) outp = a[++i];
             else if (a[i] == "--edits" && i+1 < a.Length) editsFile = a[++i];
+            else if (a[i] == "--header" && i+1 < a.Length) headerFile = a[++i];
         }
         if (src == null || outp == null || editsFile == null) {
             Console.Error.WriteLine("用法: textpatcher --src <源> --out <输出> --edits <edits.txt>");
@@ -33,6 +34,11 @@ class P {
         int throwAfter = CountOccurrences(outp_text, "throw ");
         if (throwBefore != throwAfter) { Console.Error.WriteLine($"[失败] throw 条数变了：{throwBefore} → {throwAfter}"); return 1; }
         Console.WriteLine($"[断言] throw {throwBefore}=={throwAfter}");
+        if (headerFile != null) {
+            var header = File.ReadAllText(headerFile, Encoding.UTF8);
+            outp_text = header + outp_text;
+            Console.WriteLine($"[头部] 插入 {header.Length} 字符（{headerFile}）");
+        }
         File.WriteAllText(outp, outp_text, Encoding.UTF8);
         Console.WriteLine($"[写出] {outp}（{outp_text.Length} 字符，{applied} 条替换）");
         return 0;
