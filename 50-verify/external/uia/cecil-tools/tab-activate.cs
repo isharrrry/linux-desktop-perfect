@@ -60,140 +60,6 @@ class P {
     dv.Fields.Add(doneF);
     var scrolledF = new FieldDefinition("_scrolled", FieldAttributes.Public | FieldAttributes.Static, asm.MainModule.TypeSystem.Boolean);
     dv.Fields.Add(scrolledF);
-    var vmF = new FieldDefinition("_vm", FieldAttributes.Public | FieldAttributes.Static, mwVmRef);
-    dv.Fields.Add(vmF);
-    /* K-1143：InvokeScan —— 对 Button 调 Helper.TryInvoke（AddOrActivate 后再试） */
-    var helper = AssemblyDefinition.ReadAssembly(System.IO.Path.Combine(a[3], "UiaInvokeHelper.dll"));
-    var helperType = helper.MainModule.Types.First(x => x.Name == "Helper");
-    var tryInvokeRef = asm.MainModule.ImportReference(helperType.Methods.First(x => x.Name == "TryInvoke"));
-    var callNoArgRef2 = asm.MainModule.ImportReference(helperType.Methods.First(x => x.Name == "CallNoArg"));
-    var checkCmdRef = asm.MainModule.ImportReference(helperType.Methods.First(x => x.Name == "CheckCommand"));
-    /* K-1163（T3 收尾）：SetupAtspiAction + WindowInteropHelper */
-    var setupAtspiRef = asm.MainModule.ImportReference(helperType.Methods.First(x => x.Name == "SetupAtspiAction"));
-    var wihType = pf.MainModule.Types.SelectMany(Flat).FirstOrDefault(x => x.Name == "WindowInteropHelper" && x.Namespace == "System.Windows.Interop");
-    MethodReference wihCtor = null, wihHandle = null;
-    if (wihType != null) {
-      wihCtor = asm.MainModule.ImportReference(wihType.Methods.First(x => x.IsConstructor && x.Parameters.Count == 1));
-      wihHandle = asm.MainModule.ImportReference(wihType.Properties.First(x => x.Name == "Handle").GetMethod);
-      Console.WriteLine("WindowInteropHelper: ctor + Handle 可用");
-    } else Console.WriteLine("WindowInteropHelper: NOT FOUND");
-    var mwRef = asm.MainModule.ImportReference(mw);
-    var mwF = new FieldDefinition("_mw", FieldAttributes.Public | FieldAttributes.Static, mwRef);
-    dv.Fields.Add(mwF);
-    var uap = pc.MainModule.Types.SelectMany(Flat).FirstOrDefault(x => x.Name == "UIElementAutomationPeer") ?? pf.MainModule.Types.SelectMany(Flat).First(x => x.Name == "UIElementAutomationPeer");
-    var createPeerRef = asm.MainModule.ImportReference(uap.Methods.First(x => x.Name == "CreatePeerForElement"));
-    var peerType = pc.MainModule.Types.SelectMany(Flat).First(x => x.Name == "AutomationPeer" && x.Namespace == "System.Windows.Automation.Peers");
-    var peerRef = asm.MainModule.ImportReference(peerType);
-    var buttonType = pf.MainModule.Types.SelectMany(Flat).First(x => x.Name == "Button" && x.Namespace == "System.Windows.Controls");
-    var buttonRef = asm.MainModule.ImportReference(buttonType);
-    var invD = new FieldDefinition("_invd", FieldAttributes.Public | FieldAttributes.Static, asm.MainModule.TypeSystem.Int32);
-    dv.Fields.Add(invD);
-    var invokeScan = new MethodDefinition("InvokeScan", MethodAttributes.Public | MethodAttributes.Static, asm.MainModule.TypeSystem.Void);
-    invokeScan.Parameters.Add(new ParameterDefinition(uiElementRef));
-    dv.Methods.Add(invokeScan);
-    {
-    var ilv = invokeScan.Body.GetILProcessor();
-    invokeScan.Body.InitLocals = true;
-    var vCnt = new VariableDefinition(asm.MainModule.TypeSystem.Int32); invokeScan.Body.Variables.Add(vCnt);
-    var vI = new VariableDefinition(asm.MainModule.TypeSystem.Int32); invokeScan.Body.Variables.Add(vI);
-    var vCh = new VariableDefinition(uiElementRef); invokeScan.Body.Variables.Add(vCh);
-    var vPeer = new VariableDefinition(peerRef); invokeScan.Body.Variables.Add(vPeer);
-    var vBtn = new VariableDefinition(buttonRef); invokeScan.Body.Variables.Add(vBtn);
-    void V(Instruction i) => ilv.Append(i);
-    var vret = ilv.Create(OpCodes.Ret);
-    var vcond = ilv.Create(OpCodes.Ldloc, vI);
-    var vincr = ilv.Create(OpCodes.Ldloc, vI);
-    var vbody = ilv.Create(OpCodes.Ldarg_0);
-    V(ilv.Create(OpCodes.Ldsfld, invD)); V(ilv.Create(OpCodes.Ldc_I4, 14)); V(ilv.Create(OpCodes.Bge, vret));
-    V(ilv.Create(OpCodes.Ldsfld, invD)); V(ilv.Create(OpCodes.Ldc_I4_1)); V(ilv.Create(OpCodes.Add)); V(ilv.Create(OpCodes.Stsfld, invD));
-    V(ilv.Create(OpCodes.Ldarg_0)); V(ilv.Create(OpCodes.Call, getCountRef)); V(ilv.Create(OpCodes.Stloc, vCnt));
-    V(ilv.Create(OpCodes.Ldc_I4_0)); V(ilv.Create(OpCodes.Stloc, vI));
-    V(ilv.Create(OpCodes.Br, vcond));
-    V(vbody);
-    V(ilv.Create(OpCodes.Ldloc, vI)); V(ilv.Create(OpCodes.Call, getChildRef));
-    V(ilv.Create(OpCodes.Isinst, uiElementRef)); V(ilv.Create(OpCodes.Stloc, vCh));
-    V(ilv.Create(OpCodes.Ldloc, vCh)); V(ilv.Create(OpCodes.Brfalse, vincr));
-    /* 若是 Button：取 peer 并 TryInvoke */
-    V(ilv.Create(OpCodes.Ldloc, vCh)); V(ilv.Create(OpCodes.Isinst, buttonRef)); V(ilv.Create(OpCodes.Stloc, vBtn));
-    V(ilv.Create(OpCodes.Ldloc, vBtn));
-    var vNotBtn = ilv.Create(OpCodes.Nop);
-    V(ilv.Create(OpCodes.Brfalse, vNotBtn));
-    V(ilv.Create(OpCodes.Ldstr, "[INV2] try Button")); V(ilv.Create(OpCodes.Call, wlS));
-    /* K-1164：不用 WindowInteropHelper（K-1163 崩溃），直接 hwnd=0（指向 root node） */
-    V(ilv.Create(OpCodes.Ldc_I4_0));
-    V(ilv.Create(OpCodes.Conv_U8));
-    V(ilv.Create(OpCodes.Ldloc, vPeer));
-    V(ilv.Create(OpCodes.Call, setupAtspiRef));
-    /* K-1146：检查 Command.CanExecute */
-    V(ilv.Create(OpCodes.Ldloc, vBtn)); V(ilv.Create(OpCodes.Call, checkCmdRef));
-    V(ilv.Create(OpCodes.Ldloc, vCh)); V(ilv.Create(OpCodes.Call, createPeerRef)); V(ilv.Create(OpCodes.Stloc, vPeer));
-    V(ilv.Create(OpCodes.Ldloc, vPeer));
-    var vNoPeer = ilv.Create(OpCodes.Nop);
-    V(ilv.Create(OpCodes.Brfalse, vNoPeer));
-    V(ilv.Create(OpCodes.Ldloc, vPeer)); V(ilv.Create(OpCodes.Call, tryInvokeRef)); V(ilv.Create(OpCodes.Pop));
-    V(vNoPeer);
-    V(vNotBtn);
-    /* 递归 */
-    V(ilv.Create(OpCodes.Ldloc, vCh)); V(ilv.Create(OpCodes.Call, invokeScan));
-    V(vincr);
-    V(ilv.Create(OpCodes.Ldc_I4_1)); V(ilv.Create(OpCodes.Add)); V(ilv.Create(OpCodes.Stloc, vI));
-    V(vcond);
-    V(ilv.Create(OpCodes.Ldloc, vCnt)); V(ilv.Create(OpCodes.Blt, vbody));
-    V(ilv.Create(OpCodes.Ldsfld, invD)); V(ilv.Create(OpCodes.Ldc_I4_1)); V(ilv.Create(OpCodes.Sub)); V(ilv.Create(OpCodes.Stsfld, invD));
-    V(vret);
-    }
-
-    /* K-1142：菜单展开（在 dv 声明之后插入，避免上轮的 CS0841） */
-    var menuItem = pf.MainModule.Types.SelectMany(Flat).First(x => x.Name == "MenuItem" && x.Namespace == "System.Windows.Controls");
-    var menuItemRef = asm.MainModule.ImportReference(menuItem);
-    var setOpenRef = asm.MainModule.ImportReference(menuItem.Properties.First(x => x.Name == "IsSubmenuOpen").SetMethod);
-    var openD = new FieldDefinition("_opend", FieldAttributes.Public | FieldAttributes.Static, asm.MainModule.TypeSystem.Int32);
-    dv.Fields.Add(openD);
-    var openedF = new FieldDefinition("_opened", FieldAttributes.Public | FieldAttributes.Static, asm.MainModule.TypeSystem.Boolean);
-    dv.Fields.Add(openedF);
-    var open = new MethodDefinition("OpenFirst", MethodAttributes.Public | MethodAttributes.Static, asm.MainModule.TypeSystem.Void);
-    open.Parameters.Add(new ParameterDefinition(uiElementRef));
-    dv.Methods.Add(open);
-    {
-    var ilo = open.Body.GetILProcessor();
-    open.Body.InitLocals = true;
-    var oCnt = new VariableDefinition(asm.MainModule.TypeSystem.Int32); open.Body.Variables.Add(oCnt);
-    var oI = new VariableDefinition(asm.MainModule.TypeSystem.Int32); open.Body.Variables.Add(oI);
-    var oCh = new VariableDefinition(uiElementRef); open.Body.Variables.Add(oCh);
-    var oMi = new VariableDefinition(menuItemRef); open.Body.Variables.Add(oMi);
-    void O(Instruction i) => ilo.Append(i);
-    var oret = ilo.Create(OpCodes.Ret);
-    var ocond = ilo.Create(OpCodes.Ldloc, oI);
-    var oincr = ilo.Create(OpCodes.Ldloc, oI);
-    var obody = ilo.Create(OpCodes.Ldarg_0);
-    O(ilo.Create(OpCodes.Ldsfld, openedF)); O(ilo.Create(OpCodes.Brtrue, oret));
-    O(ilo.Create(OpCodes.Ldsfld, openD)); O(ilo.Create(OpCodes.Ldc_I4, 14)); O(ilo.Create(OpCodes.Bge, oret));
-    O(ilo.Create(OpCodes.Ldsfld, openD)); O(ilo.Create(OpCodes.Ldc_I4_1)); O(ilo.Create(OpCodes.Add)); O(ilo.Create(OpCodes.Stsfld, openD));
-    O(ilo.Create(OpCodes.Ldarg_0)); O(ilo.Create(OpCodes.Call, getCountRef)); O(ilo.Create(OpCodes.Stloc, oCnt));
-    O(ilo.Create(OpCodes.Ldc_I4_0)); O(ilo.Create(OpCodes.Stloc, oI));
-    O(ilo.Create(OpCodes.Br, ocond));
-    O(obody);
-    O(ilo.Create(OpCodes.Ldloc, oI)); O(ilo.Create(OpCodes.Call, getChildRef));
-    O(ilo.Create(OpCodes.Isinst, uiElementRef)); O(ilo.Create(OpCodes.Stloc, oCh));
-    O(ilo.Create(OpCodes.Ldloc, oCh)); O(ilo.Create(OpCodes.Brfalse, oincr));
-    O(ilo.Create(OpCodes.Ldloc, oCh)); O(ilo.Create(OpCodes.Isinst, menuItemRef)); O(ilo.Create(OpCodes.Stloc, oMi));
-    O(ilo.Create(OpCodes.Ldloc, oMi));
-    var oNot = ilo.Create(OpCodes.Nop);
-    O(ilo.Create(OpCodes.Brfalse, oNot));
-    O(ilo.Create(OpCodes.Ldstr, "[MENU] opening")); O(ilo.Create(OpCodes.Call, wlS));
-    O(ilo.Create(OpCodes.Ldloc, oMi)); O(ilo.Create(OpCodes.Ldc_I4_1)); O(ilo.Create(OpCodes.Callvirt, setOpenRef));
-    O(ilo.Create(OpCodes.Ldc_I4_1)); O(ilo.Create(OpCodes.Stsfld, openedF));
-    O(ilo.Create(OpCodes.Ret));
-    O(oNot);
-    O(ilo.Create(OpCodes.Ldloc, oCh)); O(ilo.Create(OpCodes.Call, open));
-    O(oincr);
-    O(ilo.Create(OpCodes.Ldc_I4_1)); O(ilo.Create(OpCodes.Add)); O(ilo.Create(OpCodes.Stloc, oI));
-    O(ocond);
-    O(ilo.Create(OpCodes.Ldloc, oCnt)); O(ilo.Create(OpCodes.Blt, obody));
-    O(ilo.Create(OpCodes.Ldsfld, openD)); O(ilo.Create(OpCodes.Ldc_I4_1)); O(ilo.Create(OpCodes.Sub)); O(ilo.Create(OpCodes.Stsfld, openD));
-    O(oret);
-    }
-
     /* FixTab */
     var fixTab = new MethodDefinition("FixTab", MethodAttributes.Public | MethodAttributes.Static, asm.MainModule.TypeSystem.Void);
     fixTab.Parameters.Add(new ParameterDefinition(uiElementRef));
@@ -294,11 +160,8 @@ class P {
     Push(il2.Create(OpCodes.Ldc_I4_0)); Push(il2.Create(OpCodes.Stsfld, doneF));
     Push(il2.Create(OpCodes.Ldc_I4_0)); Push(il2.Create(OpCodes.Stsfld, scrolledF));
     Push(il2.Create(OpCodes.Ldstr, "[SCR] enter")); Push(il2.Create(OpCodes.Call, wlS));
-    Push(il2.Create(OpCodes.Ldarg_0)); Push(il2.Create(OpCodes.Stsfld, mwF));
     Push(il2.Create(OpCodes.Ldarg_0)); Push(il2.Create(OpCodes.Callvirt, getDC));
-    Push(il2.Create(OpCodes.Castclass, mwVmRef));
-    Push(il2.Create(OpCodes.Dup)); Push(il2.Create(OpCodes.Stsfld, vmF));
-    Push(il2.Create(OpCodes.Callvirt, getTabContainer));
+    Push(il2.Create(OpCodes.Castclass, mwVmRef)); Push(il2.Create(OpCodes.Callvirt, getTabContainer));
     Push(il2.Create(OpCodes.Stloc, vTabVm));
     Push(il2.Create(OpCodes.Ldarg_0)); Push(il2.Create(OpCodes.Callvirt, getContentRef));
     Push(il2.Create(OpCodes.Castclass, uiElementRef)); Push(il2.Create(OpCodes.Ldloc, vTabVm));
@@ -324,11 +187,6 @@ class P {
     Push(il2.Create(OpCodes.Ldstr, "stgit"));
     Push(il2.Create(OpCodes.Callvirt, addOrActivateRef));
     Push(il2.Create(OpCodes.Ldstr, "[DIAG] AddOrActivate OK")); Push(il2.Create(OpCodes.Call, wlS));
-    /* K-1148：AddOrActivate 之后 SelectedTabVM 应非 null ⇒ 重试 AddRemove */
-    Push(il2.Create(OpCodes.Ldsfld, vmF));
-    Push(il2.Create(OpCodes.Ldstr, "AddRemove"));
-    Push(il2.Create(OpCodes.Call, callNoArgRef2));
-    Push(il2.Create(OpCodes.Pop));
     Push(il2.Create(OpCodes.Ldstr, "[DIAG] SelectedRepository after:"));
     Push(il2.Create(OpCodes.Call, wlS));
     Push(il2.Create(OpCodes.Ldloc, vTabVm));
@@ -337,16 +195,7 @@ class P {
     /* （菜单展开已移除）*/
     Push(il2.Create(OpCodes.Ldarg_0)); Push(il2.Create(OpCodes.Callvirt, getContentRef));
     Push(il2.Create(OpCodes.Castclass, uiElementRef)); Push(il2.Create(OpCodes.Call, doScroll));
-    Push(il2.Create(OpCodes.Ldstr, "[SCR] done"));
-    /* K-1142：展开菜单 */
-    Push(il2.Create(OpCodes.Ldc_I4_0)); Push(il2.Create(OpCodes.Stsfld, openD));
-    Push(il2.Create(OpCodes.Ldc_I4_0)); Push(il2.Create(OpCodes.Stsfld, openedF));
-    Push(il2.Create(OpCodes.Ldarg_0)); Push(il2.Create(OpCodes.Callvirt, getContentRef));
-    Push(il2.Create(OpCodes.Castclass, uiElementRef)); Push(il2.Create(OpCodes.Call, open)); Push(il2.Create(OpCodes.Call, wlS));
-    /* K-1143：AddOrActivate 之后扫 Button 并 Invoke */
-    Push(il2.Create(OpCodes.Ldc_I4_0)); Push(il2.Create(OpCodes.Stsfld, invD));
-    Push(il2.Create(OpCodes.Ldarg_0)); Push(il2.Create(OpCodes.Callvirt, getContentRef));
-    Push(il2.Create(OpCodes.Castclass, uiElementRef)); Push(il2.Create(OpCodes.Call, invokeScan));
+    Push(il2.Create(OpCodes.Ldstr, "[SCR] done")); Push(il2.Create(OpCodes.Call, wlS));
     asm.Write(a[1]);
     Console.WriteLine("patched -> " + a[1]);
   }
