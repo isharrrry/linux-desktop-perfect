@@ -1222,7 +1222,17 @@ LRESULT SendMessageW(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
         default: break;
     }
     ++g_in_send_message;
+    /* 【K-675】探针：确认 `WM_GETOBJECT`（0x003D）是否到达 WPF 的窗口过程 */
+    if (msg == 0x003D && getenv("WPF_LINUX_UIA_DIAG")) {
+        fprintf(stderr, "[DISPATCH] WM_GETOBJECT hwnd=%p wp=0x%lx lp=0x%lx\n",
+                (void *)hwnd, (unsigned long)wp, (unsigned long)lp);
+        fflush(stderr);
+    }
     LRESULT r = wpf_dispatch_to_window(hwnd, msg, wp, lp);
+    if (msg == 0x003D && getenv("WPF_LINUX_UIA_DIAG")) {
+        fprintf(stderr, "[DISPATCH] WM_GETOBJECT 返回 0x%lx\n", (unsigned long)r);
+        fflush(stderr);
+    }
     --g_in_send_message;
     return r;
 }
