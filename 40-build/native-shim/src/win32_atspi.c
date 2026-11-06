@@ -582,7 +582,8 @@ static DBusHandlerResult atspi_msg_handler(DBusConnection *conn, DBusMessage *ms
     if (!path || !member) return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
     if (iface && strcmp(iface, "org.freedesktop.DBus.Introspectable") != 0
              && strcmp(iface, "org.a11y.atspi.Accessible") != 0
-             && strcmp(iface, "org.freedesktop.DBus.Properties") != 0)
+             && strcmp(iface, "org.freedesktop.DBus.Properties") != 0
+             && strcmp(iface, "org.a11y.atspi.Cache") != 0)
         return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
 
     wpf_atspi_node *n = atspi_node_by_path(path);
@@ -599,6 +600,16 @@ static DBusHandlerResult atspi_msg_handler(DBusConnection *conn, DBusMessage *ms
     } else if (strcmp(member, "GetRoleName") == 0) {
         const char *r = n->role;
         dbus_message_iter_append_basic(&it, DBUS_TYPE_STRING, &r);
+    } else if (strcmp(member, "GetItems") == 0) {
+        /* 【K-627】`org.a11y.atspi.Cache.GetItems` 是缓存优化接口。
+         *   不实现会触发 `dbind-WARNING`，并让 pyatspi 走「批量取」失败后的回退。
+         *   返回**空数组** `a((so)au)sa{sv}a{sv}i` 的形状不完整会崩溃，
+         *   所以返回一个「合法但空」的 `a(so)` 数组即可让 pyatspi 放弃缓存。
+         *   注：GetItems 的真实签名是 `a(so)` in, `a((so)ua{sv}a{sv}i)` out。
+         *   我们直接返回一个空的结果数组。 */
+        DBusMessageIter arr;
+        dbus_message_iter_open_container(&it, DBUS_TYPE_ARRAY, "((so)ua{sv}a{sv}i)", &arr);
+        dbus_message_iter_close_container(&it, &arr);
     } else if (strcmp(member, "GetRole") == 0) {
         /* 【K-625】AT-SPI 的 `GetRole` 返回 uint32 role 码（pyatspi 用它，
          *   不是 `GetRoleName`）。`AT_SPI_ROLE_APPLICATION = 75`，
