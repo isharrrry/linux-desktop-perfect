@@ -145,6 +145,23 @@ static int atspi_ensure(void)
     const char *uniq = dbus_bus_get_unique_name(g_bus);
     snprintf(g_bus_name, sizeof(g_bus_name), "%s", uniq ? uniq : "wpf-linux");
 
+    /* 【K-616】**关键修复**：`dbus_connection_open_private` 只建连接、拿到唯一名（`:1.xx`），
+     *   **不会请求 well-known 名字**。而 `at-spi2-registryd` / `pyatspi` 是通过
+     *   well-known 名字扫描 bus 上的应用 ⇒ 不请求名字就永远不会被发现。
+     *   （`RegisterApplication` 是 AT-SPI1 API，AT-SPI2 已废弃 —— 那条路本仓一直在报错。） */
+    {
+        DBusError nerr; dbus_error_init(&nerr);
+        int rc = dbus_bus_request_name(g_bus, "org.a11y.atspi.SourceTree",
+                                       DBUS_NAME_FLAG_REPLACE_EXISTING, &nerr);
+        if (rc == DBUS_REQUEST_NAME_REPLY_PRIMARY_OWNER || rc == DBUS_REQUEST_NAME_REPLY_ALREADY_OWNER) {
+            snprintf(g_bus_name, sizeof(g_bus_name), "%s", "org.a11y.atspi.SourceTree");
+            atspi_diag("[ATSPI] well-known 名字注册成功：org.a11y.atspi.SourceTree");
+        } else {
+            atspi_diag("[ATSPI] 名字注册失败 rc=%d：%s", rc, nerr.message ? nerr.message : "?");
+        }
+        dbus_error_free(&nerr);
+    }
+
     /* RegisterApplication(bus_name) —— 失败不致命（可能没有 registry 在跑） */
     {
         DBusMessage *m = dbus_message_new_method_call(ATSPI_REG_SERVICE, ATSPI_REG_PATH, ATSPI_REG_IFACE, "RegisterApplication");
