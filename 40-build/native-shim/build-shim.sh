@@ -29,9 +29,11 @@ OPT="${OPT:--O2}"
 #   这是 dlsym 风格符号表的固有做法，不是 bug。
 WARN="-Wall -Wextra -Wno-unused-parameter -Wno-cast-function-type"
 CFLAGS_BASE="$CSTD $OPT $WARN -fPIC -fvisibility=default"
-LDLIBS="-lX11 -ldl -lpthread"
+DBUS_CFLAGS="$(pkg-config --cflags dbus-1 2>/dev/null)"
+DBUS_LIBS="$(pkg-config --libs dbus-1 2>/dev/null)"
+LDLIBS="-lX11 -ldl -lpthread $DBUS_LIBS"
 
-SRCS=(src/win32_core.c src/win32_msg.c src/win32_x11.c src/win32_misc.c src/win32_exports.c src/win32_unicode_tables.c src/win32_classification.c src/win32_oem.c src/win32_gdiplus.c src/win32_pts.c)
+SRCS=(src/win32_core.c src/win32_msg.c src/win32_x11.c src/win32_misc.c src/win32_exports.c src/win32_unicode_tables.c src/win32_classification.c src/win32_oem.c src/win32_gdiplus.c src/win32_pts.c src/win32_gdi_dc.c src/win32_atspi.c src/win32_gdi_text.c src/win32_gdip_render.c src/win32_ibus.c src/win32_imm.c src/win32_clipboard.c)
 OBJS=()
 TARGET="bin/libwpfwin32.so"
 
@@ -50,7 +52,7 @@ build() {
     for src in "${SRCS[@]}"; do
         obj="obj/$(basename "${src%.c}").o"
         echo "   CC  $src"
-        "$CC" $CFLAGS_BASE -Isrc -c "$src" -o "$obj" || die "编译 $src"
+        "$CC" $CFLAGS_BASE -Isrc $DBUS_CFLAGS -c "$src" -o "$obj" || die "编译 $src"
         OBJS+=("$obj")
     done
     echo "== 链接 -shared -Wl,--no-undefined"
