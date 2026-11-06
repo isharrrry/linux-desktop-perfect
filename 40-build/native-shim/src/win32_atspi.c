@@ -153,6 +153,10 @@ static int atspi_ensure(void)
         DBusError nerr; dbus_error_init(&nerr);
         int rc = dbus_bus_request_name(g_bus, "org.a11y.atspi.SourceTree",
                                        DBUS_NAME_FLAG_REPLACE_EXISTING, &nerr);
+        /* 【K-616b】打印原始 rc（0=PRIMARY_OWNER 1=IN_QUEUE 2=EXISTS 3=ALREADY_OWNER） */
+        atspi_diag("[ATSPI] request_name rc=%d (0=PRIMARY 1=IN_QUEUE 2=EXISTS 3=ALREADY) err=%s",
+                   rc, nerr.message ? nerr.message : "(none)");
+        dbus_connection_flush(g_bus);
         if (rc == DBUS_REQUEST_NAME_REPLY_PRIMARY_OWNER || rc == DBUS_REQUEST_NAME_REPLY_ALREADY_OWNER) {
             snprintf(g_bus_name, sizeof(g_bus_name), "%s", "org.a11y.atspi.SourceTree");
             atspi_diag("[ATSPI] well-known 名字注册成功：org.a11y.atspi.SourceTree");
