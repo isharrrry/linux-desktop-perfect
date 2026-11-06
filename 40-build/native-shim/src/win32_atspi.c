@@ -613,6 +613,9 @@ static DBusHandlerResult atspi_msg_handler(DBusConnection *conn, DBusMessage *ms
     DBusMessageIter it;
     dbus_message_iter_init_append(reply, &it);
 
+    /* K-1186：打印每个 member（调试用） */
+    atspi_diag("[ATSPI] member=%s iface=%s path=%s", member, iface ? iface : "(null)", path);
+
     if (strcmp(member, "GetName") == 0) {
         /* K-1184：`Accessible.GetName`（无参）返回节点名；`Action.GetName(i)`（带参）返回 action 名 */
         int argi = -1;
