@@ -659,10 +659,13 @@ static DBusHandlerResult atspi_msg_handler(DBusConnection *conn, DBusMessage *ms
         const char *want_iface = NULL, *want_prop = NULL;
         DBusMessageIter in;
         if (dbus_message_iter_init(msg, &in)) {
-            dbus_message_iter_get_basic(&in, &want_iface);
-            dbus_message_iter_next(&in);
-            dbus_message_iter_get_basic(&in, &want_prop);
+            if (dbus_message_iter_get_arg_type(&in) == DBUS_TYPE_STRING)
+                dbus_message_iter_get_basic(&in, &want_iface);
+            if (dbus_message_iter_next(&in) && dbus_message_iter_get_arg_type(&in) == DBUS_TYPE_STRING)
+                dbus_message_iter_get_basic(&in, &want_prop);
         }
+        atspi_diag("[ATSPI] Properties.Get: iface=%s prop=%s (path=%s)",
+                   want_iface ? want_iface : "(null)", want_prop ? want_prop : "(null)", path);
         DBusMessageIter var;
         if (want_prop && strcmp(want_prop, "name") == 0) {
             const char *nm_val = n->name;
