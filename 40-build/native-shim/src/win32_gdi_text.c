@@ -290,7 +290,10 @@ intptr_t UiaReturnRawElementProvider(void *hwnd, intptr_t wParam, intptr_t lPara
         g_uia_providers[g_uia_provider_count].el = el;
         ++g_uia_provider_count;
     }
-    if (getenv("WPF_LINUX_UIA_DIAG")) {
+    /* 【K-949】`el` 现在是 `GCHandle`（K-948 的方案，非 COM 指针）⇒ **禁止读 vtable**
+     *   （否则 `*(void**)el` 是野指针 ⇒ 崩溃）。用 `WPF_LINUX_UIA_GCHANDLE=1` 或默认跳过。 */
+    int el_is_gchandle = (getenv("WPF_LINUX_UIA_GCHANDLE") != NULL) || 1;   /* 默认跳过 */
+    if (getenv("WPF_LINUX_UIA_DIAG") && !el_is_gchandle) {
         wpf_uia_provider_vtbl *vt = *(wpf_uia_provider_vtbl **)el;
         if (vt && vt->AddRef) vt->AddRef(el);
         const char *name = "(no-vtable)";
