@@ -46,15 +46,25 @@ if not m:
     print('找不到 EDITS 块'); sys.exit(1)
 block = m.group(1)
 entries = []
-pat = re.compile(r'\(\s*"[^"]*"\s*,\s*(\w+)\s*,\s*(\w+)\s*\)')
+pat = re.compile(r'\(\s*"[^"]*"\s*,\s*(\w+)\s*,\s*(?:(\w+)|\'\'\'(.*?)\'\'\'|"((?:[^"\\]|\\.)*)")\s*\)', re.S)
 for m2 in pat.finditer(block):
-    entries.append((m2.group(1), m2.group(2)))
+    entries.append((m2.group(1), m2.group(2), m2.group(3), m2.group(4) if m2.lastindex >= 4 else None))
 print(f'找到 {len(entries)} 条 EDITS')
 ok = 0
 with io.open(out, 'w', encoding='utf-8') as f:
-    for aname, rname in entries:
+    for entry in entries:
+        aname, rname = entry[0], entry[1]
+        rinline = entry[2] if len(entry) > 2 else None
+        rinline2 = entry[3] if len(entry) > 3 else None
         anchor = parse_const(aname)
-        repl = parse_const(rname)
+        if rname and rname.isidentifier():
+            repl = parse_const(rname)
+        elif rinline is not None:
+            repl = rinline
+        elif rinline2 is not None:
+            repl = rinline2
+        else:
+            repl = None
         if anchor is None:
             print(f'[跳过] {aname} 无法解析'); continue
         if repl is None:
