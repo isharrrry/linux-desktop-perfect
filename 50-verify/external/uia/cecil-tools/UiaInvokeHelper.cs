@@ -261,5 +261,24 @@ namespace UiaInvokeHelper
             return null;
         }
 
+
+        /// <summary>K-1208：直接创建并显示 AddToBookmarksWindow（K-1120 的方式）。</summary>
+        public static void ShowBookmarkDialog(object owner)
+        {
+            try
+            {
+                var asm = owner.GetType().Assembly;
+                var t = asm.GetType("SourceTree.View.Repository.AddToBookmarksWindow");
+                if (t == null) { Console.WriteLine("[DLG2] 找不到 AddToBookmarksWindow"); return; }
+                Console.WriteLine("[DLG2] creating " + t.FullName);
+                var w = Activator.CreateInstance(t) as System.Windows.Window;
+                if (w == null) { Console.WriteLine("[DLG2] 不是 Window"); return; }
+                try { var op = t.GetProperty("Owner"); if (op != null && owner is System.Windows.Window) op.SetValue(w, owner); } catch { }
+                w.Show();
+                Console.WriteLine("[DLG2] Show() returns, title=" + (w.Title ?? "(null)"));
+            }
+            catch (Exception e) { Console.WriteLine("[DLG2] 失败: " + e.GetType().Name + ": " + e.Message); }
+        }
+
     }
 }
