@@ -594,6 +594,12 @@ static DBusHandlerResult atspi_msg_handler(DBusConnection *conn, DBusMessage *ms
     } else if (strcmp(member, "GetRoleName") == 0) {
         const char *r = n->role;
         dbus_message_iter_append_basic(&it, DBUS_TYPE_STRING, &r);
+    } else if (strcmp(member, "GetRole") == 0) {
+        /* 【K-625】AT-SPI 的 `GetRole` 返回 uint32 role 码（pyatspi 用它，
+         *   不是 `GetRoleName`）。`AT_SPI_ROLE_APPLICATION = 75`，
+         *   `AT_SPI_ROLE_FRAME = 23`。 */
+        dbus_uint32_t role = (n->hwnd == 0) ? 75 : 23;
+        dbus_message_iter_append_basic(&it, DBUS_TYPE_UINT32, &role);
     } else if (strcmp(member, "GetChildren") == 0) {
         DBusMessageIter arr;
         dbus_message_iter_open_container(&it, DBUS_TYPE_ARRAY, "(so)", &arr);
