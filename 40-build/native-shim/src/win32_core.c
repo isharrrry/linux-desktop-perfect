@@ -1516,8 +1516,18 @@ INT_PTR GetWindowLongPtrW(HWND hwnd, int nIndex)
     wpf_global_init();
     wpf_lock();
     wpf_window *w = wpf_window_find(hwnd);
-    if (!w) { pthread_mutex_unlock(&g_wpf.lock);
-              wpf_set_last_error(ERROR_INVALID_WINDOW_HANDLE); return 0; }
+    if (!w) {
+        pthread_mutex_unlock(&g_wpf.lock);
+        // 【K-522】**不再设 ERROR_INVALID_WINDOW_HANDLE（1400）**。
+        //   实测（K-521）：SourceTree 的 `HwndSubclass.HookWindowProc` 在窗口被销毁后
+        //   仍会调 `SetWindowLongPtr(GWLP_WNDPROC)`；WPF 的 `CriticalSetWindowLong`
+        //   发现「返回 0 且 GetLastError != 0」就抛 `Win32Exception(1400)`
+        //   ⇒ `SubclassWndProc` 异常 ⇒ 整个窗口过程链断裂 ⇒ 主窗口不显示（偶发）。
+        //   这里**只返回 0、不设错误**：WPF 认为"旧值是 0"（等价于"没有旧过程"），
+        //   消息链继续走我们的 `DefWindowProcW`，不影响功能。
+        wpf_set_last_error(0);
+        return 0;
+    }
     if (nIndex == GWL_WNDPROC) {
         INT_PTR r = (INT_PTR)w->wndproc;
         pthread_mutex_unlock(&g_wpf.lock);
@@ -1555,6 +1565,11 @@ INT_PTR SetWindowLongPtrW(HWND hwnd, int nIndex, INT_PTR dwNewLong)
         INT_PTR old = (INT_PTR)w->wndproc;
         w->wndproc = (WNDPROC)dwNewLong;
         pthread_mutex_unlock(&g_wpf.lock);
+        // 【K-523】成功路径**显式清零 last_error** —— WPF 的 `CriticalSetWindowLong`
+        //   用 `SetLastError=true` 的 P/Invoke；实测 .NET 在 Linux 上**不一定**会在
+        //   调用前清 GetLastError ⇒ 之前任何一次失败（如 `GetWindowRect` 设的 1400）
+        //   会被它读到 ⇒ 误判"设置失败" ⇒ 抛 `Win32Exception(1400)` ⇒ 窗口过程链断裂。
+        wpf_set_last_error(0);
         return old;
     }
     int64_t *slot = NULL;
@@ -1562,6 +1577,7 @@ INT_PTR SetWindowLongPtrW(HWND hwnd, int nIndex, INT_PTR dwNewLong)
         INT_PTR old = (INT_PTR)*slot;
         *slot = (int64_t)dwNewLong;
         pthread_mutex_unlock(&g_wpf.lock);
+        wpf_set_last_error(0);
         return old;
     }
     pthread_mutex_unlock(&g_wpf.lock);
