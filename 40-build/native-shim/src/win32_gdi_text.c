@@ -255,6 +255,12 @@ typedef struct { unsigned short vt; unsigned short r1, r2, r3; unsigned long lon
 intptr_t UiaReturnRawElementProvider(void *hwnd, intptr_t wParam, intptr_t lParam, void *el)
 {
     (void)wParam; (void)lParam;
+    /* 【K-922】诊断必须在 `if (!el)` **之前** —— K-921 发现 `el == null` 时静默返回 0
+     *   ⇒ 无法区分「函数未被调用」与「el 为 null」。 */
+    if (getenv("WPF_LINUX_UIA_DIAG")) {
+        fprintf(stderr, "[UIA] CALLED hwnd=%p el=%p\n", hwnd, el);
+        fflush(stderr);
+    }
     if (!el) return 0;
     if (g_uia_provider_count < WPF_UIA_MAX_PROVIDERS) {
         g_uia_providers[g_uia_provider_count].hwnd = hwnd;
