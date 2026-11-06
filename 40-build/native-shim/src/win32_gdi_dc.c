@@ -368,6 +368,14 @@ uint32_t wpf_gdi_color(HGDIOBJ o, uint32_t dflt) { wpf_gdi_obj *p = wpf_gdi_of(o
 BOOL BitBlt(HDC hdcDest, int32_t x, int32_t y, int32_t w, int32_t h,
             HDC hdcSrc, int32_t x1, int32_t y1, uint32_t rop)
 {
+    /* 【K-914】诊断：`BitBlt` 是否被调用（WPF 软件渲染的输出路径） */
+    if (getenv("WPF_LINUX_BITBLT_DIAG")) {
+        static int n = 0;
+        if (n++ < 40)
+            fprintf(stderr, "[BITBLT] dst=%p src=%p %dx%d at %d,%d rop=0x%x\n",
+                    (void *)hdcDest, (void *)hdcSrc, w, h, x, y, rop);
+        fflush(stderr);
+    }
     wpf_hdc *d = wpf_hdc_of(hdcDest);
     wpf_hdc *s = wpf_hdc_of(hdcSrc);
     if (!d || !s || w <= 0 || h <= 0) return 0;
