@@ -155,8 +155,16 @@ internal static class Program
     {
         var snap = new DesktopSnapshot();
         var kids = Call(Registry, Root, "org.a11y.atspi.Accessible", "GetChildren");
-        var refs = ParseRefs(kids);
-        snap.DesktopChildCount = refs.Count;
+        var allRefs = ParseRefs(kids);
+        snap.DesktopChildCount = allRefs.Count;
+
+        // 【K-653】**去重**：`at-spi2-registryd` 不会清理死进程的条目，
+        //   每次 `kill -9` + 重启 SourceTree 就多一个重复条目。
+        //   按 `(bus, path)` 去重后再枚举，避免「105 个控件」这种假象。
+        var seen = new HashSet<string>();
+        var refs = new List<(string bus, string path)>();
+        foreach (var (b, p) in allRefs)
+            if (seen.Add(b + p)) refs.Add((b, p));
 
         for (int i = 0; i < refs.Count; i++)
         {
@@ -235,6 +243,8 @@ internal static class Program
         {
             desktop_child_count = snap.DesktopChildCount,
             apps = snap.Apps.Select(a => new { index = a.Index, name = a.Name, role = a.Role, children = a.Children }),
+            desktop_child_count_raw = snap.DesktopChildCount,
+            desktop_child_count_dedup = snap.Apps.Count,
             found_sourcetree = snap.Found,
             controls = snap.Controls.Select(c => new
             {
