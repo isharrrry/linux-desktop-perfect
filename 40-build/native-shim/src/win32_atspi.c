@@ -722,6 +722,20 @@ static DBusHandlerResult atspi_msg_handler(DBusConnection *conn, DBusMessage *ms
             dbus_message_unref(reply);
             return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
         }
+    } else if (strcmp(member, "GetInterfaces") == 0) {
+        /* K-1180：告诉 libatspi 本节点有哪些接口（否则 get_action_iface 返回 None） */
+        DBusMessageIter arr;
+        dbus_message_iter_open_container(&it, DBUS_TYPE_ARRAY, "s", &arr);
+        const char *ifs[] = {
+            "org.a11y.atspi.Accessible",
+            "org.a11y.atspi.Action",
+            "org.a11y.atspi.Component",
+            "org.a11y.atspi.Text",
+            "org.a11y.atspi.Value",
+        };
+        for (size_t k = 0; k < sizeof(ifs)/sizeof(ifs[0]); ++k)
+            dbus_message_iter_append_basic(&arr, DBUS_TYPE_STRING, &ifs[k]);
+        dbus_message_iter_close_container(&it, &arr);
     } else if (strcmp(member, "GetActions") == 0) {
         /* K-1161：返回 node 上真实设置的 action（WPF 侧通过 wpf_atspi_set_action 提供） */
         DBusMessageIter arr;
@@ -744,6 +758,7 @@ static DBusHandlerResult atspi_msg_handler(DBusConnection *conn, DBusMessage *ms
             "<method name='GetName'><arg direction='out' type='s'/></method>"
             "<method name='GetParent'><arg direction='out' type='(so)'/></method>"
             "<method name='GetApplication'><arg direction='out' type='(so)'/></method>"
+            "<method name='GetInterfaces'><arg direction='out' type='as'/></method>"
             "</interface>"
             /* K-1159（T3）：AT-SPI Action 接口 —— 最小实现（空 action 列表 + DoAction 返回 false）。
                目的：让 pyatspi 能调 GetActions()/DoAction()，证明接口存在；
