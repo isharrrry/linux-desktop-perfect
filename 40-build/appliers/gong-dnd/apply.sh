@@ -15,7 +15,7 @@
 #   sh 40-build/appliers/gong-dnd/apply.sh           # 注入，原地替换（先备份 .orig）
 set -e
 ROOT=$(cd "$(dirname "$0")/../../.." && pwd)
-APP="${APP:-/tmp/stpkg/SourceTree/app-3.4.15}"
+APP="${APP:?必须指定 APP=<SourceTree app 目录>（如 APP=/path/to/SourceTree/app-3.4.15）}"
 SRC="$APP/GongSolutions.Wpf.DragDrop.dll"
 BAK="$APP/GongSolutions.Wpf.DragDrop.dll.orig"
 TOOL_DIR="$ROOT/40-build/appliers/gong-dnd"
