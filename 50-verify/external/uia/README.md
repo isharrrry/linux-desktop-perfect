@@ -1,9 +1,9 @@
-# UIA / AT-SPI 验证脚本
+# UIA / AT-SPI 验证工具（C# 版）
 
 ## 用法
 
 ```bash
-# 1. 先启动 SourceTree
+# 1. 先启动 SourceTree（见仓根 40-build/install-shims.sh 和 /tmp/stpkg 部署）
 export DOTNET_ROOT=~/.local/share/ldp/dotnet
 FX=~/.local/share/ldp/dotnet/shared/Microsoft.WindowsDesktop.App/10.0.11
 cd /tmp/stpkg/SourceTree/app-3.4.15
@@ -13,16 +13,18 @@ DISPLAY=:303 DOTNET_ROOT=$DOTNET_ROOT DOTNET_ReadyToRun=0 \
 
 # 2. 等 20 秒后跑验证
 sleep 20
-DISPLAY=:303 python3 50-verify/external/uia/dump_tree.py
+DISPLAY=:303 ~/.local/share/ldp/dotnet/dotnet \
+  50-verify/external/uia/dump-tree-cs/bin/Release/net10.0/dump-tree.dll
 ```
 
 ## 参数
 
 | 参数 | 说明 |
 |---|---|
-| **无参数** | 人类可读输出 |
-| **`--json`** | JSON 输出（含 apps/controls/states）|
-| **`--wait N`** | 等最多 N 秒，直到找到 SourceTree |
+| 无参数 | 人类可读输出 |
+| `--json` | JSON 输出（含 apps/controls/bus/path）|
+| `--wait N` | 等最多 N 秒，直到找到 SourceTree |
+| `--bus <addr>` | 指定 D-Bus 地址（默认自动发现 `bus_<display>`）|
 
 ## 退出码
 
@@ -30,25 +32,39 @@ DISPLAY=:303 python3 50-verify/external/uia/dump_tree.py
 |---|---|
 | **0** | 找到 SourceTree 且枚举 ≥ 10 个控件 ✅ |
 | **1** | 找到但控件不足 |
-| **2** | pyatspi 不可用 |
 | **3** | 超时未找到 |
+| **4** | gdbus 不可用 / 找不到 bus |
 
-## 当前状态（基线）
+## 实现
 
-`baseline-before-uia.txt` 是 UIA 实现**之前**的输出：
+- **纯 C#（`net10.0`），无第三方 NuGet**（`Tmds.DBus` 离线不可用）
+- **通过 `System.Diagnostics.Process` 调用 `gdbus` 命令行**
+- **自动发现 bus**：`$AT_SPI_BUS_ADDRESS` → `$HOME/.cache/at-spi/bus_<display>` → `$XDG_RUNTIME_DIR/at-spi/bus_<display>`
+- **递归读 `GetChildren` + `Properties.Get(Name/ChildCount)`**
+
+## 当前状态（第 105 轮实测）
 
 ```
-桌面子项数: 1
-  [0] 'xdg-desktop-portal-gtk' role=application children=0
+桌面子项数: 2
+  [1] 'SourceTree' role=application children=9
 
-❌ 未找到 SourceTree
+✅ 找到 SourceTree，枚举了 10 个控件（5 个有 name）
+[application] 'SourceTree' (childCount=9)
+  [frame] '' (childCount=0)
+  [frame] 'SystemResourceNotifyWindow' (childCount=0)
+  [frame] '' (childCount=0)
+  [frame] '' (childCount=0)
+  [frame] 'Sourcetree' (childCount=0)
+  [frame] '' (childCount=0)
+  [frame] 'MediaContextNotificationWindow' (childCount=0)
+  [frame] '' (childCount=0)
+  [frame] '.NET-BroadcastEventWindow.30c4a4.0' (childCount=0)
+退出码=0
 ```
 
-**原因**：`win32_gdi_text.c:229` 的 `UiaReturnRawElementProvider` 是桩（`{ return 0; }`）⇒ WPF 控件不暴露给 AT-SPI。
+**⇒ 达成「找到 SourceTree + ≥10 控件」；但控件树只有窗口级（无菜单/工具栏/按钮）。**
 
-## 要实现的两层
+## 待办
 
-1. **`UiaReturnRawElementProvider`** —— 返回真正的 COM `IRawElementProviderSimple*`（把 `el` 指针存进 `hwnd → el` 表）
-2. **AT-SPI2 `org.a11y.atspi.Accessible` D-Bus 桥接** —— 把这张表暴露成 D-Bus 对象
-
-**详见 `70-operate/已知坑清单.md` 的 K-611 / K-612。**
+- **`UiaReturnRawElementProvider` 仍是桩**（`win32_gdi_text.c:229` 返回 0）⇒ 这是「控件树只有窗口级」的根本原因
+- **需要从 WPF `AutomationPeer` 树拿真实控件**
