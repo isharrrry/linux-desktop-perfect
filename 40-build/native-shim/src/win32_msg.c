@@ -583,6 +583,22 @@ static void wpf_trace_msg(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
     fflush(stderr);
 }
 
+/* 【K-898】运行期首次消息时补发 `WM_GETOBJECT`。
+ *   为什么不在建窗时发（K-896）：那一刻 UI 线程还没有 `Dispatcher`
+ *   （`Dispatcher.FromThread` 返回 null）⇒ `SubclassWndProc` 不转发给 hooks（K-897）。
+ *   运行期（`WM_SHOWWINDOW`/`WM_PAINT`）时 Dispatcher 已建立 ⇒ 能走 hooks。 */
+LRESULT SendMessageW(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp);   /* 前向声明 */
+static HWND g_uia_sent[64]; static int g_uia_sent_count = 0;
+static int uia_already_sent(HWND h)
+{
+    for (int i = 0; i < g_uia_sent_count; ++i) if (g_uia_sent[i] == h) return 1;
+    return 0;
+}
+static void uia_mark_sent(HWND h)
+{
+    if (g_uia_sent_count < 64) g_uia_sent[g_uia_sent_count++] = h;
+}
+
 LRESULT wpf_dispatch_to_window(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
 {
     WNDPROC proc = NULL;
@@ -631,6 +647,14 @@ LRESULT wpf_dispatch_to_window(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
                 w ? (void *)w->wndproc : NULL, w ? (void *)w->class_wndproc : NULL, w ? 1 : 0);
         fflush(stderr);
     }
+    /* 【K-898】运行期首次 `WM_SHOWWINDOW`/`WM_PAINT` 时补发 `WM_GETOBJECT`（UI 线程有 Dispatcher） */
+    if ((msg == 0x0018 || msg == 0x000F) && hwnd && !uia_already_sent(hwnd)) {
+        uia_mark_sent(hwnd);
+        if (getenv("WPF_LINUX_UIA_DIAG"))
+            fprintf(stderr, "[UIA-GETOBJ-RUNTIME] hwnd=%p msg=0x%x -> 发 WM_GETOBJECT\n", (void *)hwnd, msg);
+        SendMessageW(hwnd, 0x003D /*WM_GETOBJECT*/, 0, (LPARAM)(intptr_t)-4 /*OBJID_CLIENT*/);
+    }
+
     /* 【K-891】查不到 `w` 时回查影子表（`HwndSubclass` 对未知 hwnd 的 wndproc 写入） */
     if (!proc) {
         extern WNDPROC wpf_shadow_get_proc(HWND hwnd);
