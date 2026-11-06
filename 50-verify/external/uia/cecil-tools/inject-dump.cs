@@ -37,6 +37,8 @@ class P {
     var helper = AssemblyDefinition.ReadAssembly(System.IO.Path.Combine(a.Length > 3 ? a[3] : ".", "UiaInvokeHelper.dll"));
     var helperType = helper.MainModule.Types.First(x => x.Name == "Helper");
     var dumpTextRef = asm.MainModule.ImportReference(helperType.Methods.First(x => x.Name == "DumpText"));
+    /* K-1209：ShowBookmarkDialog */
+    var showDlgRef = asm.MainModule.ImportReference(helperType.Methods.First(x => x.Name == "ShowBookmarkDialog"));
     /* K-1181：SetupAtspiActionNoInvoker（填真实 action，让 pyatspi 的 nActions>0） */
     var setupAtspiRef = asm.MainModule.ImportReference(helperType.Methods.First(x => x.Name == "SetupAtspiActionNoInvoker"));
     /* K-1205：OpenMenu（菜单展开，用于大窗口截图） */
@@ -148,6 +150,7 @@ class P {
     il2.InsertBefore(first2, il2.Create(OpCodes.Castclass, uiElementRef));
     il2.InsertBefore(first2, il2.Create(OpCodes.Call, dump));
     /* K-1205 已回退：OpenMenu 调用导致 InvalidProgramException（IL 栈不平衡） */
+    /* K-1209 已回退：Ldarg_0 + Call 破坏 IL 栈（InvalidProgramException） */
     asm.Write(a[1]);
     Console.WriteLine("patched -> " + a[1]);
   }
