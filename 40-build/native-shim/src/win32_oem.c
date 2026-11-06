@@ -144,7 +144,10 @@ int32_t DwmGetWindowAttribute(void *hwnd, DWORD attr, void *val, DWORD cb)
 //   「没有 UIA 客户端在监听」这个**真话**（FALSE），不是"假装有"。
 //   为什么必须有落点：WPF 的 `TextCompositionManager` 在每次文本合成完成时问一次
 //   `UiaClientsAreListening()`；缺这条导出 ⇒ 键盘一入字符就 `DllNotFoundException`（实测崩）。
-int32_t UiaClientsAreListening(void) { return 0; }   /* FALSE：没有 UIA/AT-SPI 客户端订阅 */
+// 【K-611】改成 TRUE：让 WPF 认为有 UIA 客户端在监听 ⇒ 它会把 AutomationPeer 交给
+// `UiaReturnRawElementProvider`（我们实现它来读控件名）。这是「能被辅助技术看到」的前提。
+// 代价：WPF 会多发一些 UIA 事件（我们实现了 `UiaRaise*` 桩，不会崩）。
+int32_t UiaClientsAreListening(void) { return 1; }   /* TRUE：假装有 UIA 客户端在听 */
 
 // ── shell32：只补"调用方真的会碰"的三个 + ExtractIconEx 的别名已在 win32_misc.c ──
 typedef struct { void *hIcon; int32_t iIcon; DWORD dwAttributes; uint16_t szDisplayName[260]; uint16_t szTypeName[80]; } SHFILEINFOW;
