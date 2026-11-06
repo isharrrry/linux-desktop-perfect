@@ -1557,6 +1557,11 @@ LONG GetWindowLong(HWND h, int i) { return GetWindowLongW(h, i); }
 INT_PTR SetWindowLongPtrW(HWND hwnd, int nIndex, INT_PTR dwNewLong)
 {
     wpf_global_init();
+    /* 【K-711】**入口清 last_error**：`CriticalSetWindowLong` 用 `SetLastError=true` 的
+     *   P/Invoke，.NET 在 Linux 上不保证调用前清 GetLastError ⇒ 之前任何一次失败
+     *   （如 `GetWindowRect` 设的 1400）会被它读到 ⇒ 误判"设置失败" ⇒ 抛
+     *   `Win32Exception(1400)`。入口清一次，杜绝脏值。 */
+    wpf_set_last_error(0);
     wpf_lock();
     wpf_window *w = wpf_window_find(hwnd);
     if (!w) { pthread_mutex_unlock(&g_wpf.lock);
