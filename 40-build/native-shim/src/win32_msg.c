@@ -620,6 +620,14 @@ LRESULT wpf_dispatch_to_window(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
                 w ? (void *)w->wndproc : NULL, w ? (void *)w->class_wndproc : NULL);
         fflush(stderr);
     }
+    /* 【K-878】`WM_GETOBJECT` 的 `proc` 诊断：确认消息是否被 `!proc` 短路到 `DefWindowProcW`
+     *   （K-877 推断 `proc == NULL` 是 `[DISPATCH] ... 返回 0x0` 的原因）。 */
+    if (msg == 0x003D && getenv("WPF_LINUX_UIA_DIAG")) {
+        fprintf(stderr, "[GETOBJ-DISPATCH] hwnd=%p proc=%p wndproc=%p class_wndproc=%p win_found=%d\\n",
+                (void *)hwnd, (void *)proc,
+                w ? (void *)w->wndproc : NULL, w ? (void *)w->class_wndproc : NULL, w ? 1 : 0);
+        fflush(stderr);
+    }
     if (!proc) return DefWindowProcW(hwnd, msg, wp, lp);
     return proc(hwnd, msg, wp, lp);
 }
