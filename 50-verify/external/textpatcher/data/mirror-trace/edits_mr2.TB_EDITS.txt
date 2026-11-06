@@ -1,0 +1,1 @@
+TB_EDITS_0	        protected sealed override void OnRender(DrawingContext ctx)\n        {\n	        protected sealed override void OnRender(DrawingContext ctx)\n        {\n            // ── T1c M6（只读插桩）：**宿主侧**读数（只对 TextBlock+RTL 打）──\n            System.Windows.WpfLinuxMirrorTrace.M6OnRender(this);\n
