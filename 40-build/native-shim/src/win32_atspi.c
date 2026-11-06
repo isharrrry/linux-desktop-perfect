@@ -429,9 +429,12 @@ static DBusHandlerResult atspi_msg_handler(DBusConnection *conn, DBusMessage *ms
                 atspi_append_ref(&arr, bus, g_nodes[i].path);
         dbus_message_iter_close_container(&it, &arr);
     } else if (strcmp(member, "GetChildAtIndex") == 0) {
+        // 读取请求的 index 参数
         dbus_int32_t idx = 0;
-        dbus_message_iter_get_basic(dbus_message_iter_peek(&(DBusMessageIter){0}) ? NULL : NULL, NULL);
-        // 简化：返回第 0 个顶层窗口
+        DBusMessageIter in;
+        if (dbus_message_iter_init(msg, &in) && dbus_message_iter_get_arg_type(&in) == DBUS_TYPE_INT32)
+            dbus_message_iter_get_basic(&in, &idx);
+        // 简化：忽略 idx，返回第一个顶层窗口
         const char *cp = "";
         int found = 0;
         for (int i = 0; i < g_node_count && !found; ++i)
