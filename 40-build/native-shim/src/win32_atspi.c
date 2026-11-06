@@ -714,6 +714,18 @@ static DBusHandlerResult atspi_msg_handler(DBusConnection *conn, DBusMessage *ms
             dbus_message_unref(reply);
             return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
         }
+    } else if (strcmp(member, "GetActions") == 0) {
+        /* K-1159：空 action 列表（a(ss)）。真正的 action 待 WPF 侧提供。 */
+        DBusMessageIter arr;
+        dbus_message_iter_open_container(&it, DBUS_TYPE_ARRAY, "(ss)", &arr);
+        dbus_message_iter_close_container(&it, &arr);
+    } else if (strcmp(member, "DoAction") == 0) {
+        /* K-1159：未实现 ⇒ 返回 false */
+        dbus_bool_t r = FALSE;
+        dbus_message_iter_append_basic(&it, DBUS_TYPE_BOOLEAN, &r);
+    } else if (strcmp(member, "GetActionName") == 0 || strcmp(member, "GetActionDescription") == 0 || strcmp(member, "GetKeyBinding") == 0) {
+        const char *empty = "";
+        dbus_message_iter_append_basic(&it, DBUS_TYPE_STRING, &empty);
     } else if (strcmp(member, "Introspect") == 0) {
         const char *xml =
             "<node><interface name='org.a11y.atspi.Accessible'>"
@@ -723,7 +735,18 @@ static DBusHandlerResult atspi_msg_handler(DBusConnection *conn, DBusMessage *ms
             "<method name='GetName'><arg direction='out' type='s'/></method>"
             "<method name='GetParent'><arg direction='out' type='(so)'/></method>"
             "<method name='GetApplication'><arg direction='out' type='(so)'/></method>"
-            "</interface></node>";
+            "</interface>"
+            /* K-1159（T3）：AT-SPI Action 接口 —— 最小实现（空 action 列表 + DoAction 返回 false）。
+               目的：让 pyatspi 能调 GetActions()/DoAction()，证明接口存在；
+               真正的 action 数据需要 WPF 侧通过 Cecil 注入提供（下轮）。*/
+            "<interface name='org.a11y.atspi.Action'>"
+            "<method name='GetActions'><arg direction='out' type='a(ss)'/></method>"
+            "<method name='DoAction'><arg direction='in' type='i'/><arg direction='out' type='b'/></method>"
+            "<method name='GetActionName'><arg direction='in' type='i'/><arg direction='out' type='s'/></method>"
+            "<method name='GetActionDescription'><arg direction='in' type='i'/><arg direction='out' type='s'/></method>"
+            "<method name='GetKeyBinding'><arg direction='in' type='i'/><arg direction='out' type='s'/></method>"
+            "</interface>"
+            "</node>";
         dbus_message_iter_append_basic(&it, DBUS_TYPE_STRING, &xml);
     } else {
         dbus_message_unref(reply);
