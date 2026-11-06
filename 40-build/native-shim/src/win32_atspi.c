@@ -542,10 +542,18 @@ typedef struct {
     uint64_t hwnd;                  // 关联的 HWND（0 = 应用 root）
     int registered;                 // 是否已注册到 D-Bus
     int alive;
+    /* K-1161（T3）：Action 接口数据（由 WPF 侧通过 wpf_atspi_set_action 提供） */
+    int has_action;
+    char action_name[64];
+    char action_desc[64];
 } wpf_atspi_node;
 
 static wpf_atspi_node g_nodes[WPF_ATSPI_MAX_NODES];
 static int g_node_count = 0;
+
+/* K-1161：WPF 侧注册的「执行 action」回调（Cecil 注入时传入） */
+typedef void (*wpf_atspi_action_invoker_t)(uint64_t hwnd);
+static wpf_atspi_action_invoker_t g_action_invoker = NULL;
 static int g_atspi_tree_ready = 0;
 
 static wpf_atspi_node *atspi_node_find(uint64_t hwnd)
@@ -715,14 +723,31 @@ static DBusHandlerResult atspi_msg_handler(DBusConnection *conn, DBusMessage *ms
             return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
         }
     } else if (strcmp(member, "GetActions") == 0) {
-        /* K-1159：空 action 列表（a(ss)）。真正的 action 待 WPF 侧提供。 */
+        /* K-1161：返回 node 上真实设置的 action（WPF 侧通过 wpf_atspi_set_action 提供） */
         DBusMessageIter arr;
         dbus_message_iter_open_container(&it, DBUS_TYPE_ARRAY, "(ss)", &arr);
+        if (n && n->has_action) {
+            DBusMessageIter st;
+            const char *an = n->action_name;
+            const char *ad = n->action_desc;
+            dbus_message_iter_open_container(&arr, DBUS_TYPE_STRUCT, NULL, &st);
+            dbus_message_iter_append_basic(&st, DBUS_TYPE_STRING, &an);
+            dbus_message_iter_append_basic(&st, DBUS_TYPE_STRING, &ad);
+            dbus_message_iter_close_container(&arr, &st);
+        }
         dbus_message_iter_close_container(&it, &arr);
     } else if (strcmp(member, "DoAction") == 0) {
-        /* K-1159：未实现 ⇒ 返回 false */
-        dbus_bool_t r = FALSE;
-        dbus_message_iter_append_basic(&it, DBUS_TYPE_BOOLEAN, &r);
+        /* K-1161：有 action 时调用 WPF 侧回调，否则返回 false */
+        int idx = -1;
+        if (dbus_message_get_args(msg, NULL, DBUS_TYPE_INT32, &idx, DBUS_TYPE_INVALID) && n && n->has_action && idx == 0) {
+            atspi_diag("[ATSPI] DoAction(0) on %s -> 请求 WPF 执行", n->path);
+            if (g_action_invoker) g_action_invoker(n->hwnd);
+            dbus_bool_t r = TRUE;
+            dbus_message_iter_append_basic(&it, DBUS_TYPE_BOOLEAN, &r);
+        } else {
+            dbus_bool_t r = FALSE;
+            dbus_message_iter_append_basic(&it, DBUS_TYPE_BOOLEAN, &r);
+        }
     } else if (strcmp(member, "GetActionName") == 0 || strcmp(member, "GetActionDescription") == 0 || strcmp(member, "GetKeyBinding") == 0) {
         const char *empty = "";
         dbus_message_iter_append_basic(&it, DBUS_TYPE_STRING, &empty);
@@ -831,3 +856,25 @@ void wpf_atspi_unregister_window(uint64_t hwnd)
 
 // 【对外】查询是否已注册任意窗口（供诊断）
 int wpf_atspi_node_count(void) { return g_node_count; }
+
+/* ── K-1161（T3）：Action 接口的写入侧（由 WPF 侧通过 Cecil 注入调用）────────────
+   wpf_atspi_set_action(hwnd, name, desc)：
+     给某个已注册窗口设置它的 action（如 "Invoke"/"按下按钮"）。
+     设置后 GetActions() 会返回它，DoAction(0) 会触发 invoker。
+   wpf_atspi_set_action_invoker(fn)：
+     注册「执行 action」的回调（WPF 侧在注入时传入一个函数指针）。*/
+void wpf_atspi_set_action(uint64_t hwnd, const char *name, const char *desc)
+{
+    wpf_atspi_node *n = atspi_node_find(hwnd);
+    if (!n) { atspi_diag("[ATSPI] set_action: hwnd=0x%llx 未注册", (unsigned long long)hwnd); return; }
+    snprintf(n->action_name, sizeof(n->action_name), "%s", name ? name : "");
+    snprintf(n->action_desc, sizeof(n->action_desc), "%s", desc ? desc : "");
+    n->has_action = 1;
+    atspi_diag("[ATSPI] set_action: hwnd=0x%llx name=%s desc=%s", (unsigned long long)hwnd, n->action_name, n->action_desc);
+}
+
+void wpf_atspi_set_action_invoker(void *fn)
+{
+    g_action_invoker = (wpf_atspi_action_invoker_t)fn;
+    atspi_diag("[ATSPI] set_action_invoker: %p", fn);
+}

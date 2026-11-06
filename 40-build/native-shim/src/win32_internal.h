@@ -724,3 +724,6 @@ void wpf_atspi_register_window(uint64_t hwnd, const char *title);
 void wpf_atspi_update_name(uint64_t hwnd, const char *title);
 void wpf_atspi_unregister_window(uint64_t hwnd);
 int wpf_atspi_node_count(void);
+/* K-1161（T3）：Action 接口写入侧 */
+void wpf_atspi_set_action(uint64_t hwnd, const char *name, const char *desc);
+void wpf_atspi_set_action_invoker(void *fn);
