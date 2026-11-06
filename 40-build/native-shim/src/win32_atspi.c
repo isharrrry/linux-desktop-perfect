@@ -289,14 +289,18 @@ static int atspi_ensure(void)
             dbus_message_iter_append_basic(&st, DBUS_TYPE_STRING, &bus);
             dbus_message_iter_append_basic(&st, DBUS_TYPE_OBJECT_PATH, &path);
             dbus_message_iter_close_container(&it, &st);
-            DBusError e2; dbus_error_init(&e2);
-            DBusMessage *r = dbus_connection_send_with_reply_and_block(g_bus, m, 3000, &e2);
-            if (r) {
-                atspi_diag("[ATSPI] Socket.Embed 成功");
-                dbus_message_unref(r);
+            /* 【K-629】**关键**：不能用 `send_with_reply_and_block` —— 它会在主线程
+             *   （WPF 的 `create_window_utf8` 路径里）**阻塞**，而泵线程同时在同一个
+             *   `DBusConnection` 上 `read_write_dispatch` ⇒ 两线程抢同一连接
+             *   ⇒ 阻塞数秒 + 把 `GetLastError` 污染成 1400
+             *   ⇒ WPF 抛 `Win32Exception(1400) "The application is terminating"` 崩溃。
+             *   改成**异步发送**（`dbus_connection_send`），不等待回复。 */
+            dbus_uint32_t serial = 0;
+            if (dbus_connection_send(g_bus, m, &serial)) {
+                dbus_connection_flush(g_bus);
+                atspi_diag("[ATSPI] Socket.Embed 已发送（serial=%u）", (unsigned)serial);
             } else {
-                atspi_diag("[ATSPI] Socket.Embed 失败：%s", e2.message ? e2.message : "?");
-                dbus_error_free(&e2);
+                atspi_diag("[ATSPI] Socket.Embed 发送失败");
             }
             dbus_message_unref(m);
         } else {
@@ -667,24 +671,27 @@ static DBusHandlerResult atspi_msg_handler(DBusConnection *conn, DBusMessage *ms
         atspi_diag("[ATSPI] Properties.Get: iface=%s prop=%s (path=%s)",
                    want_iface ? want_iface : "(null)", want_prop ? want_prop : "(null)", path);
         DBusMessageIter var;
-        if (want_prop && strcmp(want_prop, "name") == 0) {
+        /* 【K-630】**关键**：AT-SPI2 的 `Properties.Get` 用的是**大写首字母**
+         *   （GObject 风格）：`Name`/`Description`/`ChildCount`/`Parent`。
+         *   我们之前只匹配小写 ⇒ `pyatspi` 拿到空串。两个都认。 */
+        if (want_prop && (strcmp(want_prop, "name") == 0 || strcmp(want_prop, "Name") == 0)) {
             const char *nm_val = n->name;
             dbus_message_iter_open_container(&it, DBUS_TYPE_VARIANT, "s", &var);
             dbus_message_iter_append_basic(&var, DBUS_TYPE_STRING, &nm_val);
             dbus_message_iter_close_container(&it, &var);
-        } else if (want_prop && strcmp(want_prop, "description") == 0) {
+        } else if (want_prop && (strcmp(want_prop, "description") == 0 || strcmp(want_prop, "Description") == 0)) {
             const char *ds_val = "";
             dbus_message_iter_open_container(&it, DBUS_TYPE_VARIANT, "s", &var);
             dbus_message_iter_append_basic(&var, DBUS_TYPE_STRING, &ds_val);
             dbus_message_iter_close_container(&it, &var);
-        } else if (want_prop && strcmp(want_prop, "childCount") == 0) {
+        } else if (want_prop && (strcmp(want_prop, "childCount") == 0 || strcmp(want_prop, "ChildCount") == 0)) {
             dbus_int32_t cnt = 0;
             for (int i = 0; i < g_node_count; ++i)
                 if (g_nodes[i].alive && g_nodes[i].hwnd != 0 && n->hwnd == 0) ++cnt;
             dbus_message_iter_open_container(&it, DBUS_TYPE_VARIANT, "i", &var);
             dbus_message_iter_append_basic(&var, DBUS_TYPE_INT32, &cnt);
             dbus_message_iter_close_container(&it, &var);
-        } else if (want_prop && strcmp(want_prop, "parent") == 0) {
+        } else if (want_prop && (strcmp(want_prop, "parent") == 0 || strcmp(want_prop, "Parent") == 0)) {
             const char *pp = (n->hwnd == 0) ? "" : WPF_ATSPI_PATH_ROOT;
             DBusMessageIter st;
             dbus_message_iter_open_container(&it, DBUS_TYPE_VARIANT, "(so)", &var);

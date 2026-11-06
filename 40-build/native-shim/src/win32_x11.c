@@ -832,6 +832,10 @@ uint64_t wpf_x11_create_window(wpf_window *w, const char *title)
 
     /* 【K-612】把新窗口注册到 AT-SPI 对象树（懒初始化 bus + 注册 D-Bus 路径） */
     wpf_atspi_register_window((uint64_t)xid, title);
+    /* 【K-629】**必须清 last_error**：AT-SPI 注册会调 Xlib/D-Bus，这些不维护 Win32
+     *   的 `GetLastError`；WPF 在窗口创建后会读它，读到脏值就抛
+     *   `Win32Exception(1400)`（"The application is terminating"）并崩溃。 */
+    wpf_set_last_error(0);
 
     XSelectInput(d, xid, WPF_EVENT_MASK);
 
