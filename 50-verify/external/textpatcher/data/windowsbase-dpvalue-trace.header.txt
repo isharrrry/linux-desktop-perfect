@@ -1,0 +1,561 @@
+// =====================================================================================
+//  T1c 第 5 批（W1…W4）：**读路径为什么不解析 deferred**（`DependencyObject`）
+//
+//  背景：第 4 批证明 `TextContainer.Changed → SetCurrentDeferredValue(TextProperty, dtr)` 全绿，
+//  而 `DeferredTextReference.GetValue` **一次都没被调**（样例读了 18 次 `.Text`）⇒
+//  读路径从不解析那个 deferred 引用。本批只问：**是 A（写侧没留住标记）/ B（读方要原始 deferred）/ C（走了别的分支）。**
+//
+//  开关：WPF_LINUX_INPUT_TRACE（严格）或 WPF_LINUX_MSGFLOW_TRACE（与原生同名同义）。缺省关 / ≤200 行 / 只打印。
+//  ⚠️ 只对 `dp.Name == "Text"` 打（这条路径是全进程最热的 DP 路径）。
+//  ⚠️ 本类**不读任何 DP**；字段读取全部在 try/catch 里，调用点只传局部变量/结构体副本。
+// =====================================================================================
+internal static class WpfLinuxDpValueTrace
+{
+    private const string EnvInputTrace = "WPF_LINUX_INPUT_TRACE";
+    private const string EnvMsgFlow = "WPF_LINUX_MSGFLOW_TRACE";
+    private const int MaxLines = 2000;      // 总上限（原 200 会被 W7 那种高频辅助格吃光 ⇒ L12）
+    private const int MaxW7Lines = 16;      // W7（flatten 辅助格）**独立小额度**：采样足够
+
+    private static readonly bool s_enabled;
+    private static readonly string s_via;
+    private static int s_lines;
+    private static int s_w7Lines;
+    private static int s_w7Notice;
+    private static int s_seq;                    // 第 8 批：调用序号（判『输入之后』）
+    private static readonly int s_t0 = System.Environment.TickCount;   // 进程内相对时刻
+
+    static WpfLinuxDpValueTrace()
+    {
+        string a = null, b = null;
+        try { a = System.Environment.GetEnvironmentVariable(EnvInputTrace); } catch (System.Exception) { }
+        try { b = System.Environment.GetEnvironmentVariable(EnvMsgFlow); } catch (System.Exception) { }
+        s_enabled = IsOn(a) || IsOnNativeSwitch(b);
+        s_via = IsOn(a) ? EnvInputTrace : (IsOnNativeSwitch(b) ? EnvMsgFlow : "(都未设)");
+        if (s_enabled)
+        {
+            Emit("via=" + s_via + " pid=" + System.Environment.ProcessId
+                 + " —— WB 侧 W1…W4 读数（DependencyObject 的 DP 读路径，只跟 dp.Name == \\"Text\\"）");
+        }
+    }
+
+    internal static bool IsOn(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value)) return false;
+        string v = value.Trim();
+        if (v == "1") return true;
+        if (string.Equals(v, "true", System.StringComparison.OrdinalIgnoreCase)) return true;
+        if (string.Equals(v, "on", System.StringComparison.OrdinalIgnoreCase)) return true;
+        if (string.Equals(v, "yes", System.StringComparison.OrdinalIgnoreCase)) return true;
+        return false;
+    }
+
+    /// <summary>与原生 `win32_msg.c` 的同名开关**同义**：非空且非字面 `0` ⇒ 开。</summary>
+    internal static bool IsOnNativeSwitch(string value)
+    {
+        if (value == null) return false;
+        string v = value.Trim();
+        if (v.Length == 0) return false;
+        return v != "0";
+    }
+
+    internal static int LineCount { get { return s_lines; } }
+
+    private static int s_budgetNotice;
+
+    /// <summary>
+    /// **触顶必须看得见**（L12）：额度用尽时打一行，否则"没打"与"没发生"长得一模一样 ——
+    /// 第 6 批就是这样把输入时刻的关键读数全丢掉的（W*=199/200）。
+    /// </summary>
+    private static void NoticeBudget(string what, int used)
+    {
+        if (System.Threading.Interlocked.Exchange(ref s_budgetNotice, 1) != 0) return;
+        try
+        {
+            System.Console.Error.WriteLine("[INPUT_TRACE] **预算用尽**（" + what + "，已打 " + used
+                + " 行）⇒ 之后不再打印；**这回「没打」不等于「没发生」**：请调大额度或缩小过滤范围");
+            System.Console.Error.Flush();
+        }
+        catch (System.Exception) { }
+    }
+
+    private static void Emit(string message)
+    {
+        if (!s_enabled) return;
+        if (System.Threading.Interlocked.Increment(ref s_lines) > MaxLines)
+        {
+            NoticeBudget("总上限 MaxLines=" + MaxLines, MaxLines);
+            return;
+        }
+        try
+        {
+            System.Console.Error.WriteLine("[INPUT_TRACE] " + message);
+            System.Console.Error.Flush();
+        }
+        catch (System.Exception)
+        {
+            System.Threading.Interlocked.Decrement(ref s_lines);
+        }
+    }
+
+    private static string TypeOf(object o)
+    {
+        if (o == null) return "(null)";
+        try
+        {
+            return o.GetType().Name + "#"
+                 + System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(o).ToString("x");
+        }
+        catch (System.Exception) { return "(读不出来)"; }
+    }
+
+    private static string ValOf(object v)
+    {
+        if (v == null) return "(null)";
+        try
+        {
+            string s = v as string;
+            if (s != null)
+            {
+                string head = (s.Length > 24) ? (s.Substring(0, 24) + "…") : s;
+                return "string(len=" + s.Length + ")" + ' ' + '"' + head + '"';
+            }
+            return v.GetType().Name;
+        }
+        catch (System.Exception) { return "(读值抛异常)"; }
+    }
+
+    /// <summary>只看 `Text`（这条路径太热，不过滤会把预算吃光）。</summary>
+    private static int s_textPropIndex = -1;   // TextProperty 的 GlobalIndex（W7 用它把自己**收窄到 Text**）
+
+    private static bool IsTextDp(object dp)
+    {
+        DependencyProperty p = dp as DependencyProperty;
+        if (p == null) return false;
+        try
+        {
+            if (p.Name != "Text") return false;
+            // `EffectiveValueEntry._propertyIndex = (short) dp.GlobalIndex`（上游构造里就是这么赋的）
+            // ⇒ 记下来，`GetFlattenedEntry` 那边虽然没有 dp 参数，也能用条目的 PropertyIndex 收窄到 Text。
+            s_textPropIndex = p.GlobalIndex;
+            return true;
+        }
+        catch (System.Exception) { return false; }
+    }
+
+    private static string DpOf(object dp)
+    {
+        DependencyProperty p = dp as DependencyProperty;
+        if (p == null) return "(非 DependencyProperty)";
+        try
+        {
+            return '"' + p.Name + '"' + " OwnerType=" + ((p.OwnerType == null) ? "(null)" : p.OwnerType.Name);
+        }
+        catch (System.Exception) { return "(读 dp 抛异常)"; }
+    }
+
+    private static void DumpStack(string tag)
+    {
+        try
+        {
+            System.Diagnostics.StackTrace st = new System.Diagnostics.StackTrace(1, true);
+            int n = st.FrameCount;
+            if (n > 4) n = 4;
+            for (int i = 0; i < n; i++)
+            {
+                System.Diagnostics.StackFrame f = st.GetFrame(i);
+                System.Reflection.MethodBase m = (f == null) ? null : f.GetMethod();
+                string name = (m == null) ? "(?)"
+                             : ((m.DeclaringType == null) ? m.Name : (m.DeclaringType.Name + "." + m.Name));
+                string file = "?";
+                try
+                {
+                    file = (f == null || f.GetFileName() == null)
+                         ? "(无行号)"
+                         : (System.IO.Path.GetFileName(f.GetFileName()) + ":" + f.GetFileLineNumber());
+                }
+                catch (System.Exception) { file = "(读行号抛异常)"; }
+                Emit(tag + " #" + i + " " + name + " @" + file);
+            }
+        }
+        catch (System.Exception) { }
+    }
+
+
+    // ── 第 7 批 W8/W9：索引从哪来（只对 Text 的 targetIndex 打；LookupEntry 很热）──────────
+    /// <summary>W8 `LookupEntry(targetIndex)` 入口。</summary>
+    internal static void W8LookupEntry(object target, int targetIndex)
+    {
+        if (!s_enabled) return;
+        if (s_textPropIndex < 0 || targetIndex != s_textPropIndex) return;
+        int seq = System.Threading.Interlocked.Increment(ref s_seq);
+        Emit("W8 LookupEntry(Text 的 GlobalIndex=" + targetIndex + ") 入口 #" + seq
+             + " (+" + (System.Environment.TickCount - s_t0) + "ms)"
+             + " EffectiveValuesCount=" + CountOf(target) + " target=" + TypeOf(target));
+    }
+
+    /// <summary>W8' `LookupEntry` 的**四条出口**各打一行（索引是怎么算出来的）。</summary>
+    internal static void W8LookupResult(object target, int targetIndex, string how, uint index, bool found)
+    {
+        if (!s_enabled) return;
+        if (s_textPropIndex < 0 || targetIndex != s_textPropIndex) return;
+        // **实参惰性**：调用点只传 `iPv/iLo`（uint）与 `true/false`，不出现 `new EntryIndex(...)`
+        Emit("W8' LookupEntry **出口[" + how + "]** → Index=" + index + " Found=" + found
+             + " target=" + TypeOf(target));
+    }
+
+    /// <summary>W9 `CheckEntryIndex(entryIndex, targetIndex)` 入口（持索引者的**重查**）。</summary>
+    internal static void W9CheckEntryIndex(object target, EntryIndex entryIndex, int targetIndex)
+    {
+        if (!s_enabled) return;
+        if (s_textPropIndex < 0 || targetIndex != s_textPropIndex) return;
+        string i = "(?)";
+        try { i = "Index=" + entryIndex.Index + " Found=" + entryIndex.Found; } catch (System.Exception) { }
+        Emit("W9 CheckEntryIndex 入口 传入 " + i + " targetIndex=" + targetIndex + " target=" + TypeOf(target));
+    }
+
+    /// <summary>W9' `CheckEntryIndex` 的两条出口：**沿用旧索引** / **重新查找**。</summary>
+    internal static void W9CheckResult(object target, int targetIndex, string how, EntryIndex result)
+    {
+        if (!s_enabled) return;
+        if (s_textPropIndex < 0 || targetIndex != s_textPropIndex) return;
+        string r = "(?)";
+        try { r = "Index=" + result.Index + " Found=" + result.Found; } catch (System.Exception) { }
+        Emit("W9' CheckEntryIndex **出口[" + how + "]** → " + r + " target=" + TypeOf(target));
+    }
+
+
+    // ── 第 8 批 W10：`GetFlattenedEntry` 里**取了哪个 modifier 值**（9 个赋值点各一行）──────
+    /// <summary>
+    /// `flatten` 组装 flattened entry 时**采用了哪个值**（CoercedValue / AnimatedValue / ExpressionValue / BaseValue /
+    /// expressionValue），并把 `ModifiedValue` 的四个字段**并排**打出来 —— 直接判"flatten 有没有把 deferred 取出来"。
+    /// **实参惰性**：调用点只传 `this`（源条目）与局部 `modifiedValue`。
+    /// </summary>
+    internal static void W10Pick(string which, object entry, object modifiedValue)
+    {
+        if (!s_enabled) return;
+        EffectiveValueEntry e = (EffectiveValueEntry)entry;
+        int pi = -1;
+        try { pi = e.PropertyIndex; } catch (System.Exception) { }
+        if (!(s_textPropIndex >= 0 && pi == s_textPropIndex)) return;      // **只对 Text 条目打**
+        string val = "(?)", flags = "(?)", modDump = "(?)";
+        try { val = ValOf(e.Value); } catch (System.Exception) { }
+        try
+        {
+            flags = "IsCoerced=" + e.IsCoerced + " IsAnimated=" + e.IsAnimated
+                  + " IsExpression=" + e.IsExpression + " IsCoercedWithCurrentValue=" + e.IsCoercedWithCurrentValue
+                  + " IsDeferredReference=" + e.IsDeferredReference;
+        }
+        catch (System.Exception) { }
+        try
+        {
+            ModifiedValue mv = modifiedValue as ModifiedValue;
+            modDump = (mv == null) ? "(null)"
+                    : ("Base=" + ValOf(mv.BaseValue) + " Coerced=" + ValOf(mv.CoercedValue)
+                       + " Expression=" + ValOf(mv.ExpressionValue) + " Animated=" + ValOf(mv.AnimatedValue));
+        }
+        catch (System.Exception ex) { modDump = "(读 ModifiedValue 抛 " + ex.GetType().Name + ")"; }
+        Emit("W10 flatten **取值[" + which + "]** 采用的值=" + val + "｜" + flags + "｜ModifiedValue: " + modDump);
+    }
+
+    /// <summary>看 `EffectiveValuesCount`（**只读**；取不到就返回 -1）。</summary>
+    private static long CountOf(object target)
+    {
+        try
+        {
+            DependencyObject dobj = target as DependencyObject;
+            if (dobj != null) return (long)dobj.EffectiveValuesCount;
+        }
+        catch (System.Exception) { }
+        return -1;
+    }
+
+    /// <summary>W1 `GetValue(dp)` 入口（返回值的类型改在 W3 的四个出口打：那里能同时判路径，且保持纯插入）。</summary>
+    internal static void W1GetValue(object target, object dp)
+    {
+        if (!s_enabled || !IsTextDp(dp)) return;
+        // **惰性**：`LookupEntry` 在这里调（调用点只传 this/dp）；它是纯查找（只读、无副作用），
+        // 且 `_effectiveValues` 为 null/空时上游自己就返回 `EntryIndex(0, found:false)` ⇒ 不会抛。
+        // 读侧**用的就是这个索引**（上游 :166-170 `GetValueEntry(LookupEntry(dp.GlobalIndex), …)`）
+        // ⇒ 这一行是判"读侧是否用了陈旧索引"的关键读数。
+        string idx = "(取不到)";
+        try
+        {
+            DependencyObject dobj = target as DependencyObject;
+            DependencyProperty p = dp as DependencyProperty;
+            if (dobj != null && p != null)
+            {
+                EntryIndex ei = dobj.LookupEntry(p.GlobalIndex);
+                idx = "Index=" + ei.Index + " Found=" + ei.Found;
+            }
+        }
+        catch (System.Exception ex) { idx = "(LookupEntry 抛 " + ex.GetType().Name + ")"; }
+        Emit("W1 GetValue(…) 读 " + DpOf(dp) + " target=" + TypeOf(target)
+             + " ⇒ **读侧 LookupEntry 得到 " + idx + "**");
+    }
+
+    /// <summary>W2 `GetEffectiveValue` 入口：把 A/B/C 三格需要的状态一次打全。</summary>
+    internal static void W2Entry(object target, object dp, RequestFlags requests,
+                                 EffectiveValueEntry entry, EffectiveValueEntry effectiveEntry,
+                                 EntryIndex entryIndex)
+    {
+        if (!s_enabled || !IsTextDp(dp)) return;
+        string inIdx = "(?)";
+        try { inIdx = "Index=" + entryIndex.Index + " Found=" + entryIndex.Found; } catch (System.Exception) { }
+        string isDeferred = "(?)", hasMod = "(?)", hasExpr = "(?)", val = "(?)", flat = "(?)";
+        try { isDeferred = effectiveEntry.IsDeferredReference.ToString(); } catch (System.Exception) { }
+        try { hasMod = entry.HasModifiers.ToString(); } catch (System.Exception) { }
+        try { hasExpr = entry.HasExpressionMarker.ToString(); } catch (System.Exception) { }
+        try { val = ValOf(entry.Value); } catch (System.Exception) { }
+        try { flat = ValOf(effectiveEntry.Value); } catch (System.Exception) { }
+        Emit("W2 GetEffectiveValue 入口 **读路径传入的 entryIndex: " + inIdx + "** " + DpOf(dp) + " requests=" + requests
+             + " effectiveEntry.IsDeferredReference=" + isDeferred
+             + " entry.HasModifiers=" + hasMod + " entry.HasExpressionMarker=" + hasExpr
+             + " entry.Value=" + val + " effectiveEntry.Value=" + flat + " " + TypeOf(target));
+        // ── 第 8 批：**原始槽 vs ModifiedValue vs 算出的 effectiveEntry** 并排 ──
+        //    `entry` 就是调用点的 `_effectiveValues[entryIndex.Index]`（上游 :300 逐字），所以这里不需要再传数组
+        //    （**实参惰性**：调用点一个字段都不取）。
+        string slotFlags = "(?)", modDump = "(无修饰)";
+        try
+        {
+            slotFlags = "IsDeferredReference=" + entry.IsDeferredReference
+                      + " IsCoerced=" + entry.IsCoerced
+                      + " IsAnimated=" + entry.IsAnimated
+                      + " IsExpression=" + entry.IsExpression
+                      + " IsCoercedWithCurrentValue=" + entry.IsCoercedWithCurrentValue
+                      + "（`_source` 是 private 且无访问器 ⇒ 打它的派生标志）";
+        }
+        catch (System.Exception) { }
+        try
+        {
+            if (entry.HasModifiers)
+            {
+                ModifiedValue mv = entry.ModifiedValue;
+                modDump = (mv == null) ? "(ModifiedValue=null)"
+                         : ("BaseValue=" + ValOf(mv.BaseValue)
+                            + " CoercedValue=" + ValOf(mv.CoercedValue)
+                            + " ExpressionValue=" + ValOf(mv.ExpressionValue)
+                            + " AnimatedValue=" + ValOf(mv.AnimatedValue));
+            }
+        }
+        catch (System.Exception ex) { modDump = "(读 ModifiedValue 抛 " + ex.GetType().Name + ")"; }
+        Emit("W2' **原始槽** " + slotFlags + "｜**ModifiedValue** " + modDump);
+        Emit("W2'' **算出的 effectiveEntry** Value=" + flat + " IsDeferredReference=" + isDeferred
+             + "（与上行并排 ⇒ 一眼看出标记是在槽里就有、还是 flatten 之后才丢的）");
+    }
+
+    /// <summary>W3a **提前返回（不解析）**：直接判 A / B（B 再打调用栈前 4 帧）。</summary>
+    internal static void W3EarlyReturn(object target, object dp, RequestFlags requests,
+                                       EffectiveValueEntry effectiveEntry, EntryIndex entryIndex)
+    {
+        if (!s_enabled || !IsTextDp(dp)) return;
+        string inIdx = "(?)";
+        try { inIdx = "Index=" + entryIndex.Index + " Found=" + entryIndex.Found; } catch (System.Exception) { }
+        bool byRequests = (requests & (RequestFlags.DeferredReferences | RequestFlags.RawEntry)) != 0;
+        string isDeferred = "(?)", val = "(?)";
+        try { isDeferred = effectiveEntry.IsDeferredReference.ToString(); } catch (System.Exception) { }
+        try { val = ValOf(effectiveEntry.Value); } catch (System.Exception) { }
+        Emit("W3a **提前返回 effectiveEntry（不解析）** 用的 entryIndex: " + inIdx + " " + DpOf(dp) + " 原因="
+             + (byRequests ? "**B：requests 带了 DeferredReferences/RawEntry**"
+                           : "**A：effectiveEntry.IsDeferredReference == false ⇒ 本格不解析**（写侧有没有 deferred 须看写侧那行 W6b 有效值槽.IsDeferredReference=…）")
+             + " requests=" + requests + " IsDeferredReference=" + isDeferred
+             + " 返回的值=" + val);
+        if (byRequests) DumpStack("W3a-B 谁要的\\"原始 deferred\\"（前 4 帧）");
+    }
+
+    /// <summary>W3b **真解析了**（`!HasModifiers &amp;&amp; !HasExpressionMarker` 经典路径）。</summary>
+    internal static void W3ResolvedLocal(object target, object dp, EffectiveValueEntry entry)
+    {
+        if (!s_enabled || !IsTextDp(dp)) return;
+        string val = "(?)";
+        try { val = ValOf(entry.Value); } catch (System.Exception) { }
+        Emit("W3b **真解析了（经典路径）** " + DpOf(dp) + " entry.Value=" + val
+             + " ⇒ deferred 被展开、DP 拿到新值（这条出现 ⇒ 再看 PF 侧 Q8 哨兵）");
+    }
+
+    /// <summary>W3c 修改值分支里 `reference == null` ⇒ 提前返回（C 的一种）。</summary>
+    internal static void W3BailModifiedNull(object target, object dp, EffectiveValueEntry entry, EffectiveValueEntry effectiveEntry)
+    {
+        if (!s_enabled || !IsTextDp(dp)) return;
+        string hasMod = "(?)", isExpr = "(?)", isCoerced = "(?)", val = "(?)";
+        try { hasMod = entry.HasModifiers.ToString(); } catch (System.Exception) { }
+        try { isExpr = entry.IsExpression.ToString(); } catch (System.Exception) { }
+        try { isCoerced = entry.IsCoerced.ToString(); } catch (System.Exception) { }
+        try { val = ValOf(effectiveEntry.Value); } catch (System.Exception) { }
+        Emit("W3c 修改值分支 **reference==null ⇒ 提前返回（不解析）** " + DpOf(dp)
+             + " HasModifiers=" + hasMod + " IsExpression=" + isExpr + " IsCoerced=" + isCoerced
+             + " 返回的值=" + val);
+    }
+
+    /// <summary>W3d 修改值分支里**真解析**（expression / coerced 值里带的 deferred）。</summary>
+    internal static void W3ResolvedModified(object target, object dp, EffectiveValueEntry entry,
+                                            EffectiveValueEntry effectiveEntry, bool referenceFromExpression)
+    {
+        if (!s_enabled || !IsTextDp(dp)) return;
+        string val = "(?)", modKind = "(?)";
+        try { val = ValOf(effectiveEntry.Value); } catch (System.Exception) { }
+        try
+        {
+            modKind = "HasModifiers=" + entry.HasModifiers + " IsExpression=" + entry.IsExpression
+                    + " IsCoerced=" + entry.IsCoerced + " IsCoercedWithCurrentValue=" + entry.IsCoercedWithCurrentValue;
+        }
+        catch (System.Exception) { }
+        Emit("W3d **真解析了（HasModifiers 分支）** " + DpOf(dp) + " referenceFromExpression=" + referenceFromExpression
+             + " " + modKind + " 返回的值=" + val);
+    }
+
+    /// <summary>W4a `SetValueCommon` **存值之后**：写侧有没有把 deferred 标记留住（A 的直接证据）。</summary>
+    internal static void W4StoreLocal(object target, object dp, object value, bool isDeferredReference,
+                                      EffectiveValueEntry newEntry, bool newValueHasExpressionMarker,
+                                      EntryIndex entryIndex)
+    {
+        if (!s_enabled || !IsTextDp(dp)) return;
+        string stored = "(?)", storedDeferred = "(?)";
+        long idx = -1;
+        try { idx = (long)entryIndex.Index; } catch (System.Exception) { }
+        try { stored = ValOf(newEntry.Value); } catch (System.Exception) { }
+        try { storedDeferred = newEntry.IsDeferredReference.ToString(); } catch (System.Exception) { }
+        Emit("W4a SetValueCommon **newEntry.Value = value** " + Tgt(target, dp, idx)
+             + " " + DpOf(dp)
+             + " 写入的 value=" + ValOf(value) + " isDeferredReference=" + isDeferredReference
+             + " newValueHasExpressionMarker=" + newValueHasExpressionMarker
+             + " ⇒ newEntry.Value=" + stored + " newEntry.IsDeferredReference=" + storedDeferred);
+    }
+
+
+    /// <summary>
+    /// W4/W5/W6 共用的**目标身份**读数：把 `target=` 放在**行首**。
+    /// 第 5 批的 W4 把 target 放在**行尾**，实战里很容易被截断 ⇒ 无法与读侧 W1 的 `target=` 对齐。
+    /// </summary>
+    private static string Tgt(object target, object dp, long entryIndex)   // long：容纳 uint 实参与 -1 哨兵
+    {
+        string gi = "(?)";
+        try
+        {
+            DependencyProperty p = dp as DependencyProperty;
+            if (p != null) gi = p.GlobalIndex.ToString();
+        }
+        catch (System.Exception) { }
+        // ⚠️ `-1` 是**本 helper 的哨兵**（该调用点压根没有 entryIndex，例如 W5 的八个写入口），
+        //    **不是**运行时值：`EntryIndex.Index` 是掩掉 bit31 的 uint，永远不可能是 -1。
+        //    第一版直接打 `entryIndex=-1` ⇒ 看起来像"实测索引是 -1"，会把人带沟里（G 类假读数）。
+        return "target=" + TypeOf(target) + " dp.GlobalIndex=" + gi
+             + " entryIndex=" + ((entryIndex < 0) ? "(该点没有索引)" : entryIndex.ToString());
+    }
+
+
+    /// <summary>
+    /// W7 `EffectiveValueEntry.GetFlattenedEntry` 的**三个 return 分支**各打一行
+    /// —— 确认"flatten 有没有把 deferred 标记吞掉"。
+    /// ⚠️ **有界**：这个方法对**每个 DP 读**都会走，且没有 `dp` 参数 ⇒ 不能用 dp.Name 过滤；
+    ///    这里用 `IsDeferredReference || requests 带了 DeferredReferences/RawEntry` 过滤（非 deferred 静默）。
+    /// </summary>
+    internal static void W7Flatten(string branch, object entry, RequestFlags requests)
+    {
+        if (!s_enabled) return;
+        EffectiveValueEntry e = (EffectiveValueEntry)entry;
+        bool isDef = false, hasMod = false, hasExpr = false;
+        try { isDef = e.IsDeferredReference; } catch (System.Exception) { }
+        try { hasMod = e.HasModifiers; } catch (System.Exception) { }
+        try { hasExpr = e.HasExpressionMarker; } catch (System.Exception) { }
+        bool byRequests = (requests & (RequestFlags.DeferredReferences | RequestFlags.RawEntry)) != 0;
+        // **收窄到 Text**：`GetFlattenedEntry` 没有 dp 参数，但条目自带 `PropertyIndex`
+        // （== (short)dp.GlobalIndex）；Text 的 GlobalIndex 由 `IsTextDp` 第一次碰到 TextProperty 时记下。
+        // 这样启动期的 `DeferredResourceReference`（资源/样式/模板）就不再吃 W7 的额度。
+        int pi = -1;
+        try { pi = e.PropertyIndex; } catch (System.Exception) { }
+        bool isTextEntry = (s_textPropIndex >= 0 && pi == s_textPropIndex);
+        if (!isTextEntry && !byRequests) return;
+        // **独立小额度**：W7 是辅助格；`IsDeferredReference` 在启动期很常见
+        // （`DeferredResourceReference` = 资源/样式/模板，SystemResources.cs:1700）⇒ 144 行是"过滤生效但太宽"，
+        // 不是"过滤没生效"。独立封顶后才不会把 W5/W6/W4 的额度吃光（L12）。
+        if (System.Threading.Interlocked.Increment(ref s_w7Lines) > MaxW7Lines)
+        {
+            if (System.Threading.Interlocked.Exchange(ref s_w7Notice, 1) == 0)
+            {
+                Emit("W7 **已达独立额度 " + MaxW7Lines + " 行** ⇒ 之后不再打 W7（其余 W 格不受影响；"
+                     + "**「没打」≠「没发生」**）");
+            }
+            return;
+        }
+        string val = "(?)";
+        try { val = ValOf(e.Value); } catch (System.Exception) { }
+        Emit("W7 GetFlattenedEntry → **" + branch + "** IsDeferredReference=" + isDef
+             + " HasModifiers=" + hasMod + " HasExpressionMarker=" + hasExpr
+             + " Value=" + val + " requests=" + requests
+             + (byRequests ? "（requests 带了 DeferredReferences/RawEntry）" : ""));
+    }
+
+    /// <summary>W5 写"Text"的**每一个入口**（每次必打）+ **调用栈前 4 帧**（谁写的）。</summary>
+    internal static void W5WriteEntry(object target, object dp, object value, string entry)
+    {
+        if (!s_enabled || !IsTextDp(dp)) return;
+        Emit("W5 **写入口 " + entry + "** 写入的 value=" + ValOf(value) + " " + Tgt(target, dp, -1));
+        DumpStack("W5-> 谁写的（前 4 帧）");
+    }
+
+    /// <summary>W6a `UpdateEffectiveValue` **之前**：operationType + newEntry/oldEntry + 当前有效值槽。</summary>
+    internal static void W6BeforeUpdate(object target, object dp, object operationType,
+                                        EffectiveValueEntry newEntry, EffectiveValueEntry oldEntry,
+                                        EntryIndex entryIndex, EffectiveValueEntry[] slots)
+    {
+        if (!s_enabled || !IsTextDp(dp)) return;
+        string nv = "(?)", ov = "(?)", sv = "(?)", sd = "(?)";
+        try { nv = ValOf(newEntry.Value); } catch (System.Exception) { }
+        try { ov = ValOf(oldEntry.Value); } catch (System.Exception) { }
+        // ⚠️ 槽的读取（下标 + null + 越界）**都在这里**，调用点只传 `entryIndex` 与数组本身：
+        //    静态初始化期 `_effectiveValues` 可能是 null、`entryIndex` 可能无效 ⇒ **一律当作"取不到"，绝不抛**。
+        long idx = -1;
+        try { idx = (long)entryIndex.Index; } catch (System.Exception) { }
+        try
+        {
+            if (slots != null && idx >= 0 && idx < (long)slots.Length)
+            {
+                sv = ValOf(slots[idx].Value);
+                sd = slots[idx].IsDeferredReference.ToString();
+            }
+            else
+            {
+                sv = "越界/不可用";
+                sd = "越界/不可用";
+            }
+        }
+        catch (System.Exception ex) { sv = "(读槽抛 " + ex.GetType().Name + ")"; sd = "(?)"; }
+        Emit("W6a UpdateEffectiveValue **之前** operationType=" + operationType
+             + " newEntry.Value=" + nv + " oldEntry.Value=" + ov
+             + " 有效值槽.Value=" + sv + " 有效值槽.IsDeferredReference=" + sd
+             + " " + Tgt(target, dp, idx));
+    }
+
+    /// <summary>
+    /// W6b `UpdateEffectiveValue` **之后**：有效值槽到底被写成了什么（判据 c 的直接读数）。
+    /// ⚠️ **下标越界检查在 helper 内**（调用点不做下标访问 ⇒ 调用点不会抛异常、控制流不变）。
+    /// </summary>
+    internal static void W6AfterUpdate(object target, object dp, object operationType,
+                                       EffectiveValueEntry newEntry, EntryIndex entryIndex, EffectiveValueEntry[] slots)
+    {
+        if (!s_enabled || !IsTextDp(dp)) return;
+        string nv = "(?)", sv = "(?)", sd = "(?)";
+        long idx = -1;
+        try { idx = (long)entryIndex.Index; } catch (System.Exception) { }
+        try { nv = ValOf(newEntry.Value); } catch (System.Exception) { }
+        try
+        {
+            // entryIndex.Index 是 uint ⇒ 这里用 long 承接并对 long 做越界判断
+            if (slots != null && idx >= 0 && idx < (long)slots.Length)
+            {
+                sv = ValOf(slots[idx].Value);
+                sd = slots[idx].IsDeferredReference.ToString();
+            }
+            else
+            {
+                sv = "(下标越界或数组为 null ⇒ 不读)";
+                sd = "(?)";
+            }
+        }
+        catch (System.Exception ex) { sv = "(读槽抛 " + ex.GetType().Name + ")"; }
+        Emit("W6b UpdateEffectiveValue **之后** operationType=" + operationType
+             + " 有效值槽.Value=" + sv + " 有效值槽.IsDeferredReference=" + sd
+             + " newEntry.Value=" + nv + " " + Tgt(target, dp, idx));
+    }
+}
+
