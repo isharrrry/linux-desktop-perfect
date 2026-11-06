@@ -10,6 +10,9 @@ def _unescape(s):
 
 
 def parse_const(name):
+    # 单行单引号（在 _unescape 前）
+    m = re.search(rf"^{name}\s*=\s*'([^'\\]*(?:\\.[^'\\]*)*)'", s, re.M)
+    if m: return _unescape(m.group(1))
     """解析 NAME = '''...''' 或 NAME = ( '...' '...' ) 或 NAME = "..." 或 NAME = "..." "..." """
     # 单块三引号
     m = re.search(rf'^{name}\s*=\s*[rR]?\'\'\'(.*?)\'\'\'', s, re.S | re.M)
