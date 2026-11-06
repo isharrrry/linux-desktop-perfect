@@ -260,11 +260,12 @@ typedef struct { unsigned short vt; unsigned short r1, r2, r3; unsigned long lon
 //   AT-SPI 桥接后续可用 `GCHandle.FromIntPtr` 取回对象（需托管侧支持）。
 intptr_t wpf_uia_register_provider(void *hwnd, intptr_t gcHandle)
 {
-    if (gcHandle == 0) return 0;
+    /* 【K-940】诊断必须在 `if (gcHandle == 0)` **之前**（教训：K-921/K-940 同类错误） */
     if (getenv("WPF_LINUX_UIA_DIAG")) {
         fprintf(stderr, "[UIA] REGISTER hwnd=%p gcHandle=0x%lx\n", hwnd, (long)gcHandle);
         fflush(stderr);
     }
+    if (gcHandle == 0) return 0;
     if (g_uia_provider_count < WPF_UIA_MAX_PROVIDERS) {
         g_uia_providers[g_uia_provider_count].hwnd = hwnd;
         g_uia_providers[g_uia_provider_count].el = (void *)gcHandle;
