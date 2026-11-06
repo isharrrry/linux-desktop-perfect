@@ -709,6 +709,12 @@ static DBusHandlerResult atspi_msg_handler(DBusConnection *conn, DBusMessage *ms
             dbus_message_iter_open_container(&it, DBUS_TYPE_VARIANT, "i", &var);
             dbus_message_iter_append_basic(&var, DBUS_TYPE_INT32, &cnt);
             dbus_message_iter_close_container(&it, &var);
+        } else if (want_prop && (strcmp(want_prop, "NActions") == 0 || strcmp(want_prop, "nActions") == 0)) {
+            /* K-1183：Action 接口的「动作数」是**属性**（libatspi 的 get_n_actions 读它） */
+            dbus_int32_t na = (n->has_action ? 1 : 0);
+            dbus_message_iter_open_container(&it, DBUS_TYPE_VARIANT, "i", &var);
+            dbus_message_iter_append_basic(&var, DBUS_TYPE_INT32, &na);
+            dbus_message_iter_close_container(&it, &var);
         } else if (want_prop && (strcmp(want_prop, "parent") == 0 || strcmp(want_prop, "Parent") == 0)) {
             const char *pp = (n->hwnd == 0) ? "" : WPF_ATSPI_PATH_ROOT;
             DBusMessageIter st;
