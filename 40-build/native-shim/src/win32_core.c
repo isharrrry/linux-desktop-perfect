@@ -1566,11 +1566,25 @@ INT_PTR SetWindowLongPtrW(HWND hwnd, int nIndex, INT_PTR dwNewLong)
     wpf_global_init();
     wpf_lock();
     wpf_window *w = wpf_window_find(hwnd);
-    if (!w) { pthread_mutex_unlock(&g_wpf.lock);
-              /* 【K-883】诊断：哪个 hwnd 不在窗口表（1400 来源，非热路径） */
-              if (getenv("WPF_LINUX_UIA_DIAG"))
-                  fprintf(stderr, "[SETWNDLONG-FAIL] hwnd=%p nIndex=%d (窗口不在表)\n", (void *)hwnd, nIndex);
-              wpf_set_last_error(ERROR_INVALID_WINDOW_HANDLE); return 0; }
+    if (!w) {
+        pthread_mutex_unlock(&g_wpf.lock);
+        /* 【K-885】**崩溃止血**：`HwndSubclass.HookWindowProc` 会对 `HwndWrapper`
+         *   内部的窗口（不在我们的窗口表）调 `SetWindowLongPtr(GWLP_WNDPROC)`；
+         *   之前返回 1400 ⇒ `Win32Exception` 从 `HwndSubclass.SubclassWndProc`
+         *   冒到顶层 ⇒ **进程随机启动崩溃**（实测约一半概率）。
+         *   这里对未知 hwnd 的 `GWL_WNDPROC` **假装成功**（old=0，last_error=0）：
+         *   代价是该窗口的 `HwndSubclass` hook 链不生效（本来也没生效）。 */
+        if (nIndex == GWL_WNDPROC) {
+            if (getenv("WPF_LINUX_UIA_DIAG"))
+                fprintf(stderr, "[SETWNDLONG-UNKNOWN] hwnd=%p GWL_WNDPROC -> 假装成功\n", (void *)hwnd);
+            wpf_set_last_error(0);
+            return 0;
+        }
+        if (getenv("WPF_LINUX_UIA_DIAG"))
+            fprintf(stderr, "[SETWNDLONG-FAIL] hwnd=%p nIndex=%d (窗口不在表)\n", (void *)hwnd, nIndex);
+        wpf_set_last_error(ERROR_INVALID_WINDOW_HANDLE);
+        return 0;
+    }
     if (nIndex == GWL_WNDPROC) {
         INT_PTR old = (INT_PTR)w->wndproc;
         w->wndproc = (WNDPROC)dwNewLong;
