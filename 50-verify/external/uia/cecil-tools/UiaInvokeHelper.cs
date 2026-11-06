@@ -207,7 +207,21 @@ namespace UiaInvokeHelper
                     var v = p.GetValue(el) as string;
                     if (!string.IsNullOrEmpty(v)) { val = v; break; }
                 }
-                if (val != null) Console.WriteLine("[TEXT] " + tn + " = \"" + val + "\"");
+                if (val != null) { Console.WriteLine("[TEXT] " + tn + " = \"" + val + "\""); return; }
+                // K-1169：Content 不是 string ⇒ 递归读它的 Text/Content/Header
+                var cp = t.GetProperty("Content", BindingFlags.Public | BindingFlags.Instance);
+                if (cp != null) {
+                    var content = cp.GetValue(el);
+                    if (content != null) {
+                        var ct = content.GetType();
+                        foreach (var inner in new[] { "Text", "Content", "Header" }) {
+                            var ip = ct.GetProperty(inner, BindingFlags.Public | BindingFlags.Instance);
+                            if (ip == null || ip.PropertyType != typeof(string)) continue;
+                            var iv = ip.GetValue(content) as string;
+                            if (!string.IsNullOrEmpty(iv)) { Console.WriteLine("[TEXT] " + tn + ".Content->" + ct.Name + "." + inner + " = \"" + iv + "\""); return; }
+                        }
+                    }
+                }
             }
             catch { }
         }
