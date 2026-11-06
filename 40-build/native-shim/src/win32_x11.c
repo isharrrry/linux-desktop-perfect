@@ -913,9 +913,34 @@ void wpf_x11_map(HWND hwnd, int map)
         }
         fflush(stderr);
     }
+    // 【K-522】清空错误缓冲，捕获 `XMapWindow` 的异步错误
+    g_wpf.x_error[0] = 0;
     if (map) XMapWindow(g_wpf.dpy, (Window)(uintptr_t)hwnd);
     else     XUnmapWindow(g_wpf.dpy, (Window)(uintptr_t)hwnd);
     XFlush(g_wpf.dpy);
+    if (getenv("WPF_LINUX_CREATE_DIAG") && map) {
+        XSync(g_wpf.dpy, False);
+        if (g_wpf.x_error[0])
+            fprintf(stderr, "[MAPERR] hwnd=0x%llx XMapWindow 被拒: %s\n",
+                    (unsigned long long)(uintptr_t)hwnd, g_wpf.x_error);
+        else
+            fprintf(stderr, "[MAPERR] hwnd=0x%llx XMapWindow 无错误\n", (unsigned long long)(uintptr_t)hwnd);
+        fflush(stderr);
+    }
+    // 【K-521 诊断】`XMapWindow` 之后 `XSync` + 读 `Map State`，确认是否真的 viewable。
+    if (getenv("WPF_LINUX_CREATE_DIAG")) {
+        XSync(g_wpf.dpy, False);
+        XWindowAttributes wa;
+        if (XGetWindowAttributes(g_wpf.dpy, (Window)(uintptr_t)hwnd, &wa)) {
+            fprintf(stderr, "[MAPCHK] hwnd=0x%llx map_state=%d (%s) size=%dx%d map_installed=%d\n",
+                    (unsigned long long)(uintptr_t)hwnd, wa.map_state,
+                    wa.map_state == IsViewable ? "IsViewable" : (wa.map_state == IsUnmapped ? "IsUnmapped" : "IsUnviewable"),
+                    wa.width, wa.height, wa.map_installed);
+        } else {
+            fprintf(stderr, "[MAPCHK] hwnd=0x%llx XGetWindowAttributes FAILED\n", (unsigned long long)(uintptr_t)hwnd);
+        }
+        fflush(stderr);
+    }
     XUNLOCK();
 
     // ── 补丁 F2 第二处：**顶层可见窗口被 map 时把 X 输入焦点也给它** ──────────────
