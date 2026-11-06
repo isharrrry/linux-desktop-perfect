@@ -39,6 +39,8 @@ class P {
     var dumpTextRef = asm.MainModule.ImportReference(helperType.Methods.First(x => x.Name == "DumpText"));
     /* K-1181：SetupAtspiActionNoInvoker（填真实 action，让 pyatspi 的 nActions>0） */
     var setupAtspiRef = asm.MainModule.ImportReference(helperType.Methods.First(x => x.Name == "SetupAtspiActionNoInvoker"));
+    /* K-1205：OpenMenu（菜单展开，用于大窗口截图） */
+    var openMenuRef = asm.MainModule.ImportReference(helperType.Methods.First(x => x.Name == "OpenMenu"));
     var dv = new TypeDefinition("UiaProbe", "GeomHelper", TypeAttributes.Public | TypeAttributes.Abstract | TypeAttributes.Sealed, asm.MainModule.TypeSystem.Object);
     asm.MainModule.Types.Add(dv);
     var depthField = new FieldDefinition("_depth", FieldAttributes.Public | FieldAttributes.Static, asm.MainModule.TypeSystem.Int32);
@@ -145,6 +147,7 @@ class P {
     il2.InsertBefore(first2, il2.Create(OpCodes.Callvirt, getContentRef));
     il2.InsertBefore(first2, il2.Create(OpCodes.Castclass, uiElementRef));
     il2.InsertBefore(first2, il2.Create(OpCodes.Call, dump));
+    /* K-1205 已回退：OpenMenu 调用导致 InvalidProgramException（IL 栈不平衡） */
     asm.Write(a[1]);
     Console.WriteLine("patched -> " + a[1]);
   }
