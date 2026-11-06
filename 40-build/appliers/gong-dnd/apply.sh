@@ -27,9 +27,10 @@ fi
 
 [ -f "$SRC" ] || { echo "缺 $SRC"; exit 1; }
 
-# 已经 patch 过则跳过（幂等）
-if grep -qa "gongfix" "$SRC" 2>/dev/null; then
-    echo "已 patch 过（跳过）"
+# 已经 patch 过则跳过（幂等）—— 用字节大小判定：patch 后恒为 102400
+SZ_NOW=$(stat -c%s "$SRC")
+if [ "$SZ_NOW" = "102400" ]; then
+    echo "已 patch 过（$SZ_NOW 字节，跳过）"
     exit 0
 fi
 
