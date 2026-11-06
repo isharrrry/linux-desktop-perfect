@@ -190,5 +190,27 @@ namespace UiaInvokeHelper
             catch (Exception e) { Console.WriteLine("[ATSPI-ACT2] 失败: " + e.GetType().Name + ": " + e.Message); }
         }
 
+
+        /// <summary>K-1167：打印控件的 Text/Content/Header 属性（供验证状态栏文字）。</summary>
+        public static void DumpText(object el)
+        {
+            if (el == null) return;
+            try
+            {
+                var t = el.GetType();
+                string tn = t.Name;
+                string val = null;
+                foreach (var name in new[] { "Text", "Content", "Header", "Title" })
+                {
+                    var p = t.GetProperty(name, BindingFlags.Public | BindingFlags.Instance);
+                    if (p == null || p.PropertyType != typeof(string)) continue;
+                    var v = p.GetValue(el) as string;
+                    if (!string.IsNullOrEmpty(v)) { val = v; break; }
+                }
+                if (val != null) Console.WriteLine("[TEXT] " + tn + " = \"" + val + "\"");
+            }
+            catch { }
+        }
+
     }
 }

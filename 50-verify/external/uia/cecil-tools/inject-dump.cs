@@ -33,6 +33,10 @@ class P {
     var typeName = asm.MainModule.ImportReference(typeof(Type).GetProperty("FullName").GetGetMethod());
     var wlO = asm.MainModule.ImportReference(typeof(Console).GetMethod("WriteLine", new[]{typeof(object)}));
     var wlS = asm.MainModule.ImportReference(typeof(Console).GetMethod("WriteLine", new[]{typeof(string)}));
+    /* K-1167：helper 的 DumpText（打印 TextBlock.Text 等） */
+    var helper = AssemblyDefinition.ReadAssembly(System.IO.Path.Combine(a.Length > 3 ? a[3] : ".", "UiaInvokeHelper.dll"));
+    var helperType = helper.MainModule.Types.First(x => x.Name == "Helper");
+    var dumpTextRef = asm.MainModule.ImportReference(helperType.Methods.First(x => x.Name == "DumpText"));
     var dv = new TypeDefinition("UiaProbe", "GeomHelper", TypeAttributes.Public | TypeAttributes.Abstract | TypeAttributes.Sealed, asm.MainModule.TypeSystem.Object);
     asm.MainModule.Types.Add(dv);
     var depthField = new FieldDefinition("_depth", FieldAttributes.Public | FieldAttributes.Static, asm.MainModule.TypeSystem.Int32);
@@ -96,6 +100,9 @@ class P {
     A(il.Create(OpCodes.Callvirt, getAH));
     A(il.Create(OpCodes.Box, asm.MainModule.TypeSystem.Double));
     A(il.Create(OpCodes.Call, wlO));
+    /* K-1167：打印 Text/Content（状态栏文字） */
+    A(il.Create(OpCodes.Ldloc, vChild));
+    A(il.Create(OpCodes.Call, dumpTextRef));
     A(il.Create(OpCodes.Ldloc, vChild));
     A(il.Create(OpCodes.Call, dump));
     A(il.Create(OpCodes.Ldloc, vChild));
