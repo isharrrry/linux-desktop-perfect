@@ -1,0 +1,58 @@
+{
+  "generated": "2026-11-02T06:40:00+08:00",
+  "probe": "UiaProbe.DumpText (Helper.DumpText 反射读 AccessText.Text) —— K-1167",
+  "source_log": "/tmp/st593.log",
+  "count": 7,
+  "menus": [
+    {
+      "index": 0,
+      "name": "文件(_F)",
+      "stripped": "文件"
+    },
+    {
+      "index": 1,
+      "name": "编辑(_E)",
+      "stripped": "编辑"
+    },
+    {
+      "index": 2,
+      "name": "查看(_V)",
+      "stripped": "查看"
+    },
+    {
+      "index": 3,
+      "name": "仓库(_R)",
+      "stripped": "仓库"
+    },
+    {
+      "index": 4,
+      "name": "操作(_A)",
+      "stripped": "操作"
+    },
+    {
+      "index": 5,
+      "name": "工具(_T)",
+      "stripped": "工具"
+    },
+    {
+      "index": 6,
+      "name": "帮助(_H)",
+      "stripped": "帮助"
+    }
+  ],
+  "role_evidence": {
+    "type": "System.Windows.Controls.MenuItem",
+    "count": 7,
+    "source": "proof-uia-tree-151.json（MenuItem×7）"
+  },
+  "screenshot_evidence": {
+    "file": "sourcetree-shots/st-28-menu-and-commits-36186.png",
+    "bytes": 36186,
+    "colors": 847,
+    "note": "菜单展开 + 提交列表同时可见（K-1142）"
+  },
+  "acceptance": {
+    "count_over_7": true,
+    "all_chinese_menus": true
+  }
+}
