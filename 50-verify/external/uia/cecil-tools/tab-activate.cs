@@ -60,10 +60,13 @@ class P {
     dv.Fields.Add(doneF);
     var scrolledF = new FieldDefinition("_scrolled", FieldAttributes.Public | FieldAttributes.Static, asm.MainModule.TypeSystem.Boolean);
     dv.Fields.Add(scrolledF);
+    var vmF = new FieldDefinition("_vm", FieldAttributes.Public | FieldAttributes.Static, mwVmRef);
+    dv.Fields.Add(vmF);
     /* K-1143：InvokeScan —— 对 Button 调 Helper.TryInvoke（AddOrActivate 后再试） */
     var helper = AssemblyDefinition.ReadAssembly(System.IO.Path.Combine(a[3], "UiaInvokeHelper.dll"));
     var helperType = helper.MainModule.Types.First(x => x.Name == "Helper");
     var tryInvokeRef = asm.MainModule.ImportReference(helperType.Methods.First(x => x.Name == "TryInvoke"));
+    var callNoArgRef2 = asm.MainModule.ImportReference(helperType.Methods.First(x => x.Name == "CallNoArg"));
     var checkCmdRef = asm.MainModule.ImportReference(helperType.Methods.First(x => x.Name == "CheckCommand"));
     var uap = pc.MainModule.Types.SelectMany(Flat).FirstOrDefault(x => x.Name == "UIElementAutomationPeer") ?? pf.MainModule.Types.SelectMany(Flat).First(x => x.Name == "UIElementAutomationPeer");
     var createPeerRef = asm.MainModule.ImportReference(uap.Methods.First(x => x.Name == "CreatePeerForElement"));
@@ -275,7 +278,9 @@ class P {
     Push(il2.Create(OpCodes.Ldc_I4_0)); Push(il2.Create(OpCodes.Stsfld, scrolledF));
     Push(il2.Create(OpCodes.Ldstr, "[SCR] enter")); Push(il2.Create(OpCodes.Call, wlS));
     Push(il2.Create(OpCodes.Ldarg_0)); Push(il2.Create(OpCodes.Callvirt, getDC));
-    Push(il2.Create(OpCodes.Castclass, mwVmRef)); Push(il2.Create(OpCodes.Callvirt, getTabContainer));
+    Push(il2.Create(OpCodes.Castclass, mwVmRef));
+    Push(il2.Create(OpCodes.Dup)); Push(il2.Create(OpCodes.Stsfld, vmF));
+    Push(il2.Create(OpCodes.Callvirt, getTabContainer));
     Push(il2.Create(OpCodes.Stloc, vTabVm));
     Push(il2.Create(OpCodes.Ldarg_0)); Push(il2.Create(OpCodes.Callvirt, getContentRef));
     Push(il2.Create(OpCodes.Castclass, uiElementRef)); Push(il2.Create(OpCodes.Ldloc, vTabVm));
@@ -301,6 +306,11 @@ class P {
     Push(il2.Create(OpCodes.Ldstr, "stgit"));
     Push(il2.Create(OpCodes.Callvirt, addOrActivateRef));
     Push(il2.Create(OpCodes.Ldstr, "[DIAG] AddOrActivate OK")); Push(il2.Create(OpCodes.Call, wlS));
+    /* K-1148：AddOrActivate 之后 SelectedTabVM 应非 null ⇒ 重试 AddRemove */
+    Push(il2.Create(OpCodes.Ldsfld, vmF));
+    Push(il2.Create(OpCodes.Ldstr, "AddRemove"));
+    Push(il2.Create(OpCodes.Call, callNoArgRef2));
+    Push(il2.Create(OpCodes.Pop));
     Push(il2.Create(OpCodes.Ldstr, "[DIAG] SelectedRepository after:"));
     Push(il2.Create(OpCodes.Call, wlS));
     Push(il2.Create(OpCodes.Ldloc, vTabVm));

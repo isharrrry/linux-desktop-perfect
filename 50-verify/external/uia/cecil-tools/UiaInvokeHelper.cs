@@ -86,5 +86,44 @@ namespace UiaInvokeHelper
             catch (Exception e) { Console.WriteLine("[CMD] 失败: " + e.GetType().Name + ": " + e.Message); }
         }
 
+
+        /// <summary>反射调用无参方法（K-1118/K-1148：AddRemove 等受限方法）。</summary>
+        public static bool CallNoArg(object target, string methodName)
+        {
+            if (target == null) return false;
+            try
+            {
+                var m = target.GetType().GetMethod(methodName,
+                    BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance, null, Type.EmptyTypes, null);
+                if (m == null) { Console.WriteLine("[CALL] method NOT FOUND: " + methodName); return false; }
+                Console.WriteLine("[CALL] invoke " + target.GetType().Name + "." + methodName + " via reflection");
+                m.Invoke(target, null);
+                Console.WriteLine("[CALL] OK " + methodName);
+                return true;
+            }
+            catch (Exception e)
+            {
+                var inner = e.InnerException ?? e;
+                Console.WriteLine("[CALL] fail " + methodName + ": " + inner.GetType().Name + ": " + inner.Message);
+                return false;
+            }
+        }
+
+        /// <summary>用 ExpandCollapse pattern 展开（MenuItem 等）。</summary>
+        public static bool TryExpand(AutomationPeer peer)
+        {
+            if (peer == null) return false;
+            try
+            {
+                var p = peer.GetPattern(PatternInterface.ExpandCollapse);
+                if (p == null) return false;
+                var prov = p as System.Windows.Automation.Provider.IExpandCollapseProvider;
+                if (prov == null) return false;
+                prov.Expand();
+                return true;
+            }
+            catch (Exception e) { Console.WriteLine("[EXP] reject " + e.GetType().Name); return false; }
+        }
+
     }
 }
