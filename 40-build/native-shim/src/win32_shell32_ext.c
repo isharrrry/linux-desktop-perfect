@@ -300,3 +300,28 @@ long GetCurrentPackageFullName(unsigned int *packageFullNameLength, unsigned sho
     if (packageFullNameLength) *packageFullNameLength = 0;
     return 15700;   // APPMODEL_ERROR_NO_PACKAGE
 }
+
+// ── ⑪ SHGetStockIconInfo：K-1148（Add Repository 对话框要系统图标）──────────────
+//   Windows: HRESULT SHGetStockIconInfo(SHSTOCKICONID siid, UINT uFlags, SHSTOCKICONINFO *psii)
+//   Linux 侧没有 shell 图标库 ⇒ 返回 E_NOTIMPL，让上层拿到失败码而不是
+//   EntryPointNotFoundException（K-1148 实测：缺符号直接抛异常，连兜底都没有）。
+//
+//   SHSTOCKICONINFO 的布局（Win32）：
+//     DWORD cbSize; HICON hIcon; int iSysImageIndex; int iIcon; WCHAR szPath[MAX_PATH];
+//   我们不填它（返回失败码），上层应检查 HRESULT。
+int SHGetStockIconInfo(int siid, unsigned int uFlags, void *psii)
+{
+    (void)siid; (void)uFlags;
+    // K-1149：不返回 E_NOTIMPL（那会让 .NET 抛 NotImplementedException），
+    // 而是返回 S_OK 但把 hIcon 置 0（无图标）——调用方检查 hIcon != NULL 即可优雅降级。
+    // SHSTOCKICONINFO 布局：DWORD cbSize; HICON hIcon; int iSysImageIndex; int iIcon; WCHAR szPath[260];
+    if (psii) {
+        unsigned char *p = (unsigned char *)psii;
+        // hIcon 在 offset 8（x64 下 cbSize 占 4 + 4 对齐 ⇒ hIcon 在 8）
+        *(void **)(p + 8) = (void *)0;
+        // iSysImageIndex / iIcon 置 -1
+        *(int *)(p + 16) = -1;
+        *(int *)(p + 20) = -1;
+    }
+    return 0; // S_OK
+}
