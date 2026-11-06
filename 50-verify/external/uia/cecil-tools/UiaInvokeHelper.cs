@@ -125,5 +125,55 @@ namespace UiaInvokeHelper
             catch (Exception e) { Console.WriteLine("[EXP] reject " + e.GetType().Name); return false; }
         }
 
+
+        // ── K-1162（T3 第④步）：把 action 传给 shim，并注册回调 ──────────────────
+        [System.Runtime.InteropServices.DllImport("libwpfwin32.so", EntryPoint = "wpf_atspi_set_action")]
+        static extern void shim_set_action(ulong hwnd, string name, string desc);
+        [System.Runtime.InteropServices.DllImport("libwpfwin32.so", EntryPoint = "wpf_atspi_set_action_invoker")]
+        static extern void shim_set_invoker(IntPtr fn);
+
+        [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
+        delegate void ActionInvokerDelegate(ulong hwnd);
+
+        static ActionInvokerDelegate _invoker;
+        static System.Collections.Generic.Dictionary<ulong, AutomationPeer> _peersByHwnd
+            = new System.Collections.Generic.Dictionary<ulong, AutomationPeer>();
+
+        static void OnActionInvoked(ulong hwnd)
+        {
+            try
+            {
+                Console.WriteLine("[ATSPI-ACT] invoker 被调用 hwnd=0x" + hwnd.ToString("x"));
+                AutomationPeer peer;
+                if (_peersByHwnd.TryGetValue(hwnd, out peer) && peer != null)
+                {
+                    Console.WriteLine("[ATSPI-ACT] 调 TryInvoke");
+                    TryInvoke(peer);
+                }
+                else Console.WriteLine("[ATSPI-ACT] 没有 hwnd 对应的 peer");
+            }
+            catch (Exception e) { Console.WriteLine("[ATSPI-ACT] invoker 异常: " + e.GetType().Name + ": " + e.Message); }
+        }
+
+        /// <summary>给指定 hwnd 设置 action="Invoke"，并注册全局 invoker + 记住 peer。</summary>
+        public static void SetupAtspiAction(ulong hwnd, AutomationPeer peer)
+        {
+            try
+            {
+                if (peer == null) { Console.WriteLine("[ATSPI-ACT] peer null，跳过"); return; }
+                _peersByHwnd[hwnd] = peer;
+                if (_invoker == null)
+                {
+                    _invoker = OnActionInvoked;
+                    IntPtr fp = System.Runtime.InteropServices.Marshal.GetFunctionPointerForDelegate(_invoker);
+                    shim_set_invoker(fp);
+                    Console.WriteLine("[ATSPI-ACT] invoker 已注册");
+                }
+                shim_set_action(hwnd, "Invoke", "按下按钮");
+                Console.WriteLine("[ATSPI-ACT] set_action(hwnd=0x" + hwnd.ToString("x") + ", Invoke)");
+            }
+            catch (Exception e) { Console.WriteLine("[ATSPI-ACT] Setup 失败: " + e.GetType().Name + ": " + e.Message); }
+        }
+
     }
 }
