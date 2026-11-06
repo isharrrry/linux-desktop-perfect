@@ -1,0 +1,5 @@
+桌面子项数: 1
+  [0] 'xdg-desktop-portal-gtk' role=application children=0
+
+❌ 未找到 SourceTree
+退出码=3
