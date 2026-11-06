@@ -196,6 +196,11 @@ int SetEnhMetaFileBits(UINT cb, const uint8_t *bits) { (void)cb; (void)bits; ret
 // 这段包起来。返回 FALSE 会让 HwndTarget 在 layered window 路径上抛异常。
 BOOL BeginPaint(HWND h, WPF_PAINTSTRUCT *ps)
 {
+    /* 【K-965】诊断 */
+    if (getenv("WPF_LINUX_PAINT_DIAG")) {
+        static int n2 = 0;
+        if (n2++ < 20) { fprintf(stderr, "[BEGINPAINT] hwnd=%p ps=%p\n", h, (void*)ps); fflush(stderr); }
+    }
     // 【ACC-028 / K-142】诊断：确认 WinForms 的 WM_PAINT 路径有没有走到这里
     if (getenv("WPF_LINUX_KEY_DIAG")) {
         static int bp = 0;
@@ -371,6 +376,11 @@ void wpf_paint_flush(void)
 BOOL InvalidateRect(HWND h, const void *rc, BOOL erase)
 {
     (void)rc; (void)erase;
+    /* 【K-965】诊断：`WM_PAINT` 缺失排查 */
+    if (getenv("WPF_LINUX_PAINT_DIAG")) {
+        static int n = 0;
+        if (n++ < 20) { fprintf(stderr, "[INVALIDATE] hwnd=%p erase=%d\n", h, (int)erase); fflush(stderr); }
+    }
     if (!h) return 1;
     wpf_paint_note(h);
     g_paint_pending = 1;
