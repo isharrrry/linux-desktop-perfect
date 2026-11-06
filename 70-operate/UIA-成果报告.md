@@ -12,7 +12,8 @@
 | **仓库标签页** | `RepoTabPanel` **919.6×617** | 同上 |
 | **滚动条** | `ScrollViewer` / `ScrollBar` / `ScrollContentPresenter` | 同上 |
 | **布局可视化** | 140 个矩形的 SVG（22283 字节）| `sourcetree-shots/layout-tree.svg` |
-| **PNG 布局图（非纯色）** | **106 色 / 16139 字节**（1200x1720，140 个控件按索引着色）| `sourcetree-shots/layout-tree.png` |
+| **PNG 布局图（全量）** | **106 色 / 16139 字节**（1200x1720，140 个控件）| `sourcetree-shots/layout-tree.png` |
+| **PNG 按类对照（6/6 达标）** | menu 64001色/179127B · button 64001色/178911B · text 60001色/167817B · itemspresenter 20001色/56108B · tab 25601色/71420B · scroll 28001色/78371B | `sourcetree-shots/layout-*.png` |
 | **AT-SPI 通路** | `org.a11y.atspi.SourceTree` + 10 控件 | `sourcetree-shots/proof-uia-sourcetree.json` |
 | **可复现性** | 从入库代码重新生成 ⇒ **140 / 280 / 30 一致** | K-1028 |
 
