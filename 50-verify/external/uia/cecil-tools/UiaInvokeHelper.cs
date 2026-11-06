@@ -226,5 +226,33 @@ namespace UiaInvokeHelper
             catch { }
         }
 
+
+        /// <summary>K-1204：递归找第一个 MenuItem 并展开（IsSubmenuOpen = true）。</summary>
+        public static void OpenMenu(object root)
+        {
+            try
+            {
+                var found = FindMenuItem(root as System.Windows.DependencyObject);
+                if (found == null) { Console.WriteLine("[MENU2] 没找到 MenuItem"); return; }
+                found.IsSubmenuOpen = true;
+                Console.WriteLine("[MENU2] 展开成功: Header=" + (found.Header ?? "(null)"));
+            }
+            catch (Exception e) { Console.WriteLine("[MENU2] 失败: " + e.GetType().Name + ": " + e.Message); }
+        }
+
+        static System.Windows.Controls.MenuItem FindMenuItem(System.Windows.DependencyObject d)
+        {
+            if (d == null) return null;
+            var mi = d as System.Windows.Controls.MenuItem;
+            if (mi != null && mi.Items.Count > 0) return mi;
+            int n = System.Windows.Media.VisualTreeHelper.GetChildrenCount(d);
+            for (int i = 0; i < n; i++)
+            {
+                var r = FindMenuItem(System.Windows.Media.VisualTreeHelper.GetChild(d, i));
+                if (r != null) return r;
+            }
+            return null;
+        }
+
     }
 }
