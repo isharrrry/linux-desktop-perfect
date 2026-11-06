@@ -318,10 +318,10 @@ int SHGetStockIconInfo(int siid, unsigned int uFlags, void *psii)
     if (psii) {
         unsigned char *p = (unsigned char *)psii;
         // hIcon 在 offset 8（x64 下 cbSize 占 4 + 4 对齐 ⇒ hIcon 在 8）
-        *(void **)(p + 8) = (void *)0;
+        *(void **)(p + 8) = (void *)0;   /* K-1153 已回退：哨兵 0x4000 导致硬崩溃 */
         // iSysImageIndex / iIcon 置 -1
         *(int *)(p + 16) = -1;
         *(int *)(p + 20) = -1;
     }
-    return 1; // S_FALSE（K-1152：让调用方走"无图标"分支而非报错）
+    return 0; // S_OK（K-1153：hIcon 用哨兵 0x4000）
 }
