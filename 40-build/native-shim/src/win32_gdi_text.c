@@ -290,6 +290,13 @@ intptr_t UiaReturnRawElementProvider(void *hwnd, intptr_t wParam, intptr_t lPara
         g_uia_providers[g_uia_provider_count].el = el;
         ++g_uia_provider_count;
     }
+    /* 【K-967】WPF 在 Linux 上从不调 `InvalidateRect` ⇒ `g_paint_pending` 永远 0
+     *   ⇒ `wpf_paint_flush` 永不 Post `WM_PAINT` ⇒ 窗口不重绘（K-966）。
+     *   这里借 `UiaReturnRawElementProvider` 被调的时机（K-948 已证）补投一次。 */
+    if (getenv("WPF_LINUX_UIA_KICK_PAINT")) {
+        extern int PostMessageW(void *hwnd, unsigned int msg, intptr_t w, intptr_t l);
+        PostMessageW(hwnd, 0x000F /* WM_PAINT */, 0, 0);
+    }
     /* 【K-949】`el` 现在是 `GCHandle`（K-948 的方案，非 COM 指针）⇒ **禁止读 vtable**
      *   （否则 `*(void**)el` 是野指针 ⇒ 崩溃）。用 `WPF_LINUX_UIA_GCHANDLE=1` 或默认跳过。 */
     int el_is_gchandle = (getenv("WPF_LINUX_UIA_GCHANDLE") != NULL) || 1;   /* 默认跳过 */
