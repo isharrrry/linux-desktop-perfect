@@ -1,0 +1,12 @@
+// ⚠️ 本文件由 src/WpfGfx.Linux.Native/tools/patch-presentationcore-textline-fallback.py **生成**，不要手改。
+//
+// 内容 = 上游 `upstream/wpf/src/Microsoft.DotNet.Wpf/src/PresentationCore/MS/internal/TextFormatting/TextFormatterImp.cs`
+//        逐字复制 + 2 处 T1b/D3 修改（把 FullTextLine 回退接到托管 `HbTextFallback`）
+//        + T1c/RTL 宽松兜底类（`WpfLinuxLenientTextFallback`；`#17` 起它同时收两个 DIP 缩进形参，
+//          `#23` P2 起它还把**段落原点** `paragraphOrigin: cpFirst` 透给工厂 —— 缺它则宽松档帧恒 0）。
+// 每次运行该脚本都会从上游重读重生成；锚点找不到 / 计数不符时**报错退出**，不会静默产出未打补丁的副本。
+//
+// 为什么打（实测）：Linux 无 LineServices。WpfTextDemo 上 `LoCreateContext` 被查找 27 次而
+//   `libwpfwin32.so` 里没有该符号 ⇒ EntryPointNotFoundException ⇒ abort(134)；HelloWpf 因小文本
+//   留在 SimpleTextLine 快路径而 0 次查找。托管路径接不上时**原样回退**，行为与接线前一致。
+
