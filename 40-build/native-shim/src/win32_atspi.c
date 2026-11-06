@@ -614,8 +614,16 @@ static DBusHandlerResult atspi_msg_handler(DBusConnection *conn, DBusMessage *ms
     dbus_message_iter_init_append(reply, &it);
 
     if (strcmp(member, "GetName") == 0) {
-        const char *nm = n->name;
-        dbus_message_iter_append_basic(&it, DBUS_TYPE_STRING, &nm);
+        /* K-1184：`Accessible.GetName`（无参）返回节点名；`Action.GetName(i)`（带参）返回 action 名 */
+        int argi = -1;
+        if (dbus_message_get_args(msg, NULL, DBUS_TYPE_INT32, &argi, DBUS_TYPE_INVALID)
+            && n && n->has_action && argi == 0) {
+            const char *an = n->action_name;
+            dbus_message_iter_append_basic(&it, DBUS_TYPE_STRING, &an);
+        } else {
+            const char *nm = n->name;
+            dbus_message_iter_append_basic(&it, DBUS_TYPE_STRING, &nm);
+        }
     } else if (strcmp(member, "GetRoleName") == 0) {
         const char *r = n->role;
         dbus_message_iter_append_basic(&it, DBUS_TYPE_STRING, &r);
@@ -762,9 +770,15 @@ static DBusHandlerResult atspi_msg_handler(DBusConnection *conn, DBusMessage *ms
         /* K-1163：回退到 false（带回调的版本崩溃，待排查） */
         dbus_bool_t r = FALSE;
         dbus_message_iter_append_basic(&it, DBUS_TYPE_BOOLEAN, &r);
-    } else if (strcmp(member, "GetActionName") == 0 || strcmp(member, "GetActionDescription") == 0 || strcmp(member, "GetKeyBinding") == 0) {
-        const char *empty = "";
-        dbus_message_iter_append_basic(&it, DBUS_TYPE_STRING, &empty);
+    } else if (strcmp(member, "GetActionName") == 0 || strcmp(member, "GetActionDescription") == 0 || strcmp(member, "GetKeyBinding") == 0
+               || strcmp(member, "GetName") == 0 || strcmp(member, "GetDescription") == 0 || strcmp(member, "getKeyBinding") == 0) {
+        /* AT-SPI 的 `org.a11y.atspi.Action` 用**带参**的 `GetName(i)`/`GetDescription(i)`/`GetKeyBinding(i)` */
+        const char *val = "";
+        if (n && n->has_action && (strcmp(member, "GetName") == 0 || strcmp(member, "GetActionName") == 0))
+            val = n->action_name;
+        else if (n && n->has_action && (strcmp(member, "GetDescription") == 0 || strcmp(member, "GetActionDescription") == 0))
+            val = n->action_desc;
+        dbus_message_iter_append_basic(&it, DBUS_TYPE_STRING, &val);
     } else if (strcmp(member, "Introspect") == 0) {
         const char *xml =
             "<node><interface name='org.a11y.atspi.Accessible'>"
@@ -782,9 +796,12 @@ static DBusHandlerResult atspi_msg_handler(DBusConnection *conn, DBusMessage *ms
             "<interface name='org.a11y.atspi.Action'>"
             "<method name='GetActions'><arg direction='out' type='a(ss)'/></method>"
             "<method name='DoAction'><arg direction='in' type='i'/><arg direction='out' type='b'/></method>"
+            "<method name='GetName'><arg direction='in' type='i'/><arg direction='out' type='s'/></method>"
+            "<method name='GetDescription'><arg direction='in' type='i'/><arg direction='out' type='s'/></method>"
+            "<method name='GetKeyBinding'><arg direction='in' type='i'/><arg direction='out' type='s'/></method>"
             "<method name='GetActionName'><arg direction='in' type='i'/><arg direction='out' type='s'/></method>"
             "<method name='GetActionDescription'><arg direction='in' type='i'/><arg direction='out' type='s'/></method>"
-            "<method name='GetKeyBinding'><arg direction='in' type='i'/><arg direction='out' type='s'/></method>"
+            "<property name='NActions' type='i' access='read'/>"
             "</interface>"
             "</node>";
         dbus_message_iter_append_basic(&it, DBUS_TYPE_STRING, &xml);
