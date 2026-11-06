@@ -54,6 +54,7 @@
 static DBusConnection *g_bus = NULL;
 static int g_bus_state = 0;     /* 0=未尝试 1=可用 -1=已放弃 */
 static char g_bus_name[128];
+static pthread_mutex_t g_atspi_lock = PTHREAD_MUTEX_INITIALIZER;
 
 static void atspi_diag(const char *fmt, ...)
 {
@@ -123,17 +124,30 @@ static void *atspi_pump_thread(void *arg)
 // ── 懒初始化：连 bus + 注册应用 ─────────────────────────────────────────────
 static int atspi_ensure(void)
 {
-    if (g_bus_state != 0) return g_bus_state > 0;
+    /* 【K-617】**竞态修复**：`create_window_utf8` 可能在多个线程上跑，
+     *   两个线程都看到 `g_bus_state == 0` 就会**各自建一个连接**，
+     *   后完成的那次覆盖 `g_bus` ⇒ 前一条连接上的 well-known 名字丢失。
+     *   加锁保证只建一次。 */
+    static int call_n = 0;
+    pthread_mutex_lock(&g_atspi_lock);
+    int my_call = ++call_n;
+    if (g_bus_state != 0) {
+        int r = g_bus_state > 0;
+        pthread_mutex_unlock(&g_atspi_lock);
+        if (my_call <= 6) atspi_diag("[ATSPI] ensure 第 %d 次调用 -> 已就绪(%d)", my_call, r);
+        return r;
+    }
+    atspi_diag("[ATSPI] ensure 第 %d 次调用 -> 首次初始化", my_call);
     g_bus_state = -1;                                  /* 先悲观：任何一步失败都保持放弃 */
 
     char addr[1024];
-    if (!atspi_address(addr, sizeof(addr))) { atspi_diag("[ATSPI] 无可用总线，降级"); return 0; }
+    if (!atspi_address(addr, sizeof(addr))) { atspi_diag("[ATSPI] 无可用总线，降级"); pthread_mutex_unlock(&g_atspi_lock); return 0; }
 
     DBusError err; dbus_error_init(&err);
     g_bus = dbus_connection_open_private(addr, &err);
     if (!g_bus) {
         atspi_diag("[ATSPI] 连接失败：%s", err.message ? err.message : "?");
-        dbus_error_free(&err); return 0;
+        dbus_error_free(&err); pthread_mutex_unlock(&g_atspi_lock); return 0;
     }
     dbus_connection_set_exit_on_disconnect(g_bus, FALSE);
     if (!dbus_bus_register(g_bus, &err)) {
@@ -201,6 +215,7 @@ static int atspi_ensure(void)
     }
 
     g_bus_state = 1;
+    pthread_mutex_unlock(&g_atspi_lock);
     return 1;
 }
 
