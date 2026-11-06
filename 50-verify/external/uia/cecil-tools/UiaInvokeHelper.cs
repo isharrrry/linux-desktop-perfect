@@ -37,12 +37,15 @@ namespace UiaInvokeHelper
                 if (pattern == null) return false;
                 string name = peer.GetType().Name;
                 Tried++;
-                Console.WriteLine("[INV] try#" + Tried + " " + name);
+                string n2 = "(?)"; try { n2 = peer.GetName() ?? "(null)"; } catch { }
+                Console.WriteLine("[INV] try#" + Tried + " " + name + " Name=" + n2);
                 var wrapper = _wrap.Invoke(null, new object[] { peer, pattern });
                 if (wrapper == null) { Console.WriteLine("[INV]  wrapper null"); return false; }
                 _invoke.Invoke(wrapper, null);
                 Succeeded++;
                 Console.WriteLine("[INV] INVOKED ok " + name + " (累计成功 " + Succeeded + ")");
+                try { Console.WriteLine("[INV]   Name=" + (peer.GetName() ?? "(null)") + " Id=" + (peer.GetAutomationId() ?? "(null)")); }
+                catch (Exception e2) { Console.WriteLine("[INV]   (读 Name 失败: " + e2.GetType().Name + ")"); }
                 return true;
             }
             catch (Exception e)
