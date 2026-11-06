@@ -628,6 +628,13 @@ LRESULT wpf_dispatch_to_window(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
                 w ? (void *)w->wndproc : NULL, w ? (void *)w->class_wndproc : NULL, w ? 1 : 0);
         fflush(stderr);
     }
+    /* 【K-891】查不到 `w` 时回查影子表（`HwndSubclass` 对未知 hwnd 的 wndproc 写入） */
+    if (!proc) {
+        extern WNDPROC wpf_shadow_get_proc(HWND hwnd);
+        proc = wpf_shadow_get_proc(hwnd);
+        if (proc && msg == 0x003D && getenv("WPF_LINUX_UIA_DIAG"))
+            fprintf(stderr, "[GETOBJ-SHADOW] hwnd=%p 命中影子表 proc=%p\n", (void *)hwnd, (void *)proc);
+    }
     if (!proc) return DefWindowProcW(hwnd, msg, wp, lp);
     return proc(hwnd, msg, wp, lp);
 }

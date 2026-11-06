@@ -1561,6 +1561,33 @@ LONG GetWindowLongW(HWND hwnd, int nIndex)
 LONG GetWindowLongA(HWND h, int i) { return GetWindowLongW(h, i); }
 LONG GetWindowLong(HWND h, int i) { return GetWindowLongW(h, i); }
 
+/* 【K-891】**影子窗口表**：`HwndSubclass.SubclassWndProc` 首次收消息时会用
+ *   `SetWindowLongPtr(GWLP_WNDPROC, SubclassWndProc)` 把自己装成窗口过程（`HwndSubclass.cs:271/437`）。
+ *   这些 hwnd 可能是 `HwndWrapper` 内部窗口，不在 `wpf_window_find` 的表里 ⇒ 之前写入被丢弃
+ *   ⇒ `SubclassWndProc` 永不生效 ⇒ `HwndWrapper.WndProc` 的 hook 链（含 `HwndTargetFilterMessage`）
+ *   不走 ⇒ `WM_GETOBJECT` 到不了 `HwndTarget`（K-889/K-890）。
+ *   这里用一个小的影子表承接写入，并在 `wpf_dispatch_to_window` 里回查。 */
+#define WPF_SHADOW_MAX 64
+static struct { HWND hwnd; WNDPROC proc; } g_shadow_proc[WPF_SHADOW_MAX];
+static int g_shadow_count = 0;
+
+WNDPROC wpf_shadow_get_proc(HWND hwnd)
+{
+    for (int i = 0; i < g_shadow_count; ++i)
+        if (g_shadow_proc[i].hwnd == hwnd) return g_shadow_proc[i].proc;
+    return NULL;
+}
+static void wpf_shadow_set_proc(HWND hwnd, WNDPROC proc)
+{
+    for (int i = 0; i < g_shadow_count; ++i)
+        if (g_shadow_proc[i].hwnd == hwnd) { g_shadow_proc[i].proc = proc; return; }
+    if (g_shadow_count < WPF_SHADOW_MAX) {
+        g_shadow_proc[g_shadow_count].hwnd = hwnd;
+        g_shadow_proc[g_shadow_count].proc = proc;
+        ++g_shadow_count;
+    }
+}
+
 INT_PTR SetWindowLongPtrW(HWND hwnd, int nIndex, INT_PTR dwNewLong)
 {
     wpf_global_init();
@@ -1576,7 +1603,9 @@ INT_PTR SetWindowLongPtrW(HWND hwnd, int nIndex, INT_PTR dwNewLong)
          *   代价是该窗口的 `HwndSubclass` hook 链不生效（本来也没生效）。 */
         if (nIndex == GWL_WNDPROC) {
             if (getenv("WPF_LINUX_UIA_DIAG"))
-                fprintf(stderr, "[SETWNDLONG-UNKNOWN] hwnd=%p GWL_WNDPROC -> 假装成功\n", (void *)hwnd);
+                fprintf(stderr, "[SETWNDLONG-SHADOW] hwnd=%p GWL_WNDPROC -> %p (影子表)\n",
+                        (void *)hwnd, (void *)dwNewLong);
+            wpf_shadow_set_proc(hwnd, (WNDPROC)dwNewLong);   /* 【K-891】真写入影子表 */
             wpf_set_last_error(0);
             return 0;
         }
