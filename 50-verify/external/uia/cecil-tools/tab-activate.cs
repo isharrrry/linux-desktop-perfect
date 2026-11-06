@@ -119,16 +119,11 @@ class P {
     var vNotBtn = ilv.Create(OpCodes.Nop);
     V(ilv.Create(OpCodes.Brfalse, vNotBtn));
     V(ilv.Create(OpCodes.Ldstr, "[INV2] try Button")); V(ilv.Create(OpCodes.Call, wlS));
-    /* K-1163：拿 hwnd 并 SetupAtspiAction（若 WindowInteropHelper 可用） */
-    if (wihCtor != null && wihHandle != null) {
-      V(ilv.Create(OpCodes.Ldsfld, mwF));
-      V(ilv.Create(OpCodes.Newobj, wihCtor));
-      V(ilv.Create(OpCodes.Callvirt, wihHandle));
-      V(ilv.Create(OpCodes.Conv_I8));           /* IntPtr -> int64 */
-      V(ilv.Create(OpCodes.Conv_U8));           /* -> uint64 */
-      V(ilv.Create(OpCodes.Ldloc, vPeer));
-      V(ilv.Create(OpCodes.Call, setupAtspiRef));
-    }
+    /* K-1164：不用 WindowInteropHelper（K-1163 崩溃），直接 hwnd=0（指向 root node） */
+    V(ilv.Create(OpCodes.Ldc_I4_0));
+    V(ilv.Create(OpCodes.Conv_U8));
+    V(ilv.Create(OpCodes.Ldloc, vPeer));
+    V(ilv.Create(OpCodes.Call, setupAtspiRef));
     /* K-1146：检查 Command.CanExecute */
     V(ilv.Create(OpCodes.Ldloc, vBtn)); V(ilv.Create(OpCodes.Call, checkCmdRef));
     V(ilv.Create(OpCodes.Ldloc, vCh)); V(ilv.Create(OpCodes.Call, createPeerRef)); V(ilv.Create(OpCodes.Stloc, vPeer));
