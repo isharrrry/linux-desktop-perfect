@@ -15,6 +15,8 @@
 | **PNG 布局图（全量）** | **106 色 / 16139 字节**（1200x1720，140 个控件）| `sourcetree-shots/layout-tree.png` |
 | **PNG 按类对照（6/6 达标）** | menu 64001色/179127B · button 64001色/178911B · text 60001色/167817B · itemspresenter 20001色/56108B · tab 25601色/71420B · scroll 28001色/78371B | `sourcetree-shots/layout-*.png` |
 | **AT-SPI 通路** | `org.a11y.atspi.SourceTree` + 10 控件 | `sourcetree-shots/proof-uia-sourcetree.json` |
+| **AT-SPI frame name（已修复）** | **9/9 为 `'SourceTree'`**（不再空串）| `sourcetree-shots/proof-uia-sourcetree-v2.json` |
+| **shim 可构建 + 可复现** | `./build-shim.sh` ⇒ **783624 字节，md5 `17e6d15d...`（两次一致）** | K-1074 / K-1077 |
 | **可复现性** | 从入库代码重新生成 ⇒ **140 / 280 / 30 一致** | K-1028 |
 
 ## 二、实现方式（C#）
