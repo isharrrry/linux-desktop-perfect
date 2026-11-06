@@ -718,3 +718,8 @@ typedef struct {
 extern ldp_items g_items[LDP_MAX_WINDOWS];
 ldp_items *ldp_items_of(HWND hwnd, int create);
 
+
+/* 【K-612】AT-SPI 窗口注册（win32_atspi.c） */
+void wpf_atspi_register_window(uint64_t hwnd, const char *title);
+void wpf_atspi_unregister_window(uint64_t hwnd);
+int wpf_atspi_node_count(void);

@@ -830,6 +830,9 @@ uint64_t wpf_x11_create_window(wpf_window *w, const char *title)
                         (const unsigned char *)title, (int)strlen(title));
     }
 
+    /* 【K-612】把新窗口注册到 AT-SPI 对象树（懒初始化 bus + 注册 D-Bus 路径） */
+    wpf_atspi_register_window((uint64_t)xid, title);
+
     XSelectInput(d, xid, WPF_EVENT_MASK);
 
     // WM_DELETE_WINDOW：没有它，点关闭时窗口管理器直接 XKillClient，

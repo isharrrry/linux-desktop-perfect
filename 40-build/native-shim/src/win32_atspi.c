@@ -86,6 +86,20 @@ static int atspi_address(char *out, size_t outsz)
             snprintf(p, sizeof(p), "%s/.cache/at-spi/bus%d", home, i);
             if (access(p, F_OK) == 0) { snprintf(out, outsz, "unix:path=%s", p); atspi_diag("[ATSPI] 地址来自 %s", p); return 1; }
         }
+        // 【K-615】**关键修复**：at-spi-bus-launcher 在当前环境写的是 `bus`（**无数字后缀**），
+        //   不是 `bus0`~`bus3`。之前只探带后缀的 ⇒ 永远找不到 ⇒ `atspi_ensure()` 返回 0
+        //   ⇒ 所有 AT-SPI 功能静默降级 ⇒ pyatspi 看不到本应用。
+        snprintf(p, sizeof(p), "%s/.cache/at-spi/bus", home);
+        if (access(p, F_OK) == 0) { snprintf(out, outsz, "unix:path=%s", p); atspi_diag("[ATSPI] 地址来自 %s（无后缀）", p); return 1; }
+        // 也探一下 XDG_RUNTIME_DIR 风格的无后缀路径（新版本 at-spi2 用这个）
+        {
+            char xp[512];
+            const char *xr = getenv("XDG_RUNTIME_DIR");
+            if (xr && *xr) {
+                snprintf(xp, sizeof(xp), "%s/at-spi/bus", xr);
+                if (access(xp, F_OK) == 0) { snprintf(out, outsz, "unix:path=%s", xp); atspi_diag("[ATSPI] 地址来自 %s（XDG 无后缀）", xp); return 1; }
+            }
+        }
     }
     /* 最后退回通用 session bus（at-spi2 也常挂在上面） */
     const char *sess = getenv("DBUS_SESSION_BUS_ADDRESS");
