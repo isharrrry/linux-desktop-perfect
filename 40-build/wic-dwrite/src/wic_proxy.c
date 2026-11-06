@@ -339,6 +339,27 @@ int32_t IWICImagingFactory_CreateDecoderFromStream_Proxy(void *factory, void *st
     if (!out) return E_NOTIMPL_;
     *out = NULL;
     if (!wpf_wic_factory_valid(factory) || !stream) return 0x80070057;
+    // 【K-500】先看是不是**我们自己的 `wic_stream`**（`IWICImagingFactory_CreateStream` 造的）
+    //   是的话直接拿数据，不走 `LdpMilStreamRead` bridge。
+    {
+        extern int wic_stream_own(const void *p);
+        extern const uint8_t *wic_stream_data(const void *p, size_t *len);
+        if (wic_stream_own(stream)) {
+            size_t n = 0;
+            const uint8_t *d = wic_stream_data(stream, &n);
+            if (!d || n == 0) return 0x80070057;
+            wic_decoder *dd = (wic_decoder *)calloc(1, sizeof(wic_decoder));
+            if (!dd) return E_NOTIMPL_;
+            char err2[256] = { 0 };
+            int32_t hr2 = wic_decode_any((uint8_t *)d, n, &dd->img, err2, sizeof(err2));
+            if (hr2 != 0) { free(dd); return hr2; }
+            dd->hdr.magic = WIC_DECODER_MAGIC;
+            wic_track_add(dd);
+            *out = dd;
+            if (getenv("LDP_WIC_TRACE")) { fprintf(stderr, "[WIC-DEC] 从我们的 wic_stream 解码 %zu 字节 OK\n", n); fflush(stderr); }
+            return S_OK_;
+        }
+    }
     ldp_read_fn read_fn = wic_stream_read_fn();
     if (!read_fn) return E_NOTIMPL_;   // bridge 不在（没有 LdpMilStreamRead）⇒ 诚实失败
     // 把流整段读出来（上限 64 MB，防止坏 handled 撑爆内存）

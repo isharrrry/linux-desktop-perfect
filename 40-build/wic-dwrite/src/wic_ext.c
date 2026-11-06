@@ -97,7 +97,6 @@ WIC_PROXY_NOSTUB(IWICImagingFactory_CreateFastMetadataEncoderFromFrameDecode_Pro
 WIC_PROXY_NOSTUB(IWICImagingFactory_CreatePalette_Proxy)
 WIC_PROXY_NOSTUB(IWICImagingFactory_CreateQueryWriterFromReader_Proxy)
 WIC_PROXY_NOSTUB(IWICImagingFactory_CreateQueryWriter_Proxy)
-WIC_PROXY_NOSTUB(IWICImagingFactory_CreateStream_Proxy)
 WIC_PROXY_NOSTUB(IWICMetadataBlockReader_GetCount_Proxy)
 WIC_PROXY_NOSTUB(IWICMetadataBlockReader_GetReaderByIndex_Proxy)
 WIC_PROXY_NOSTUB(IWICMetadataQueryReader_GetContainerFormat_Proxy)
@@ -116,7 +115,6 @@ WIC_PROXY_NOSTUB(IWICPixelFormatInfo_GetBitsPerPixel_Proxy)
 WIC_PROXY_NOSTUB(IWICPixelFormatInfo_GetChannelCount_Proxy)
 WIC_PROXY_NOSTUB(IWICPixelFormatInfo_GetChannelMask_Proxy)
 WIC_PROXY_NOSTUB(IWICStream_InitializeFromIStream_Proxy)
-WIC_PROXY_NOSTUB(IWICStream_InitializeFromMemory_Proxy)
 
 // ── GUID ↔ 格式短名（真实现：WPF 的 BitmapDecoder/Encoder 靠它选编解码器）──────
 typedef struct { const uint16_t *short_name; const uint16_t *mime; const char *ext; uint32_t tail; uint32_t d1; uint16_t d2, d3; uint8_t b[8]; } wic_fmt_map;
