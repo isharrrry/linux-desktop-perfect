@@ -56,7 +56,7 @@ class P {
         foreach (var line in lines) {
             if (string.IsNullOrWhiteSpace(line) || line.StartsWith("#")) continue;
             var parts = line.Split('\t');
-            if (parts.Length >= 3) list.Add((parts[0], parts[1].Replace("\\\\n", "\n"), parts[2].Replace("\\\\n", "\n")));
+            if (parts.Length >= 3) list.Add((parts[0], parts[1].Replace("\\n", "\n"), parts[2].Replace("\\n", "\n")));
         }
         return list;
     }
