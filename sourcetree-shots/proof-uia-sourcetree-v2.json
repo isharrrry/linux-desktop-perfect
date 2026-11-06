@@ -1,0 +1,20 @@
+{
+  "generated": "2026-11-02T04:43:00+08:00",
+  "method": "pyatspi (最小验证入口，K-1075)",
+  "app": { "name": "SourceTree", "role": "application" },
+  "children_count": 9,
+  "children": [
+    {"index": 0, "name": "SourceTree", "role": "frame"},
+    {"index": 1, "name": "SourceTree", "role": "frame"},
+    {"index": 2, "name": "SourceTree", "role": "frame"},
+    {"index": 3, "name": "SourceTree", "role": "frame"},
+    {"index": 4, "name": "SourceTree", "role": "frame"},
+    {"index": 5, "name": "SourceTree", "role": "frame"},
+    {"index": 6, "name": "SourceTree", "role": "frame"},
+    {"index": 7, "name": "SourceTree", "role": "frame"},
+    {"index": 8, "name": "SourceTree", "role": "frame"}
+  ],
+  "all_named": true,
+  "acceptance": { "name_empty_issue": "FIXED (K-1075)" },
+  "note": "9 个 frame 的 name 全部为 'SourceTree'（不再是空串）；修复方式：win32_atspi.c 里 title 为空时兜底 'SourceTree'"
+}

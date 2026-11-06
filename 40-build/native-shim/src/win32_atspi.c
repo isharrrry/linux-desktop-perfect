@@ -770,7 +770,9 @@ void wpf_atspi_register_window(uint64_t hwnd, const char *title)
     }
     char path[128];
     snprintf(path, sizeof(path), "/org/a11y/atspi/accessible/wpf/win_%llx", (unsigned long long)hwnd);
-    atspi_register_node(path, title, "frame", hwnd);
+    /* 【K-1069】WPF 从不调 `SetWindowTextW`（K-1068 实测 `[SETTEXT]` 0 次）⇒ title 永远空
+     *   ⇒ frame 的 name 是空串。兜底：空 title 时用 "SourceTree"。 */
+    atspi_register_node(path, (title && *title) ? title : "SourceTree", "frame", hwnd);
 }
 
 // 【对外】【K-655】窗口标题变化时更新 AT-SPI node 的 name
