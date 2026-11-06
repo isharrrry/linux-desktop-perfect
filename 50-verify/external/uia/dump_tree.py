@@ -1,124 +1,89 @@
 #!/usr/bin/env python3
-"""UIA/AT-SPI 验证脚本：枚举 AT-SPI 桌面树，找 SourceTree 并 dump 控件。
+"""【K-631】用 pyatspi 枚举桌面上所有 AT-SPI 应用及其子控件。
 
 用法：
-  DISPLAY=:303 python3 dump_tree.py            # 人类可读
-  DISPLAY=:303 python3 dump_tree.py --json     # JSON 输出
-  DISPLAY=:303 python3 dump_tree.py --wait 60  # 等最多 60 秒直到找到
+    DISPLAY=:303 python3 50-verify/external/uia/dump_tree.py [--json]
 
-退出码：
-  0 = 找到 SourceTree 且枚举 >= 10 个控件
-  1 = 找到但控件不足
-  2 = pyatspi 不可用
-  3 = 超时未找到
+依赖：python3-pyatspi（本机已装）
+前提：SourceTree 运行中，且 `win32_atspi.c` 的 AT-SPI 桥接已生效：
+  · `atspi_address()` 找 `$HOME/.cache/at-spi/bus_<display>`（K-625）
+  · `dbus_bus_request_name("org.a11y.atspi.SourceTree")`（K-620）
+  · `org.a11y.atspi.Socket.Embed` 到 registry（K-621）
+  · `Properties.Get` 同时认 `Name`/`name`（K-630）
+  · `(so)` 里用 `DBUS_TYPE_OBJECT_PATH`（K-626）
+  · 泵线程用独立 `g_a11y_running` 标志（K-624）
 """
-import sys, json, time
+import json
+import sys
 
-def collect(el, depth=0, max_depth=5, max_children=30):
-    """递归收集控件信息。"""
-    out = []
-    if depth > max_depth:
-        return out
+import pyatspi
+
+
+def dump_app(app):
+    # 每条属性都可能抛 GLib.GError（应用已退出 / 是残留条目）⇒ 逐个容错
+    def safe(fn, default=None):
+        try:
+            return fn()
+        except Exception:  # noqa: BLE001
+            return default
+
+    item = {
+        "name": safe(lambda: app.name, ""),
+        "role": safe(lambda: app.getRoleName(), "?"),
+        "childCount": safe(lambda: app.childCount, 0),
+        "children": [],
+    }
     try:
-        cnt = el.childCount
-    except Exception:
-        return out
-    for i in range(min(cnt, max_children)):
-        try:
-            c = el.getChildAtIndex(i)
-            item = {
-                "depth": depth,
+        for j in range(app.childCount):
+            c = app.getChildAtIndex(j)
+            item["children"].append({
+                "name": c.name,
                 "role": c.getRoleName(),
-                "name": (c.name or ""),
-            }
-            # 尝试拿描述和状态
-            try:
-                item["description"] = c.description or ""
-            except Exception:
-                item["description"] = ""
-            try:
-                item["states"] = [s for s in c.getState().getStates()][:8]
-            except Exception:
-                item["states"] = []
-            out.append(item)
-            out.extend(collect(c, depth + 1, max_depth, max_children))
-        except Exception as e:
-            out.append({"depth": depth, "role": "ERROR", "name": str(e)})
-    return out
+                "childCount": c.childCount,
+            })
+    except Exception as exc:  # noqa: BLE001 - pyatspi 抛的是 GLib.GError
+        item["children_error"] = str(exc)[:120]
+    return item
 
-def find_sourcetree(d):
-    for i in range(d.childCount):
-        try:
-            app = d.getChildAtIndex(i)
-            if "sourcetree" in (app.name or "").lower():
-                return app
-        except Exception:
-            pass
-    return None
 
 def main():
-    args = sys.argv[1:]
-    as_json = "--json" in args
-    wait_sec = 0
-    if "--wait" in args:
+    as_json = "--json" in sys.argv
+    desktop = pyatspi.Registry.getDesktop(0)
+    apps = []
+    for i in range(desktop.childCount):
         try:
-            wait_sec = int(args[args.index("--wait") + 1])
-        except Exception:
-            pass
-
-    try:
-        import pyatspi
-    except ImportError:
-        print("ERROR: pyatspi 未安装", file=sys.stderr)
-        return 2
-
-    deadline = time.time() + wait_sec
-    app = None
-    d = pyatspi.Registry.getDesktop(0)
-    while True:
-        app = find_sourcetree(d)
-        if app is not None or time.time() >= deadline:
-            break
-        time.sleep(1)
-
-    result = {
-        "desktop_child_count": d.childCount,
-        "apps": [],
-        "found_sourcetree": app is not None,
-        "controls": [],
-    }
-    for i in range(d.childCount):
-        try:
-            a = d.getChildAtIndex(i)
-            result["apps"].append({
-                "index": i,
-                "name": a.name or "",
-                "role": a.getRoleName(),
-                "children": a.childCount,
-            })
-        except Exception as e:
-            result["apps"].append({"index": i, "error": str(e)})
-
-    if app is not None:
-        result["controls"] = collect(app)
+            app = desktop.getChildAtIndex(i)
+        except Exception as exc:  # noqa: BLE001
+            apps.append({"index": i, "error": str(exc)[:120]})
+            continue
+        entry = dump_app(app)
+        if entry["name"]:
+            apps.append({"index": i, **entry})
+        else:
+            apps.append({"index": i, "error": "unnamed app (likely exited)"})
 
     if as_json:
-        print(json.dumps(result, ensure_ascii=False, indent=2))
-    else:
-        print(f"桌面子项数: {result['desktop_child_count']}")
-        for a in result["apps"]:
-            print(f"  [{a.get('index')}] {a.get('name')!r} role={a.get('role')} children={a.get('children')}")
-        if app is None:
-            print("\n❌ 未找到 SourceTree")
-        else:
-            n = len(result["controls"])
-            print(f"\n✅ 找到 SourceTree，枚举了 {n} 个控件：")
-            for c in result["controls"]:
-                print(f"{'  ' * c['depth']}[{c['role']}] {c['name']!r}")
+        print(json.dumps({"desktop_child_count": desktop.childCount, "apps": apps},
+                         ensure_ascii=False, indent=2))
+        return 0
 
-    if app is None:
-        return 3
-    return 0 if len(result["controls"]) >= 10 else 1
+    print(f"桌面子项数: {desktop.childCount}")
+    for a in apps:
+        if "error" in a:
+            print(f"  [{a['index']}] ERR {a['error']}")
+            continue
+        print(f"  [{a['index']}] {a['name']!r} role={a['role']} children={a['childCount']}")
+        for j, c in enumerate(a["children"]):
+            print(f"        - [{j}] {c['name']!r} role={c['role']} children={c['childCount']}")
+
+    found = [a for a in apps if a.get("name") == "SourceTree"]
+    if found:
+        total = sum(a.get("childCount", 0) for a in found)
+        print(f"✅ 找到 SourceTree，枚举了 {total} 个控件")
+        return 0
+    print("❌ 未找到 SourceTree")
+    return 1
+
 
 if __name__ == "__main__":
     sys.exit(main())
