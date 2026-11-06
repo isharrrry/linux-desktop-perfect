@@ -635,7 +635,8 @@ static DBusHandlerResult atspi_msg_handler(DBusConnection *conn, DBusMessage *ms
         DBusMessageIter st;
         dbus_message_iter_open_container(&it, DBUS_TYPE_STRUCT, NULL, &st);
         dbus_message_iter_append_basic(&st, DBUS_TYPE_STRING, &bus);
-        dbus_message_iter_append_basic(&st, DBUS_TYPE_STRING, &(const char *){WPF_ATSPI_PATH_ROOT});
+        const char *app_root_p = WPF_ATSPI_PATH_ROOT;
+        dbus_message_iter_append_basic(&st, DBUS_TYPE_STRING, &app_root_p);
         dbus_message_iter_close_container(&it, &st);
     } else if (strcmp(member, "Get") == 0) {
         /* 【K-622】**关键**：AT-SPI2 的 `name`/`description`/`parent`/`childCount`
@@ -651,12 +652,14 @@ static DBusHandlerResult atspi_msg_handler(DBusConnection *conn, DBusMessage *ms
         }
         DBusMessageIter var;
         if (want_prop && strcmp(want_prop, "name") == 0) {
+            const char *nm_val = n->name;
             dbus_message_iter_open_container(&it, DBUS_TYPE_VARIANT, "s", &var);
-            dbus_message_iter_append_basic(&var, DBUS_TYPE_STRING, &(const char *){n->name});
+            dbus_message_iter_append_basic(&var, DBUS_TYPE_STRING, &nm_val);
             dbus_message_iter_close_container(&it, &var);
         } else if (want_prop && strcmp(want_prop, "description") == 0) {
+            const char *ds_val = "";
             dbus_message_iter_open_container(&it, DBUS_TYPE_VARIANT, "s", &var);
-            dbus_message_iter_append_basic(&var, DBUS_TYPE_STRING, &(const char *){""});
+            dbus_message_iter_append_basic(&var, DBUS_TYPE_STRING, &ds_val);
             dbus_message_iter_close_container(&it, &var);
         } else if (want_prop && strcmp(want_prop, "childCount") == 0) {
             dbus_int32_t cnt = 0;
