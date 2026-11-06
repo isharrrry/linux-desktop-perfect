@@ -626,18 +626,8 @@ static DBusHandlerResult atspi_msg_handler(DBusConnection *conn, DBusMessage *ms
          *   调 `UiaReturnRawElementProvider`（我们已实现，存 `hwnd → el`）。
          *   **注意**：`SendMessageW` 是同步的（会阻塞 AT-SPI 泵线程），
          *   所以只对**顶层窗口**发一次（用 static 标志去重）。 */
-        static int g_wmget_sent = 0;
-        if (!g_wmget_sent && n->hwnd == 0) {
-            g_wmget_sent = 1;
-            for (int i = 0; i < g_node_count; ++i) {
-                if (g_nodes[i].alive && g_nodes[i].hwnd != 0) {
-                    atspi_diag("[ATSPI] 发 WM_GETOBJECT 给 hwnd=0x%llx（触发 WPF 创建 provider）",
-                               (unsigned long long)g_nodes[i].hwnd);
-                    SendMessageW((HWND)(uintptr_t)g_nodes[i].hwnd, 0x003D /*WM_GETOBJECT*/,
-                                 0, (LPARAM)(intptr_t)-4 /*OBJID_CLIENT*/);
-                }
-            }
-        }
+        /* 【K-896】**已移除**：跨线程发 `WM_GETOBJECT` 是无效的（`SubclassWndProc` 要求
+         *   当前线程有 Dispatcher，见 K-895）。改在 `create_window_utf8`（UI 线程）里发。 */
         DBusMessageIter arr;
         dbus_message_iter_open_container(&it, DBUS_TYPE_ARRAY, "(so)", &arr);
         for (int i = 0; i < g_node_count; ++i)

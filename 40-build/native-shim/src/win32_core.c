@@ -1148,6 +1148,19 @@ static HWND create_window_utf8(uint32_t dwExStyle, const char *cls,
     if (!w->is_message_only)
         wpf_atspi_register_window((uint64_t)w->hwnd, title);
 
+    /* 【K-896】**必须在 UI 线程发 `WM_GETOBJECT`**：`HwndSubclass.SubclassWndProc`
+     *   （`HwndSubclass.cs:295`）只在 `Dispatcher.FromThread(Thread.CurrentThread) != null`
+     *   时才把消息转发给 `HwndWrapper.WndProc` 的 hook 链（`HwndTargetFilterMessage` 等）。
+     *   之前是 AT-SPI 泵线程用 `SendMessageW` 发（K-667）⇒ 那个线程**没有 Dispatcher**
+     *   ⇒ hooks 链永远不走 ⇒ `WM_GETOBJECT` 到不了 `HwndTarget`（K-895）。
+     *   这里在**窗口创建所在的 UI 线程**发一次。 */
+    if (!w->is_message_only) {
+        if (getenv("WPF_LINUX_UIA_DIAG"))
+            fprintf(stderr, "[UIA-GETOBJ-UI] hwnd=0x%llx 在 UI 线程发 WM_GETOBJECT\n",
+                    (unsigned long long)(uintptr_t)w->hwnd);
+        SendMessageW(w->hwnd, 0x003D /*WM_GETOBJECT*/, 0, (LPARAM)(intptr_t)-4 /*OBJID_CLIENT*/);
+    }
+
     return w->hwnd;
 }
 
