@@ -37,6 +37,7 @@
 #include <stdint.h>
 #include <stdarg.h>
 #include <unistd.h>
+#include <pthread.h>
 #include "win32_internal.h"
 #include <dbus/dbus.h>
 
@@ -107,6 +108,18 @@ static int atspi_address(char *out, size_t outsz)
     return 0;
 }
 
+// 【K-614】D-Bus 消息泵线程：`dbus_connection_open_private` 不会自己处理消息，
+//   必须有线程持续 `read_write_dispatch`。否则注册的方法永远不被调用。
+static void *atspi_pump_thread(void *arg)
+{
+    (void)arg;
+    if (!g_bus) return NULL;
+    while (g_bus_state > 0) {
+        dbus_connection_read_write_dispatch(g_bus, 500);
+    }
+    return NULL;
+}
+
 // ── 懒初始化：连 bus + 注册应用 ─────────────────────────────────────────────
 static int atspi_ensure(void)
 {
@@ -147,6 +160,25 @@ static int atspi_ensure(void)
         }
     }
     dbus_connection_flush(g_bus);
+
+    /* 【K-614】**关键**：`dbus_connection_open_private` 的连接**不会自己处理消息** ——
+     *   必须有一个线程循环调 `dbus_connection_read_write_dispatch()`，否则
+     *   `register_object_path` 注册的方法永远不会被调用（`dbus-send` 会回
+     *   `UnknownMethod`）。这是本仓之前所有 AT-SPI 尝试都失败的**真正原因之一**。 */
+    {
+        static int pump_started = 0;
+        if (!pump_started) {
+            pthread_t th;
+            if (pthread_create(&th, NULL, atspi_pump_thread, NULL) == 0) {
+                pthread_detach(th);
+                pump_started = 1;
+                atspi_diag("[ATSPI] 泵线程已启动");
+            } else {
+                atspi_diag("[ATSPI] 泵线程启动失败");
+            }
+        }
+    }
+
     g_bus_state = 1;
     return 1;
 }
