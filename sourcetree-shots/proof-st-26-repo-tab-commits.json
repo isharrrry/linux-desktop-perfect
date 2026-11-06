@@ -1,0 +1,34 @@
+{
+  "generated": "2026-11-02T05:45:00+08:00",
+  "file": "sourcetree-shots/st-26-repo-tab-commits-37801.png",
+  "method": "gongfix(patch Gong..cctor) + tab-fix(DataContext+ReopenTabs) + AddOrActivate('/tmp/stgit',0,'stgit')",
+  "size_bytes": 37801,
+  "width": 625,
+  "height": 540,
+  "full_colors": 818,
+  "customer_colors": 518,
+  "commit_list_area_colors": 262,
+  "baseline": {
+    "file": "st-21-repo-tab-20725.png",
+    "bytes": 20725,
+    "full_colors": 558,
+    "customer_colors": 268,
+    "commit_area": 3
+  },
+  "improvement": {
+    "bytes": "+82.2%",
+    "full_colors": "+46.6%",
+    "customer_colors": "+93.3%",
+    "commit_area": "3→262 色"
+  },
+  "stdout": [
+    "[DIAG] AddOrActivate OK",
+    "[DIAG] SelectedRepository after:",
+    "崩溃=0"
+  ],
+  "acceptance": {
+    "bytes_over_20000": true,
+    "colors_over_100": true
+  },
+  "note": "提交列表填充 16 个提交（/tmp/stgit）；截图 37801B 远超 20000 阈值"
+}
