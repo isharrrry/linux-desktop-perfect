@@ -18,8 +18,18 @@ def parse_const(name):
     if m: return _unescape(m.group(1))
     """解析 NAME = '''...''' 或 NAME = ( '...' '...' ) 或 NAME = "..." 或 NAME = "..." "..." """
     # 单块三引号
-    m = re.search(rf'^{name}\s*=\s*[rR]?\'\'\'(.*?)\'\'\'', s, re.S | re.M)
-    if m: return _unescape(m.group(1))
+    # 三引号单引号：用「下一个顶层常量名之前」的最后一个 '''
+    pos = s.find(f"{name} = '''")
+    if pos < 0: pos = s.find(f"{name} = r'''")
+    if pos >= 0:
+        start = pos + len(f"{name} = '''") if s.find(f"{name} = '''") >= 0 else pos + len(f"{name} = r'''")
+        # 找下一个顶层常量（^XXX = ）或最后
+        m_next = re.search(r'^[A-Z_][A-Z0-9_]*\s*=', s[start:], re.M)
+        limit = start + m_next.start() if m_next else len(s)
+        # 在 limit 之前找最后一个 '''
+        last = s.rfind("'''", start, limit)
+        if last > start:
+            return _unescape(s[start:last])
     # 多行拼接（括号内单引号或双引号，可带 \n）
     m = re.search(rf'^{name}\s*=\s*\(\s*((?:\s*(?:\'[^\']*\'|"[^"]*")\s*)+)\)', s, re.S | re.M)
     if m:
