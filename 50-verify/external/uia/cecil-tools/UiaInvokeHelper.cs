@@ -175,5 +175,20 @@ namespace UiaInvokeHelper
             catch (Exception e) { Console.WriteLine("[ATSPI-ACT] Setup 失败: " + e.GetType().Name + ": " + e.Message); }
         }
 
+
+        /// <summary>K-1165：只调 set_action，不注册回调（隔离 K-1164 的崩溃）。</summary>
+        public static void SetupAtspiActionNoInvoker(ulong hwnd, AutomationPeer peer)
+        {
+            try
+            {
+                Console.WriteLine("[ATSPI-ACT2] enter hwnd=0x" + hwnd.ToString("x"));
+                if (peer != null) _peersByHwnd[hwnd] = peer;
+                Console.WriteLine("[ATSPI-ACT2] peer 存好，准备调 set_action");
+                shim_set_action(hwnd, "Invoke", "按下按钮");
+                Console.WriteLine("[ATSPI-ACT2] set_action OK");
+            }
+            catch (Exception e) { Console.WriteLine("[ATSPI-ACT2] 失败: " + e.GetType().Name + ": " + e.Message); }
+        }
+
     }
 }

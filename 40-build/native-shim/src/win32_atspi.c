@@ -849,12 +849,18 @@ int wpf_atspi_node_count(void) { return g_node_count; }
      注册「执行 action」的回调（WPF 侧在注入时传入一个函数指针）。*/
 void wpf_atspi_set_action(uint64_t hwnd, const char *name, const char *desc)
 {
-    wpf_atspi_node *n = atspi_node_find(hwnd);
-    if (!n) { atspi_diag("[ATSPI] set_action: hwnd=0x%llx 未注册", (unsigned long long)hwnd); return; }
-    snprintf(n->action_name, sizeof(n->action_name), "%s", name ? name : "");
-    snprintf(n->action_desc, sizeof(n->action_desc), "%s", desc ? desc : "");
-    n->has_action = 1;
-    atspi_diag("[ATSPI] set_action: hwnd=0x%llx name=%s desc=%s", (unsigned long long)hwnd, n->action_name, n->action_desc);
+    /* K-1165：hwnd==0 时设到所有 node（WPF 侧拿不到真实 hwnd 时的兜底，
+       因为 pyatspi 查的是 frame 节点而非 root）*/
+    int count = 0;
+    for (int i = 0; i < g_node_count; ++i) {
+        if (!g_nodes[i].alive) continue;
+        if (hwnd != 0 && g_nodes[i].hwnd != hwnd) continue;
+        snprintf(g_nodes[i].action_name, sizeof(g_nodes[i].action_name), "%s", name ? name : "");
+        snprintf(g_nodes[i].action_desc, sizeof(g_nodes[i].action_desc), "%s", desc ? desc : "");
+        g_nodes[i].has_action = 1;
+        count++;
+    }
+    atspi_diag("[ATSPI] set_action: hwnd=0x%llx name=%s → %d 个 node", (unsigned long long)hwnd, name ? name : "", count);
 }
 
 void wpf_atspi_set_action_invoker(void *fn)
