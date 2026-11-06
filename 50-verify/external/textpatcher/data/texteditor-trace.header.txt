@@ -1,0 +1,10 @@
+// ⚠️ 本文件由 src/WpfGfx.Linux.Native/tools/patch-presentationframework-texteditor-trace.py **生成**，不要手改。
+//
+// 内容 = 上游 `upstream/wpf/{rel}` 逐字复制 + {n} 处 T1c **只读插桩**（第 2 批 P6）。
+// 每次运行该脚本都会从上游重读重生成；锚点找不到 / 命中数不符时**报错退出**，不会静默产出未打补丁的副本。
+//
+// 为什么打：**打字到不了 TextBox**。第 1 批证明字符到了 OnPreprocessMessage 且没被
+//   `_eatCharMessages` 吞掉，停在 `ProcessTextInputAction ⇒ handled=True` 而文本未变。
+//   P6 是这条链的终点那一格：**TextBox（TextEditorTyping.OnTextInput）到底跑没跑、跑了为什么没插入**。
+//   五个点分布在两道 `return` 门的两侧 ⇒ "没打印"不再有多种含义。
+//   开关与 PC 侧同一套（WPF_LINUX_INPUT_TRACE / WPF_LINUX_MSGFLOW_TRACE），缺省关、≤120 行、只打印。
