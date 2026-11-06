@@ -769,9 +769,20 @@ void wpf_atspi_register_window(uint64_t hwnd, const char *title)
 //   在 `SetWindowTextW` 里调本函数，把最新标题同步到 node。
 void wpf_atspi_update_name(uint64_t hwnd, const char *title)
 {
-    if (!atspi_ensure() || !title || !*title) return;
+    atspi_diag("[ATSPI] update_name 被调用: hwnd=0x%llx title=%s",
+               (unsigned long long)hwnd, title ? title : "(null)");
+    if (!atspi_ensure()) { atspi_diag("[ATSPI] update_name: atspi_ensure 失败"); return; }
+    if (!title || !*title) { atspi_diag("[ATSPI] update_name: title 空"); return; }
     wpf_atspi_node *n = atspi_node_find(hwnd);
-    if (!n) return;
+    if (!n) {
+        atspi_diag("[ATSPI] update_name: node 找不到 hwnd=0x%llx（已注册的节点：）",
+                   (unsigned long long)hwnd);
+        for (int i = 0; i < g_node_count; ++i)
+            if (g_nodes[i].alive)
+                atspi_diag("[ATSPI]   已注册 hwnd=0x%llx path=%s name=%s",
+                           (unsigned long long)g_nodes[i].hwnd, g_nodes[i].path, g_nodes[i].name);
+        return;
+    }
     snprintf(n->name, sizeof(n->name), "%s", title);
     atspi_diag("[ATSPI] 更新 node name: hwnd=0x%llx name=%s", (unsigned long long)hwnd, title);
 }
