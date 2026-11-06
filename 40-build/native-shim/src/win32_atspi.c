@@ -726,28 +726,12 @@ static DBusHandlerResult atspi_msg_handler(DBusConnection *conn, DBusMessage *ms
         /* K-1161：返回 node 上真实设置的 action（WPF 侧通过 wpf_atspi_set_action 提供） */
         DBusMessageIter arr;
         dbus_message_iter_open_container(&it, DBUS_TYPE_ARRAY, "(ss)", &arr);
-        if (n && n->has_action) {
-            DBusMessageIter st;
-            const char *an = n->action_name;
-            const char *ad = n->action_desc;
-            dbus_message_iter_open_container(&arr, DBUS_TYPE_STRUCT, NULL, &st);
-            dbus_message_iter_append_basic(&st, DBUS_TYPE_STRING, &an);
-            dbus_message_iter_append_basic(&st, DBUS_TYPE_STRING, &ad);
-            dbus_message_iter_close_container(&arr, &st);
-        }
         dbus_message_iter_close_container(&it, &arr);
+        /* K-1163：暂时回退到空列表（带 action 的版本会崩，待排查） */
     } else if (strcmp(member, "DoAction") == 0) {
-        /* K-1161：有 action 时调用 WPF 侧回调，否则返回 false */
-        int idx = -1;
-        if (dbus_message_get_args(msg, NULL, DBUS_TYPE_INT32, &idx, DBUS_TYPE_INVALID) && n && n->has_action && idx == 0) {
-            atspi_diag("[ATSPI] DoAction(0) on %s -> 请求 WPF 执行", n->path);
-            if (g_action_invoker) g_action_invoker(n->hwnd);
-            dbus_bool_t r = TRUE;
-            dbus_message_iter_append_basic(&it, DBUS_TYPE_BOOLEAN, &r);
-        } else {
-            dbus_bool_t r = FALSE;
-            dbus_message_iter_append_basic(&it, DBUS_TYPE_BOOLEAN, &r);
-        }
+        /* K-1163：回退到 false（带回调的版本崩溃，待排查） */
+        dbus_bool_t r = FALSE;
+        dbus_message_iter_append_basic(&it, DBUS_TYPE_BOOLEAN, &r);
     } else if (strcmp(member, "GetActionName") == 0 || strcmp(member, "GetActionDescription") == 0 || strcmp(member, "GetKeyBinding") == 0) {
         const char *empty = "";
         dbus_message_iter_append_basic(&it, DBUS_TYPE_STRING, &empty);

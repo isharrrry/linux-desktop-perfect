@@ -68,6 +68,18 @@ class P {
     var tryInvokeRef = asm.MainModule.ImportReference(helperType.Methods.First(x => x.Name == "TryInvoke"));
     var callNoArgRef2 = asm.MainModule.ImportReference(helperType.Methods.First(x => x.Name == "CallNoArg"));
     var checkCmdRef = asm.MainModule.ImportReference(helperType.Methods.First(x => x.Name == "CheckCommand"));
+    /* K-1163（T3 收尾）：SetupAtspiAction + WindowInteropHelper */
+    var setupAtspiRef = asm.MainModule.ImportReference(helperType.Methods.First(x => x.Name == "SetupAtspiAction"));
+    var wihType = pf.MainModule.Types.SelectMany(Flat).FirstOrDefault(x => x.Name == "WindowInteropHelper" && x.Namespace == "System.Windows.Interop");
+    MethodReference wihCtor = null, wihHandle = null;
+    if (wihType != null) {
+      wihCtor = asm.MainModule.ImportReference(wihType.Methods.First(x => x.IsConstructor && x.Parameters.Count == 1));
+      wihHandle = asm.MainModule.ImportReference(wihType.Properties.First(x => x.Name == "Handle").GetMethod);
+      Console.WriteLine("WindowInteropHelper: ctor + Handle 可用");
+    } else Console.WriteLine("WindowInteropHelper: NOT FOUND");
+    var mwRef = asm.MainModule.ImportReference(mw);
+    var mwF = new FieldDefinition("_mw", FieldAttributes.Public | FieldAttributes.Static, mwRef);
+    dv.Fields.Add(mwF);
     var uap = pc.MainModule.Types.SelectMany(Flat).FirstOrDefault(x => x.Name == "UIElementAutomationPeer") ?? pf.MainModule.Types.SelectMany(Flat).First(x => x.Name == "UIElementAutomationPeer");
     var createPeerRef = asm.MainModule.ImportReference(uap.Methods.First(x => x.Name == "CreatePeerForElement"));
     var peerType = pc.MainModule.Types.SelectMany(Flat).First(x => x.Name == "AutomationPeer" && x.Namespace == "System.Windows.Automation.Peers");
@@ -107,6 +119,16 @@ class P {
     var vNotBtn = ilv.Create(OpCodes.Nop);
     V(ilv.Create(OpCodes.Brfalse, vNotBtn));
     V(ilv.Create(OpCodes.Ldstr, "[INV2] try Button")); V(ilv.Create(OpCodes.Call, wlS));
+    /* K-1163：拿 hwnd 并 SetupAtspiAction（若 WindowInteropHelper 可用） */
+    if (wihCtor != null && wihHandle != null) {
+      V(ilv.Create(OpCodes.Ldsfld, mwF));
+      V(ilv.Create(OpCodes.Newobj, wihCtor));
+      V(ilv.Create(OpCodes.Callvirt, wihHandle));
+      V(ilv.Create(OpCodes.Conv_I8));           /* IntPtr -> int64 */
+      V(ilv.Create(OpCodes.Conv_U8));           /* -> uint64 */
+      V(ilv.Create(OpCodes.Ldloc, vPeer));
+      V(ilv.Create(OpCodes.Call, setupAtspiRef));
+    }
     /* K-1146：检查 Command.CanExecute */
     V(ilv.Create(OpCodes.Ldloc, vBtn)); V(ilv.Create(OpCodes.Call, checkCmdRef));
     V(ilv.Create(OpCodes.Ldloc, vCh)); V(ilv.Create(OpCodes.Call, createPeerRef)); V(ilv.Create(OpCodes.Stloc, vPeer));
@@ -277,6 +299,7 @@ class P {
     Push(il2.Create(OpCodes.Ldc_I4_0)); Push(il2.Create(OpCodes.Stsfld, doneF));
     Push(il2.Create(OpCodes.Ldc_I4_0)); Push(il2.Create(OpCodes.Stsfld, scrolledF));
     Push(il2.Create(OpCodes.Ldstr, "[SCR] enter")); Push(il2.Create(OpCodes.Call, wlS));
+    Push(il2.Create(OpCodes.Ldarg_0)); Push(il2.Create(OpCodes.Stsfld, mwF));
     Push(il2.Create(OpCodes.Ldarg_0)); Push(il2.Create(OpCodes.Callvirt, getDC));
     Push(il2.Create(OpCodes.Castclass, mwVmRef));
     Push(il2.Create(OpCodes.Dup)); Push(il2.Create(OpCodes.Stsfld, vmF));
