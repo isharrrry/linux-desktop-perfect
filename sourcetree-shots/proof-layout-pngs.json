@@ -1,0 +1,89 @@
+{
+  "generated": "2026-11-02T05:05:00+08:00",
+  "note": "布局图 PNG 的像素分析证据（几何可视化，非界面截图）",
+  "files": [
+    {
+      "file": "layout-tree.png",
+      "exists": true,
+      "size_bytes": 16139,
+      "width": 1200,
+      "height": 1720,
+      "unique_colors": 106,
+      "non_solid": true,
+      "bytes_over_10000": true,
+      "note": "几何布局可视化（非 WPF 界面截图；几何数据来自 K-1013）"
+    },
+    {
+      "file": "layout-menu.png",
+      "exists": true,
+      "size_bytes": 179127,
+      "width": 800,
+      "height": 220,
+      "unique_colors": 64001,
+      "non_solid": true,
+      "bytes_over_10000": true,
+      "note": "几何布局可视化（非 WPF 界面截图；几何数据来自 K-1013）"
+    },
+    {
+      "file": "layout-button.png",
+      "exists": true,
+      "size_bytes": 178911,
+      "width": 800,
+      "height": 200,
+      "unique_colors": 64001,
+      "non_solid": true,
+      "bytes_over_10000": true,
+      "note": "几何布局可视化（非 WPF 界面截图；几何数据来自 K-1013）"
+    },
+    {
+      "file": "layout-text.png",
+      "exists": true,
+      "size_bytes": 167817,
+      "width": 800,
+      "height": 180,
+      "unique_colors": 60001,
+      "non_solid": true,
+      "bytes_over_10000": true,
+      "note": "几何布局可视化（非 WPF 界面截图；几何数据来自 K-1013）"
+    },
+    {
+      "file": "layout-itemspresenter.png",
+      "exists": true,
+      "size_bytes": 56108,
+      "width": 800,
+      "height": 80,
+      "unique_colors": 20001,
+      "non_solid": true,
+      "bytes_over_10000": true,
+      "note": "几何布局可视化（非 WPF 界面截图；几何数据来自 K-1013）"
+    },
+    {
+      "file": "layout-tab.png",
+      "exists": true,
+      "size_bytes": 71420,
+      "width": 800,
+      "height": 80,
+      "unique_colors": 25601,
+      "non_solid": true,
+      "bytes_over_10000": true,
+      "note": "几何布局可视化（非 WPF 界面截图；几何数据来自 K-1013）"
+    },
+    {
+      "file": "layout-scroll.png",
+      "exists": true,
+      "size_bytes": 78371,
+      "width": 800,
+      "height": 100,
+      "unique_colors": 28001,
+      "non_solid": true,
+      "bytes_over_10000": true,
+      "note": "几何布局可视化（非 WPF 界面截图；几何数据来自 K-1013）"
+    }
+  ],
+  "summary": {
+    "total": 7,
+    "non_solid_count": 7,
+    "bytes_ok_count": 7,
+    "all_pass": true
+  }
+}
