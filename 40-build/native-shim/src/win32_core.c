@@ -1141,6 +1141,13 @@ static HWND create_window_utf8(uint32_t dwExStyle, const char *cls,
     if (!w->is_message_only && (dwStyle & WS_VISIBLE) != 0)
         wpf_x11_map(w->hwnd, 1);
 
+    /* 【K-867】AT-SPI 节点注册（UIA 根因修复）
+       `wpf_atspi_register_window` 原来只在 `win32_x11.c:834` 调用 ⇒ `create_window_utf8`
+       这条（WPF 实际走的）**从不注册 AT-SPI 节点** ⇒ `root` 对象空 ⇒ `dump-tree` 返回空。
+       这里在窗口创建完成（map 之后）注册，覆盖 WPF 的实际路径。 */
+    if (!w->is_message_only)
+        wpf_atspi_register_window((uint64_t)w->hwnd, title);
+
     return w->hwnd;
 }
 
