@@ -65,5 +65,26 @@ namespace UiaInvokeHelper
                 || n.IndexOf("MenuItem", StringComparison.Ordinal) >= 0
                 || n.IndexOf("Toggle", StringComparison.Ordinal) >= 0;
         }
+
+        /// <summary>检查 ButtonBase 的 Command 是否可执行（K-1146）。</summary>
+        public static void CheckCommand(object button)
+        {
+            if (button == null) return;
+            try
+            {
+                var t = button.GetType();
+                var cmdProp = t.GetProperty("Command", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+                if (cmdProp == null) { Console.WriteLine("[CMD] 无 Command 属性"); return; }
+                var cmd = cmdProp.GetValue(button);
+                if (cmd == null) { Console.WriteLine("[CMD] Command = null"); return; }
+                var can = cmd.GetType().GetMethod("CanExecute", BindingFlags.Public | BindingFlags.Instance, null, new[] { typeof(object) }, null);
+                var exec = cmd.GetType().GetMethod("Execute", BindingFlags.Public | BindingFlags.Instance, null, new[] { typeof(object) }, null);
+                string canR = "(?)";
+                try { canR = can == null ? "(no CanExecute)" : (can.Invoke(cmd, new object[] { null })?.ToString() ?? "(null)"); } catch (Exception e) { canR = "throw:" + e.GetType().Name; }
+                Console.WriteLine("[CMD] " + t.Name + " Command=" + cmd.GetType().Name + " CanExecute=" + canR);
+            }
+            catch (Exception e) { Console.WriteLine("[CMD] 失败: " + e.GetType().Name + ": " + e.Message); }
+        }
+
     }
 }

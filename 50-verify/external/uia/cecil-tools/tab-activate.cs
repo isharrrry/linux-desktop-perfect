@@ -64,6 +64,7 @@ class P {
     var helper = AssemblyDefinition.ReadAssembly(System.IO.Path.Combine(a[3], "UiaInvokeHelper.dll"));
     var helperType = helper.MainModule.Types.First(x => x.Name == "Helper");
     var tryInvokeRef = asm.MainModule.ImportReference(helperType.Methods.First(x => x.Name == "TryInvoke"));
+    var checkCmdRef = asm.MainModule.ImportReference(helperType.Methods.First(x => x.Name == "CheckCommand"));
     var uap = pc.MainModule.Types.SelectMany(Flat).FirstOrDefault(x => x.Name == "UIElementAutomationPeer") ?? pf.MainModule.Types.SelectMany(Flat).First(x => x.Name == "UIElementAutomationPeer");
     var createPeerRef = asm.MainModule.ImportReference(uap.Methods.First(x => x.Name == "CreatePeerForElement"));
     var peerType = pc.MainModule.Types.SelectMany(Flat).First(x => x.Name == "AutomationPeer" && x.Namespace == "System.Windows.Automation.Peers");
@@ -103,6 +104,8 @@ class P {
     var vNotBtn = ilv.Create(OpCodes.Nop);
     V(ilv.Create(OpCodes.Brfalse, vNotBtn));
     V(ilv.Create(OpCodes.Ldstr, "[INV2] try Button")); V(ilv.Create(OpCodes.Call, wlS));
+    /* K-1146：检查 Command.CanExecute */
+    V(ilv.Create(OpCodes.Ldloc, vBtn)); V(ilv.Create(OpCodes.Call, checkCmdRef));
     V(ilv.Create(OpCodes.Ldloc, vCh)); V(ilv.Create(OpCodes.Call, createPeerRef)); V(ilv.Create(OpCodes.Stloc, vPeer));
     V(ilv.Create(OpCodes.Ldloc, vPeer));
     var vNoPeer = ilv.Create(OpCodes.Nop);
