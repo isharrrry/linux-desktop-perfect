@@ -249,6 +249,44 @@ static int atspi_ensure(void)
         }
     }
 
+    /* 【K-621】**终极修复**：AT-SPI2 的正确注册方式是
+     *   `org.a11y.atspi.Socket.Embed((our_well_known_name, our_root_path))`
+     *   对象路径 `/org/a11y/atspi/accessible/root`（在 `org.a11y.atspi.Registry` 上），
+     *   签名 `(so)`（一个 struct，`objectpath` 类型）。
+     *   `dbus-monitor` 抓到的实证（`TestApp` 的流程）：
+     *     → Embed("org.a11y.atspi.TestApp", /org/a11y/atspi/accessible/root)
+     *     ← ChildrenChanged 信号 + Properties.Set("org.a11y.atspi.Application", "Id")
+     *   注意：必须在 `request_name` **之后**（否则 registry 找不到我们的 bus name）。 */
+    {
+        DBusMessage *m = dbus_message_new_method_call(
+            "org.a11y.atspi.Registry",
+            "/org/a11y/atspi/accessible/root",
+            "org.a11y.atspi.Socket",
+            "Embed");
+        if (m) {
+            DBusMessageIter it, st;
+            dbus_message_iter_init_append(m, &it);
+            dbus_message_iter_open_container(&it, DBUS_TYPE_STRUCT, NULL, &st);
+            const char *bus = "org.a11y.atspi.SourceTree";
+            const char *path = "/org/a11y/atspi/accessible/wpf/root";
+            dbus_message_iter_append_basic(&st, DBUS_TYPE_STRING, &bus);
+            dbus_message_iter_append_basic(&st, DBUS_TYPE_OBJECT_PATH, &path);
+            dbus_message_iter_close_container(&it, &st);
+            DBusError e2; dbus_error_init(&e2);
+            DBusMessage *r = dbus_connection_send_with_reply_and_block(g_bus, m, 3000, &e2);
+            if (r) {
+                atspi_diag("[ATSPI] Socket.Embed 成功");
+                dbus_message_unref(r);
+            } else {
+                atspi_diag("[ATSPI] Socket.Embed 失败：%s", e2.message ? e2.message : "?");
+                dbus_error_free(&e2);
+            }
+            dbus_message_unref(m);
+        } else {
+            atspi_diag("[ATSPI] Socket.Embed 消息创建失败");
+        }
+    }
+
     g_bus_state = 1;
     pthread_mutex_unlock(&g_atspi_lock);
     return 1;
@@ -521,7 +559,8 @@ static DBusHandlerResult atspi_msg_handler(DBusConnection *conn, DBusMessage *ms
     const char *member = dbus_message_get_member(msg);
     if (!path || !member) return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
     if (iface && strcmp(iface, "org.freedesktop.DBus.Introspectable") != 0
-             && strcmp(iface, "org.a11y.atspi.Accessible") != 0)
+             && strcmp(iface, "org.a11y.atspi.Accessible") != 0
+             && strcmp(iface, "org.freedesktop.DBus.Properties") != 0)
         return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
 
     wpf_atspi_node *n = atspi_node_by_path(path);
@@ -575,6 +614,47 @@ static DBusHandlerResult atspi_msg_handler(DBusConnection *conn, DBusMessage *ms
         dbus_message_iter_append_basic(&st, DBUS_TYPE_STRING, &bus);
         dbus_message_iter_append_basic(&st, DBUS_TYPE_STRING, &(const char *){WPF_ATSPI_PATH_ROOT});
         dbus_message_iter_close_container(&it, &st);
+    } else if (strcmp(member, "Get") == 0) {
+        /* 【K-622】**关键**：AT-SPI2 的 `name`/`description`/`parent`/`childCount`
+         *   是 **D-Bus 属性**（走 `org.freedesktop.DBus.Properties.Get`），
+         *   不是 `GetName`/`GetRoleName` 方法。pyatspi 读属性拿名字。
+         *   没有这个 ⇒ pyatspi 显示 `name=None`。 */
+        const char *want_iface = NULL, *want_prop = NULL;
+        DBusMessageIter in;
+        if (dbus_message_iter_init(msg, &in)) {
+            dbus_message_iter_get_basic(&in, &want_iface);
+            dbus_message_iter_next(&in);
+            dbus_message_iter_get_basic(&in, &want_prop);
+        }
+        DBusMessageIter var;
+        if (want_prop && strcmp(want_prop, "name") == 0) {
+            dbus_message_iter_open_container(&it, DBUS_TYPE_VARIANT, "s", &var);
+            dbus_message_iter_append_basic(&var, DBUS_TYPE_STRING, &(const char *){n->name});
+            dbus_message_iter_close_container(&it, &var);
+        } else if (want_prop && strcmp(want_prop, "description") == 0) {
+            dbus_message_iter_open_container(&it, DBUS_TYPE_VARIANT, "s", &var);
+            dbus_message_iter_append_basic(&var, DBUS_TYPE_STRING, &(const char *){""});
+            dbus_message_iter_close_container(&it, &var);
+        } else if (want_prop && strcmp(want_prop, "childCount") == 0) {
+            dbus_int32_t cnt = 0;
+            for (int i = 0; i < g_node_count; ++i)
+                if (g_nodes[i].alive && g_nodes[i].hwnd != 0 && n->hwnd == 0) ++cnt;
+            dbus_message_iter_open_container(&it, DBUS_TYPE_VARIANT, "i", &var);
+            dbus_message_iter_append_basic(&var, DBUS_TYPE_INT32, &cnt);
+            dbus_message_iter_close_container(&it, &var);
+        } else if (want_prop && strcmp(want_prop, "parent") == 0) {
+            const char *pp = (n->hwnd == 0) ? "" : WPF_ATSPI_PATH_ROOT;
+            DBusMessageIter st;
+            dbus_message_iter_open_container(&it, DBUS_TYPE_VARIANT, "(so)", &var);
+            dbus_message_iter_open_container(&var, DBUS_TYPE_STRUCT, NULL, &st);
+            dbus_message_iter_append_basic(&st, DBUS_TYPE_STRING, &bus);
+            dbus_message_iter_append_basic(&st, DBUS_TYPE_OBJECT_PATH, &pp);
+            dbus_message_iter_close_container(&var, &st);
+            dbus_message_iter_close_container(&it, &var);
+        } else {
+            dbus_message_unref(reply);
+            return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+        }
     } else if (strcmp(member, "Introspect") == 0) {
         const char *xml =
             "<node><interface name='org.a11y.atspi.Accessible'>"
