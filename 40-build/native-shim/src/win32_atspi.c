@@ -46,6 +46,16 @@
 #endif
 #define WPF_S_OK ((int32_t)0)
 
+/* 【K-623】**关键**：libdbus 默认**不是线程安全的**，而 `win32_ibus.c` /
+ *   `win32_atspi.c` 都在多个线程用 D-Bus。`dbus_threads_init_default()` 必须在
+ *   **任何** `dbus_*` 调用之前执行。放在 `atspi_ensure()` 里太晚（ibus 可能先调）。
+ *   用 `__attribute__((constructor))` 在加载 .so 时最早的时机初始化。 */
+__attribute__((constructor))
+static void wpf_dbus_threads_init_early(void)
+{
+    dbus_threads_init_default();
+}
+
 #define ATSPI_REG_SERVICE "org.a11y.atspi.Registry"
 #define ATSPI_REG_PATH    "/org/a11y/atspi/registry"
 #define ATSPI_REG_IFACE   "org.a11y.atspi.Registry"
