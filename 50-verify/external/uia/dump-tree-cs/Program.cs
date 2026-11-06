@@ -21,6 +21,8 @@ internal static class Program
     private static string _busAddr = "";
     private const string Registry = "org.a11y.atspi.Registry";
     private const string Root = "/org/a11y/atspi/accessible/root";
+    private const string KnownAppBus = "org.a11y.atspi.SourceTree";
+    private const string KnownAppRoot = "/org/a11y/atspi/accessible/wpf/root";
 
     private static int Main(string[] argv)
     {
@@ -48,6 +50,11 @@ internal static class Program
                 return 4;
             }
         }
+
+        // 【K-871】`gdbus call --address` 需要 D-Bus 地址（`unix:path=/...`），
+        //   而调用方常直接给 socket 文件路径（`$HOME/.cache/at-spi/bus_N`）⇒ 转换之。
+        if (_busAddr.StartsWith("/", StringComparison.Ordinal))
+            _busAddr = "unix:path=" + _busAddr;
 
         if (!HasGdbus())
         {
@@ -165,6 +172,19 @@ internal static class Program
         var refs = new List<(string bus, string path)>();
         foreach (var (b, p) in allRefs)
             if (seen.Add(b + p)) refs.Add((b, p));
+
+        // 【K-870】fallback：`org.a11y.atspi.Registry` 上没有 `RegisterApplication`
+        //   （见 SourceTree 日志）⇒ registryd 的桌面 `GetChildren` 永远是空 ⇒ 找不到我们的 app。
+        //   这里在桌面为空时直连**已知 app 名 + `/wpf/root`**（`win32_atspi.c` 注册的真实路径）。
+        if (refs.Count == 0)
+        {
+            var kn = ExtractString(Call(KnownAppBus, KnownAppRoot, "org.a11y.atspi.Accessible", "GetName"));
+            if (kn.Length > 0)
+            {
+                refs.Add((KnownAppBus, KnownAppRoot));
+                snap.DesktopChildCount = 1;
+            }
+        }
 
         for (int i = 0; i < refs.Count; i++)
         {
