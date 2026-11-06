@@ -207,7 +207,14 @@ namespace UiaInvokeHelper
                     var v = p.GetValue(el) as string;
                     if (!string.IsNullOrEmpty(v)) { val = v; break; }
                 }
-                if (val != null) { Console.WriteLine("[TEXT] " + tn + " = \"" + val + "\""); return; }
+                if (val != null) { Console.WriteLine("[TEXT] " + tn + " = \"" + val + "\""); }
+                // K-1206：如果这是 MenuItem 且有子项 ⇒ 顺便展开（零 IL 风险）
+                var mi = el as System.Windows.Controls.MenuItem;
+                if (mi != null && mi.Items.Count > 0 && !mi.IsSubmenuOpen) {
+                    try { mi.IsSubmenuOpen = true; Console.WriteLine("[MENU3] 展开: Header=" + (mi.Header ?? "(null)")); }
+                    catch (Exception me) { Console.WriteLine("[MENU3] 展开失败: " + me.GetType().Name); }
+                }
+                if (val != null) return;
                 // K-1169：Content 不是 string ⇒ 递归读它的 Text/Content/Header
                 var cp = t.GetProperty("Content", BindingFlags.Public | BindingFlags.Instance);
                 if (cp != null) {
