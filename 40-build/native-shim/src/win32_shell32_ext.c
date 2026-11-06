@@ -288,3 +288,15 @@ int32_t SHAutoComplete(void *hwndEdit, uint32_t dwFlags)
     (void)hwndEdit; (void)dwFlags;
     return 0;      // S_OK —— 见上面的说明：登记成功但无实际效果
 }
+
+// ── 【K-489】UWP 包检测（`DesktopBridge.Helpers.IsRunningAsUwp` 依赖）────────────
+//   SourceTree 启动时调 `GetCurrentPackageFullName` 判断自己是否跑在 UWP 容器里。
+//   Linux 上没有 UWP ⇒ 必须返回 **`APPMODEL_ERROR_NO_PACKAGE`（15700）**，
+//   让 `IsRunningAsUwp()` 返回 false，走普通桌面路径。
+//   依据：Windows API 签名 `LONG GetCurrentPackageFullName(UINT32 *len, PWSTR name)`。
+long GetCurrentPackageFullName(unsigned int *packageFullNameLength, unsigned short *packageFullName)
+{
+    (void)packageFullName;
+    if (packageFullNameLength) *packageFullNameLength = 0;
+    return 15700;   // APPMODEL_ERROR_NO_PACKAGE
+}
