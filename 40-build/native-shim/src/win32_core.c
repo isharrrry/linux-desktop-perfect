@@ -1838,6 +1838,8 @@ BOOL SetWindowTextW(HWND hwnd, const uint16_t *text)
         fflush(stderr);
     }
     BOOL r = SetWindowTextA(hwnd, t ? t : "");
+    /* 【K-655】把标题同步到 AT-SPI node（修 frame 的 name 空串） */
+    if (t && *t) wpf_atspi_update_name((uint64_t)(uintptr_t)hwnd, t);
     free(t);
     return r;
 }

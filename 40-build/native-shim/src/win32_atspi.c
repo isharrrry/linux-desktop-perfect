@@ -763,6 +763,19 @@ void wpf_atspi_register_window(uint64_t hwnd, const char *title)
     atspi_register_node(path, title, "frame", hwnd);
 }
 
+// 【对外】【K-655】窗口标题变化时更新 AT-SPI node 的 name
+//   根因（K-654）：`create_window_utf8` 时 WPF 还没调 `SetWindowTextW`，
+//   所以注册时 `title` 是空 ⇒ frame 的 name 是空串。
+//   在 `SetWindowTextW` 里调本函数，把最新标题同步到 node。
+void wpf_atspi_update_name(uint64_t hwnd, const char *title)
+{
+    if (!atspi_ensure() || !title || !*title) return;
+    wpf_atspi_node *n = atspi_node_find(hwnd);
+    if (!n) return;
+    snprintf(n->name, sizeof(n->name), "%s", title);
+    atspi_diag("[ATSPI] 更新 node name: hwnd=0x%llx name=%s", (unsigned long long)hwnd, title);
+}
+
 // 【对外】窗口销毁时标记
 void wpf_atspi_unregister_window(uint64_t hwnd)
 {
