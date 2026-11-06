@@ -618,6 +618,26 @@ static DBusHandlerResult atspi_msg_handler(DBusConnection *conn, DBusMessage *ms
         dbus_uint32_t role = (n->hwnd == 0) ? 75 : 23;
         dbus_message_iter_append_basic(&it, DBUS_TYPE_UINT32, &role);
     } else if (strcmp(member, "GetChildren") == 0) {
+        /* 【K-667】**触发 WPF 创建 UIA provider**：主窗口（`HwndSource`）不走
+         *   `UiaReturnRawElementProvider`（只有 `HwndHost`/`Popup` 走），而是通过
+         *   `WM_GETOBJECT`（`HwndTarget.cs:1106` → `CriticalHandleWMGetobject`）提供 provider。
+         *   shim 之前不处理 `WM_GETOBJECT` ⇒ provider 从未被创建 ⇒ `[UIA]` 日志空。
+         *   这里主动发 `WM_GETOBJECT`（`OBJID_CLIENT = -4`），让 WPF 创建 provider 并
+         *   调 `UiaReturnRawElementProvider`（我们已实现，存 `hwnd → el`）。
+         *   **注意**：`SendMessageW` 是同步的（会阻塞 AT-SPI 泵线程），
+         *   所以只对**顶层窗口**发一次（用 static 标志去重）。 */
+        static int g_wmget_sent = 0;
+        if (!g_wmget_sent && n->hwnd == 0) {
+            g_wmget_sent = 1;
+            for (int i = 0; i < g_node_count; ++i) {
+                if (g_nodes[i].alive && g_nodes[i].hwnd != 0) {
+                    atspi_diag("[ATSPI] 发 WM_GETOBJECT 给 hwnd=0x%llx（触发 WPF 创建 provider）",
+                               (unsigned long long)g_nodes[i].hwnd);
+                    SendMessageW((HWND)(uintptr_t)g_nodes[i].hwnd, 0x003D /*WM_GETOBJECT*/,
+                                 0, (LPARAM)(intptr_t)-4 /*OBJID_CLIENT*/);
+                }
+            }
+        }
         DBusMessageIter arr;
         dbus_message_iter_open_container(&it, DBUS_TYPE_ARRAY, "(so)", &arr);
         for (int i = 0; i < g_node_count; ++i)
