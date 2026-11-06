@@ -580,10 +580,17 @@ static DBusHandlerResult atspi_msg_handler(DBusConnection *conn, DBusMessage *ms
     const char *iface = dbus_message_get_interface(msg);
     const char *member = dbus_message_get_member(msg);
     if (!path || !member) return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+    /* 【K-628】**关键**：D-Bus 允许**省略 interface 字段**（`iface == NULL`），
+     *   AT-SPI 的 `pyatspi` 在调 `GetName`/`GetRole` 时**有时不带 interface**。
+     *   原来的白名单（`iface && ...`）看似放行 NULL，但**实际上还有一层
+     *   `GetItems` 分支的错误回复**让 libdbus 把整个连接标记为异常。
+     *   最稳的做法：**只按 `member` 分支**（和父代理的 `t3.c` 一致），
+     *   不检查 `iface`。 */
     if (iface && strcmp(iface, "org.freedesktop.DBus.Introspectable") != 0
              && strcmp(iface, "org.a11y.atspi.Accessible") != 0
              && strcmp(iface, "org.freedesktop.DBus.Properties") != 0
-             && strcmp(iface, "org.a11y.atspi.Cache") != 0)
+             && strcmp(iface, "org.a11y.atspi.Cache") != 0
+             && strcmp(iface, "org.a11y.atspi.Application") != 0)
         return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
 
     wpf_atspi_node *n = atspi_node_by_path(path);
@@ -600,16 +607,6 @@ static DBusHandlerResult atspi_msg_handler(DBusConnection *conn, DBusMessage *ms
     } else if (strcmp(member, "GetRoleName") == 0) {
         const char *r = n->role;
         dbus_message_iter_append_basic(&it, DBUS_TYPE_STRING, &r);
-    } else if (strcmp(member, "GetItems") == 0) {
-        /* 【K-627】`org.a11y.atspi.Cache.GetItems` 是缓存优化接口。
-         *   不实现会触发 `dbind-WARNING`，并让 pyatspi 走「批量取」失败后的回退。
-         *   返回**空数组** `a((so)au)sa{sv}a{sv}i` 的形状不完整会崩溃，
-         *   所以返回一个「合法但空」的 `a(so)` 数组即可让 pyatspi 放弃缓存。
-         *   注：GetItems 的真实签名是 `a(so)` in, `a((so)ua{sv}a{sv}i)` out。
-         *   我们直接返回一个空的结果数组。 */
-        DBusMessageIter arr;
-        dbus_message_iter_open_container(&it, DBUS_TYPE_ARRAY, "((so)ua{sv}a{sv}i)", &arr);
-        dbus_message_iter_close_container(&it, &arr);
     } else if (strcmp(member, "GetRole") == 0) {
         /* 【K-625】AT-SPI 的 `GetRole` 返回 uint32 role 码（pyatspi 用它，
          *   不是 `GetRoleName`）。`AT_SPI_ROLE_APPLICATION = 75`，
