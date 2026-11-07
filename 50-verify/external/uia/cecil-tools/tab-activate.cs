@@ -464,6 +464,27 @@ class P {
                 /* K-1297：先用 **ICollection.Count**（非泛型接口，不依赖泛型解析）拿到集合大小。 */
                 var icollRef = asm.MainModule.ImportReference(typeof(System.Collections.ICollection));
                 var getCountI = asm.MainModule.ImportReference(typeof(System.Collections.ICollection).GetProperty("Count").GetGetMethod());
+                /* K-1334：扩展诊断 —— 打印 ChangeSetViewModel 是否为 null + FileList/StagedFileList/CheckedFileCount */
+                var getFileList = asm.MainModule.ImportReference(wcc.Properties.First(x => x.Name == "FileList").GetMethod);
+                var getStaged = asm.MainModule.ImportReference(wcc.Properties.First(x => x.Name == "StagedFileList").GetMethod);
+                var getChecked = asm.MainModule.ImportReference(wcc.Properties.First(x => x.Name == "CheckedFileCount").GetMethod);
+                var flType = asm.MainModule.ImportReference(wcc.Properties.First(x => x.Name == "FileList").PropertyType);
+                var getCountF = asm.MainModule.ImportReference(typeof(System.Collections.ICollection).GetProperty("Count").GetGetMethod());
+                var vFl = new VariableDefinition(flType); defer.Body.Variables.Add(vFl);
+                D(ild.Create(OpCodes.Ldstr, "[DIAG] FileList.Count=")); D(ild.Create(OpCodes.Call, wlS));
+                D(ild.Create(OpCodes.Ldloc, vWcc)); D(ild.Create(OpCodes.Callvirt, getFileList));
+                D(ild.Create(OpCodes.Stloc, vFl));
+                D(ild.Create(OpCodes.Ldloc, vFl)); D(ild.Create(OpCodes.Castclass, icollRef));
+                D(ild.Create(OpCodes.Callvirt, getCountI));
+                D(ild.Create(OpCodes.Call, asm.MainModule.ImportReference(typeof(Console).GetMethod("WriteLine", new[]{typeof(int)})))); 
+                D(ild.Create(OpCodes.Ldstr, "[DIAG] StagedFileList.Count=")); D(ild.Create(OpCodes.Call, wlS));
+                D(ild.Create(OpCodes.Ldloc, vWcc)); D(ild.Create(OpCodes.Callvirt, getStaged));
+                D(ild.Create(OpCodes.Castclass, icollRef));
+                D(ild.Create(OpCodes.Callvirt, getCountI));
+                D(ild.Create(OpCodes.Call, asm.MainModule.ImportReference(typeof(Console).GetMethod("WriteLine", new[]{typeof(int)})))); 
+                D(ild.Create(OpCodes.Ldstr, "[DIAG] CheckedFileCount=")); D(ild.Create(OpCodes.Call, wlS));
+                D(ild.Create(OpCodes.Ldloc, vWcc)); D(ild.Create(OpCodes.Callvirt, getChecked));
+                D(ild.Create(OpCodes.Call, asm.MainModule.ImportReference(typeof(Console).GetMethod("WriteLine", new[]{typeof(int)})))); 
                 D(ild.Create(OpCodes.Ldstr, "[REFLECT] UnstagedFileList.Count=")); D(ild.Create(OpCodes.Call, wlS));
                 D(ild.Create(OpCodes.Ldloc, vColl));
                 D(ild.Create(OpCodes.Castclass, icollRef));
