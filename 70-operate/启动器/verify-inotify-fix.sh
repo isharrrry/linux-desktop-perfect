@@ -1,5 +1,15 @@
 #!/bin/bash
-# inotify 提权后的验证清单（K-1306/K-1307）
+# inotify 提权后的验证清单
+#
+# ⚠️ 本脚本基于 K-1306/K-1307 的假设（「inotify 上限导致暂存失败」），
+#    该假设已被 K-1333/K-1343 **否定**：
+#    - K-1333：RepoWatcher 零报错（inotify 已用 124/128）时，UnstagedFileList.Count 仍为 0
+#    - K-1343：最终根因是 Tabs.Count = 0（SourceTree 从没打开仓库）
+#    - ⇒ 正确结论见 70-operate/已知限制汇总.md 的 L-20.4：暂存不可达
+#
+# 本脚本保留作为历史记录 / 环境自检（检查 inotify 上限本身仍有意义），
+# 但**不要**再认为「跑完它暂存就能用」。
+#
 # 用法：bash 70-operate/启动器/verify-inotify-fix.sh
 set -u
 FX=~/.local/share/ldp/dotnet/shared/Microsoft.WindowsDesktop.App/10.0.11
