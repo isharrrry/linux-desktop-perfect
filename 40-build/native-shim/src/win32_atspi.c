@@ -187,7 +187,11 @@ static int atspi_ensure(void)
     {
         const char *ev = getenv("WPF_LINUX_ATSPI");
         if (ev && ev[0] == '0' && ev[1] == '\0') {
-            atspi_diag("[ATSPI] 已被 WPF_LINUX_ATSPI=0 禁用");
+            /* K-1258：与 `AT_SPI_BUS_ADDRESS=/nonexistent` 对齐 —— 把状态置成**已放弃(-1)**，
+               否则保持 0（未初始化）会让后续调用反复进入初始化路径，引入竞态
+               （K-1257 实测：NOADDR 100% vs NOATSPI 75%）。 */
+            atspi_diag("[ATSPI] 已被 WPF_LINUX_ATSPI=0 禁用（状态置 -1）");
+            g_bus_state = -1;
             return 0;
         }
     }
