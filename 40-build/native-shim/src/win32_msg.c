@@ -867,13 +867,24 @@ BOOL GetMessageW(WPF_MSG *msg, HWND hwnd, UINT lo, UINT hi)
             dm.hwnd = um.hwnd = ah;
             dm.message = 0x0201;  /* WM_LBUTTONDOWN */
             um.message = 0x0202;  /* WM_LBUTTONUP   */
-            dm.wParam = um.wParam = 1;  /* MK_LBUTTON */
-            dm.lParam = um.lParam = (LPARAM)(((uint32_t)20 << 16) | 20);
+            /* K-1252：坐标可配置（`WPF_ATSPI_ACTION_XY="x,y"`，默认 20,20） */
+            int ax = 20, ay = 20;
+            {
+                const char *xy = getenv("WPF_ATSPI_ACTION_XY");
+                if (xy && *xy) { sscanf(xy, "%d,%d", &ax, &ay); }
+            }
+            /* K-1253：**与 `WPF_FAKE_CLICK` 逐字段对齐**（此前两处不一致导致 UI 无反应）：
+               ① UP 的 `wParam` 必须是 0（MK_LBUTTON 只属于 DOWN）；
+               ② 必须同时设 `pt_x`/`pt_y`（WPF 命中测试会用）。 */
+            dm.wParam = 1;   /* MK_LBUTTON */
+            um.wParam = 0;
+            dm.lParam = um.lParam = (LPARAM)(uint32_t)(((uint32_t)(ax & 0xFFFF)) | (((uint32_t)(ay & 0xFFFF)) << 16));
+            dm.pt_x = um.pt_x = ax; dm.pt_y = um.pt_y = ay;
             dm.time = um.time = (uint32_t)wpf_now_ms();
             wpf_queue_push(wpf_thread_self(), &dm);
             wpf_queue_push(wpf_thread_self(), &um);
-            fprintf(stderr, "[ATSPI-ACTION] injected click hwnd=0x%llx at 20,20\n",
-                    (unsigned long long)(uintptr_t)ah);
+            fprintf(stderr, "[ATSPI-ACTION] injected click hwnd=0x%llx at %d,%d\n",
+                    (unsigned long long)(uintptr_t)ah, ax, ay);
             fflush(stderr);
         }
     }
