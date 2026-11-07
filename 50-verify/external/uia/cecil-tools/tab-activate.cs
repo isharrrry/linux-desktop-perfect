@@ -431,6 +431,14 @@ class P {
                 D(ild.Create(OpCodes.Ldstr, "[REFLECT] UnstagedFileList obtained, calling Stage(IEnumerable)")); D(ild.Create(OpCodes.Call, wlS));
                 /* K-1296：把 UnstagedFileList（ObservableCollection<IFileStatusRecord>，实现了 IEnumerable<T>）
                    直接传给 RepoTabViewModel.Stage(IEnumerable<IFileStatusRecord>)。 */
+                /* K-1297：先用 **ICollection.Count**（非泛型接口，不依赖泛型解析）拿到集合大小。 */
+                var icollRef = asm.MainModule.ImportReference(typeof(System.Collections.ICollection));
+                var getCountI = asm.MainModule.ImportReference(typeof(System.Collections.ICollection).GetProperty("Count").GetGetMethod());
+                D(ild.Create(OpCodes.Ldstr, "[REFLECT] UnstagedFileList.Count=")); D(ild.Create(OpCodes.Call, wlS));
+                D(ild.Create(OpCodes.Ldloc, vColl));
+                D(ild.Create(OpCodes.Castclass, icollRef));
+                D(ild.Create(OpCodes.Callvirt, getCountI));
+                D(ild.Create(OpCodes.Call, asm.MainModule.ImportReference(typeof(Console).GetMethod("WriteLine", new[]{typeof(int)}))));
                 var stageEnum = asm.MainModule.ImportReference(rtv2.Methods.First(x => x.Name == "Stage" && x.Parameters.Count == 1));
                 D(ild.Create(OpCodes.Ldloc, vRtv));
                 D(ild.Create(OpCodes.Ldloc, vColl));
