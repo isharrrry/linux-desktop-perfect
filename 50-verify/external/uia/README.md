@@ -3,13 +3,22 @@
 ## 用法
 
 ```bash
-# 1. 先启动 SourceTree（见仓根 40-build/install-shims.sh 和 /tmp/stpkg 部署）
-export DOTNET_ROOT=~/.local/share/ldp/dotnet
-FX=~/.local/share/ldp/dotnet/shared/Microsoft.WindowsDesktop.App/10.0.11
-cd /tmp/stpkg/SourceTree/app-3.4.15
-DISPLAY=:303 DOTNET_ROOT=$DOTNET_ROOT DOTNET_ReadyToRun=0 \
-  LD_LIBRARY_PATH="$FX/native:$FX:" WPF_LINUX_WIN32_SHIM=$FX/libwpfwin32.so \
-  ~/.local/share/ldp/dotnet/dotnet SourceTree.exe >/tmp/st.log 2>&1 &
+# 1. 启动 SourceTree —— 用仓库自带的启动器（推荐，自动带好全部环境变量）
+cp 70-operate/启动器/sourcetree /tmp/stpkg/SourceTree/app-3.4.15/sourcetree
+chmod +x /tmp/stpkg/SourceTree/app-3.4.15/sourcetree
+DISPLAY=:303 /tmp/stpkg/SourceTree/app-3.4.15/sourcetree >/tmp/st.log 2>&1 &
+
+# 等价的手动写法（启动器内部就是这些）：
+# export DOTNET_ROOT=~/.local/share/ldp/dotnet
+# FX=~/.local/share/ldp/dotnet/shared/Microsoft.WindowsDesktop.App/10.0.11
+# cd /tmp/stpkg/SourceTree/app-3.4.15
+# DISPLAY=:303 DOTNET_ROOT=$DOTNET_ROOT DOTNET_ReadyToRun=0 \
+#   LD_LIBRARY_PATH="$FX/native:$FX:" WPF_LINUX_WIN32_SHIM=$FX/libwpfwin32.so \
+#   ~/.local/share/ldp/dotnet/dotnet SourceTree.exe >/tmp/st.log 2>&1 &
+#
+# 启动器还做了两件额外的事：
+#   - 检测 .lnk 快捷方式并明确报错（K-1310，不再静默失败）
+#   - 自动补 DISPLAY 默认值 :303
 
 # 2. 等 20 秒后跑验证
 sleep 20
