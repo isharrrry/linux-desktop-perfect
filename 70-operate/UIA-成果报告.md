@@ -76,7 +76,7 @@ cp SourceTree.uia.dll $APP/SourceTree.exe
 
 | 操作 | 状态 | 实测证据 |
 |---|---|---|
-| **提交查看**（commit list）| **✅ 可用** | `st-26` 37801B / 542 色、`st-27` 34955B（文件状态视图）；`st-31`~`st-35` 菜单/对话框/仓库详情均 > 20000B |
+| **提交查看**（History 视图）| **❌ 未验证** | `st-26`/`st-27` 实为**文件状态视图**（显示「没什么可提交的」），不是提交列表（K-1360）；`st-31`~`st-35` 是菜单/对话框/仓库详情，也不含提交列表 |
 | **差异对比** | **❌ 不可用** | `ShowDiffBetweenCommits` 在 `Loaded`/`ContentRendered` 都崩（K-1275/K-1276）；`RenderTargetBitmap` 也确认不可用（K-1308）|
 | **提交操作** | **❌ 不可用** | 需要 `RepoTabViewModel` 实例，但 `Tabs.Count=0`（K-1343）|
 | **切换分支** | **❌ 不可用** | 同上 —— `_checkoutSelectedCommand` 拿不到（K-1356 推论）|
