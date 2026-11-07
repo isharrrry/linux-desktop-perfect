@@ -697,6 +697,8 @@ wpf_class  *wpf_class_find_name(const char *name);
 
 // 队列（win32_msg.c）
 void    wpf_queue_push(wpf_thread *t, const WPF_MSG *m);
+/* K-1227：取「最近在泵消息」的线程（GetMessageW 登记） */
+wpf_thread *wpf_pump_thread_get(void);
 int     wpf_queue_pop(wpf_thread *t, WPF_MSG *out, HWND filter, UINT lo, UINT hi);
 void    wpf_queue_wake(wpf_thread *t);
 int     wpf_queue_count(wpf_thread *t);

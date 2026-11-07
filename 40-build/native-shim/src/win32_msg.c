@@ -82,6 +82,12 @@ static uint32_t s_push_mods;
 static uint8_t  s_push_mods_valid;
 void wpf_keystate_set_push_mods(uint32_t mods) { s_push_mods = mods & 0xFF; s_push_mods_valid = 1; }   // bit4 = 左键（D-008）
 
+/* K-1227：记录「最近一次真正在泵消息」的线程。
+   【为什么】K-1226 实测：`WPF_FAKE_CLICK`（在 GetMessageW 内投 wpf_thread_self()）能驱动 UI，
+   而 `push()` 里投 `t`（X 事件线程）或 `owner_thread` 都取不到 ⇒ 必须投给**泵消息的那个线程**。 */
+static wpf_thread *g_pump_thread = NULL;
+wpf_thread *wpf_pump_thread_get(void) { return __atomic_load_n(&g_pump_thread, __ATOMIC_ACQUIRE); }
+
 void wpf_queue_push(wpf_thread *t, const WPF_MSG *m)
 {
     if (!t) return;
@@ -844,6 +850,7 @@ BOOL GetMessageW(WPF_MSG *msg, HWND hwnd, UINT lo, UINT hi)
     wpf_global_init();
     if (!msg) { wpf_set_last_error(87); return (BOOL)-1; }
     wpf_thread *t = wpf_thread_self();
+    /* K-1227 已回退：登记 g_pump_thread 后推送该线程导致启动崩溃 */
     wpf_msgflow_api("GetMessageW");          // 【MSGFLOW】取消息者标注
     // 【MSGFLOW v2 · 仪器①】入口参数：**这一格回答"有没有带区间/带窗口的调用在跑"** ——
     //   若某次 `GetMessageW` 带 `hwnd` 或 `lo..hi`，被它跳过的 `WM_CHAR` 就永远留在队里（判据 (a)）。

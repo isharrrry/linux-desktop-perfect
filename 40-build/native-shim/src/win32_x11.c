@@ -1320,6 +1320,9 @@ static void push(wpf_thread *t, HWND hwnd, uint32_t msg, WPARAM wp, LPARAM lp,
         wpf_window *w = wpf_window_find(hwnd);
         if (w && w->owner_thread) target = (wpf_thread *)w->owner_thread;
         owner_thr = w ? (void *)w->owner_thread : NULL;
+        /* K-1227 已回退：投给 g_pump_thread 导致**启动即崩**（疑似该线程已退出 ⇒ 悬空指针）。
+           修复需要线程存活检查（generation/refcount），见任务 tk_01M6SWX…  */
+
         pthread_mutex_unlock(&g_wpf.lock);
     }
     /* K-1226 已回退：把输入消息改投 pump 线程**实测无效**（按键前后 0B / 0 色变化），
