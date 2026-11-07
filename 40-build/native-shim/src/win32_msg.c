@@ -27,6 +27,7 @@
 #define _GNU_SOURCE
 #include <dlfcn.h>
 #include "win32_internal.h"
+#include <X11/Xlib.h>
 
 #include <errno.h>
 #include <poll.h>
@@ -833,6 +834,12 @@ BOOL GetMessageW(WPF_MSG *msg, HWND hwnd, UINT lo, UINT hi)
                     pthread_mutex_unlock(&g_wpf.lock);
                 }
                 if (h) {
+                    /* K-1263：注入前先把**真实 X 指针**移到目标坐标 —— WPF 的命中测试依赖
+                       `Mouse.DirectlyOver`（来自 X 指针位置），只改消息里的 pt_x/pt_y 不够。 */
+                    if (g_wpf.dpy) {
+                        XWarpPointer(g_wpf.dpy, None, DefaultRootWindow(g_wpf.dpy), 0, 0, 0, 0, cx, cy);
+                        XFlush(g_wpf.dpy);
+                    }
                     WPF_MSG dm, um;
                     memset(&dm, 0, sizeof dm); memset(&um, 0, sizeof um);
                     dm.hwnd = um.hwnd = h;
@@ -876,6 +883,20 @@ BOOL GetMessageW(WPF_MSG *msg, HWND hwnd, UINT lo, UINT hi)
             /* K-1253：**与 `WPF_FAKE_CLICK` 逐字段对齐**（此前两处不一致导致 UI 无反应）：
                ① UP 的 `wParam` 必须是 0（MK_LBUTTON 只属于 DOWN）；
                ② 必须同时设 `pt_x`/`pt_y`（WPF 命中测试会用）。 */
+            /* K-1263：同样先移动真实指针 */
+            if (g_wpf.dpy) {
+                Window rt = DefaultRootWindow(g_wpf.dpy);
+                Window ch; int rx, ry, wx, wy; unsigned mk;
+                int rootx = 0, rooty = 0;
+                if (XTranslateCoordinates(g_wpf.dpy, (Window)(uintptr_t)ah, rt, ax, ay, &rootx, &rooty, &ch)) {
+                    XWarpPointer(g_wpf.dpy, None, rt, 0, 0, 0, 0, rootx, rooty);
+                    XFlush(g_wpf.dpy);
+                } else {
+                    XWarpPointer(g_wpf.dpy, None, rt, 0, 0, 0, 0, ax, ay);
+                    XFlush(g_wpf.dpy);
+                }
+                (void)rx; (void)ry; (void)wx; (void)wy; (void)mk;
+            }
             dm.wParam = 1;   /* MK_LBUTTON */
             um.wParam = 0;
             dm.lParam = um.lParam = (LPARAM)(uint32_t)(((uint32_t)(ax & 0xFFFF)) | (((uint32_t)(ay & 0xFFFF)) << 16));
