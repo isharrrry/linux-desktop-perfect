@@ -1314,11 +1314,20 @@ static void push(wpf_thread *t, HWND hwnd, uint32_t msg, WPARAM wp, LPARAM lp,
     //   "The calling thread cannot access this object"。
     //   改成按 `wpf_window.owner_thread` 路由后，任何线程 pump 都只会给自己的窗口投消息。
     wpf_thread *target = t;
+    void *owner_thr = NULL;
     {
         wpf_lock();
         wpf_window *w = wpf_window_find(hwnd);
         if (w && w->owner_thread) target = (wpf_thread *)w->owner_thread;
+        owner_thr = w ? (void *)w->owner_thread : NULL;
         pthread_mutex_unlock(&g_wpf.lock);
+    }
+    /* K-1225：线程路由诊断（仅 WPF_LINUX_PUSH_DIAG=1 时打印，运行期零开销） */
+    if (getenv("WPF_LINUX_PUSH_DIAG")) {
+        fprintf(stderr, "[PUSH] hwnd=0x%lx msg=0x%04x pump_tid=%lu owner=%p target=%p\n",
+                (unsigned long)hwnd, (unsigned)msg,
+                (unsigned long)(uintptr_t)pthread_self(), owner_thr, (void *)target);
+        fflush(stderr);
     }
     if (getenv("WPF_LINUX_XDND_DIAG") && msg == 0x0233 /* WM_DROPFILES */) {
         fprintf(stderr, "[XDND-PUSH] WM_DROPFILES hwnd=0x%lx wp=0x%lx pump_thread=%p owner=%p -> target=%p\n",
