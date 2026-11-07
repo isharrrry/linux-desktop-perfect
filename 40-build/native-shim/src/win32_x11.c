@@ -1322,6 +1322,8 @@ static void push(wpf_thread *t, HWND hwnd, uint32_t msg, WPARAM wp, LPARAM lp,
         owner_thr = w ? (void *)w->owner_thread : NULL;
         pthread_mutex_unlock(&g_wpf.lock);
     }
+    /* K-1226 已回退：把输入消息改投 pump 线程**实测无效**（按键前后 0B / 0 色变化），
+       说明差异不在 target 选择，而在调用线程身份（FAKE_CLICK 在 GetMessageW 内调用）。 */
     /* K-1225：线程路由诊断（仅 WPF_LINUX_PUSH_DIAG=1 时打印，运行期零开销） */
     if (getenv("WPF_LINUX_PUSH_DIAG")) {
         fprintf(stderr, "[PUSH] hwnd=0x%lx msg=0x%04x pump_tid=%lu owner=%p target=%p\n",
