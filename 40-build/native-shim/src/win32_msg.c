@@ -88,9 +88,16 @@ void wpf_keystate_set_push_mods(uint32_t mods) { s_push_mods = mods & 0xFF; s_pu
 static wpf_thread *g_pump_thread = NULL;
 wpf_thread *wpf_pump_thread_get(void) { return __atomic_load_n(&g_pump_thread, __ATOMIC_ACQUIRE); }
 
+/* K-1231：WM_PAINT 计数 —— 用于消除 FAKE_CLICK/FAKE_KEYS 的启动竞态。
+   只有在「界面已经至少重绘 N 次」之后再注入，才能避免撞上初始化阶段（K-1230）。 */
+static unsigned g_paint_count = 0;
+unsigned wpf_paint_count_get(void) { return __atomic_load_n(&g_paint_count, __ATOMIC_ACQUIRE); }
+
 void wpf_queue_push(wpf_thread *t, const WPF_MSG *m)
 {
     if (!t) return;
+    if (m->message == 0x000F /* WM_PAINT */)
+        __atomic_add_fetch(&g_paint_count, 1, __ATOMIC_RELAXED);
     wpf_msg_node *n = (wpf_msg_node *)malloc(sizeof(wpf_msg_node));
     if (!n) return;
     n->mods = (uint8_t)(s_push_mods & 0xFF);   // [D-K1] 随消息带走"事件时刻"的修饰位（bit4=左键，D-008）
@@ -862,6 +869,7 @@ BOOL GetMessageW(WPF_MSG *msg, HWND hwnd, UINT lo, UINT hi)
         if (fk && *fk && !s_fk_done) {
             if (!s_fk_t0) s_fk_t0 = wpf_now_ms();
             else if (wpf_now_ms() - s_fk_t0 >= 3000) {
+                /* K-1231 已回退：改「paint>=3 后触发」实测 3 次里 2 次崩溃，PASS 率更差 */
                 HWND h = g_focus_window;
                 if (h) {
                     char buf[256];
