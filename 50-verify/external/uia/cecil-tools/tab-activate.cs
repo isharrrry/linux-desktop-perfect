@@ -356,24 +356,6 @@ class P {
           var ild = defer.Body.GetILProcessor();
           void D(Instruction i) => ild.Append(i);
           D(ild.Create(OpCodes.Ldstr, "[DIFF] ContentRendered fired")); D(ild.Create(OpCodes.Call, wlS));
-          /* K-1300：先调 IRepositoryMonitorManager.RefreshFileSystemMonitoring()（K-1299），
-             让 SourceTree 刷新文件系统监控，填充 UnstagedFileList。开关 ST_MONITOR=1。 */
-          if (Environment.GetEnvironmentVariable("ST_MONITOR") == "1") {
-            var monIface = apiAsm2.MainModule.Types.SelectMany(Flat).FirstOrDefault(x => x.Name == "IRepositoryMonitorManager");
-            if (monIface != null) {
-              var monRef = asm.MainModule.ImportReference(monIface);
-              var mwvmT3 = asm.MainModule.Types.SelectMany(Flat).First(x => x.Name == "MainWindowViewModel");
-              var mwvmR3 = asm.MainModule.ImportReference(mwvmT3);
-              var getMon = asm.MainModule.ImportReference(mwvmT3.Properties.First(x => x.Name == "RepositoryMonitorManager").GetMethod);
-              var refreshFs = asm.MainModule.ImportReference(monIface.Methods.First(x => x.Name == "RefreshFileSystemMonitoring"));
-              D(ild.Create(OpCodes.Ldstr, "[MONITOR] calling RefreshFileSystemMonitoring()")); D(ild.Create(OpCodes.Call, wlS));
-              D(ild.Create(OpCodes.Ldarg_0)); D(ild.Create(OpCodes.Callvirt, getDC));
-              D(ild.Create(OpCodes.Castclass, mwvmR3));
-              D(ild.Create(OpCodes.Callvirt, getMon));
-              D(ild.Create(OpCodes.Callvirt, refreshFs));
-              D(ild.Create(OpCodes.Ldstr, "[MONITOR] RefreshFileSystemMonitoring() done")); D(ild.Create(OpCodes.Call, wlS));
-            }
-          }
           /* K-1293：用 System.Reflection 访问私有字段 `_commitAndFileStatusVm`（K-1292），
              拿到 CommitAndFileStatusViewModel → .ChangeSetViewModel.UnstagedFileList 的**数量**并打印。
              这一步只验证「反射能突破 private 限制」，不修改任何状态。开关 ST_REFLECT=1。 */
@@ -441,16 +423,6 @@ class P {
                 var vColl = new VariableDefinition(collType); defer.Body.Variables.Add(vColl);
                 D(ild.Create(OpCodes.Ldloc, vObj));
                 D(ild.Create(OpCodes.Castclass, cfsvRef));
-                /* K-1298：先调 RefreshCommitMode()（public 无参），让 UnstagedFileList 填充。
-                   开关 ST_REFRESH=1 控制（避免影响其他测试）。 */
-                if (Environment.GetEnvironmentVariable("ST_REFRESH") == "1") {
-                  var refreshM = asm.MainModule.ImportReference(cfsv.Methods.First(x => x.Name == "RefreshCommitMode" && x.Parameters.Count == 0));
-                  D(ild.Create(OpCodes.Ldstr, "[REFLECT] calling RefreshCommitMode()")); D(ild.Create(OpCodes.Call, wlS));
-                  D(ild.Create(OpCodes.Ldloc, vObj));
-                  D(ild.Create(OpCodes.Castclass, cfsvRef));
-                  D(ild.Create(OpCodes.Callvirt, refreshM));
-                  D(ild.Create(OpCodes.Ldstr, "[REFLECT] RefreshCommitMode() done")); D(ild.Create(OpCodes.Call, wlS));
-                }
                 D(ild.Create(OpCodes.Ldloc, vObj));
                 D(ild.Create(OpCodes.Castclass, cfsvRef));
                 D(ild.Create(OpCodes.Callvirt, getChangeSet));
