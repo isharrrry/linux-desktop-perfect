@@ -344,14 +344,36 @@ class P {
           var showDiff   = asm.MainModule.ImportReference(logVm.Methods.First(x => x.Name == "ShowDiffBetweenCommits"));
           string h1 = Environment.GetEnvironmentVariable("ST_DIFF_H1") ?? "9a74d4ae1898bf1894f9fd6a14d2339e6246065f";
           string h2 = Environment.GetEnvironmentVariable("ST_DIFF_H2") ?? "657c444cd914d22cc0b6c6d47ce08c4173bc5d4c";
-          Push(il2.Create(OpCodes.Ldstr, "[DIFF] calling ShowDiffBetweenCommits")); Push(il2.Create(OpCodes.Call, wlS));
-          Push(il2.Create(OpCodes.Ldarg_0)); Push(il2.Create(OpCodes.Callvirt, getDC));
-          Push(il2.Create(OpCodes.Castclass, tabIfaceRef));            // IRepositoryTabContainerViewModel
-          Push(il2.Create(OpCodes.Callvirt, getSelRepo));              // → IRepoTabViewModel
-          Push(il2.Create(OpCodes.Callvirt, getLog));                  // → ILogViewModel
-          Push(il2.Create(OpCodes.Ldstr, h1)); Push(il2.Create(OpCodes.Ldstr, h2));
-          Push(il2.Create(OpCodes.Callvirt, showDiff));
-          Push(il2.Create(OpCodes.Ldstr, "[DIFF] done")); Push(il2.Create(OpCodes.Call, wlS));
+          /* K-1276：不再在 Loaded 里直接调（K-1275 会崩），改为注册到 ContentRendered 事件。
+             新建静态方法 ShowDiffDeferred(object, EventArgs)，把三跳 + ShowDiff 放进去。 */
+          var evArgsRef = asm.MainModule.ImportReference(typeof(EventArgs));
+          var objRef = asm.MainModule.TypeSystem.Object;
+          var defer = new MethodDefinition("ShowDiffDeferred",
+                          MethodAttributes.Public | MethodAttributes.Static, asm.MainModule.TypeSystem.Void);
+          defer.Parameters.Add(new ParameterDefinition(objRef));
+          defer.Parameters.Add(new ParameterDefinition(evArgsRef));
+          dv.Methods.Add(defer);
+          var ild = defer.Body.GetILProcessor();
+          void D(Instruction i) => ild.Append(i);
+          D(ild.Create(OpCodes.Ldstr, "[DIFF] ContentRendered fired")); D(ild.Create(OpCodes.Call, wlS));
+          D(ild.Create(OpCodes.Ldarg_0)); D(ild.Create(OpCodes.Callvirt, getDC));
+          D(ild.Create(OpCodes.Castclass, tabIfaceRef));
+          D(ild.Create(OpCodes.Callvirt, getSelRepo));
+          D(ild.Create(OpCodes.Callvirt, getLog));
+          D(ild.Create(OpCodes.Ldstr, h1)); D(ild.Create(OpCodes.Ldstr, h2));
+          D(ild.Create(OpCodes.Callvirt, showDiff));
+          D(ild.Create(OpCodes.Ldstr, "[DIFF] done")); D(ild.Create(OpCodes.Call, wlS));
+          D(ild.Create(OpCodes.Ret));
+          // 注册：mainWindow.ContentRendered += ShowDiffDeferred
+          var winT2 = pf.MainModule.Types.SelectMany(Flat).First(x => x.Name == "Window" && x.Namespace == "System.Windows");
+          var addCr = asm.MainModule.ImportReference(winT2.Methods.First(x => x.Name == "add_ContentRendered"));
+          var evtCtor = asm.MainModule.ImportReference(typeof(EventHandler).GetConstructors()[0]);
+          Push(il2.Create(OpCodes.Ldarg_0));
+          Push(il2.Create(OpCodes.Ldnull));
+          Push(il2.Create(OpCodes.Ldftn, defer));
+          Push(il2.Create(OpCodes.Newobj, evtCtor));
+          Push(il2.Create(OpCodes.Callvirt, addCr));
+          Push(il2.Create(OpCodes.Ldstr, "[DIFF] ContentRendered handler registered")); Push(il2.Create(OpCodes.Call, wlS));
         }
       } catch (Exception ex) { Console.WriteLine("ShowDiff 注入失败: " + ex.GetType().Name + " " + ex.Message); }
     }
