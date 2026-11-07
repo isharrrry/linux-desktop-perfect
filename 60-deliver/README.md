@@ -77,6 +77,14 @@ env -i DISPLAY=:91 HOME=$HOME DOTNET_ReadyToRun=0 $D/dotnet /path/to/App.dll
 只拷三个文件（`<App>.dll` + `<App>.deps.json` + `<App>.runtimeconfig.json`）；
 `DOTNET_ReadyToRun=0` 是唯一省不掉的环境变量（D-005）；WinForms 另需框架目录里的 Win32 同名软链。
 
+> **跑本仓的主目标 SourceTree 时，用启动器更省事**：
+> ```bash
+> cp 70-operate/启动器/sourcetree /tmp/stpkg/SourceTree/app-3.4.15/sourcetree
+> chmod +x /tmp/stpkg/SourceTree/app-3.4.15/sourcetree
+> DISPLAY=:303 /tmp/stpkg/SourceTree/app-3.4.15/sourcetree
+> ```
+> 它自动带好全部环境变量、检测 `.lnk` 并报错（K-1310）。
+
 **完整步骤、每步的输入/输出/替代方式、对着 30 条需求逐条怎么验、环境变量实测记录、WPF 与 WinForms
 逐项差异、失败对照表**，见 [`使用手册.md`](使用手册.md)。
 
