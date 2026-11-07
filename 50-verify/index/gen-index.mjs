@@ -46,6 +46,7 @@ const COMMANDS = {
   'ACC-028': 'node 50-verify/winforms/six-controls.mjs',
   'ACC-029': 'node 50-verify/index/run-all.mjs --dry',
   'ACC-030': 'node 50-verify/degrade/audit.mjs',
+  'ACC-031': 'node 50-verify/external/check-external-winapp.mjs',
 };
 
 function parseMatrix() {
