@@ -1,31 +1,122 @@
 #!/bin/bash
-# SourceTree Linux 启动器
-#   K-1288/K-1310：检测 .lnk 快捷方式并给出明确提示
-#   K-1379：必须设置 WPF_LINUX_ATSPI=0，否则 SourceTree 启动后只显示白屏
-#           （AT-SPI 初始化会阻塞 WPF UI 线程）
-FX=~/.local/share/ldp/dotnet/shared/Microsoft.WindowsDesktop.App/10.0.11
-APP="${ST_APP:-/tmp/stpkg/SourceTree/app-3.4.15}"
+# SourceTree Linux 启动器（支持配置文件）
+#
+# 一行启动：bash 70-operate/启动器/sourcetree --profile rdp
+#
+# 配置查找顺序（第一个存在的生效）：
+#   1. $APP/sourcetree.conf.<profile>         （程序目录下，用户可自己放）
+#   2. <本脚本目录>/profiles/<profile>.conf     （仓库自带）
+#
+# 优先级规则：
+#   - 默认：配置文件的值**覆盖**环境变量（便于固化配置）
+#   - 设 ST_ENV_WINS=1：**已有环境变量优先**，配置文件不覆盖
+#
+# 关键项（K-1379）：WPF_LINUX_ATSPI=0 必需，否则 UI 线程卡在 AT-SPI 初始化，
+#                  窗口不出现（表现为「白屏」）。
 
-if [ ! -x "$APP/SourceTree.exe" ] && [ ! -f "$APP/SourceTree.exe" ]; then
-  echo "错误：找不到 SourceTree：$APP/SourceTree.exe" >&2
-  echo "可用 ST_APP=/path/to/app-3.4.15 指定应用目录。" >&2
-  exit 3
-fi
+set -u
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-for arg in "$@"; do
-  case "${arg,,}" in
-    *.lnk)
-      echo "错误：不支持 Windows 快捷方式（.lnk）：$arg" >&2
-      echo "请在 SourceTree 中直接使用仓库的真实路径，或先用 readlink 解析快捷方式。" >&2
-      exit 2
-      ;;
+# ---- 解析参数 ----
+PROFILE="default"
+ARGS=()
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --profile|-p)
+      PROFILE="${2:-}"
+      [ -n "$PROFILE" ] || { echo "错误：--profile 需要一个名字" >&2; exit 2; }
+      shift 2 ;;
+    --profile=*)
+      PROFILE="${1#*=}"; shift ;;
+    --list-profiles)
+      echo "可用配置："
+      for f in "$HERE"/profiles/*.conf; do
+        [ -f "$f" ] && echo "  $(basename "$f" .conf)"
+      done
+      [ -d "${ST_APP:-/tmp/stpkg/SourceTree/app-3.4.15}" ] && \
+        ls "${ST_APP:-/tmp/stpkg/SourceTree/app-3.4.15}"/sourcetree.conf.* 2>/dev/null | \
+        sed 's/.*sourcetree\.conf\./  /; s/^/  (app) /' 2>/dev/null
+      exit 0 ;;
+    *.lnk|*.LNK)
+      echo "错误：不支持 Windows 快捷方式（.lnk）：$1" >&2
+      echo "请直接使用仓库的真实路径。" >&2
+      exit 2 ;;
+    *)
+      ARGS+=("$1"); shift ;;
   esac
 done
 
-cd "$APP"
-exec env DOTNET_ROOT=~/.local/share/ldp/dotnet DOTNET_ReadyToRun=0 \
-  LD_LIBRARY_PATH="$FX/native:$FX:" \
-  WPF_LINUX_WIN32_SHIM=$FX/libwpfwin32.so \
-  WPF_LINUX_ATSPI=0 \
-  DISPLAY="${DISPLAY:-:303}" \
-  ~/.local/share/ldp/dotnet/dotnet SourceTree.exe "$@"
+# ---- 找配置文件 ----
+APP_GUESS="${ST_APP:-/tmp/stpkg/SourceTree/app-3.4.15}"
+CFG=""
+if [ -f "$APP_GUESS/sourcetree.conf.$PROFILE" ]; then
+  CFG="$APP_GUESS/sourcetree.conf.$PROFILE"
+elif [ -f "$HERE/profiles/$PROFILE.conf" ]; then
+  CFG="$HERE/profiles/$PROFILE.conf"
+fi
+if [ -z "$CFG" ]; then
+  echo "错误：找不到配置 '$PROFILE'" >&2
+  echo "可用配置（仓库自带）：" >&2
+  for f in "$HERE"/profiles/*.conf; do [ -f "$f" ] && echo "  $(basename "$f" .conf)" >&2; done
+  echo "也可以把配置放到：$APP_GUESS/sourcetree.conf.$PROFILE" >&2
+  exit 4
+fi
+
+# ---- 读取配置（KEY=VALUE 格式，忽略注释/空行）----
+CFG_KEYS=(); CFG_VALS=()
+while IFS= read -r line || [ -n "$line" ]; do
+  case "$line" in
+    ''|'#'*) continue ;;
+  esac
+  key="${line%%=*}"; val="${line#*=}"
+  key="$(echo "$key" | tr -d '[:space:]')"
+  [ -n "$key" ] || continue
+  # K-1386：展开 ~ 和 $HOME（配置里的路径常用 ~）
+  case "$val" in
+    "~/"*) val="$HOME/${val#~/}" ;;
+    "~")   val="$HOME" ;;
+  esac
+  CFG_KEYS+=("$key"); CFG_VALS+=("$val")
+done < "$CFG"
+
+# ---- 合并：环境变量 vs 配置文件 ----
+export C_APP="" C_FX="" C_DISPLAY=""
+for i in "${!CFG_KEYS[@]}"; do
+  k="${CFG_KEYS[$i]}"; v="${CFG_VALS[$i]}"
+  cur="$(eval echo "\${$k-}")"
+  if [ "${ST_ENV_WINS:-0}" = "1" ] && [ -n "$cur" ]; then
+    continue   # 环境变量优先，跳过配置文件
+  fi
+  case "$k" in
+    APP) C_APP="$v" ;;
+    FX)  C_FX="$v" ;;
+    DISPLAY) C_DISPLAY="$v" ;;
+    *) export "$k=$v" ;;
+  esac
+done
+
+APP="${C_APP:-$APP_GUESS}"
+FX="${C_FX:-$HOME/.local/share/ldp/dotnet/shared/Microsoft.WindowsDesktop.App/10.0.11}"
+DOTNET_ROOT="${DOTNET_ROOT:-$HOME/.local/share/ldp/dotnet}"
+
+[ -f "$APP/SourceTree.exe" ] || { echo "错误：找不到 $APP/SourceTree.exe" >&2; echo "用 --profile 或 ST_APP= 指定应用目录。" >&2; exit 3; }
+
+SHIM="${WPF_LINUX_WIN32_SHIM:-}"
+case "$SHIM" in
+  ""|auto) export WPF_LINUX_WIN32_SHIM="$FX/libwpfwin32.so" ;;
+  *) export WPF_LINUX_WIN32_SHIM="$SHIM" ;;
+esac
+# K-1385：必须**清空**旧 LD_LIBRARY_PATH（保留会加载到系统库覆盖 shim，导致中文丢失）
+if [ "${ST_KEEP_LD_LIBRARY_PATH:-0}" = "1" ]; then
+  export LD_LIBRARY_PATH="$FX/native:$FX:${LD_LIBRARY_PATH:-}"
+else
+  export LD_LIBRARY_PATH="$FX/native:$FX:"
+fi
+[ -n "$C_DISPLAY" ] && export DISPLAY="$C_DISPLAY"
+
+# 兜底：无论配置怎么写，这两个都必须有（K-1379 / R2R）
+export WPF_LINUX_ATSPI="${WPF_LINUX_ATSPI:-0}"
+export DOTNET_ReadyToRun="${DOTNET_ReadyToRun:-0}"
+
+cd "$APP" || exit 3
+exec "$DOTNET_ROOT/dotnet" SourceTree.exe "${ARGS[@]+"${ARGS[@]}"}"
