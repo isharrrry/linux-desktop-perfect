@@ -356,6 +356,28 @@ class P {
           var ild = defer.Body.GetILProcessor();
           void D(Instruction i) => ild.Append(i);
           D(ild.Create(OpCodes.Ldstr, "[DIFF] ContentRendered fired")); D(ild.Create(OpCodes.Call, wlS));
+          /* K-1289：调 RepoTabViewModel.Stage()（暂存）。开关 ST_DO_STAGE=1。 */
+          if (Environment.GetEnvironmentVariable("ST_DO_STAGE") == "1") {
+            var rtv = apiAsm2.MainModule.Types.SelectMany(Flat).FirstOrDefault(x => x.Name == "RepoTabViewModel");
+            if (rtv != null) {
+              var rtvRef = asm.MainModule.ImportReference(rtv);
+              var stageM = asm.MainModule.ImportReference(rtv.Methods.First(x => x.Name == "Stage" && x.Parameters.Count == 0));
+              D(ild.Create(OpCodes.Ldstr, "[STAGE] calling RepoTabViewModel.Stage()")); D(ild.Create(OpCodes.Call, wlS));
+              /* 独立解析（避免与后面的声明顺序冲突） */
+              var mwvmT = asm.MainModule.Types.SelectMany(Flat).First(x => x.Name == "MainWindowViewModel");
+              var mwvmR = asm.MainModule.ImportReference(mwvmT);
+              var getRtc2 = asm.MainModule.ImportReference(mwvmT.Properties.First(x => x.Name == "RepositoryTabContainer").GetMethod);
+              var getSel2 = asm.MainModule.ImportReference(contType.Properties.First(x => x.Name == "SelectedRepoTabViewModel").GetMethod);
+              D(ild.Create(OpCodes.Ldarg_0)); D(ild.Create(OpCodes.Callvirt, getDC));
+              D(ild.Create(OpCodes.Castclass, mwvmR));
+              D(ild.Create(OpCodes.Callvirt, getRtc2));
+              D(ild.Create(OpCodes.Castclass, tabIfaceRef));
+              D(ild.Create(OpCodes.Callvirt, getSel2));
+              D(ild.Create(OpCodes.Castclass, rtvRef));
+              D(ild.Create(OpCodes.Callvirt, stageM));
+              D(ild.Create(OpCodes.Ldstr, "[STAGE] done")); D(ild.Create(OpCodes.Call, wlS));
+            }
+          }
           /* K-1279：**关键修正** —— DataContext 实际是 MainWindowViewModel（不是 IRepositoryTabContainerViewModel，
              K-1278 实测 InvalidCastException）。正确路径：
              MainWindowViewModel.SelectedTabVM (IRepoTabViewModel) → .LogVM (ILogViewModel) */
