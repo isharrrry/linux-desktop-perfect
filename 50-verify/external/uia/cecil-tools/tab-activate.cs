@@ -106,6 +106,15 @@ class P {
 
     /* OpenMenu(UIElement) —— K-1235：递归找第一个 MenuItem 并 IsSubmenuOpen=true。
        照 FixTab 的成熟 IL 模式（K-1140 验证过），不走 helper（K-1205/K-1209 证明会崩）。 */
+    /* K-1236：先拿 Window.Activate —— 菜单 Popup 可能要求 owner 窗口处于激活态 */
+    var winType = pf.MainModule.Types.SelectMany(Flat).FirstOrDefault(x => x.Name == "Window" && x.Namespace == "System.Windows");
+    MethodReference activateRef = null;
+    if (winType != null) {
+      activateRef = asm.MainModule.ImportReference(
+        winType.Methods.FirstOrDefault(m => m.Name == "Activate" && m.Parameters.Count == 0 && m.ReturnType.Name == "Boolean")
+        ?? winType.Methods.FirstOrDefault(m => m.Name == "Activate" && m.Parameters.Count == 0));
+      Console.WriteLine("Activate ref = " + (activateRef == null ? "(null)" : "ok"));
+    }
     var miType = pf.MainModule.Types.SelectMany(Flat).FirstOrDefault(x => x.Name == "MenuItem" && x.Namespace == "System.Windows.Controls");
     MethodDefinition openMenu = null;
     if (miType == null) { Console.WriteLine("MenuItem 类型未找到"); }
@@ -250,6 +259,7 @@ class P {
     Push(il2.Create(OpCodes.Castclass, uiElementRef)); Push(il2.Create(OpCodes.Call, doScroll));
     /* K-1235：展开第一个菜单（纯 IL） */
     if (openMenu != null) {
+      /* K-1236 已回退：在 MainWindow_Loaded 里调 Window.Activate() 会核心转储（同 K-1119 的 Show()） */
       Push(il2.Create(OpCodes.Ldarg_0)); Push(il2.Create(OpCodes.Callvirt, getContentRef));
       Push(il2.Create(OpCodes.Castclass, uiElementRef)); Push(il2.Create(OpCodes.Call, openMenu));
     }
