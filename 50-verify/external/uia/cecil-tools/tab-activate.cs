@@ -419,7 +419,6 @@ class P {
                 var getChangeSet = asm.MainModule.ImportReference(cfsv.Properties.First(x => x.Name == "ChangeSetViewModel").GetMethod);
                 var getUnstaged = asm.MainModule.ImportReference(wcc.Properties.First(x => x.Name == "UnstagedFileList").GetMethod);
                 var collType = asm.MainModule.ImportReference(wcc.Properties.First(x => x.Name == "UnstagedFileList").PropertyType);
-                var getCount = asm.MainModule.ImportReference(collType.Resolve().Methods.First(x => x.Name == "get_Count"));
                 var vWcc = new VariableDefinition(wccRef); defer.Body.Variables.Add(vWcc);
                 var vColl = new VariableDefinition(collType); defer.Body.Variables.Add(vColl);
                 D(ild.Create(OpCodes.Ldloc, vObj));
@@ -429,11 +428,14 @@ class P {
                 D(ild.Create(OpCodes.Ldloc, vWcc));
                 D(ild.Create(OpCodes.Callvirt, getUnstaged));
                 D(ild.Create(OpCodes.Stloc, vColl));
-                D(ild.Create(OpCodes.Ldstr, "[REFLECT] UnstagedFileList.Count obtained")); D(ild.Create(OpCodes.Call, wlS));
-                // 打印 Count
+                D(ild.Create(OpCodes.Ldstr, "[REFLECT] UnstagedFileList obtained, calling Stage(IEnumerable)")); D(ild.Create(OpCodes.Call, wlS));
+                /* K-1296：把 UnstagedFileList（ObservableCollection<IFileStatusRecord>，实现了 IEnumerable<T>）
+                   直接传给 RepoTabViewModel.Stage(IEnumerable<IFileStatusRecord>)。 */
+                var stageEnum = asm.MainModule.ImportReference(rtv2.Methods.First(x => x.Name == "Stage" && x.Parameters.Count == 1));
+                D(ild.Create(OpCodes.Ldloc, vRtv));
                 D(ild.Create(OpCodes.Ldloc, vColl));
-                D(ild.Create(OpCodes.Callvirt, getCount));
-                D(ild.Create(OpCodes.Call, asm.MainModule.ImportReference(typeof(Console).GetMethod("WriteLine", new[]{typeof(int)}))));
+                D(ild.Create(OpCodes.Callvirt, stageEnum));
+                D(ild.Create(OpCodes.Ldstr, "[REFLECT] Stage(IEnumerable) invoked")); D(ild.Create(OpCodes.Call, wlS));
               }
               D(skipLabel);
             }
