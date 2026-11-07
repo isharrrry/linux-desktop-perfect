@@ -326,6 +326,35 @@ class P {
       Push(il2.Create(OpCodes.Callvirt, showDlgRef));
       Push(il2.Create(OpCodes.Ldstr, "[DLG] Show() returned")); Push(il2.Create(OpCodes.Call, wlS));
     }
+    /* K-1275：调 ILogViewModel.ShowDiffBetweenCommits(h1, h2) 做差异对比。
+       路径（K-1274）：MainWindow.DataContext (IRepositoryTabContainerViewModel)
+         → .SelectedRepoTabViewModel (IRepoTabViewModel) → .LogVM (ILogViewModel) */
+    if (a.Length > 3 && Environment.GetEnvironmentVariable("ST_SHOW_DIFF") == "1") {
+      try {
+        var rr2 = new DefaultAssemblyResolver(); rr2.AddSearchDirectory(a[3]);
+        var apiAsm2 = AssemblyDefinition.ReadAssembly(
+          System.IO.Path.Combine(a[3], "SourceTree.Api.UI.Wpf.dll"),
+          new ReaderParameters { AssemblyResolver = rr2 });
+        var contType = apiAsm2.MainModule.Types.SelectMany(Flat).FirstOrDefault(x => x.Name == "IRepositoryTabContainerViewModel");
+        var repoTab  = apiAsm2.MainModule.Types.SelectMany(Flat).FirstOrDefault(x => x.Name == "IRepoTabViewModel");
+        var logVm    = apiAsm2.MainModule.Types.SelectMany(Flat).FirstOrDefault(x => x.Name == "ILogViewModel");
+        if (contType != null && repoTab != null && logVm != null) {
+          var getSelRepo = asm.MainModule.ImportReference(contType.Properties.First(x => x.Name == "SelectedRepoTabViewModel").GetMethod);
+          var getLog     = asm.MainModule.ImportReference(repoTab.Properties.First(x => x.Name == "LogVM").GetMethod);
+          var showDiff   = asm.MainModule.ImportReference(logVm.Methods.First(x => x.Name == "ShowDiffBetweenCommits"));
+          string h1 = Environment.GetEnvironmentVariable("ST_DIFF_H1") ?? "9a74d4ae1898bf1894f9fd6a14d2339e6246065f";
+          string h2 = Environment.GetEnvironmentVariable("ST_DIFF_H2") ?? "657c444cd914d22cc0b6c6d47ce08c4173bc5d4c";
+          Push(il2.Create(OpCodes.Ldstr, "[DIFF] calling ShowDiffBetweenCommits")); Push(il2.Create(OpCodes.Call, wlS));
+          Push(il2.Create(OpCodes.Ldarg_0)); Push(il2.Create(OpCodes.Callvirt, getDC));
+          Push(il2.Create(OpCodes.Castclass, tabIfaceRef));            // IRepositoryTabContainerViewModel
+          Push(il2.Create(OpCodes.Callvirt, getSelRepo));              // → IRepoTabViewModel
+          Push(il2.Create(OpCodes.Callvirt, getLog));                  // → ILogViewModel
+          Push(il2.Create(OpCodes.Ldstr, h1)); Push(il2.Create(OpCodes.Ldstr, h2));
+          Push(il2.Create(OpCodes.Callvirt, showDiff));
+          Push(il2.Create(OpCodes.Ldstr, "[DIFF] done")); Push(il2.Create(OpCodes.Call, wlS));
+        }
+      } catch (Exception ex) { Console.WriteLine("ShowDiff 注入失败: " + ex.GetType().Name + " " + ex.Message); }
+    }
     Push(il2.Create(OpCodes.Ldstr, "[SCR] done")); Push(il2.Create(OpCodes.Call, wlS));
     asm.Write(a[1]);
     Console.WriteLine("patched -> " + a[1]);
