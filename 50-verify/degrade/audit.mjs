@@ -22,9 +22,17 @@ for (const r of rows) {
   if (!judge) bad.push(`${id}：缺判据`);
   if (!status) bad.push(`${id}：缺状态`);
 }
+// K-1323：K 号唯一性检查（只查正文条目，排除附录 md5 表 + 引用表）
+// 排除「引用表」行：第 2 列是 **短文本** 且整行以 | 结尾（如 `| K-1297 | **Count = 0** |`）
+const isRefRow = (l) => /^\|\s*K-\d+\s*\|\s*\*\*[^*]{0,38}\*\*\s*\|\s*$/.test(l);
+const bodyRows = lines.filter((l) => /^\|\s*K-\d+\s*\|\s*(\*\*|🎯|🎉|⚠|✅|📋)/.test(l) && !isRefRow(l));
+const kIds = bodyRows.map((l) => l.split('|')[1].trim());
+const dupK = [...new Set(kIds.filter((v, i, arr) => arr.indexOf(v) !== i))];
+for (const d of dupK) bad.push(`K 号撞车：${d}`);
+
 const mustHave = ['D-001', 'D-002', 'K-001'];
 const missingIds = mustHave.filter((m) => !ids.includes(m));
-const env = { entries: rows.length, ids, required_missing: missingIds, violations: bad.length };
+const env = { entries: rows.length, body_entries: bodyRows.length, dup_k: dupK.length, ids, required_missing: missingIds, violations: bad.length };
 const pass = rows.length > 0 && bad.length === 0 && missingIds.length === 0;
 finish({ acc: 'ACC-030', started, env, expectRef: 'ACC-030：每条降级四要素齐全、无未登记静默失败',
   verdict: pass ? 'PASS' : 'FAIL',
