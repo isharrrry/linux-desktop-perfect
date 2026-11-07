@@ -166,6 +166,19 @@ class P {
       O(oret);
     }
 
+    /* ShowDlg() —— K-1240：纯 IL 调 MessageBox.Show(string)，验证「对话框能否显示」。
+       比注入 helper 简单（K-1205/K-1209 证明 IL 调 helper 会崩）。 */
+    MethodReference mbShowRef = null;
+    {
+      var mbType = pf.MainModule.Types.SelectMany(Flat).FirstOrDefault(x => x.Name == "MessageBox" && x.Namespace == "System.Windows");
+      if (mbType != null) {
+        var cand = mbType.Methods.Where(m => m.Name == "Show" && m.Parameters.Count == 1
+                  && m.Parameters[0].ParameterType.Name == "String").FirstOrDefault();
+        if (cand != null) mbShowRef = asm.MainModule.ImportReference(cand);
+        Console.WriteLine("MessageBox.Show ref = " + (mbShowRef == null ? "(null)" : "ok"));
+      }
+    }
+
     /* DoScroll(UIElement) —— 找第一个 ScrollViewer，滚动到一半 */
     var doScroll = new MethodDefinition("DoScroll", MethodAttributes.Public | MethodAttributes.Static, asm.MainModule.TypeSystem.Void);
     doScroll.Parameters.Add(new ParameterDefinition(uiElementRef));
@@ -262,6 +275,14 @@ class P {
       /* K-1236 已回退：在 MainWindow_Loaded 里调 Window.Activate() 会核心转储（同 K-1119 的 Show()） */
       Push(il2.Create(OpCodes.Ldarg_0)); Push(il2.Create(OpCodes.Callvirt, getContentRef));
       Push(il2.Create(OpCodes.Castclass, uiElementRef)); Push(il2.Create(OpCodes.Call, openMenu));
+    }
+    /* K-1240：弹出 MessageBox（模态，抓图后外部 kill） */
+    /* 注意：这里的判断在 **patcher 进程**执行，不是目标进程 ⇒ 不能依赖目标进程的环境变量。
+       改为无条件生成（用 ST_OPEN_DLG 控制的是「生成与否」，由调用方在 patch 前设置）。 */
+    if (mbShowRef != null && Environment.GetEnvironmentVariable("ST_PATCH_DLG") == "1") {
+      Push(il2.Create(OpCodes.Ldstr, "[DLG] about to show MessageBox")); Push(il2.Create(OpCodes.Call, wlS));
+      Push(il2.Create(OpCodes.Ldstr, "SourceTree 对话框测试")); Push(il2.Create(OpCodes.Call, mbShowRef)); Push(il2.Create(OpCodes.Pop));
+      Push(il2.Create(OpCodes.Ldstr, "[DLG] MessageBox returned")); Push(il2.Create(OpCodes.Call, wlS));
     }
     Push(il2.Create(OpCodes.Ldstr, "[SCR] done")); Push(il2.Create(OpCodes.Call, wlS));
     asm.Write(a[1]);
