@@ -193,7 +193,7 @@ class P {
             System.IO.Path.Combine(a[3], "SourceTree.Api.UI.Wpf.dll"),
             new ReaderParameters { AssemblyResolver = r2 });
           bt = apiAsm.MainModule.Types.SelectMany(Flat)
-                 .FirstOrDefault(x => x.Name == "AddToBookmarksWindow");
+                 .FirstOrDefault(x => x.Name == (Environment.GetEnvironmentVariable("ST_DLG_TYPE") ?? "AddToBookmarksWindow"));
           if (bt != null) Console.WriteLine("AddToBookmarksWindow 来自 Api.UI.Wpf.dll");
         } catch (Exception ex) { Console.WriteLine("加载 Api.UI.Wpf.dll 失败: " + ex.GetType().Name); }
       }
