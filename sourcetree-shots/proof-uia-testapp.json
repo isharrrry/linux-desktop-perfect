@@ -1,0 +1,27 @@
+{
+  "desktop_child_count": 4,
+  "apps": [
+    {
+      "index": 0,
+      "name": "TestApp",
+      "role": "application",
+      "children": -1
+    },
+    {
+      "index": 1,
+      "error": "atspi_error: The name org.a11y.atspi.SourceTree was not provided by any .service files (1)"
+    },
+    {
+      "index": 2,
+      "name": "TestApp",
+      "role": "application",
+      "children": -1
+    },
+    {
+      "index": 3,
+      "error": "atspi_error: The name org.a11y.atspi.SourceTree was not provided by any .service files (1)"
+    }
+  ],
+  "found_sourcetree": false,
+  "controls": []
+}

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ArrayOfTreeViewNode xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <TreeViewNode xsi:type="BookmarkNode">
+    <Level>0</Level>
+    <IsExpanded>false</IsExpanded>
+    <IsLeaf>true</IsLeaf>
+    <Name>stgit</Name>
+    <Children />
+    <CanSelect>true</CanSelect>
+    <HasError>false</HasError>
+    <Path>/tmp/stgit</Path>
+    <RepoType>None</RepoType>
+  </TreeViewNode>
+</ArrayOfTreeViewNode>

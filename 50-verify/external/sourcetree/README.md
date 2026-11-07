@@ -1,6 +1,8 @@
 # SourceTree 截图存证位置
 
-**截图已移到工作区根目录：`/home/links-dev/netTest/GitProj/sourcetree-shots/`**
+**截图统一存放于：`sourcetree-shots/`（本仓库内，相对 `linux-desktop-perfect/` 根目录）**
+
+> **2026-11-02 统一（K-1380）**：原仓外目录 `/home/links-dev/netTest/GitProj/sourcetree-shots/`（15 个文件）已全部迁入本仓库，仓外目录已删除。
 
 | 文件 | 字节 | 内容 |
 |---|---|---|

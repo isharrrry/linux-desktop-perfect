@@ -1,0 +1,102 @@
+{
+  "desktop_child_count": 2,
+  "apps": [
+    {
+      "index": 0,
+      "name": "",
+      "role": "",
+      "children": 0
+    },
+    {
+      "index": 1,
+      "name": "SourceTree",
+      "role": "application",
+      "children": 9
+    }
+  ],
+  "desktop_child_count_raw": 2,
+  "desktop_child_count_dedup": 2,
+  "found_sourcetree": true,
+  "controls": [
+    {
+      "depth": 0,
+      "bus": "org.a11y.atspi.SourceTree",
+      "path": "/org/a11y/atspi/accessible/wpf/root",
+      "name": "SourceTree",
+      "role": "application",
+      "child_count": 9
+    },
+    {
+      "depth": 1,
+      "bus": "org.a11y.atspi.SourceTree",
+      "path": "/org/a11y/atspi/accessible/wpf/win_e00001",
+      "name": "",
+      "role": "frame",
+      "child_count": 0
+    },
+    {
+      "depth": 1,
+      "bus": "org.a11y.atspi.SourceTree",
+      "path": "/org/a11y/atspi/accessible/wpf/win_e00002",
+      "name": "SystemResourceNotifyWindow",
+      "role": "frame",
+      "child_count": 0
+    },
+    {
+      "depth": 1,
+      "bus": "org.a11y.atspi.SourceTree",
+      "path": "/org/a11y/atspi/accessible/wpf/win_e00003",
+      "name": "",
+      "role": "frame",
+      "child_count": 0
+    },
+    {
+      "depth": 1,
+      "bus": "org.a11y.atspi.SourceTree",
+      "path": "/org/a11y/atspi/accessible/wpf/win_e00004",
+      "name": "",
+      "role": "frame",
+      "child_count": 0
+    },
+    {
+      "depth": 1,
+      "bus": "org.a11y.atspi.SourceTree",
+      "path": "/org/a11y/atspi/accessible/wpf/win_e00005",
+      "name": "Sourcetree",
+      "role": "frame",
+      "child_count": 0
+    },
+    {
+      "depth": 1,
+      "bus": "org.a11y.atspi.SourceTree",
+      "path": "/org/a11y/atspi/accessible/wpf/win_e00006",
+      "name": "",
+      "role": "frame",
+      "child_count": 0
+    },
+    {
+      "depth": 1,
+      "bus": "org.a11y.atspi.SourceTree",
+      "path": "/org/a11y/atspi/accessible/wpf/win_e00007",
+      "name": "MediaContextNotificationWindow",
+      "role": "frame",
+      "child_count": 0
+    },
+    {
+      "depth": 1,
+      "bus": "org.a11y.atspi.SourceTree",
+      "path": "/org/a11y/atspi/accessible/wpf/win_e0000a",
+      "name": "",
+      "role": "frame",
+      "child_count": 0
+    },
+    {
+      "depth": 1,
+      "bus": "org.a11y.atspi.SourceTree",
+      "path": "/org/a11y/atspi/accessible/wpf/win_e0000b",
+      "name": ".NET-BroadcastEventWindow.30c4a4.0",
+      "role": "frame",
+      "child_count": 0
+    }
+  ]
+}
