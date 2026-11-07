@@ -179,6 +179,20 @@ class P {
       }
     }
 
+    /* K-1241：纯 IL 创建并 Show 业务对话框 AddToBookmarksWindow（K-1120 的路线，不用 MessageBox） */
+    MethodReference showDlgRef = null;
+    TypeReference bookmarksTypeRef = null;
+    {
+      var bt = asm.MainModule.Types.SelectMany(Flat).FirstOrDefault(x => x.FullName == "SourceTree.View.Repository.AddToBookmarksWindow");
+      if (bt != null) {
+        bookmarksTypeRef = asm.MainModule.ImportReference(bt);
+        var winT = pf.MainModule.Types.SelectMany(Flat).FirstOrDefault(x => x.Name == "Window" && x.Namespace == "System.Windows");
+        var showM = winT?.Methods.FirstOrDefault(m => m.Name == "Show" && m.Parameters.Count == 0);
+        if (showM != null) showDlgRef = asm.MainModule.ImportReference(showM);
+        Console.WriteLine("AddToBookmarksWindow = ok, Show ref = " + (showDlgRef == null ? "(null)" : "ok"));
+      } else Console.WriteLine("AddToBookmarksWindow 未找到");
+    }
+
     /* DoScroll(UIElement) —— 找第一个 ScrollViewer，滚动到一半 */
     var doScroll = new MethodDefinition("DoScroll", MethodAttributes.Public | MethodAttributes.Static, asm.MainModule.TypeSystem.Void);
     doScroll.Parameters.Add(new ParameterDefinition(uiElementRef));
@@ -283,6 +297,21 @@ class P {
       Push(il2.Create(OpCodes.Ldstr, "[DLG] about to show MessageBox")); Push(il2.Create(OpCodes.Call, wlS));
       Push(il2.Create(OpCodes.Ldstr, "SourceTree 对话框测试")); Push(il2.Create(OpCodes.Call, mbShowRef)); Push(il2.Create(OpCodes.Pop));
       Push(il2.Create(OpCodes.Ldstr, "[DLG] MessageBox returned")); Push(il2.Create(OpCodes.Call, wlS));
+    }
+    /* K-1241：创建并显示业务对话框（ST_PATCH_DLG=1 时才生成） */
+    if (bookmarksTypeRef != null && showDlgRef != null && Environment.GetEnvironmentVariable("ST_PATCH_DLG") == "1") {
+      var getTypeFromHandle = asm.MainModule.ImportReference(
+        typeof(Type).GetMethod("GetTypeFromHandle", new[] { typeof(RuntimeTypeHandle) }));
+      var createInstance = asm.MainModule.ImportReference(
+        typeof(Activator).GetMethod("CreateInstance", new[] { typeof(Type) }));
+      Push(il2.Create(OpCodes.Ldstr, "[DLG] creating AddToBookmarksWindow")); Push(il2.Create(OpCodes.Call, wlS));
+      Push(il2.Create(OpCodes.Ldtoken, bookmarksTypeRef));
+      Push(il2.Create(OpCodes.Call, getTypeFromHandle));
+      Push(il2.Create(OpCodes.Call, createInstance));
+      Push(il2.Create(OpCodes.Castclass, asm.MainModule.ImportReference(
+        pf.MainModule.Types.SelectMany(Flat).First(x => x.Name == "Window" && x.Namespace == "System.Windows"))));
+      Push(il2.Create(OpCodes.Callvirt, showDlgRef));
+      Push(il2.Create(OpCodes.Ldstr, "[DLG] Show() returned")); Push(il2.Create(OpCodes.Call, wlS));
     }
     Push(il2.Create(OpCodes.Ldstr, "[SCR] done")); Push(il2.Create(OpCodes.Call, wlS));
     asm.Write(a[1]);
