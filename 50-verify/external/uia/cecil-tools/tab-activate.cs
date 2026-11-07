@@ -441,19 +441,23 @@ class P {
           /* K-1280：`SelectedTabVM` 是 **private**（K-1279 实测 MethodAccessException），
              改用 **public** 的 `RepositoryTabContainer` → `.SelectedRepoTabViewModel` → `.LogVM`。 */
           var getRtc = asm.MainModule.ImportReference(mwvmType.Properties.First(x => x.Name == "RepositoryTabContainer").GetMethod);
-          D(ild.Create(OpCodes.Ldarg_0)); D(ild.Create(OpCodes.Callvirt, getDC));
-          D(ild.Create(OpCodes.Castclass, mwvmRef));
-          D(ild.Create(OpCodes.Callvirt, getRtc));
-          D(ild.Create(OpCodes.Castclass, tabIfaceRef));
-          D(ild.Create(OpCodes.Callvirt, getSelRepo));
-          D(ild.Create(OpCodes.Callvirt, getLog));
-          /* K-1278：不调 ShowDiffBetweenCommits（会崩，K-1275/K-1276），改调
-             ILogViewModel.SelectCommit(hash, true, true) —— 让 WPF 自己渲染 diff 面板。 */
-          var selCommit = asm.MainModule.ImportReference(logVm.Methods.First(x => x.Name == "SelectCommit"));
-          D(ild.Create(OpCodes.Ldstr, h1));
-          D(ild.Create(OpCodes.Ldc_I4_1));
-          D(ild.Create(OpCodes.Ldc_I4_1));
-          D(ild.Create(OpCodes.Callvirt, selCommit));
+          /* K-1294：原 SelectCommit 块**无条件执行**，而 `SelectedRepoTabViewModel.LogVM` 可能为 null
+             ⇒ 必然 NPE（K-1293 的崩溃来源）。改为开关 `ST_DO_SELECT=1` 才执行。 */
+          if (Environment.GetEnvironmentVariable("ST_DO_SELECT") == "1") {
+            D(ild.Create(OpCodes.Ldarg_0)); D(ild.Create(OpCodes.Callvirt, getDC));
+            D(ild.Create(OpCodes.Castclass, mwvmRef));
+            D(ild.Create(OpCodes.Callvirt, getRtc));
+            D(ild.Create(OpCodes.Castclass, tabIfaceRef));
+            D(ild.Create(OpCodes.Callvirt, getSelRepo));
+            D(ild.Create(OpCodes.Callvirt, getLog));
+            var selCommit = asm.MainModule.ImportReference(logVm.Methods.First(x => x.Name == "SelectCommit"));
+            D(ild.Create(OpCodes.Ldstr, h1));
+            D(ild.Create(OpCodes.Ldc_I4_1));
+            D(ild.Create(OpCodes.Ldc_I4_1));
+            D(ild.Create(OpCodes.Callvirt, selCommit));
+          } else {
+            D(ild.Create(OpCodes.Ldstr, "[DIFF] SelectCommit skipped (ST_DO_SELECT != 1)")); D(ild.Create(OpCodes.Call, wlS));
+          }
           D(ild.Create(OpCodes.Ldstr, "[DIFF] done")); D(ild.Create(OpCodes.Call, wlS));
           D(ild.Create(OpCodes.Ret));
           // 注册：mainWindow.ContentRendered += ShowDiffDeferred
