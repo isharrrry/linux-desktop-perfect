@@ -1,0 +1,18 @@
+#!/bin/bash
+# SourceTree Linux 启动器：检测 .lnk 快捷方式并给出明确提示（K-1288/K-1310）
+for arg in "$@"; do
+  case "${arg,,}" in
+    *.lnk)
+      echo "错误：不支持 Windows 快捷方式（.lnk）：$arg" >&2
+      echo "请在 SourceTree 中直接使用仓库的真实路径，或先用 readlink 解析快捷方式。" >&2
+      exit 2
+      ;;
+  esac
+done
+FX=~/.local/share/ldp/dotnet/shared/Microsoft.WindowsDesktop.App/10.0.11
+APP="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$APP"
+exec env DOTNET_ROOT=~/.local/share/ldp/dotnet DOTNET_ReadyToRun=0 \
+  LD_LIBRARY_PATH="$FX/native:$FX:" WPF_LINUX_WIN32_SHIM=$FX/libwpfwin32.so \
+  DISPLAY="${DISPLAY:-:303}" \
+  ~/.local/share/ldp/dotnet/dotnet SourceTree.exe "$@"
