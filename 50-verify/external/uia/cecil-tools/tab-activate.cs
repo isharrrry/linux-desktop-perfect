@@ -356,12 +356,27 @@ class P {
           var ild = defer.Body.GetILProcessor();
           void D(Instruction i) => ild.Append(i);
           D(ild.Create(OpCodes.Ldstr, "[DIFF] ContentRendered fired")); D(ild.Create(OpCodes.Call, wlS));
+          /* K-1279：**关键修正** —— DataContext 实际是 MainWindowViewModel（不是 IRepositoryTabContainerViewModel，
+             K-1278 实测 InvalidCastException）。正确路径：
+             MainWindowViewModel.SelectedTabVM (IRepoTabViewModel) → .LogVM (ILogViewModel) */
+          var mwvmType = asm.MainModule.Types.SelectMany(Flat).First(x => x.Name == "MainWindowViewModel");
+          var mwvmRef = asm.MainModule.ImportReference(mwvmType);
+          /* K-1280：`SelectedTabVM` 是 **private**（K-1279 实测 MethodAccessException），
+             改用 **public** 的 `RepositoryTabContainer` → `.SelectedRepoTabViewModel` → `.LogVM`。 */
+          var getRtc = asm.MainModule.ImportReference(mwvmType.Properties.First(x => x.Name == "RepositoryTabContainer").GetMethod);
           D(ild.Create(OpCodes.Ldarg_0)); D(ild.Create(OpCodes.Callvirt, getDC));
+          D(ild.Create(OpCodes.Castclass, mwvmRef));
+          D(ild.Create(OpCodes.Callvirt, getRtc));
           D(ild.Create(OpCodes.Castclass, tabIfaceRef));
           D(ild.Create(OpCodes.Callvirt, getSelRepo));
           D(ild.Create(OpCodes.Callvirt, getLog));
-          D(ild.Create(OpCodes.Ldstr, h1)); D(ild.Create(OpCodes.Ldstr, h2));
-          D(ild.Create(OpCodes.Callvirt, showDiff));
+          /* K-1278：不调 ShowDiffBetweenCommits（会崩，K-1275/K-1276），改调
+             ILogViewModel.SelectCommit(hash, true, true) —— 让 WPF 自己渲染 diff 面板。 */
+          var selCommit = asm.MainModule.ImportReference(logVm.Methods.First(x => x.Name == "SelectCommit"));
+          D(ild.Create(OpCodes.Ldstr, h1));
+          D(ild.Create(OpCodes.Ldc_I4_1));
+          D(ild.Create(OpCodes.Ldc_I4_1));
+          D(ild.Create(OpCodes.Callvirt, selCommit));
           D(ild.Create(OpCodes.Ldstr, "[DIFF] done")); D(ild.Create(OpCodes.Call, wlS));
           D(ild.Create(OpCodes.Ret));
           // 注册：mainWindow.ContentRendered += ShowDiffDeferred
