@@ -1,0 +1,27 @@
+#!/bin/bash
+# 调整 SourceTree 窗口大小（K-1387）
+# 用法：
+#   bash resize-sourcetree          # 铺满屏幕
+#   bash resize-sourcetree 1200x850 # 指定尺寸
+#   bash resize-sourcetree 1200 850 # 指定宽 高
+D="${DISPLAY:-:303}"
+SIZE="${1:-max}"
+if [ "$SIZE" = "max" ]; then
+  eval "$(DISPLAY="$D" xdotool getdisplaygeometry | awk '{print "SW="$1"; SH="$2}')"
+  W=$SW; H=$SH
+elif [ $# -ge 2 ]; then
+  W="$1"; H="$2"
+else
+  W="${SIZE%x*}"; H="${SIZE#*x}"
+fi
+WIN=$(DISPLAY="$D" xdotool search --name '^Sourcetree$' 2>/dev/null | head -1)
+if [ -z "$WIN" ]; then
+  echo "❌ 找不到 SourceTree 窗口（DISPLAY=$D）" >&2
+  echo "   先启动：bash 70-operate/启动器/sourcetree --profile rdp" >&2
+  exit 1
+fi
+DISPLAY="$D" xdotool windowsize "$WIN" "$W" "$H" 2>/dev/null
+DISPLAY="$D" xdotool windowmove "$WIN" 0 0 2>/dev/null
+sleep 1
+G=$(DISPLAY="$D" xdotool getwindowgeometry "$WIN" 2>/dev/null | grep Geometry | awk '{print $2}')
+echo "✅ 窗口 $WIN 已调整为 $G"

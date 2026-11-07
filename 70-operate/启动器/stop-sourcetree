@@ -1,0 +1,19 @@
+#!/bin/bash
+# 关闭 SourceTree（K-1387）
+# 优先发 WM_DELETE_WINDOW（优雅关闭），超时则 kill -9
+D="${DISPLAY:-:303}"
+W=$(DISPLAY="$D" xdotool search --name '^Sourcetree$' 2>/dev/null | head -1)
+if [ -n "$W" ]; then
+  echo "向窗口 $W 发送 WM_DELETE_WINDOW..."
+  DISPLAY="$D" xdotool windowclose "$W" 2>/dev/null
+  for _ in $(seq 1 5); do
+    sleep 1
+    DISPLAY="$D" xdotool search --name '^Sourcetree$' >/dev/null 2>&1 || { echo "✅ 已优雅关闭"; exit 0; }
+  done
+  echo "优雅关闭超时，改用 kill"
+fi
+n=0
+for pid in $(pgrep -f "SourceTree.exe" 2>/dev/null); do
+  kill -9 "$pid" 2>/dev/null && n=$((n+1))
+done
+echo "已强制结束 $n 个进程"
