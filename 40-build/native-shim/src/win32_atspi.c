@@ -758,6 +758,15 @@ static DBusHandlerResult atspi_msg_handler(DBusConnection *conn, DBusMessage *ms
             dbus_message_iter_append_basic(&arr, DBUS_TYPE_STRING, &ifs[k]);
         dbus_message_iter_close_container(&it, &arr);
     } else if (strcmp(member, "GetActions") == 0) {
+        /* K-1250：若 WPF 侧还没设置 action，则按需补一个默认 action（"激活窗口"），
+           让 NActions>=1、GetName(0)/GetActions 有真实数据。
+           这样外部（pyatspi/gdbus）就能看到可执行的 action 项。 */
+        if (n && !n->has_action) {
+            snprintf(n->action_name, sizeof(n->action_name), "%s", "激活窗口");
+            snprintf(n->action_desc, sizeof(n->action_desc), "%s", "Activate this window");
+            n->has_action = 1;
+            atspi_diag("[ATSPI] GetActions：按需补默认 action name=%s", n->action_name);
+        }
         /* K-1161：返回 node 上真实设置的 action（WPF 侧通过 wpf_atspi_set_action 提供） */
         DBusMessageIter arr;
         dbus_message_iter_open_container(&it, DBUS_TYPE_ARRAY, "(ss)", &arr);
