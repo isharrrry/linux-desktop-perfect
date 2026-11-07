@@ -181,6 +181,16 @@ static int atspi_ensure(void)
         static int dbus_threads_inited = 0;
         if (!dbus_threads_inited) { dbus_threads_init_default(); dbus_threads_inited = 1; }
     }
+    /* K-1256：**显式开关** `WPF_LINUX_ATSPI=0` ⇒ 完全不启用 AT-SPI。
+       本仓实测（K-1255）：AT-SPI 启用时偶发核心转储率约 33%~67%，禁用后 4/4 成功。
+       需要稳定基线（截图/门禁）时用它；需要 UIA 时不要设。 */
+    {
+        const char *ev = getenv("WPF_LINUX_ATSPI");
+        if (ev && ev[0] == '0' && ev[1] == '\0') {
+            atspi_diag("[ATSPI] 已被 WPF_LINUX_ATSPI=0 禁用");
+            return 0;
+        }
+    }
     pthread_mutex_lock(&g_atspi_lock);
     int my_call = ++call_n;
     if (g_bus_state != 0) {
