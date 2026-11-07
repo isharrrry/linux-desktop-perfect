@@ -851,6 +851,47 @@ BOOL GetMessageW(WPF_MSG *msg, HWND hwnd, UINT lo, UINT hi)
     if (!msg) { wpf_set_last_error(87); return (BOOL)-1; }
     wpf_thread *t = wpf_thread_self();
     /* K-1227 已回退：登记 g_pump_thread 后推送该线程导致启动崩溃 */
+    /* K-1228：`WPF_FAKE_KEYS="40,40,13"`（VK 码，逗号分隔）⇒ 启动 ~3s 后依次入队
+       WM_KEYDOWN/WM_KEYUP。作用与 `WPF_FAKE_CLICK` 相同：**在 GetMessageW 内直投当前线程**，
+       完全绕开 X 注入与线程路由（K-1225/K-1226/K-1227 证明那三条路都不通）。
+       用途：验证「按键 → 消息 → 派发 → UI」这一段本身是否正常。 */
+    {
+        static int s_fk_done = 0;
+        static unsigned long s_fk_t0 = 0;
+        const char *fk = getenv("WPF_FAKE_KEYS");
+        if (fk && *fk && !s_fk_done) {
+            if (!s_fk_t0) s_fk_t0 = wpf_now_ms();
+            else if (wpf_now_ms() - s_fk_t0 >= 3000) {
+                HWND h = g_focus_window;
+                if (h) {
+                    char buf[256];
+                    snprintf(buf, sizeof buf, "%s", fk);
+                    int n = 0;
+                    for (char *p = strtok(buf, ","); p && n < 16; p = strtok(NULL, ",")) {
+                        int vk = atoi(p);
+                        if (vk <= 0) continue;
+                        WPF_MSG dm, um;
+                        memset(&dm, 0, sizeof dm);
+                        memset(&um, 0, sizeof um);
+                        dm.hwnd = um.hwnd = h;
+                        dm.message = 0x0100; dm.wParam = (WPARAM)vk; dm.lParam = 1;
+                        um.message = 0x0101; um.wParam = (WPARAM)vk; um.lParam = 0xC0000001LL;
+                        dm.time = um.time = (uint32_t)wpf_now_ms();
+                        wpf_queue_push(wpf_thread_self(), &dm);
+                        wpf_queue_push(wpf_thread_self(), &um);
+                        n++;
+                    }
+                    fprintf(stderr, "[FAKEKEYS] pushed %d keys hwnd=0x%llx spec=%s\n",
+                            n, (unsigned long long)(uintptr_t)h, fk);
+                    fflush(stderr);
+                    s_fk_done = 1;
+                } else {
+                    fprintf(stderr, "[FAKEKEYS] no focus window yet\n");
+                    fflush(stderr);
+                }
+            }
+        }
+    }
     wpf_msgflow_api("GetMessageW");          // 【MSGFLOW】取消息者标注
     // 【MSGFLOW v2 · 仪器①】入口参数：**这一格回答"有没有带区间/带窗口的调用在跑"** ——
     //   若某次 `GetMessageW` 带 `hwnd` 或 `lo..hi`，被它跳过的 `WM_CHAR` 就永远留在队里（判据 (a)）。
