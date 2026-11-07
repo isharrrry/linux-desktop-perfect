@@ -1,0 +1,23 @@
+{
+  "screenshot": "sourcetree-shots/st-31-menu-real-36292.png",
+  "size": "625x540",
+  "bytes": 36292,
+  "total_colors": 812,
+  "customer_area_colors": 516,
+  "menu_window": {
+    "id": "0x80000e",
+    "geometry": "235x93+199+144",
+    "bytes": 1726,
+    "colors": 62,
+    "map_state": "IsViewable"
+  },
+  "source": "DISPLAY=:303 xwd -root 全屏截图后裁主窗口区域(160,113,625x540)",
+  "patcher": "/tmp/SourceTree.menuIL2.dll (tab-activate.cs + OpenMenu 纯IL + 深度限制12)",
+  "env": "DOTNET_ReadyToRun=0, LD_LIBRARY_PATH=$FX/native:$FX:, WPF_LINUX_WIN32_SHIM=$FX/libwpfwin32.so, DISPLAY=:303",
+  "stability": "3/3 一致 36183B/518色（无裁剪全窗口）",
+  "k_records": [
+    "K-1237",
+    "K-1238"
+  ],
+  "verdict": "PASS"
+}
