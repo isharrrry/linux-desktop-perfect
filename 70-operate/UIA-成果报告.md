@@ -67,3 +67,43 @@ dotnet bin/Release/net10.0/rre.dll SourceTree.exe SourceTree.uia.dll \
 cp SourceTree.uia.dll $APP/SourceTree.exe
 # 用 WPF_LINUX_KEY_DIAG=1 启动，stdout 里看 [LOOP]/[GEO]
 ```
+
+---
+
+## 六、常用操作验证状态（2026-11-02 最终版）
+
+**用户最初要求的四类操作，逐项状态如下。**
+
+| 操作 | 状态 | 实测证据 |
+|---|---|---|
+| **提交查看**（commit list）| **✅ 可用** | `st-26` 37801B / 542 色、`st-27` 34955B（文件状态视图）；`st-31`~`st-35` 菜单/对话框/仓库详情均 > 20000B |
+| **差异对比** | **❌ 不可用** | `ShowDiffBetweenCommits` 在 `Loaded`/`ContentRendered` 都崩（K-1275/K-1276）；`RenderTargetBitmap` 也确认不可用（K-1308）|
+| **提交操作** | **❌ 不可用** | 需要 `RepoTabViewModel` 实例，但 `Tabs.Count=0`（K-1343）|
+| **切换分支** | **❌ 不可用** | 同上 —— `_checkoutSelectedCommand` 拿不到（K-1356 推论）|
+
+### 6.1 为什么后三项都不可用 —— 同一个根因
+
+**`Tabs.Count = 0`**（SourceTree 从没打开仓库）：
+
+- **`Tabs` 空 ⇒ `SelectedRepoTabViewModel` 恒 null（K-1342 反编译确认）**
+- **⇒ 拿不到 `RepoTabViewModel` 实例**
+- **⇒ 所有依赖它的操作（暂存/提交/切分支/差异）全部不可用**
+
+**而唯一能打开仓库的 API `AppRoot.OpenRepoInTab`，在**四个独立入口**调用都崩溃（K-1345/K-1347/K-1348/K-1354）。**
+
+### 6.2 若要实现这些操作，需要
+
+1. **修改 SourceTree 源码**（在 `AppRoot` 初始化时直接构造 `Repository` 对象，绕过 `OpenRepoInTab`）；
+2. **或提供可用的合成输入**（`xdotool` 点击「打开仓库」菜单）—— 但合成输入已确认不可用（K-1263）；
+3. **或让 `SourceTree.exe` 在启动时接受仓库路径**（已试 `SourceTree.exe /tmp/stgit`，`Tabs.Count` 仍 0，K-1344）。
+
+### 6.3 已可用的自动化手段
+
+| 手段 | 用途 | 证据 |
+|---|---|---|
+| `xdotool windowsize` | 精确控制窗口尺寸（4 档验证）| K-1283 |
+| `xwd -root` + 裁剪 | 抓取任意窗口（含子窗口）| K-1238 |
+| 进程内 Cecil 反射 | 调 `InvokeProviderWrapper` 等 | K-1143 |
+| 属性赋值 | `IsSubmenuOpen`/`IsChecked`/`Show()` | K-1235/K-1237/K-1238 |
+| **AT-SPI 读取** | `GetName`/`GetActions`/`NActions` | K-1249 |
+| 启动器 | 一键启动 + `.lnk` 检测 | K-1310 |
