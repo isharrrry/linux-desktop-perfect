@@ -183,7 +183,20 @@ class P {
     MethodReference showDlgRef = null;
     TypeReference bookmarksTypeRef = null;
     {
-      var bt = asm.MainModule.Types.SelectMany(Flat).FirstOrDefault(x => x.FullName == "SourceTree.View.Repository.AddToBookmarksWindow");
+      /* K-1242：AddToBookmarksWindow 在 SourceTree.Api.UI.Wpf.dll（不在主模块） */
+      TypeDefinition bt = asm.MainModule.Types.SelectMany(Flat).FirstOrDefault(x => x.FullName == "SourceTree.View.Repository.AddToBookmarksWindow");
+      if (bt == null && a.Length > 3) {
+        try {
+          var r2 = new DefaultAssemblyResolver();
+          r2.AddSearchDirectory(a[3]);
+          var apiAsm = AssemblyDefinition.ReadAssembly(
+            System.IO.Path.Combine(a[3], "SourceTree.Api.UI.Wpf.dll"),
+            new ReaderParameters { AssemblyResolver = r2 });
+          bt = apiAsm.MainModule.Types.SelectMany(Flat)
+                 .FirstOrDefault(x => x.Name == "AddToBookmarksWindow");
+          if (bt != null) Console.WriteLine("AddToBookmarksWindow 来自 Api.UI.Wpf.dll");
+        } catch (Exception ex) { Console.WriteLine("加载 Api.UI.Wpf.dll 失败: " + ex.GetType().Name); }
+      }
       if (bt != null) {
         bookmarksTypeRef = asm.MainModule.ImportReference(bt);
         var winT = pf.MainModule.Types.SelectMany(Flat).FirstOrDefault(x => x.Name == "Window" && x.Namespace == "System.Windows");
@@ -293,13 +306,13 @@ class P {
     /* K-1240：弹出 MessageBox（模态，抓图后外部 kill） */
     /* 注意：这里的判断在 **patcher 进程**执行，不是目标进程 ⇒ 不能依赖目标进程的环境变量。
        改为无条件生成（用 ST_OPEN_DLG 控制的是「生成与否」，由调用方在 patch 前设置）。 */
-    if (mbShowRef != null && Environment.GetEnvironmentVariable("ST_PATCH_DLG") == "1") {
+    if (mbShowRef != null && Environment.GetEnvironmentVariable("ST_PATCH_DLG") == "msgbox") {
       Push(il2.Create(OpCodes.Ldstr, "[DLG] about to show MessageBox")); Push(il2.Create(OpCodes.Call, wlS));
       Push(il2.Create(OpCodes.Ldstr, "SourceTree 对话框测试")); Push(il2.Create(OpCodes.Call, mbShowRef)); Push(il2.Create(OpCodes.Pop));
       Push(il2.Create(OpCodes.Ldstr, "[DLG] MessageBox returned")); Push(il2.Create(OpCodes.Call, wlS));
     }
     /* K-1241：创建并显示业务对话框（ST_PATCH_DLG=1 时才生成） */
-    if (bookmarksTypeRef != null && showDlgRef != null && Environment.GetEnvironmentVariable("ST_PATCH_DLG") == "1") {
+    if (bookmarksTypeRef != null && showDlgRef != null && Environment.GetEnvironmentVariable("ST_PATCH_DLG") == "bookmarks") {
       var getTypeFromHandle = asm.MainModule.ImportReference(
         typeof(Type).GetMethod("GetTypeFromHandle", new[] { typeof(RuntimeTypeHandle) }));
       var createInstance = asm.MainModule.ImportReference(
