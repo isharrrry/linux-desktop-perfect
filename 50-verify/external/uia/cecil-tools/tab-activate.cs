@@ -368,14 +368,7 @@ class P {
           D(ild.Create(OpCodes.Castclass, mwvmRef));
           D(ild.Create(OpCodes.Callvirt, getRtc));
           D(ild.Create(OpCodes.Castclass, tabIfaceRef));
-          /* K-1281：`SelectedRepoTabViewModel` 可能为 null（K-1280 NPE），改取 `Tabs[0]`。
-             `Tabs` 是 `ObservableCollection<IRepoTabViewModel>` ⇒ get_Item(0) 返回 IRepoTabViewModel。 */
-          var getTabs = asm.MainModule.ImportReference(contType.Properties.First(x => x.Name == "Tabs").GetMethod);
-          var tabsType = asm.MainModule.ImportReference(contType.Properties.First(x => x.Name == "Tabs").PropertyType);
-          var getItem = asm.MainModule.ImportReference(tabsType.Resolve().Methods.First(x => x.Name == "get_Item" && x.Parameters.Count == 1 && x.Parameters[0].ParameterType.Name == "Int32"));
-          D(ild.Create(OpCodes.Callvirt, getTabs));
-          D(ild.Create(OpCodes.Ldc_I4_0));
-          D(ild.Create(OpCodes.Callvirt, getItem));
+          D(ild.Create(OpCodes.Callvirt, getSelRepo));
           D(ild.Create(OpCodes.Callvirt, getLog));
           /* K-1278：不调 ShowDiffBetweenCommits（会崩，K-1275/K-1276），改调
              ILogViewModel.SelectCommit(hash, true, true) —— 让 WPF 自己渲染 diff 面板。 */
