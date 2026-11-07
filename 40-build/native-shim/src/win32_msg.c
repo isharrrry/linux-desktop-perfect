@@ -854,6 +854,29 @@ BOOL GetMessageW(WPF_MSG *msg, HWND hwnd, UINT lo, UINT hi)
         }
     }
 
+    /* K-1251：AT-SPI `DoAction` 置了标志 ⇒ 在这里（UI 线程的 GetMessageW 内）
+       注入一对合成的 WM_LBUTTONDOWN/UP。机制与 `WPF_FAKE_CLICK` 完全一致
+       （K-1228/K-1239 验证有效），避开 K-1227 的线程路由崩溃。 */
+    if (g_atspi_pending_action_hwnd) {
+        HWND ah = (HWND)(uintptr_t)g_atspi_pending_action_hwnd;
+        g_atspi_pending_action_hwnd = 0;
+        if (ah) {
+            WPF_MSG dm, um;
+            memset(&dm, 0, sizeof dm);
+            memset(&um, 0, sizeof um);
+            dm.hwnd = um.hwnd = ah;
+            dm.message = 0x0201;  /* WM_LBUTTONDOWN */
+            um.message = 0x0202;  /* WM_LBUTTONUP   */
+            dm.wParam = um.wParam = 1;  /* MK_LBUTTON */
+            dm.lParam = um.lParam = (LPARAM)(((uint32_t)20 << 16) | 20);
+            dm.time = um.time = (uint32_t)wpf_now_ms();
+            wpf_queue_push(wpf_thread_self(), &dm);
+            wpf_queue_push(wpf_thread_self(), &um);
+            fprintf(stderr, "[ATSPI-ACTION] injected click hwnd=0x%llx at 20,20\n",
+                    (unsigned long long)(uintptr_t)ah);
+            fflush(stderr);
+        }
+    }
     wpf_global_init();
     if (!msg) { wpf_set_last_error(87); return (BOOL)-1; }
     wpf_thread *t = wpf_thread_self();

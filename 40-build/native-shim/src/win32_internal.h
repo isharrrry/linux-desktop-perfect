@@ -465,6 +465,8 @@ void wpf_global_init(void);
 
 // 焦点/捕获的软状态（win32_core.c 定义，win32_x11.c 在 FocusIn/FocusOut 时同步）。
 extern HWND g_focus_window;
+/* K-1251：AT-SPI DoAction 的待注入点击目标（0=无） */
+extern uint64_t g_atspi_pending_action_hwnd;
 extern HWND g_capture_window;
 
 // win32_core.c：某个窗口的创建线程 id（口径 = wpf_thread* 地址的低 31 位）。

@@ -551,6 +551,9 @@ typedef struct {
 static wpf_atspi_node g_nodes[WPF_ATSPI_MAX_NODES];
 static int g_node_count = 0;
 
+/* K-1251：AT-SPI DoAction 的「待注入点击」目标窗口（0 = 无待处理） */
+uint64_t g_atspi_pending_action_hwnd = 0;
+
 /* K-1161：WPF 侧注册的「执行 action」回调（Cecil 注入时传入） */
 typedef void (*wpf_atspi_action_invoker_t)(uint64_t hwnd);
 static wpf_atspi_action_invoker_t g_action_invoker = NULL;
@@ -783,8 +786,16 @@ static DBusHandlerResult atspi_msg_handler(DBusConnection *conn, DBusMessage *ms
         }
         dbus_message_iter_close_container(&it, &arr);
     } else if (strcmp(member, "DoAction") == 0) {
-        /* K-1163：回退到 false（带回调的版本崩溃，待排查） */
-        dbus_bool_t r = FALSE;
+        /* K-1251：不再依赖 WPF 侧注册回调。DoAction 只**置一个待处理标志**并返回 TRUE，
+           真正的点击由 `GetMessageW` 在 UI 线程上用**已验证有效的**
+           `wpf_queue_push(wpf_thread_self(), WM_LBUTTONDOWN/UP)` 注入
+           （与 `WPF_FAKE_CLICK` 同一机制，K-1228/K-1239 证明它有效）。
+           这样避免 K-1227 的「投给 g_pump_thread 崩溃」问题。 */
+        if (n && n->has_action) {
+            g_atspi_pending_action_hwnd = n->hwnd ? n->hwnd : (uint64_t)(uintptr_t)g_focus_window;
+            atspi_diag("[ATSPI] DoAction：置待处理标志 hwnd=0x%llx", (unsigned long long)g_atspi_pending_action_hwnd);
+        }
+        dbus_bool_t r = (n && n->has_action) ? TRUE : FALSE;
         dbus_message_iter_append_basic(&it, DBUS_TYPE_BOOLEAN, &r);
     } else if (strcmp(member, "GetActionName") == 0 || strcmp(member, "GetActionDescription") == 0 || strcmp(member, "GetKeyBinding") == 0
                || strcmp(member, "GetName") == 0 || strcmp(member, "GetDescription") == 0 || strcmp(member, "getKeyBinding") == 0) {
