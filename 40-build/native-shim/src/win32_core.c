@@ -1580,7 +1580,9 @@ LONG GetWindowLong(HWND h, int i) { return GetWindowLongW(h, i); }
  *   ⇒ `SubclassWndProc` 永不生效 ⇒ `HwndWrapper.WndProc` 的 hook 链（含 `HwndTargetFilterMessage`）
  *   不走 ⇒ `WM_GETOBJECT` 到不了 `HwndTarget`（K-889/K-890）。
  *   这里用一个小的影子表承接写入，并在 `wpf_dispatch_to_window` 里回查。 */
-#define WPF_SHADOW_MAX 64
+/* K-1266：从 64 加大到 512 —— 影子表满时会**静默丢弃**写入（旧实现 `if (g_shadow_count < MAX)`），
+   导致 `HwndSubclass.Dispose()` 时的「恢复旧过程」更新被丢掉 ⇒ 表里残留悬空指针 ⇒ 偶发崩溃（K-1265）。 */
+#define WPF_SHADOW_MAX 512
 static struct { HWND hwnd; WNDPROC proc; } g_shadow_proc[WPF_SHADOW_MAX];
 static int g_shadow_count = 0;
 
@@ -1598,6 +1600,12 @@ static void wpf_shadow_set_proc(HWND hwnd, WNDPROC proc)
         g_shadow_proc[g_shadow_count].hwnd = hwnd;
         g_shadow_proc[g_shadow_count].proc = proc;
         ++g_shadow_count;
+    } else {
+        /* K-1266：**不许静默丢弃** —— 满表时覆盖最后一个槽位并告警（本仓铁律：不静默 no-op）。 */
+        static int s_warned = 0;
+        g_shadow_proc[WPF_SHADOW_MAX - 1].hwnd = hwnd;
+        g_shadow_proc[WPF_SHADOW_MAX - 1].proc = proc;
+        if (!s_warned) { s_warned = 1; fprintf(stderr, "[SHADOW-FULL] 影子表已满(%d)，改为覆盖最后槽位\n", WPF_SHADOW_MAX); fflush(stderr); }
     }
 }
 
@@ -1619,6 +1627,9 @@ INT_PTR SetWindowLongPtrW(HWND hwnd, int nIndex, INT_PTR dwNewLong)
                 fprintf(stderr, "[SETWNDLONG-SHADOW] hwnd=%p GWL_WNDPROC -> %p (影子表)\n",
                         (void *)hwnd, (void *)dwNewLong);
             wpf_shadow_set_proc(hwnd, (WNDPROC)dwNewLong);   /* 【K-891】真写入影子表 */
+            if (getenv("WPF_LINUX_WNDPROC_DIAG"))
+                fprintf(stderr, "[WNDPROC-SET] hwnd=%p -> %p%s\n", (void *)hwnd, (void *)dwNewLong,
+                        dwNewLong ? "" : "（清空）");
             wpf_set_last_error(0);
             return 0;
         }
