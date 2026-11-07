@@ -1,57 +1,65 @@
 #!/bin/bash
-# inotify 提权后的验证清单
+# 环境自检（inotify + 启动器）
 #
-# ⚠️ 本脚本基于 K-1306/K-1307 的假设（「inotify 上限导致暂存失败」），
-#    该假设已被 K-1333/K-1343 **否定**：
-#    - K-1333：RepoWatcher 零报错（inotify 已用 124/128）时，UnstagedFileList.Count 仍为 0
-#    - K-1343：最终根因是 Tabs.Count = 0（SourceTree 从没打开仓库）
-#    - ⇒ 正确结论见 70-operate/已知限制汇总.md 的 L-20.4：暂存不可达
-#
-# 本脚本保留作为历史记录 / 环境自检（检查 inotify 上限本身仍有意义），
-# 但**不要**再认为「跑完它暂存就能用」。
+# ⚠️ 历史结论修正：
+#   - K-1306 曾认为「inotify 上限导致暂存失败」；K-1333 否定；K-1377 在「有仓库」条件下
+#     重新观察到 UI 不反映文件变化 ⇒ inotify 仍是可疑项（但非唯一）。
+#   - K-1379 确认白屏的真正原因是缺 WPF_LINUX_ATSPI=0（启动器已内置）。
 #
 # 用法：bash 70-operate/启动器/verify-inotify-fix.sh
 set -u
 FX=~/.local/share/ldp/dotnet/shared/Microsoft.WindowsDesktop.App/10.0.11
-APP=/tmp/stpkg/SourceTree/app-3.4.15
-LIMIT=$(cat /proc/sys/fs/inotify/max_user_instances 2>/dev/null)
+APP="${ST_APP:-/tmp/stpkg/SourceTree/app-3.4.15}"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SRC_LAUNCHER="$HERE/sourcetree"
 
-echo "=== 步骤 1/4：检查 inotify 上限 ==="
-echo "  max_user_instances = $LIMIT"
-if [ "${LIMIT:-0}" -lt 512 ]; then
-  echo "  ❌ 仍为 $LIMIT（未提权或未生效）"
-  echo "  请先执行："
-  echo "    sudo sysctl -w fs.inotify.max_user_instances=1024"
-  echo "    # 持久化："
-  echo "    echo 'fs.inotify.max_user_instances=1024' | sudo tee /etc/sysctl.d/99-sourcetree.conf"
-  echo "    sudo sysctl --system"
-  exit 1
+echo "=== 步骤 1/4：确保启动器是最新版（含 WPF_LINUX_ATSPI=0，K-1379）==="
+if [ ! -f "$SRC_LAUNCHER" ]; then
+  echo "  ❌ 找不到源启动器：$SRC_LAUNCHER"; exit 1
 fi
-echo "  ✅ 已提升到 $LIMIT"
+if [ ! -x "$APP/sourcetree" ] || ! grep -q "WPF_LINUX_ATSPI=0" "$APP/sourcetree" 2>/dev/null; then
+  cp "$SRC_LAUNCHER" "$APP/sourcetree" && chmod +x "$APP/sourcetree"
+  echo "  ✅ 已更新：$APP/sourcetree（$(stat -c%s "$APP/sourcetree")B）"
+else
+  echo "  ✅ 已是最新：$APP/sourcetree"
+fi
 
-echo "=== 步骤 2/4：当前已用实例数 ==="
-USED=$(for pid in $(ls /proc | grep -E '^[0-9]+$'); do ls -la /proc/$pid/fd 2>/dev/null | grep -c inotify; done 2>/dev/null | awk '{s+=$1} END {print s}')
-echo "  已用 $USED / $LIMIT"
+echo "=== 步骤 2/4：检查 inotify 上限 ==="
+LIMIT=$(cat /proc/sys/fs/inotify/max_user_instances 2>/dev/null || echo "?")
+USED=0
+for pid in $(ls /proc 2>/dev/null | grep -E '^[0-9]+$'); do
+  n=$(ls -la /proc/$pid/fd 2>/dev/null | grep -c inotify)
+  USED=$((USED + n))
+done
+echo "  max_user_instances = $LIMIT"
+echo "  已用 = $USED"
+if [ "$LIMIT" != "?" ] && [ "$LIMIT" -lt 512 ]; then
+  echo "  ⚠️ 上限偏低（$LIMIT）。若出现「RepoWatcher ... inotify instances limit」错误，请："
+  echo "     sudo sysctl -w fs.inotify.max_user_instances=1024"
+  echo "  ⚠️ 免 sudo 缓解：清理重复的 xdg-desktop-portal 进程（实测可释放 15 个，K-1379）"
+else
+  echo "  ✅ 上限充足"
+fi
 
-echo "=== 步骤 3/4：启动 SourceTree 并检查 RepoWatcher ==="
+echo "=== 步骤 3/4：启动 SourceTree 并检查日志 ==="
 for p in $(pgrep -x SourceTree 2>/dev/null); do kill -9 "$p" 2>/dev/null; done
 sleep 1
-[ -x "$APP/sourcetree" ] || { cp 70-operate/启动器/sourcetree "$APP/sourcetree" 2>/dev/null; chmod +x "$APP/sourcetree" 2>/dev/null; }
-setsid timeout 60 env DISPLAY=:303 "$APP/sourcetree" >/tmp/inotify-fix.log 2>&1 < /dev/null &
+setsid timeout 60 env DISPLAY="${DISPLAY:-:303}" "$APP/sourcetree" >/tmp/inotify-fix.log 2>&1 < /dev/null &
 sleep 45
-if grep -aq "RepoWatcher.*inotify instances limit" /tmp/inotify-fix.log; then
-  echo "  ❌ 仍有 inotify 上限错误（见 /tmp/inotify-fix.log）"
-  exit 2
-fi
-echo "  ✅ 无 inotify 上限错误"
 
-echo "=== 步骤 4/4：检查 UnstagedFileList.Count（需 ST_REFLECT 版 DLL）==="
-if [ -f /tmp/ST.cnt.dll ]; then
-  echo "  提示：用 /tmp/ST.cnt.dll 替换 SourceTree.exe 后再跑，可看到 Count 值"
-  echo "  （本脚本不自动替换，避免影响当前部署）"
+WID=$(DISPLAY="${DISPLAY:-:303}" xdotool search --name 'Sourcetree' 2>/dev/null | head -1)
+if [ -n "$WID" ]; then
+  echo "  ✅ 窗口出现：WID=$WID"
 else
-  echo "  提示：/tmp/ST.cnt.dll 不存在，无法检查 Count"
+  echo "  ❌ 窗口未出现 —— 检查是否缺 WPF_LINUX_ATSPI=0（K-1379）"
 fi
 
-echo
-echo "=== 全部检查完成 ==="
+if grep -aq "RepoWatcher.*inotify instances limit" /tmp/inotify-fix.log; then
+  echo "  ❌ RepoWatcher 报告 inotify 上限错误（需提权或清理进程）"
+else
+  echo "  ✅ 未发现 RepoWatcher inotify 错误"
+fi
+
+echo "=== 步骤 4/4：结果 ==="
+echo "  日志：/tmp/inotify-fix.log"
+echo "  说明：窗口能出现 ≠ 文件监控可用；要验证文件列表请看 K-1377 的说明。"
