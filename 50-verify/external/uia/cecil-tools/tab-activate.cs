@@ -104,6 +104,59 @@ class P {
     F(ilf.Create(OpCodes.Ldsfld, dF)); F(ilf.Create(OpCodes.Ldc_I4_1)); F(ilf.Create(OpCodes.Sub)); F(ilf.Create(OpCodes.Stsfld, dF));
     F(fret);
 
+    /* OpenMenu(UIElement) —— K-1235：递归找第一个 MenuItem 并 IsSubmenuOpen=true。
+       照 FixTab 的成熟 IL 模式（K-1140 验证过），不走 helper（K-1205/K-1209 证明会崩）。 */
+    var miType = pf.MainModule.Types.SelectMany(Flat).FirstOrDefault(x => x.Name == "MenuItem" && x.Namespace == "System.Windows.Controls");
+    MethodDefinition openMenu = null;
+    if (miType == null) { Console.WriteLine("MenuItem 类型未找到"); }
+    else {
+      var miRef = asm.MainModule.ImportReference(miType);
+      var setOpenRef = asm.MainModule.ImportReference(miType.Properties.First(x => x.Name == "IsSubmenuOpen").SetMethod);
+      var openedF = new FieldDefinition("_opened", FieldAttributes.Public | FieldAttributes.Static, asm.MainModule.TypeSystem.Boolean);
+      dv.Fields.Add(openedF);
+      var odF = new FieldDefinition("_od", FieldAttributes.Public | FieldAttributes.Static, asm.MainModule.TypeSystem.Int32);
+      dv.Fields.Add(odF);
+      openMenu = new MethodDefinition("OpenMenu", MethodAttributes.Public | MethodAttributes.Static, asm.MainModule.TypeSystem.Void);
+      openMenu.Parameters.Add(new ParameterDefinition(uiElementRef));
+      dv.Methods.Add(openMenu);
+      var ilo = openMenu.Body.GetILProcessor();
+      openMenu.Body.InitLocals = true;
+      var oCount = new VariableDefinition(asm.MainModule.TypeSystem.Int32); openMenu.Body.Variables.Add(oCount);
+      var oI = new VariableDefinition(asm.MainModule.TypeSystem.Int32); openMenu.Body.Variables.Add(oI);
+      var oChild = new VariableDefinition(uiElementRef); openMenu.Body.Variables.Add(oChild);
+      var oMi = new VariableDefinition(miRef); openMenu.Body.Variables.Add(oMi);
+      void O(Instruction i) => ilo.Append(i);
+      var oret = ilo.Create(OpCodes.Ret);
+      var ocond = ilo.Create(OpCodes.Ldloc, oI);
+      var oincr = ilo.Create(OpCodes.Ldloc, oI);
+      var obody = ilo.Create(OpCodes.Ldarg_0);
+      var skipSet = ilo.Create(OpCodes.Nop);
+      O(ilo.Create(OpCodes.Ldsfld, openedF)); O(ilo.Create(OpCodes.Brtrue, oret));
+      O(ilo.Create(OpCodes.Ldsfld, odF)); O(ilo.Create(OpCodes.Ldc_I4, 12)); O(ilo.Create(OpCodes.Bge, oret));
+      O(ilo.Create(OpCodes.Ldsfld, odF)); O(ilo.Create(OpCodes.Ldc_I4_1)); O(ilo.Create(OpCodes.Add)); O(ilo.Create(OpCodes.Stsfld, odF));
+      O(ilo.Create(OpCodes.Ldarg_0)); O(ilo.Create(OpCodes.Isinst, miRef)); O(ilo.Create(OpCodes.Stloc, oMi));
+      O(ilo.Create(OpCodes.Ldloc, oMi)); O(ilo.Create(OpCodes.Brfalse, skipSet));
+      O(ilo.Create(OpCodes.Ldloc, oMi)); O(ilo.Create(OpCodes.Ldc_I4_1)); O(ilo.Create(OpCodes.Callvirt, setOpenRef));
+      O(ilo.Create(OpCodes.Ldc_I4_1)); O(ilo.Create(OpCodes.Stsfld, openedF));
+      O(ilo.Create(OpCodes.Ldstr, "[MENUIL] IsSubmenuOpen=true")); O(ilo.Create(OpCodes.Call, wlS));
+      O(ilo.Create(OpCodes.Ret));
+      O(skipSet);
+      O(ilo.Create(OpCodes.Ldarg_0)); O(ilo.Create(OpCodes.Call, getCountRef)); O(ilo.Create(OpCodes.Stloc, oCount));
+      O(ilo.Create(OpCodes.Ldc_I4_0)); O(ilo.Create(OpCodes.Stloc, oI));
+      O(ilo.Create(OpCodes.Br, ocond));
+      O(obody);
+      O(ilo.Create(OpCodes.Ldloc, oI)); O(ilo.Create(OpCodes.Call, getChildRef));
+      O(ilo.Create(OpCodes.Isinst, uiElementRef)); O(ilo.Create(OpCodes.Stloc, oChild));
+      O(ilo.Create(OpCodes.Ldloc, oChild)); O(ilo.Create(OpCodes.Brfalse, oincr));
+      O(ilo.Create(OpCodes.Ldloc, oChild)); O(ilo.Create(OpCodes.Call, openMenu));
+      O(oincr);
+      O(ilo.Create(OpCodes.Ldc_I4_1)); O(ilo.Create(OpCodes.Add)); O(ilo.Create(OpCodes.Stloc, oI));
+      O(ocond);
+      O(ilo.Create(OpCodes.Ldloc, oCount)); O(ilo.Create(OpCodes.Blt, obody));
+      O(ilo.Create(OpCodes.Ldsfld, odF)); O(ilo.Create(OpCodes.Ldc_I4_1)); O(ilo.Create(OpCodes.Sub)); O(ilo.Create(OpCodes.Stsfld, odF));
+      O(oret);
+    }
+
     /* DoScroll(UIElement) —— 找第一个 ScrollViewer，滚动到一半 */
     var doScroll = new MethodDefinition("DoScroll", MethodAttributes.Public | MethodAttributes.Static, asm.MainModule.TypeSystem.Void);
     doScroll.Parameters.Add(new ParameterDefinition(uiElementRef));
@@ -195,6 +248,11 @@ class P {
     /* （菜单展开已移除）*/
     Push(il2.Create(OpCodes.Ldarg_0)); Push(il2.Create(OpCodes.Callvirt, getContentRef));
     Push(il2.Create(OpCodes.Castclass, uiElementRef)); Push(il2.Create(OpCodes.Call, doScroll));
+    /* K-1235：展开第一个菜单（纯 IL） */
+    if (openMenu != null) {
+      Push(il2.Create(OpCodes.Ldarg_0)); Push(il2.Create(OpCodes.Callvirt, getContentRef));
+      Push(il2.Create(OpCodes.Castclass, uiElementRef)); Push(il2.Create(OpCodes.Call, openMenu));
+    }
     Push(il2.Create(OpCodes.Ldstr, "[SCR] done")); Push(il2.Create(OpCodes.Call, wlS));
     asm.Write(a[1]);
     Console.WriteLine("patched -> " + a[1]);
