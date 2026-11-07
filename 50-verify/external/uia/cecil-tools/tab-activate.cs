@@ -184,7 +184,7 @@ class P {
     TypeReference bookmarksTypeRef = null;
     {
       /* K-1242：AddToBookmarksWindow 在 SourceTree.Api.UI.Wpf.dll（不在主模块） */
-      TypeDefinition bt = asm.MainModule.Types.SelectMany(Flat).FirstOrDefault(x => x.FullName == "SourceTree.View.Repository.AddToBookmarksWindow");
+      TypeDefinition bt = asm.MainModule.Types.SelectMany(Flat).FirstOrDefault(x => x.Name == (Environment.GetEnvironmentVariable("ST_DLG_TYPE") ?? "AddToBookmarksWindow"));
       if (bt == null && a.Length > 3) {
         try {
           var r2 = new DefaultAssemblyResolver();
@@ -312,7 +312,7 @@ class P {
       Push(il2.Create(OpCodes.Ldstr, "[DLG] MessageBox returned")); Push(il2.Create(OpCodes.Call, wlS));
     }
     /* K-1241：创建并显示业务对话框（ST_PATCH_DLG=1 时才生成） */
-    if (bookmarksTypeRef != null && showDlgRef != null && Environment.GetEnvironmentVariable("ST_PATCH_DLG") == "bookmarks") {
+    if (bookmarksTypeRef != null && showDlgRef != null && Environment.GetEnvironmentVariable("ST_PATCH_DLG") != "msgbox") {
       var getTypeFromHandle = asm.MainModule.ImportReference(
         typeof(Type).GetMethod("GetTypeFromHandle", new[] { typeof(RuntimeTypeHandle) }));
       var createInstance = asm.MainModule.ImportReference(
