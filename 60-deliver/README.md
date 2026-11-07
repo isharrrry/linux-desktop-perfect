@@ -230,3 +230,25 @@ $ node 50-verify/image/decode.mjs
 **注意**：重装只要**两步**（`install-runtime` + `build-bridge --install`），
 不需要重跑 `build-port`/`build-pack` —— 前提是 `40-build/pack/out/` 里的 nupkg 还在。
 如果那份 nupkg 也被删了，就要从 §2 的第 ① 步重新开始。
+
+
+## 一行启动（推荐）
+
+```bash
+bash 70-operate/启动器/sourcetree --profile rdp
+```
+
+**配置名：`default`（桌面直连）/ `rdp`（远程桌面）/ `xvfb`（离屏验证）**
+
+**辅助脚本：**
+
+| 脚本 | 用途 |
+|---|---|
+| `resize-sourcetree [WxH\|max]` | 调整窗口大小（默认窗口只有 625×540）|
+| `stop-sourcetree` | 优雅关闭（先发 `WM_DELETE_WINDOW`，超时再 kill）|
+| `verify-inotify-fix.sh` | 环境自检（自动更新启动器 + 检查 inotify）|
+| `--list-profiles` | 列出所有配置 |
+
+**⚠️ `WPF_LINUX_ATSPI=0` 是必需的（K-1379）**：缺了它窗口根本不出现（白屏）。启动器已内置。
+
+**字体**：配置里已设 `WPF_LINUX_UI_FONT=Noto Sans CJK SC`（K-1393）。
