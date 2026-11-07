@@ -26,14 +26,19 @@
 - **递归**：`_depth` 静态计数，上限 12
 - **代码**：`50-verify/external/uia/cecil-tools/inject-dump.cs`（137 行，**C#**）
 
-## 三、未达成（如实）
+## 三、未达成（如实）—— **2026-11-02 大幅更新**
 
-| 项 | 原因 |
-|---|---|
-| **像素截图** | **架构性不可达（L-11 / K-1087）**：`wpfgfx_cor3.so` 没有任何 Linux 图形后端符号（x11/drm/egl/vulkan/gl = 0 个）⇒ 它是 Windows 二进制改扩展名；`RenderTargetBitmap` 4 次尝试全失败（K-418/K-1006/K-1007/K-1037）|
-| **截图存证（`st-*`）** | 仓库里只有 `st-20-main-window-9172.png`（4 色空白）；`st-18`/`st-19`/「9 张达标截图」均不存在（**L-10 / K-1084 / K-1085**）|
-| **`AutomationPeer.GetName()`** | 崩溃（K-989）⇒ name 只能用 `GetType().FullName` |
-| **`AutomationPeer.Invoke()`** | IL 构造反复失败（K-1019/K-1021/K-1024/K-1025），`GetPattern` 本身可用（K-1022）|
+> **⚠️ 本节原内容有两条已被推翻，务必看新表。** 旧结论（像素截图架构性不可达 / 截图存证只有 1 张空白）源于 K-1087 的错判，已被 K-1110/K-1135/K-1238 推翻。
+
+| 项 | 现状 | 证据 |
+|---|---|---|
+| **像素截图** | **✅ 已达成** | `sourcetree-shots/` 共 **26 张 PNG，其中 17 张 > 20000B**（如 `st-26` 37801B / `st-30` 47080B / `st-31` 36292B）；`xwd -root` + 裁剪法（K-1238）|
+| **截图存证** | **✅ 已达成** | 11 张关键截图均有 `proof-*.json` 像素分析（`st-21`~`st-35`）|
+| **`RenderTargetBitmap`** | **❌ 不可用（确认）** | 构造成功但 `.Render()` 抛 `InvalidCastException`（栈：`MS.Internal.HRESULT.Check` ← `BitmapVisualManager.Render`）⇒ native 层不支持，**K-1308 复验确认** |
+| **`AutomationPeer.GetName()`** | **❌ 仍崩溃** | K-989；但 AT-SPI 侧的 `GetName` 可用（K-1249，返回 `('SourceTree',)`）|
+| **`AutomationPeer.Invoke()`** | **⚠️ 部分达成** | IL 直接构造仍失败（K-1019/K-1021），但**进程内反射调 `InvokeProviderWrapper` 可用**（K-1143）|
+| **合成输入**（点击/键盘） | **❌ 确认不可用** | 五步排除完成（K-1263）：事件到达 / IBUS 不吞 / 消息出队 / 指针移动 / 无 filter，WPF 仍不响应 |
+| **「暂存」操作** | **⚠️ 受环境限制** | 反射链全通（K-1296）但 `UnstagedFileList.Count=0`；根因是 `fs.inotify.max_user_instances=128` 已用 124（K-1306），**提高上限即可修复**（非架构限制）|
 
 ## 四、关键记录（K 编号）
 
