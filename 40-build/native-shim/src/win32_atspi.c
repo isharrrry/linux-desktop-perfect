@@ -602,7 +602,11 @@ static DBusHandlerResult atspi_msg_handler(DBusConnection *conn, DBusMessage *ms
              && strcmp(iface, "org.a11y.atspi.Accessible") != 0
              && strcmp(iface, "org.freedesktop.DBus.Properties") != 0
              && strcmp(iface, "org.a11y.atspi.Cache") != 0
-             && strcmp(iface, "org.a11y.atspi.Application") != 0)
+             && strcmp(iface, "org.a11y.atspi.Application") != 0
+             /* K-1249：**根因修复** —— 白名单漏了 `org.a11y.atspi.Action`，
+                导致 Action 的所有方法（GetName/DoAction/GetActions…）都被
+                NOT_YET_HANDLED ⇒ libdbus 回 `UnknownMethod`（L-15 的真因）。 */
+             && strcmp(iface, "org.a11y.atspi.Action") != 0)
         return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
 
     wpf_atspi_node *n = atspi_node_by_path(path);
