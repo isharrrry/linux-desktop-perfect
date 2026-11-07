@@ -1,5 +1,17 @@
 #!/bin/bash
-# SourceTree Linux 启动器：检测 .lnk 快捷方式并给出明确提示（K-1288/K-1310）
+# SourceTree Linux 启动器
+#   K-1288/K-1310：检测 .lnk 快捷方式并给出明确提示
+#   K-1379：必须设置 WPF_LINUX_ATSPI=0，否则 SourceTree 启动后只显示白屏
+#           （AT-SPI 初始化会阻塞 WPF UI 线程）
+FX=~/.local/share/ldp/dotnet/shared/Microsoft.WindowsDesktop.App/10.0.11
+APP="${ST_APP:-/tmp/stpkg/SourceTree/app-3.4.15}"
+
+if [ ! -x "$APP/SourceTree.exe" ] && [ ! -f "$APP/SourceTree.exe" ]; then
+  echo "错误：找不到 SourceTree：$APP/SourceTree.exe" >&2
+  echo "可用 ST_APP=/path/to/app-3.4.15 指定应用目录。" >&2
+  exit 3
+fi
+
 for arg in "$@"; do
   case "${arg,,}" in
     *.lnk)
@@ -9,10 +21,11 @@ for arg in "$@"; do
       ;;
   esac
 done
-FX=~/.local/share/ldp/dotnet/shared/Microsoft.WindowsDesktop.App/10.0.11
-APP="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 cd "$APP"
 exec env DOTNET_ROOT=~/.local/share/ldp/dotnet DOTNET_ReadyToRun=0 \
-  LD_LIBRARY_PATH="$FX/native:$FX:" WPF_LINUX_WIN32_SHIM=$FX/libwpfwin32.so \
+  LD_LIBRARY_PATH="$FX/native:$FX:" \
+  WPF_LINUX_WIN32_SHIM=$FX/libwpfwin32.so \
+  WPF_LINUX_ATSPI=0 \
   DISPLAY="${DISPLAY:-:303}" \
   ~/.local/share/ldp/dotnet/dotnet SourceTree.exe "$@"
