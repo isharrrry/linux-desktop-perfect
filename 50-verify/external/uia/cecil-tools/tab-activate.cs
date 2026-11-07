@@ -390,7 +390,12 @@ class P {
           Push(il2.Create(OpCodes.Callvirt, addCr));
           Push(il2.Create(OpCodes.Ldstr, "[DIFF] ContentRendered handler registered")); Push(il2.Create(OpCodes.Call, wlS));
         }
-      } catch (Exception ex) { Console.WriteLine("ShowDiff 注入失败: " + ex.GetType().Name + " " + ex.Message); }
+      } catch (Exception ex) {
+        /* K-1282：**注入失败必须中止**（K-1281 教训：抛异常后仍写出 DLL ⇒ 用错误产物测试）。
+           任何异常都不写 DLL，直接返回非零。 */
+        Console.WriteLine("ShowDiff 注入失败，中止（不写 DLL）: " + ex.GetType().Name + " " + ex.Message);
+        return;
+      }
     }
     Push(il2.Create(OpCodes.Ldstr, "[SCR] done")); Push(il2.Create(OpCodes.Call, wlS));
     asm.Write(a[1]);
