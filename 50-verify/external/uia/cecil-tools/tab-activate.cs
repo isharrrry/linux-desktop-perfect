@@ -356,6 +356,61 @@ class P {
           var ild = defer.Body.GetILProcessor();
           void D(Instruction i) => ild.Append(i);
           D(ild.Create(OpCodes.Ldstr, "[DIFF] ContentRendered fired")); D(ild.Create(OpCodes.Call, wlS));
+          /* K-1293：用 System.Reflection 访问私有字段 `_commitAndFileStatusVm`（K-1292），
+             拿到 CommitAndFileStatusViewModel → .ChangeSetViewModel.UnstagedFileList 的**数量**并打印。
+             这一步只验证「反射能突破 private 限制」，不修改任何状态。开关 ST_REFLECT=1。 */
+          if (Environment.GetEnvironmentVariable("ST_REFLECT") == "1") {
+            var rtv2 = apiAsm2.MainModule.Types.SelectMany(Flat).FirstOrDefault(x => x.Name == "RepoTabViewModel");
+            if (rtv2 != null) {
+              var rtvRef2 = asm.MainModule.ImportReference(rtv2);
+              // 独立解析导航链（避免依赖前一块的局部变量）
+              var mwvmT2 = asm.MainModule.Types.SelectMany(Flat).First(x => x.Name == "MainWindowViewModel");
+              var mwvmR2 = asm.MainModule.ImportReference(mwvmT2);
+              var getRtc3 = asm.MainModule.ImportReference(mwvmT2.Properties.First(x => x.Name == "RepositoryTabContainer").GetMethod);
+              var getSel3 = asm.MainModule.ImportReference(contType.Properties.First(x => x.Name == "SelectedRepoTabViewModel").GetMethod);
+              var getTypeFromHandle = asm.MainModule.ImportReference(
+                typeof(Type).GetMethod("GetTypeFromHandle", new[] { typeof(RuntimeTypeHandle) }));
+              var getField = asm.MainModule.ImportReference(
+                typeof(Type).GetMethod("GetField", new[] { typeof(string), typeof(System.Reflection.BindingFlags) }));
+              var getValue = asm.MainModule.ImportReference(
+                typeof(System.Reflection.FieldInfo).GetMethod("GetValue", new[] { typeof(object) }));
+              var objectRef2 = asm.MainModule.TypeSystem.Object;
+              var fiType = asm.MainModule.ImportReference(typeof(System.Reflection.FieldInfo));
+              // 局部变量：rtv, fi, obj
+              var vRtv = new VariableDefinition(rtvRef2); defer.Body.Variables.Add(vRtv);
+              var vFi = new VariableDefinition(fiType); defer.Body.Variables.Add(vFi);
+              var vObj = new VariableDefinition(objectRef2); defer.Body.Variables.Add(vObj);
+              D(ild.Create(OpCodes.Ldstr, "[REFLECT] reading private field _commitAndFileStatusVm")); D(ild.Create(OpCodes.Call, wlS));
+              // rtv = (RepoTabViewModel)RepositoryTabContainer.SelectedRepoTabViewModel
+              D(ild.Create(OpCodes.Ldarg_0)); D(ild.Create(OpCodes.Callvirt, getDC));
+              D(ild.Create(OpCodes.Castclass, mwvmR2));
+              D(ild.Create(OpCodes.Callvirt, getRtc3));
+              D(ild.Create(OpCodes.Castclass, tabIfaceRef));
+              D(ild.Create(OpCodes.Callvirt, getSel3));
+              D(ild.Create(OpCodes.Castclass, rtvRef2));
+              D(ild.Create(OpCodes.Stloc, vRtv));
+              // fi = typeof(RepoTabViewModel).GetField("_commitAndFileStatusVm", NonPublic|Instance)
+              D(ild.Create(OpCodes.Ldtoken, rtvRef2));
+              D(ild.Create(OpCodes.Call, getTypeFromHandle));
+              D(ild.Create(OpCodes.Ldstr, "_commitAndFileStatusVm"));
+              D(ild.Create(OpCodes.Ldc_I4, 0x24)); // NonPublic(32) | Instance(4)
+              D(ild.Create(OpCodes.Callvirt, getField));
+              D(ild.Create(OpCodes.Stloc, vFi));
+              // obj = fi.GetValue(rtv)
+              D(ild.Create(OpCodes.Ldloc, vFi));
+              D(ild.Create(OpCodes.Ldloc, vRtv));
+              D(ild.Create(OpCodes.Callvirt, getValue));
+              D(ild.Create(OpCodes.Stloc, vObj));
+              // 简化：只在拿到字段后打一行，不做 null 判断的 IL（避免 Box/ToString 的坑）
+              D(ild.Create(OpCodes.Ldstr, "[REFLECT] FieldInfo.GetValue() returned OK")); D(ild.Create(OpCodes.Call, wlS));
+              // 若 vObj 为 null，跳过后续（避免 NPE）
+              var skipLabel = ild.Create(OpCodes.Nop);
+              D(ild.Create(OpCodes.Ldloc, vObj));
+              D(ild.Create(OpCodes.Brfalse, skipLabel));
+              D(ild.Create(OpCodes.Ldstr, "[REFLECT] field is NOT null")); D(ild.Create(OpCodes.Call, wlS));
+              D(skipLabel);
+            }
+          }
           /* K-1289：调 RepoTabViewModel.Stage()（暂存）。开关 ST_DO_STAGE=1。 */
           if (Environment.GetEnvironmentVariable("ST_DO_STAGE") == "1") {
             var rtv = apiAsm2.MainModule.Types.SelectMany(Flat).FirstOrDefault(x => x.Name == "RepoTabViewModel");
