@@ -423,6 +423,18 @@ class P {
                 var vColl = new VariableDefinition(collType); defer.Body.Variables.Add(vColl);
                 D(ild.Create(OpCodes.Ldloc, vObj));
                 D(ild.Create(OpCodes.Castclass, cfsvRef));
+                /* K-1298：先调 RefreshCommitMode()（public 无参），让 UnstagedFileList 填充。
+                   开关 ST_REFRESH=1 控制（避免影响其他测试）。 */
+                if (Environment.GetEnvironmentVariable("ST_REFRESH") == "1") {
+                  var refreshM = asm.MainModule.ImportReference(cfsv.Methods.First(x => x.Name == "RefreshCommitMode" && x.Parameters.Count == 0));
+                  D(ild.Create(OpCodes.Ldstr, "[REFLECT] calling RefreshCommitMode()")); D(ild.Create(OpCodes.Call, wlS));
+                  D(ild.Create(OpCodes.Ldloc, vObj));
+                  D(ild.Create(OpCodes.Castclass, cfsvRef));
+                  D(ild.Create(OpCodes.Callvirt, refreshM));
+                  D(ild.Create(OpCodes.Ldstr, "[REFLECT] RefreshCommitMode() done")); D(ild.Create(OpCodes.Call, wlS));
+                }
+                D(ild.Create(OpCodes.Ldloc, vObj));
+                D(ild.Create(OpCodes.Castclass, cfsvRef));
                 D(ild.Create(OpCodes.Callvirt, getChangeSet));
                 D(ild.Create(OpCodes.Stloc, vWcc));
                 D(ild.Create(OpCodes.Ldloc, vWcc));
