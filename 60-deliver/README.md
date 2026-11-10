@@ -75,6 +75,30 @@ node 40-build/appliers/shim-chain.mjs --rollback      # 回滚到最近一次备
 > 在三次探针复跑里**未复现**（`staged` 恒 0，手动 `RefreshStatus()` 后仍 0），与 K-1436 的单次读数不一致；
 > 下一次要查的是「watcher 事件链在 `shlwapi` 修好后是否还有第二处丢事件」。
 
+**Dvcss 前置链（D 链）也要单独跑**：`SourceTree.Dvcss.Git::GetHandler` 为 null 时任何 VCS 操作都不执行
+（K-1413），而它需要的 `<home>/cmd\git.exe`（文件名**字面含反斜杠**，K-1415）**不能是裸符号链接** ——
+git 毫秒级退出会与 .NET 异步读输出形成竞态，抛
+`Cannot process request because the process has exited`（K-1441）。
+换成「延迟 0.15s 再退出」的 wrapper 后该报错 **6 次 → 0 次**。
+
+```bash
+node 40-build/appliers/dvcss-prereq.mjs                  # 造/修正 <home>/cmd\git.exe wrapper（幂等，默认 GV_HOME=/tmp/fakegit）
+node 40-build/appliers/dvcss-prereq.mjs --check          # 只检查（存在/非符号链接/可执行/含 sleep 0.15）
+node 40-build/appliers/dvcss-prereq.mjs --status         # 打印 wrapper 现状 + Dvcss 探针注入提示
+node 40-build/appliers/dvcss-prereq.mjs --home /tmp/x    # 指定别的 home
+node 40-build/appliers/dvcss-prereq.mjs --remove         # 删除 wrapper
+```
+
+判据：`--check` → `CHECK OK`；`"<home>/cmd\git.exe" --version` 耗时 **≥150 ms**（延迟生效）；
+启动日志里 `has exited` **0 次**。
+
+> ⚠️ Dvcss 配置本身**仍需运行时反射注入**（3 参 `DvcsInstallationConfiguration`，K-1415），
+> 本脚本只负责「`cmd\git.exe` 延迟退出」这一半；判据是启动后 `GetHandler.notnull=1`。
+>
+> ⚠️ 已知未闭合（K-1442）：D 链落地后 5 次启动实测 **`has exited` 0/5**（报错消除成立），
+> 但「写文件后自动刷新」只到 **3/5**；失败样本的 `git status` 调用次数（4）明显少于成功样本（6~8）
+> ⇒ 剩余断点在「watcher 事件未触发额外 `git status`」，与退出竞态是两个独立因素。
+
 ## 3. 怎么跑
 
 ### 3.1 跑本仓样本
