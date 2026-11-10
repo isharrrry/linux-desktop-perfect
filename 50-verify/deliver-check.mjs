@@ -195,10 +195,27 @@ function checkChainDynamic() {
     try { process.kill(child.pid, 0); } catch { alive = false; }
     record('四类', '进程存活', alive, alive ? `pid=${child.pid}` : '已退出（查 /tmp/deliver-check.err）');
     const logPath = LOG_CANDIDATES.find((c) => exists(c));
-    const logBody = logPath ? fs.readFileSync(logPath, 'utf8') : '';
+    let logBody = logPath ? fs.readFileSync(logPath, 'utf8') : '';
     record('四类', '探针日志', Boolean(logPath), logPath || '未生成（检查探针注入/DLL 部署）');
-    const logRows = [...logBody.matchAll(/logRows(?:\.Count)?=(\d+)/g)].map((m) => Number(m[1]));
-    const maxRows = logRows.length ? Math.max(...logRows) : 0;
+    let logRows = [...logBody.matchAll(/logRows(?:\.Count)?=(\d+)/g)].map((m) => Number(m[1]));
+    let maxRows = logRows.length ? Math.max(...logRows) : 0;
+    // K-1489：探针可能只跑到 tick1（未进 History 步骤，K-1305 类启动波动）⇒ 样本 0 时重试一次
+    if (logRows.length === 0) {
+      record('四类', 'History 重试', true, '首次样本 0，按 K-1489 重试一次');
+      try { process.kill(child.pid, 0); } catch {}
+      try { process.kill(-child.pid, 'SIGTERM'); } catch {}
+      for (const c of LOG_CANDIDATES) { try { fs.unlinkSync(c); } catch {} }
+      const child2 = spawn('bash', ['-c', `cd "${APP}" && exec "${dotnet}" "${appExe}" >/tmp/deliver-check2.out 2>/tmp/deliver-check2.err`], {
+        env, detached: true, stdio: 'ignore',
+      });
+      child2.unref();
+      sleep(26000);
+      try { process.kill(-child2.pid, 'SIGTERM'); } catch {}
+      const lp2 = LOG_CANDIDATES.find((c) => exists(c));
+      if (lp2) logBody = fs.readFileSync(lp2, 'utf8');
+      logRows = [...logBody.matchAll(/logRows(?:\.Count)?=(\d+)/g)].map((m) => Number(m[1]));
+      maxRows = logRows.length ? Math.max(...logRows) : 0;
+    }
     record('四类', 'History LogRows', maxRows >= 2, `max=${maxRows}（样本 ${logRows.length}）`);
     const stageLines = [...logBody.matchAll(/staged=(\d+)/g)].map((m) => Number(m[1]));
     record('四类', '文件状态 staged', stageLines.length > 0, `样本 ${stageLines.length} 个，max=${stageLines.length ? Math.max(...stageLines) : 0}`);
