@@ -21,6 +21,27 @@ const arg = (name, def) => {
 const SRC = arg('src', path.join(ROOT, '40-build/upstream/wpf'));
 const DST = arg('dst', path.join(ROOT, '40-build/build/wpf'));
 const CHECK = argv.includes('--check');
+
+// 二进制 DLL 补丁（K-1428/K-1431/K-1433）：派生树文本之外的「二进制段」。
+// 为什么必须有：apply.mjs 只做确定性文本改写、不产出二进制，而 UI 三处修复都在已部署的
+// `SourceTree.Api.UI.Wpf.dll` 上做 IL 补丁（History 首帧 NRE / 提交前的用户信息对话框 /
+// 确认对话框 SetIcon）。不接进来则「重建」后三处修复全失效。
+// 顺序与幂等由 `40-build/appliers/apply-bin.mjs` 及其子 applier 保证；返回 rc（0=成功）。
+async function runBinPatches(check) {
+  const app = process.env.APP || '/tmp/stpkg/SourceTree/app-3.4.15';
+  const target = path.join(app, 'SourceTree.Api.UI.Wpf.dll');
+  if (!fs.existsSync(target)) {
+    console.log(`apply: 跳过二进制 DLL 补丁（未找到 ${target}；用 APP=<dir> 指定已部署的 app 目录）`);
+    return 0;
+  }
+  const { spawnSync } = await import('node:child_process');
+  const args = ['40-build/appliers/apply-bin.mjs', '--app', app];
+  if (check) args.push('--check');
+  console.log(`apply: 二进制 DLL 补丁（${check ? '仅检查' : '应用'}）→ ${path.relative(ROOT, target)}`);
+  const r = spawnSync(process.execPath, args, { stdio: 'inherit', cwd: ROOT });
+  if (r.status !== 0) console.error('apply: 二进制 DLL 补丁失败（见上）');
+  return r.status || 0;
+}
 const SKIP_DIRS = new Set(['redist', 'tests', '.git']);
 // `.cs` 也要在列：定点补丁（如 P19 的 STA 降级）落在源码文件上，不在列表里就静默不生效。
 const TEXT_EXT = new Set(['.csproj', '.props', '.targets', '.csproj', '.projitems', '.props', '.targets', '.csdef', '.cs']);
@@ -487,7 +508,9 @@ if (CHECK) {
   if (!fs.existsSync(report)) problems.push('缺 patch-report.json');
   for (const p of problems) console.error(`ERROR ${p}`);
   console.log(`apply --check: 计划改写 ${rewrites.length} 个文件，问题 ${problems.length}`);
-  process.exit(problems.length ? 1 : 0);
+  // `--check` 也要覆盖二进制段，否则「一条命令检查」会漏掉 UI 三补丁（K-1428/K-1431/K-1433）
+  const binRc = await runBinPatches(true);
+  process.exit(problems.length || binRc ? 1 : 0);
 }
 
 fs.rmSync(DST, { recursive: true, force: true });
@@ -568,4 +591,11 @@ if (!CHECK) {
       console.log('apply: PBT 已重建');
     }
   }
+}
+
+// ── 二进制 DLL 补丁（K-1428/K-1431/K-1433）：派生树文本之后的「二进制段」──────────
+// 解释见文件上方 runBinPatches 的注释；这里只在「真正应用」模式下执行（--check 已在上面分支处理）。
+{
+  const binRc = await runBinPatches(false);
+  if (binRc) process.exit(binRc);
 }
