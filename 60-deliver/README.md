@@ -104,7 +104,9 @@ node 50-verify/deliver-check.mjs --full        # L1 + L2 + L3 预留（远程三
 判据：`--check` → `CHECK OK`；`"<home>/cmd\git.exe" --version` 耗时 **≥150 ms**（延迟生效）；
 启动日志里 `has exited` **0 次**。
 
-> 四类之外的其他已实测能力（远程三 / 储藏三 / 标签 / 合并冲突 / revert，均带 K 号与进程外判据）见《交付清单》的「**其他已实测能力**」一节。
+> 四类之外的其他已实测能力（远程三 / 储藏三 / 标签 / 合并冲突 / revert / 多仓库 / 子模块 / 工作树 / 大仓库性能 / reset，均带 K 号与进程外判据）见《交付清单》的「**其他已实测能力**」一节。
+>
+> 能力可达性自检：`node 50-verify/deliver-check.mjs`（L1 静态 15 项：四链哈希 + 别名 + wrapper + `ITagSupport`/`IStashSupport`/`IPushSupport`/`GetReverseCommitProcess`/`RunThis` 类型存在性 + 程序化清单第 ⑥ 条文档契约）；`--with-gui` 追加 6 项动态验收。
 
 ### 四链 + 四类能力索引（一条链对应一件产物）
 
