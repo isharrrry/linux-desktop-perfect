@@ -1675,5 +1675,18 @@
     <Compile Include="$(WpfLinuxRoot)src/Microsoft.DotNet.Wpf.Linux/src/PresentationCore/InputProviderSite.Linux.cs" />
   </ItemGroup>
   <!-- ==== T1c 输入链读数（第 2 批）InputProviderSite 结束 ==== -->
+  <!-- ==== T2 · 补丁 R：图像解码失败降级 BEGIN ==== -->
+  <!-- T2 · 补丁 R：图像解码失败降级（K-1424）—— 解码失败后的恢复路径依赖 MilCore
+       的 WIC 桥，Linux 上抛 E_NOTIMPL 会把 XAML 解析带崩 ⇒ 降级为「不显示」。
+       生成物 = 上游逐字 + 定点替换（见 tools/patch-presentationcore-imagedecode.py）。 -->
+  <ItemGroup>
+    <Compile Remove="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/PresentationCore/System/Windows/Media/ImageSourceConverter.cs" />
+    <Compile Include="$(WpfLinuxRoot)src/Microsoft.DotNet.Wpf.Linux/src/PresentationCore/ImageSourceConverter.Linux.cs" />
+    <Compile Remove="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/PresentationCore/System/Windows/Media/Imaging/BitmapSource.cs" />
+    <Compile Include="$(WpfLinuxRoot)src/Microsoft.DotNet.Wpf.Linux/src/PresentationCore/BitmapSource.Linux.cs" />
+    <Compile Remove="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/PresentationCore/System/Windows/Media/Imaging/CachedBitmap.cs" />
+    <Compile Include="$(WpfLinuxRoot)src/Microsoft.DotNet.Wpf.Linux/src/PresentationCore/CachedBitmap.Linux.cs" />
+  </ItemGroup>
+  <!-- ==== T2 · 补丁 R：图像解码失败降级 END ==== -->
   <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
 </Project>
