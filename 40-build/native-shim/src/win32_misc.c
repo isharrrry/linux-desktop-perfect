@@ -653,8 +653,21 @@ HANDLE CreateEventA(void *sa, BOOL manual, BOOL initial, const char *name)
 HANDLE CreateEvent(void *sa, BOOL m, BOOL i, const char *n) { return CreateEventA(sa, m, i, n); }
 BOOL SetEvent(HANDLE h) { (void)h; wpf_set_last_error(50); return 0; }
 BOOL ResetEvent(HANDLE h) { (void)h; wpf_set_last_error(50); return 0; }
+// [降级] 本 shim 不伪造内核对象（CreateEventW 返回 NULL），因此这里没有可等的
+// 句柄。早期的「直接失败」会让上层（如 NonPumpingSynchronizationContext.Wait）
+// 抛 Win32Exception(50) 并 abort 进程（K-1428/K-1441）。改为「按超时语义返回」：
+//   ms==0  -> 立即 WAIT_TIMEOUT（轮询语义）
+//   ms>0   -> 最多睡 50ms 后 WAIT_TIMEOUT（不无限阻塞，也不报错）
+// 若某路径把 WAIT_TIMEOUT 当「事件未发生」继续循环，会表现为轮询而非崩溃。
 DWORD WaitForMultipleObjectsEx(DWORD n, const HANDLE *h, BOOL all, DWORD ms, BOOL alertable)
-{ (void)n; (void)h; (void)all; (void)ms; (void)alertable; wpf_set_last_error(50); return WAIT_FAILED; }
+{
+    (void)n; (void)h; (void)all; (void)alertable;
+    if (ms > 0) {
+        DWORD sleep_ms = ms > 50 ? 50 : ms;
+        usleep((useconds_t)sleep_ms * 1000u);
+    }
+    return WAIT_TIMEOUT;
+}
 HANDLE OpenProcess(DWORD access, BOOL inherit, DWORD pid)
 { (void)access; (void)inherit; (void)pid; wpf_set_last_error(5); return NULL; }
 BOOL DuplicateHandle(HANDLE src, HANDLE sh, HANDLE dst, HANDLE *out, DWORD access,

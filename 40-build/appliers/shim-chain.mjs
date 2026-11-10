@@ -63,7 +63,11 @@ const SoName = 'libwpfwin32.so';
 const ALIASES = ['shlwapi.dll.so', 'libshlwapi.dll.so'];
 
 const KNOWN_SHA256 = process.env.SC_KNOWN_SHA256
-  || 'bfcd63ea504bc70eb21165377f648b7fed6cb900723765138da32ac11dc744d7';
+  || '9f4b635a2a3254fa9ae62d8487b1c85b55aace550c738e2821560c5be6f5dfbd';   // K-1444 后
+const KNOWN_PREV = [
+  'bfcd63ea504bc70eb21165377f648b7fed6cb900723765138da32ac11dc744d7',        // K-1437 后 / K-1444 前
+];
+const isKnown = (h) => h === KNOWN_SHA256 || KNOWN_PREV.includes(h);
 
 const DOTNET_ROOT = process.env.DOTNET_ROOT || path.join(os.homedir(), '.local/share/ldp/dotnet');
 const ARTIFACT = path.join(ROOT, '40-build/native-shim/bin', SoName);
@@ -186,7 +190,7 @@ function main() {
     console.log(`[sc] 备份目录 ${BAK_ROOT}${newestBackup() ? `（最近 ${newestBackup()}）` : '（无备份）'}`);
     if (fs.existsSync(shared) && !isLink(shared)) {
       const cur = sha256(shared);
-      console.log(`[sc] 状态 ${cur === KNOWN_SHA256 ? '已替换（当前=已知产物哈希）' : '未替换/已改动'}`);
+      console.log(`[sc] 状态 ${isKnown(cur) ? '已替换（当前=已知产物哈希）' : '未替换/已改动'}`);
     }
     return;
   }
