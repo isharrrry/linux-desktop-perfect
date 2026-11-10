@@ -44,7 +44,19 @@ node 40-build/milcore-bridge/build-bridge.mjs --install ~/.local/share/ldp/dotne
 `wpfgfx_cor3.so` 清掉（已知坑 K-003）。第 ④ 步放最后是硬约束。
 
 派生树的重建用 `node 40-build/appliers/apply.mjs`（它会自动补建
-`PresentationBuildTasks`，见 K-002）。
+`PresentationBuildTasks`，见 K-002）。它同时按 `brush → minreq → seticon` 顺序给
+`SourceTree.Api.UI.Wpf.dll` 打三处 IL 补丁（History 渲染 / 提交前置 / 确认框图标，K-1428/K-1431/K-1433）。
+
+**字体链（B 链）要单独跑**：`apply.mjs` **不会**替换全局共享框架
+（`shared/Microsoft.WindowsDesktop.App/<ver>/PresentationCore.dll`，影响所有进程）。修界面字体用：
+
+```bash
+node 40-build/appliers/font-chain.mjs            # 构建 PresentationCore + 备份 + 替换共享框架（幂等）
+node 40-build/appliers/font-chain.mjs --status   # 看当前/产物哈希，判断是否已替换
+node 40-build/appliers/font-chain.mjs --rollback # 回滚到最近一次备份（原装件另存 /tmp/fx-bak-2128/）
+```
+
+判据：`--status` 显示「已替换」；启动后 stderr 出现 4 条 `[FONT_ALIAS]`、`[FONT_FALLBACK]` 的 `resolved` 全非 `none`（K-1423/K-1425/K-1435）。
 
 ## 3. 怎么跑
 
