@@ -44,8 +44,9 @@ node 40-build/milcore-bridge/build-bridge.mjs --install ~/.local/share/ldp/dotne
 `wpfgfx_cor3.so` 清掉（已知坑 K-003）。第 ④ 步放最后是硬约束。
 
 派生树的重建用 `node 40-build/appliers/apply.mjs`（它会自动补建
-`PresentationBuildTasks`，见 K-002）。它同时按 `brush → minreq → seticon` 顺序给
-`SourceTree.Api.UI.Wpf.dll` 打三处 IL 补丁（History 渲染 / 提交前置 / 确认框图标，K-1428/K-1431/K-1433）。
+`PresentationBuildTasks`，见 K-002）。它同时按 `brush → minreq → seticon → noconfirm` 顺序给
+`SourceTree.Api.UI.Wpf.dll` 打**四处** IL 补丁（History 渲染 / 提交前置 / 确认框图标 / 跳过提交确认，
+K-1428/K-1431/K-1433/K-1457），产物 md5 = `18e599a87059e1499f01cdc71c8e57c5`。
 
 **字体链（B 链）要单独跑**：`apply.mjs` **不会**替换全局共享框架
 （`shared/Microsoft.WindowsDesktop.App/<ver>/PresentationCore.dll`，影响所有进程）。修界面字体用：
@@ -71,9 +72,10 @@ node 40-build/appliers/shim-chain.mjs --rollback      # 回滚到最近一次备
 
 判据：`--status` 显示「已替换」且两个别名均为 `ok → libwpfwin32.so`；启动日志里 **`shlwapi` 报错 0 次**。
 
-> ⚠️ 已知未闭合（K-1439）：本脚本把「替换 + 别名」自动化并验证通过，但「写文件后 UI **自动**刷新」
-> 在三次探针复跑里**未复现**（`staged` 恒 0，手动 `RefreshStatus()` 后仍 0），与 K-1436 的单次读数不一致；
-> 下一次要查的是「watcher 事件链在 `shlwapi` 修好后是否还有第二处丢事件」。
+> ✅ 已闭环（K-1439 → K-1445/K-1453）：C 链落地后「写文件后 UI 自动刷新」曾三次未复现（`staged` 恒 0）；
+> 根因是**监视器从未被激活**——`AddOrActivate` 不调 `RepositoryMonitorManager.ActivatedTab`（K-1445）。
+> 补调后自动刷新 3/3（`git status` 调用数 4→6~8）。程序化场景请照
+> `70-operate/启动器/程序化操作清单.md` 的 ①~⑤ 顺序执行。
 
 **Dvcss 前置链（D 链）也要单独跑**：`SourceTree.Dvcss.Git::GetHandler` 为 null 时任何 VCS 操作都不执行
 （K-1413），而它需要的 `<home>/cmd\git.exe`（文件名**字面含反斜杠**，K-1415）**不能是裸符号链接** ——
@@ -92,12 +94,38 @@ node 40-build/appliers/dvcss-prereq.mjs --remove         # 删除 wrapper
 判据：`--check` → `CHECK OK`；`"<home>/cmd\git.exe" --version` 耗时 **≥150 ms**（延迟生效）；
 启动日志里 `has exited` **0 次**。
 
+### 四链 + 四类能力索引（一条链对应一件产物）
+
+| 链 | 命令 | 产物 / 哈希 | 解决什么 |
+|---|---|---|---|
+| **A** | `node 40-build/appliers/apply.mjs` | `$APP/SourceTree.Api.UI.Wpf.dll` = `18e599a87059e1499f01cdc71c8e57c5`（四步 brush→minreq→seticon→noconfirm）| History 渲染、提交前置、确认框图标、跳过提交确认 |
+| **B** | `node 40-build/appliers/font-chain.mjs` | `$FX/PresentationCore.dll` = `a6a32d4c912e3b66…` | 4 个缺失族名别名（菜单栏/树文字） |
+| **C** | `node 40-build/appliers/shim-chain.mjs` | `$FX/libwpfwin32.so` = `9f4b635a2a3254fa…` + `shlwapi.dll.so`/`libshlwapi.dll.so` 别名 | `shlwapi!PathRelativePathTo`（watcher 事件不再被 DllNotFound 丢弃）|
+| **D** | `node 40-build/appliers/dvcss-prereq.mjs` | `<home>/cmd\git.exe` wrapper（`sleep 0.15`）| 消除 `has exited` 竞态、让 `GetHandler` 可用路径稳定 |
+
+> `$FX` = `~/.local/share/ldp/dotnet/shared/Microsoft.WindowsDesktop.App/<ver>`；`$APP` = SourceTree 派生目录。
+
+**四类操作在「四链齐备 + 使用方规则」下全绿**（K-1458，截图 `50-verify/读数/K-1458/shot-end.png`）：
+
+| 类别 | 判据 | 读数 |
+|---|---|---|
+| 提交查看 / History | 切 `Log` 视图后 `LogRows` | **1 → 37** |
+| 提交 | `ConfirmCommitCommand.Execute` 返回 + 进程外 git | **<3s 返回**、产生真实提交 `2dacf0f`、`git status` 空 |
+| 切分支 | `CheckoutBranch(name,null)` + `branch --show-current` | 返回、`test-ops` |
+| 差异 | 选中文件后内容区 | **`块 1: 行 0-0` / `回到区块`** |
+
+> ⚠️ 判定提交成功**必须以进程外 `git log`/`git status` 为准**：UI 反射的 `staged` 在提交后仍可能为 1（读数滞后，K-1449）。
+>
+> 程序化操作的 5 条顺序与代码骨架见 `70-operate/启动器/程序化操作清单.md`（①Dvcss 注入 → ②`AddOrActivate` → ③`ActivatedTab` → ④等 ≥1 tick 再 `NavigateToView` → ⑤切视图后自动加载）以及 `70-operate/启动器/profiles/Helper.cs`。
+>
+> 三条最容易踩的规则：**`AddOrActivate`+`ActivatedTab` 必须配对**（K-1445）；**`NavigateToView` 要等 ≥1 tick**（K-1453，立刻调会被初始化覆盖回 `FileStatus`）；**探针 DLL 必须 `cp` 进 `$APP`**（K-1453，否则 `MainWindow_Loaded` 里的调用静默失败）、启动用 `$HOME/.local/share/ldp/dotnet/dotnet`（K-1455）。
+
 > ⚠️ Dvcss 配置本身**仍需运行时反射注入**（3 参 `DvcsInstallationConfiguration`，K-1415），
 > 本脚本只负责「`cmd\git.exe` 延迟退出」这一半；判据是启动后 `GetHandler.notnull=1`。
 >
-> ⚠️ 已知未闭合（K-1442）：D 链落地后 5 次启动实测 **`has exited` 0/5**（报错消除成立），
-> 但「写文件后自动刷新」只到 **3/5**；失败样本的 `git status` 调用次数（4）明显少于成功样本（6~8）
-> ⇒ 剩余断点在「watcher 事件未触发额外 `git status`」，与退出竞态是两个独立因素。
+> ✅ 已闭环（K-1442 → K-1445/K-1453）：D 链落地后 `has exited` **0/5**（报错消除成立）；
+> 当时「自动刷新只到 3/5」的剩余断点已查明为 **watcher 未经 `ActivatedTab` 激活**（K-1445），
+> 补调后 3/3。D 链仍是必要前置（消除 `has exited` 竞态），但**不是**自动刷新的充分条件。
 
 **程序化操作（反射/IL 注入）另需 5 条使用方规则**：见[《程序化操作清单》](../70-operate/启动器/程序化操作清单.md)
 （`AddOrActivate` + `ActivatedTab` 配对 K-1445 / 视图切换 K-1421 / `LoadNextLogBatchFrom` + timer K-1419~K-1420 /
