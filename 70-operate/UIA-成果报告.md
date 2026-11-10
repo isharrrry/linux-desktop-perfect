@@ -76,7 +76,8 @@ cp SourceTree.uia.dll $APP/SourceTree.exe
 
 | 操作 | 状态 | 实测证据（读数见 K-1404，实测 2026-11-10） |
 |---|---|---|
-| **提交查看**（History 视图）| **⚠️ 数据源在、列表不渲染** | `LogVM=notnull`（`LogViewModel`）、`Refresh(true)` 返回，但界面仍停在「文件状态」、无提交列表；截图 `50-verify/读数/K-1404/logvm-shot2.png`（39261B）|
+| **文件状态（文件列表）** | **✅ 可用（需前置）** | K-1415/K-1416：满足前置（`GetHandler` 非 null）后，界面列出 `A  k146.txt`（截图 `50-verify/读数/K-1416/shot.png` 48347B），`git status` 子进程 rc=0 |
+| **提交查看**（History 视图）| **⚠️ 视图能开、历史提交未加载** | `LogVM=notnull`、`LogRows.Count=1`（仅工作副本行，K-1406）；**前置满足后是否随 `git log` 填充未验证** |
 | **差异对比** | **⚠️ 不崩溃但无可见效果** | `ShowDiffBetweenCommits(9a74d4a,657c444)` 返回正常（**不再复现 K-1275/K-1276 的崩溃**），但截图与基线 `sha256` 完全相同（`ed84afa6…`，39261B）⇒ 无 diff 窗口/内容 |
 | **提交操作** | **❌ 崩溃（新根因：Windows Principal）** | `ConfirmCommitCommand.Execute` → `PlatformNotSupportedException: Windows Principal functionality is not supported on this platform.`（`WindowsIdentity.GetCurrent` ← `AccountManager.GetDefaultUserInformation` ← `_CheckMinimumRequirementsBeforeEnterCommit`）；仓库无新提交 |
 | **切换分支** | **❌ 调用挂起** | `CheckoutBranch` 调用后 23s 无返回（日志止于调用行），`git branch --show-current` 仍为 `master`（`test-ops` 已建但未切换）|
@@ -86,7 +87,7 @@ cp SourceTree.uia.dll $APP/SourceTree.exe
 **K-1373 实测 `RepositoryTabContainerViewModel.AddOrActivate("/tmp/stgit", (RepoViewMode)1, null)` 可用**（`TabsCount: 1`、崩溃=0、返回 `void` 不能 `pop`）。本表四类操作**全部是在已打开仓库、已拿到 `RepoTabViewModel` 实例的前提下**测的，因此：
 
 - 旧结论「`Tabs.Count = 0` ⇒ 所有操作不可用」（K-1343/K-1356）**只适用于 2026-11-02 之前的工具链**，现应作为历史记录保留；
-- 现在的真正瓶颈是**四类各自不同的具体缺口**：提交查看 = 数据源有、视图不渲染；差异 = 不崩溃但无可见效果；提交 = `System.Security.Principal.Windows` 不支持；切分支 = 调用不返回。
+- 现在的真正瓶颈是**各自不同的具体缺口**：文件状态 = ✅ 可用但需前置配置（K-1415）；History 提交列表 = 视图能开、历史提交未加载（K-1406，前置后未复测）；差异 = 不崩溃但无可见效果；提交 = `System.Security.Principal.Windows` 不支持；切分支 = 调用不返回。
 
 ### 6.2 若要继续修（按 K-1404 的新缺口）
 
@@ -95,7 +96,8 @@ cp SourceTree.uia.dll $APP/SourceTree.exe
 | 提交 | 补最小 `WindowsIdentity`/`WindowsPrincipal` 支持，或跳过 `AccountManager.GetDefaultUserInformation`（任务 `tk_01M72M084MDGYDPBG6JDFZMZ5P`）| `git commit -m "msg"`（功能等价）|
 | 切换分支 | 定位 `CheckoutBranch` 挂起点（疑异步等待不回）| `git checkout <branch>` |
 | 差异 | 查 `ShowDiffBetweenCommits` 返回后为何无窗口（疑弹窗/`RenderTargetBitmap`，K-1308）| `git diff <a> <b>` |
-| 提交查看 | 查 `LogViewModel` 有数据但列表不渲染（与 K-1396「内容未进渲染树」同类）| `git log` |
+| 文件状态 | **已完成**（K-1415 前置配置 + K-1416 验证）；要常态化需把反射造配置固化成启动步骤 | — |
+| 提交查看（History）| 查前置满足后 `LogRows` 是否随 `git log` 填充（任务在跑）| `git log` |
 
 ### 6.3 已可用的自动化手段
 
