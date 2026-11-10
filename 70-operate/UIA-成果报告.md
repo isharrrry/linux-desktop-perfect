@@ -129,7 +129,7 @@ cp SourceTree.uia.dll $APP/SourceTree.exe
 | 手段 | 结果 | 证据 |
 |---|---|---|
 | `xdotool click` / `mousemove` | **WPF 不响应** | K-1263 |
-| `WPF_FAKE_CLICK` / `WPF_FAKE_KEYS` 环境变量 | **无效果** | K-1263 |
+| `WPF_FAKE_CLICK` / `WPF_FAKE_KEYS` 环境变量 | **能投递、UI 反应不可依赖**（K-1438：投递 4/5、崩溃 3/5、无焦点/视图变化；旧「无效果」与 L-17「偶发有效」均不准确） | K-1263 / K-1438 |
 | `IBUS` 输入通道 | **事件被吞** | K-1263 |
 | 五步排除 | 事件到达 / IBUS 不吞 / 消息出队 / 指针移动 / 无 filter —— **全部通过但 WPF 仍不响应** | K-1263 |
 

@@ -58,6 +58,23 @@ node 40-build/appliers/font-chain.mjs --rollback # 回滚到最近一次备份�
 
 判据：`--status` 显示「已替换」；启动后 stderr 出现 4 条 `[FONT_ALIAS]`、`[FONT_FALLBACK]` 的 `resolved` 全非 `none`（K-1423/K-1425/K-1435）。
 
+**shim 链（C 链）也要单独跑**：K-1437 的 `shlwapi!PathRelativePathTo` 生效依赖两处**运行环境**改动
+（共享框架里的 `libwpfwin32.so` 换成新构建件 + 两个小写别名 `shlwapi.dll.so` / `libshlwapi.dll.so`）。
+这两步不在 git 里，重建/换机后不做 ⇒ `DllNotFoundException: shlwapi.dll` ⇒ watcher 事件被丢（K-1436 现象）。
+
+```bash
+node 40-build/appliers/shim-chain.mjs                 # 构建 libwpfwin32.so + 备份 + 替换共享框架 + 建小写别名（幂等）
+node 40-build/appliers/shim-chain.mjs --status        # 看当前/产物哈希、两个别名状态、备份目录
+node 40-build/appliers/shim-chain.mjs --check         # 只检查（不构建、不写盘）
+node 40-build/appliers/shim-chain.mjs --rollback      # 回滚到最近一次备份（默认同时移除别名链接）
+```
+
+判据：`--status` 显示「已替换」且两个别名均为 `ok → libwpfwin32.so`；启动日志里 **`shlwapi` 报错 0 次**。
+
+> ⚠️ 已知未闭合（K-1439）：本脚本把「替换 + 别名」自动化并验证通过，但「写文件后 UI **自动**刷新」
+> 在三次探针复跑里**未复现**（`staged` 恒 0，手动 `RefreshStatus()` 后仍 0），与 K-1436 的单次读数不一致；
+> 下一次要查的是「watcher 事件链在 `shlwapi` 修好后是否还有第二处丢事件」。
+
 ## 3. 怎么跑
 
 ### 3.1 跑本仓样本
