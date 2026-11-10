@@ -2,10 +2,10 @@
   "schema_version": "1.0",
   "doc_version": "0.1",
   "date": "2026-10-30",
-  "description": "LinuxDesktopPerfect 设计文档包的机器可读模型：编号族的计数、范围与定义方。文档与模型不一致即红（#编号检查器 / #覆盖检查器）。",
+  "description": "LinuxDesktopPerfect 设计文档包的机器可读模型：编号族的计数、范围与定义方，以及 ACC 与需求的显式映射（外部需求 REQ-EXT 用 acceptanceRequirements 指向）。文档与模型不一致即红（#编号检查器 / #覆盖检查器）。",
   "counts": {
     "requirements": 30,
-    "acceptance": 30,
+    "acceptance": 31,
     "nonFunctional": 7,
     "externalInterfaces": 7,
     "decisions": 4,
@@ -28,7 +28,7 @@
     ],
     "ACC": [
       1,
-      30
+      31
     ],
     "NF": [
       1,
@@ -77,6 +77,15 @@
     "TG": [
       1,
       15
+    ]
+  },
+  "acceptanceRequirements": {
+    "ACC-031": "REQ-EXT-001"
+  },
+  "externalRequirements": {
+    "REQ-EXT": [
+      1,
+      1
     ]
   },
   "moduleGroups": [

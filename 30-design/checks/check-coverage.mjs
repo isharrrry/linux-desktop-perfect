@@ -44,11 +44,26 @@ function expandGroups(groups) {
   for (const [a, b] of groups) for (let i = a; i <= b; i += 1) out.push(i);
   return out;
 }
+// 编号范围的唯一事实源是 model.json 的 ranges：这里不硬编码条数（曾硬编码 30/15/7，
+// 与 model 重复定义 ⇒ ACC-031 补登时两处对不上）。
+function expandRange(prefix, digits) {
+  const [a, b] = model.ranges[prefix];
+  const out = [];
+  for (let i = a; i <= b; i += 1) out.push(`${prefix}-${pad(i, digits)}`);
+  return out;
+}
 const moduleSet = new Set(expandGroups(model.moduleGroups).map((n) => `MOD-${pad(n, 2)}`));
-const tgSet = new Set(Array.from({ length: 15 }, (_, i) => `TG-${pad(i + 1, 3)}`));
-const scrSet = new Set(Array.from({ length: 7 }, (_, i) => `SCR-${pad(i + 1, 2)}`));
-const accSet = new Set(Array.from({ length: 30 }, (_, i) => `ACC-${pad(i + 1, 3)}`));
-const reqSet = new Set(Array.from({ length: 30 }, (_, i) => `REQ-FN-${pad(i + 1, 3)}`));
+const tgSet = new Set(expandRange('TG', 3));
+const scrSet = new Set(expandRange('SCR', 2));
+const accSet = new Set(expandRange('ACC', 3));
+// 矩阵 REQ 列允许的编号：REQ-FN 全量 + 外部需求族（model.externalRequirements，如 REQ-EXT-001）
+const reqSet = new Set(expandRange('REQ-FN', 3));
+for (const [prefix, range] of Object.entries(model.externalRequirements || {})) {
+  const [a, b] = range;
+  for (let i = a; i <= b; i += 1) reqSet.add(`${prefix}-${pad(i, 3)}`);
+}
+// ACC → 需求的显式映射（缺省按同号 REQ-FN-NNN；ACC-031 承接 REQ-EXT-001）
+const accReqMap = model.acceptanceRequirements || {};
 
 // 展开 `MOD-01/02/06`、`ACC-001~005`、`SCR-01~SCR-07`
 function expandIds(cell, prefix, padDigits) {
@@ -98,17 +113,19 @@ for (const line of matrixSection.split('\n')) {
   rows.push({ acc, req: cells[2], mods: cells[3], tg: cells[4], scr: cells[5], form: cells[6], readout: cells[7] });
 }
 
-if (rows.length !== 30) errors.push(`矩阵行数不符：${rows.length} 行，应为 30（ACC-001~ACC-030 各一行）`);
+if (rows.length !== accSet.size) errors.push(`矩阵行数不符：${rows.length} 行，应为 ${accSet.size}（ACC 范围见 model.json ranges.ACC，每个编号一行）`);
 const seen = new Set();
 for (const r of rows) {
   if (seen.has(r.acc)) errors.push(`矩阵重复：${r.acc} 出现多次`);
   seen.add(r.acc);
   if (!accSet.has(r.acc)) errors.push(`矩阵编号非法：${r.acc}`);
-  const expectReq = `REQ-FN-${r.acc.slice(4)}`;
+  const expectReq = accReqMap[r.acc] || `REQ-FN-${r.acc.slice(4)}`;
+  // 外部需求族（REQ-EXT-*）不在 expandIds 的 REQ-FN 正则内，按显式映射单独认
   const reqIds = expandIds(r.req, 'REQ-FN', 3);
+  if (!reqIds.has(expectReq) && r.req.includes(expectReq)) reqIds.add(expectReq);
   if (!reqIds.has(expectReq)) errors.push(`矩阵对不上：${r.acc} 的 REQ 列应为 ${expectReq}，实际是「${r.req}」`);
   if (reqIds.size !== 1) errors.push(`矩阵一对多：${r.acc} 的 REQ 列只能有一条需求，实际 ${reqIds.size} 条`);
-  for (const id of reqIds) if (!reqSet.has(id)) errors.push(`矩阵引用非法：${r.acc} 的 ${id} 不在 REQ-FN 范围内`);
+  for (const id of reqIds) if (!reqSet.has(id)) errors.push(`矩阵引用非法：${r.acc} 的 ${id} 不在 REQ 编号范围内（REQ-FN / externalRequirements）`);
   const modIds = expandIds(r.mods, 'MOD', 2);
   if (modIds.size === 0) errors.push(`矩阵缺模块：${r.acc} 的承接模块为空`);
   for (const id of modIds) if (!moduleSet.has(id)) errors.push(`矩阵引用非法：${r.acc} 的 ${id} 不在 moduleGroups 内`);

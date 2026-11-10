@@ -12,6 +12,7 @@ const ROOT = path.resolve(__dirname, '../..');
 const TMP_LINKS = path.join(ROOT, '_selftest_links.md');
 const TMP_IDS = path.join(ROOT, '_selftest_ids.md');
 const TMP_MATRIX = path.join(ROOT, '_selftest_matrix.md');
+const TMP_MATRIX_MAP = path.join(ROOT, '_selftest_matrix_map.md');
 
 const assertions = [];
 function check(name, cond, detail = '') {
@@ -71,7 +72,7 @@ if (fs.existsSync(matrixDoc)) {
     .split('\n')
     .filter((l) => /^\|\s*ACC-\d{3}\s*\|/.test(l));
   const broken = rows
-    .filter((l) => !/^\|\s*ACC-030\s*\|/.test(l)) // 删掉 ACC-030
+    .filter((l) => !/^\|\s*ACC-031\s*\|/.test(l)) // 删掉 ACC-031（编号范围来自 model.ranges.ACC，删行必须报「矩阵缺行」）
     .map((l) => {
       if (/^\|\s*ACC-005\s*\|/.test(l)) return l.replace('MOD-01/05', 'MOD-99'); // 引用非法模块
       if (/^\|\s*ACC-007\s*\|/.test(l)) return l.replace('REQ-FN-007', 'REQ-FN-008'); // 需求错位
@@ -87,6 +88,17 @@ if (fs.existsSync(matrixDoc)) {
     }
   } finally {
     fs.rmSync(TMP_MATRIX, { force: true });
+  }
+  // ACC-031 承接的是外部需求 REQ-EXT-001（model.acceptanceRequirements 显式映射）：
+  // 把它改回同号的 REQ-FN-031 必须红 —— 证明「同号默认」没有把显式映射架空。
+  const remapped = rows.map((l) => (/^\|\s*ACC-031\s*\|/.test(l) ? l.replace('REQ-EXT-001', 'REQ-FN-031') : l));
+  fs.writeFileSync(TMP_MATRIX_MAP, `## 4. 自检矩阵\n\n| ACC | REQ | 承接模块 | 测试门 | 样本界面 | 判据形式 | 读数落点 |\n|---|---|---|---|---|---|---|\n${remapped.join('\n')}\n\n## 5. 自检结束\n`);
+  try {
+    const dirtyMap = run('check-coverage.mjs', ['--matrix-file', '_selftest_matrix_map.md']);
+    check('负向（覆盖）：显式映射被改错 rc=1', dirtyMap.code === 1, `实际 rc=${dirtyMap.code}`);
+    check('负向（覆盖）：命中「矩阵对不上 ACC-031」', dirtyMap.out.includes('矩阵对不上：ACC-031'), dirtyMap.out.slice(0, 200));
+  } finally {
+    fs.rmSync(TMP_MATRIX_MAP, { force: true });
   }
 } else {
   check('负向（覆盖）：矩阵文档存在', false, '08-判据先行与界面检测设计说明.md 未落地');
@@ -173,7 +185,8 @@ for (const [label, script, args] of [
   ['覆盖', 'check-coverage.mjs', []],
 ]) {
   const clean = run(script, args);
-  check(`正向（${label}）：rc=0`, clean.code === 0, `实际 rc=${clean.code}`);
+  const errs = clean.out.split('\n').filter((l) => l.includes('ERROR')).slice(0, 3).join(' / ');
+  check(`正向（${label}）：rc=0`, clean.code === 0, `实际 rc=${clean.code}${errs ? ` :: ${errs}` : ''}`);
 }
 
 let failed = 0;
