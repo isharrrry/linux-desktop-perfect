@@ -95,7 +95,11 @@ for (const req of reqs) {
 
 // 5. 每条 ACC 在 50-verify 索引前至少被定义（当前阶段只查存在）
 const accs = [...defs].filter((x) => x.startsWith('ACC-'));
-if (accs.length !== reqs.length) warnings.push(`REQ ${reqs.length} 条 vs ACC ${accs.length} 条，数量不一致（应 1:1）`);
+// 外部需求（REQ-EXT-*）由 model.json 的 acceptanceRequirements 显式声明，计入 1:1 口径
+const accReqMap = JSON.parse(fs.readFileSync(path.join(ROOT, '30-design/model/model.json'), 'utf8')).acceptanceRequirements || {};
+const extReqs = Object.values(accReqMap);
+if (accs.length !== reqs.length + extReqs.length)
+  warnings.push(`REQ ${reqs.length + extReqs.length} 条（含外部 ${extReqs.length}）vs ACC ${accs.length} 条，数量不一致（应 1:1）`);
 
 // 6. 术语首选名
 if (!design.includes('LinuxDesktopPerfect')) errors.push('《概要设计》未出现首选名 LinuxDesktopPerfect');
