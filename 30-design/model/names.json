@@ -1,6 +1,6 @@
 {
   "version": "0.2",
-  "updated": "2026-10-30",
+  "updated": "2026-11-10",
   "description": "LinuxDesktopPerfect 名称与文档清单的机器可读版本；人读以 00-admin/术语表.md 为准。",
   "documents": {
     "README": "README.md",
@@ -25,7 +25,9 @@
     "已知坑与降级清单": "70-operate/已知坑清单.md",
     "本体说明": "本体/本体说明.md",
     "本体构建记录": "本体/本体构建记录.md",
-    "破局思路": "70-operate/破局思路.md"
+    "破局思路": "70-operate/破局思路.md",
+    "程序化操作清单": "70-operate/启动器/程序化操作清单.md",
+    "交付说明": "60-deliver/README.md"
   },
   "models": {
     "设计模型": "30-design/model/model.json",

@@ -99,6 +99,11 @@ node 40-build/appliers/dvcss-prereq.mjs --remove         # 删除 wrapper
 > 但「写文件后自动刷新」只到 **3/5**；失败样本的 `git status` 调用次数（4）明显少于成功样本（6~8）
 > ⇒ 剩余断点在「watcher 事件未触发额外 `git status`」，与退出竞态是两个独立因素。
 
+**程序化操作（反射/IL 注入）另需 5 条使用方规则**：见[《程序化操作清单》](../70-operate/启动器/程序化操作清单.md)
+（`AddOrActivate` + `ActivatedTab` 配对 K-1445 / 视图切换 K-1421 / `LoadNextLogBatchFrom` + timer K-1419~K-1420 /
+Dvcss 配置注入 K-1415 / git wrapper K-1441~K-1442），参考实现见[Helper.cs](../70-operate/启动器/profiles/Helper.cs)。
+其中 K-1445 已把「自动刷新 3/5」的剩余断点查清：**watcher 未被激活**（上面那条 ⚠️ 的后续结论），补调 `ActivatedTab` 后 3/3。
+
 ## 3. 怎么跑
 
 ### 3.1 跑本仓样本
