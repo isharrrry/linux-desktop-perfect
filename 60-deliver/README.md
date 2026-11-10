@@ -91,6 +91,15 @@ node 40-build/appliers/dvcss-prereq.mjs --home /tmp/x    # 指定别的 home
 node 40-build/appliers/dvcss-prereq.mjs --remove         # 删除 wrapper
 ```
 
+**一条命令验收（四链 + 四类）**：四条链各自跑完后，用交付自检确认「当前环境是否达标」：
+
+```bash
+node 50-verify/deliver-check.mjs               # 静态：四链产物哈希 + 别名 + wrapper（无 GUI，秒级）
+node 50-verify/deliver-check.mjs --with-gui    # 静态 + 动态：部署探针 → 启动 → 验 History / 文件状态 / 截图
+```
+
+判据：退出码 `0` 且输出末尾为「全部通过」；失败项会连同实际值一起列出。动态模式需要 `:303` 上的 Xvfb，跑完自动复原 `$APP/SourceTree.exe` 并清进程。
+
 判据：`--check` → `CHECK OK`；`"<home>/cmd\git.exe" --version` 耗时 **≥150 ms**（延迟生效）；
 启动日志里 `has exited` **0 次**。
 
