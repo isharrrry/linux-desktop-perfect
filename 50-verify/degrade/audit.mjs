@@ -9,7 +9,15 @@ if (!exists(rel)) {
   finish({ acc: 'ACC-030', started, verdict: 'FAIL', expectRef: 'ACC-030：缺陷册四要素齐全', diff: [`缺被测对象：${rel}`], env: {} });
 }
 const lines = fs.readFileSync(abs(rel), 'utf8').split('\n');
-const rows = lines.filter((l) => /^\|\s*(D|K|X)-\d{3}\s*\|/.test(l)).map((l) => l.split('|').map((c) => c.trim()));
+// 缺陷条目 = 每个编号的**首次出现**（定义行）；同编号后续再出现（附录/引用表）不算条目
+const seen = new Set();
+const rows = [];
+for (const l of lines) {
+  const m = l.match(/^\|\s*((?:D|K|X)-\d{3,4})\s*\|/);
+  if (!m || seen.has(m[1])) continue;
+  seen.add(m[1]);
+  rows.push(l.split('|').map((c) => c.trim()));
+}
 const ids = rows.map((r) => r[1]);
 const bad = [];
 for (const r of rows) {
@@ -22,17 +30,18 @@ for (const r of rows) {
   if (!judge) bad.push(`${id}：缺判据`);
   if (!status) bad.push(`${id}：缺状态`);
 }
-// K-1323：K 号唯一性检查（只查正文条目，排除附录 md5 表 + 引用表）
-// 排除「引用表」行：第 2 列是 **短文本** 且整行以 | 结尾（如 `| K-1297 | **Count = 0** |`）
-const isRefRow = (l) => /^\|\s*K-\d+\s*\|\s*\*\*[^*]{0,38}\*\*\s*\|\s*$/.test(l);
-const bodyRows = lines.filter((l) => /^\|\s*K-\d+\s*\|\s*(\*\*|🎯|🎉|⚠|✅|📋)/.test(l) && !isRefRow(l));
-const kIds = bodyRows.map((l) => l.split('|')[1].trim());
+// K-1323：K 号唯一性检查（只查正文条目；引用表行第 2 列是短值，不算正文）
+const looksBody = (l) => {
+  if (!/^\|\s*K-\d{3,4}\s*\|\s*(\*\*|🎯|🎉|⚠|✅|📋)/.test(l)) return false;
+  return (l.split('|')[2] || '').trim().length > 60;
+};
+const kIds = lines.filter(looksBody).map((l) => l.split('|')[1].trim());
 const dupK = [...new Set(kIds.filter((v, i, arr) => arr.indexOf(v) !== i))];
 for (const d of dupK) bad.push(`K 号撞车：${d}`);
 
 const mustHave = ['D-001', 'D-002', 'K-001'];
 const missingIds = mustHave.filter((m) => !ids.includes(m));
-const env = { entries: rows.length, body_entries: bodyRows.length, dup_k: dupK.length, ids, required_missing: missingIds, violations: bad.length };
+const env = { entries: rows.length, body_entries: kIds.length, dup_k: dupK.length, ids, required_missing: missingIds, violations: bad.length };
 const pass = rows.length > 0 && bad.length === 0 && missingIds.length === 0;
 finish({ acc: 'ACC-030', started, env, expectRef: 'ACC-030：每条降级四要素齐全、无未登记静默失败',
   verdict: pass ? 'PASS' : 'FAIL',
