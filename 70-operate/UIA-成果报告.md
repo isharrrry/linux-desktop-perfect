@@ -74,28 +74,28 @@ cp SourceTree.uia.dll $APP/SourceTree.exe
 
 **用户最初要求的四类操作，逐项状态如下。**
 
-| 操作 | 状态 | 实测证据 |
+| 操作 | 状态 | 实测证据（读数见 K-1404，实测 2026-11-10） |
 |---|---|---|
-| **提交查看**（History 视图）| **❌ 未验证** | `st-26`/`st-27` 实为**文件状态视图**（显示「没什么可提交的」），不是提交列表（K-1360）；`st-31`~`st-35` 是菜单/对话框/仓库详情，也不含提交列表 |
-| **差异对比** | **❌ 不可用** | `ShowDiffBetweenCommits` 在 `Loaded`/`ContentRendered` 都崩（K-1275/K-1276）；`RenderTargetBitmap` 也确认不可用（K-1308）|
-| **提交操作** | **❌ 不可用** | 需要 `RepoTabViewModel` 实例，但 `Tabs.Count=0`（K-1343）|
-| **切换分支** | **❌ 不可用** | 同上 —— `_checkoutSelectedCommand` 拿不到（K-1356 推论）|
+| **提交查看**（History 视图）| **⚠️ 数据源在、列表不渲染** | `LogVM=notnull`（`LogViewModel`）、`Refresh(true)` 返回，但界面仍停在「文件状态」、无提交列表；截图 `50-verify/读数/K-1404/logvm-shot2.png`（39261B）|
+| **差异对比** | **⚠️ 不崩溃但无可见效果** | `ShowDiffBetweenCommits(9a74d4a,657c444)` 返回正常（**不再复现 K-1275/K-1276 的崩溃**），但截图与基线 `sha256` 完全相同（`ed84afa6…`，39261B）⇒ 无 diff 窗口/内容 |
+| **提交操作** | **❌ 崩溃（新根因：Windows Principal）** | `ConfirmCommitCommand.Execute` → `PlatformNotSupportedException: Windows Principal functionality is not supported on this platform.`（`WindowsIdentity.GetCurrent` ← `AccountManager.GetDefaultUserInformation` ← `_CheckMinimumRequirementsBeforeEnterCommit`）；仓库无新提交 |
+| **切换分支** | **❌ 调用挂起** | `CheckoutBranch` 调用后 23s 无返回（日志止于调用行），`git branch --show-current` 仍为 `master`（`test-ops` 已建但未切换）|
 
-### 6.1 为什么后三项都不可用 —— 同一个根因
+### 6.1 旧根因已被推翻：不是 `Tabs.Count = 0`
 
-**`Tabs.Count = 0`**（SourceTree 从没打开仓库）：
+**K-1373 实测 `RepositoryTabContainerViewModel.AddOrActivate("/tmp/stgit", (RepoViewMode)1, null)` 可用**（`TabsCount: 1`、崩溃=0、返回 `void` 不能 `pop`）。本表四类操作**全部是在已打开仓库、已拿到 `RepoTabViewModel` 实例的前提下**测的，因此：
 
-- **`Tabs` 空 ⇒ `SelectedRepoTabViewModel` 恒 null（K-1342 反编译确认）**
-- **⇒ 拿不到 `RepoTabViewModel` 实例**
-- **⇒ 所有依赖它的操作（暂存/提交/切分支/差异）全部不可用**
+- 旧结论「`Tabs.Count = 0` ⇒ 所有操作不可用」（K-1343/K-1356）**只适用于 2026-11-02 之前的工具链**，现应作为历史记录保留；
+- 现在的真正瓶颈是**四类各自不同的具体缺口**：提交查看 = 数据源有、视图不渲染；差异 = 不崩溃但无可见效果；提交 = `System.Security.Principal.Windows` 不支持；切分支 = 调用不返回。
 
-**而唯一能打开仓库的 API `AppRoot.OpenRepoInTab`，在**四个独立入口**调用都崩溃（K-1345/K-1347/K-1348/K-1354）。**
+### 6.2 若要继续修（按 K-1404 的新缺口）
 
-### 6.2 若要实现这些操作，需要
-
-1. **修改 SourceTree 源码**（在 `AppRoot` 初始化时直接构造 `Repository` 对象，绕过 `OpenRepoInTab`）；
-2. **或提供可用的合成输入**（`xdotool` 点击「打开仓库」菜单）—— 但合成输入已确认不可用（K-1263）；
-3. **或让 `SourceTree.exe` 在启动时接受仓库路径**（已试 `SourceTree.exe /tmp/stgit`，`Tabs.Count` 仍 0，K-1344）。
+| 操作 | 下一步 | 替代方案 |
+|---|---|---|
+| 提交 | 补最小 `WindowsIdentity`/`WindowsPrincipal` 支持，或跳过 `AccountManager.GetDefaultUserInformation`（任务 `tk_01M72M084MDGYDPBG6JDFZMZ5P`）| `git commit -m "msg"`（功能等价）|
+| 切换分支 | 定位 `CheckoutBranch` 挂起点（疑异步等待不回）| `git checkout <branch>` |
+| 差异 | 查 `ShowDiffBetweenCommits` 返回后为何无窗口（疑弹窗/`RenderTargetBitmap`，K-1308）| `git diff <a> <b>` |
+| 提交查看 | 查 `LogViewModel` 有数据但列表不渲染（与 K-1396「内容未进渲染树」同类）| `git log` |
 
 ### 6.3 已可用的自动化手段
 
