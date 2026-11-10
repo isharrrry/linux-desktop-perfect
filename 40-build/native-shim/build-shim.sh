@@ -39,7 +39,7 @@ SRCS=(src/win32_core.c src/win32_msg.c src/win32_x11.c src/win32_misc.c src/win3
   src/win32_penimc.c src/win32_print_ext.c src/win32_psapi_dwm.c src/win32_pt.c \
   src/win32_shell32_ext.c src/win32_unimpl_b.c src/win32_urlmon_ext.c \
   src/win32_user32x.c src/win32_uxtheme.c src/win32_winforms_extra.c src/win32_winspool.c \
-  src/milqi_shim.c)
+  src/milqi_shim.c src/win32_shlwapi_ext.c)
 OBJS=()
 TARGET="bin/libwpfwin32.so"
 
