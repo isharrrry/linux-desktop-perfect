@@ -7,7 +7,7 @@
 //     · loglabel-brush（K-1428）：History 面板首帧 `_backgroundBrush=null` 的 NRE
 //     · commit-minreq （K-1431）：提交前的用户信息对话框 → `WindowsIdentity.GetCurrent()` 崩
 //     · seticon-ret   （K-1433）：确认提交对话框 `Icon.FromHandle` 抛 `ArgumentException: handle`
-//   三者改同一个 DLL，**顺序固定**：loglabel-brush → commit-minreq → seticon-ret
+//   四者改同一个 DLL，**顺序固定**：loglabel-brush → commit-minreq → seticon-ret → commit-noconfirm
 //   （后两者在 patch 前会读回前一处的指纹，顺序错会以非 0 退出码拒绝）。
 //
 // 用法：
@@ -43,6 +43,7 @@ const STEPS = [
   { name: 'loglabel-brush', ref: 'K-1428', why: 'LogLabelControl 的 brush 初始化（History 首帧 NRE）' },
   { name: 'commit-minreq', ref: 'K-1431', why: '跳过提交前的用户信息对话框（WindowsIdentity.GetCurrent 崩）' },
   { name: 'seticon-ret', ref: 'K-1433', why: '确认对话框 SetIcon 空实现（Icon.FromHandle 抛 ArgumentException）' },
+  { name: 'commit-noconfirm', ref: 'K-1456', why: '确认提交对话框恒返回 true（避免提交被确认框阻塞）' },
 ];
 
 if (!fs.existsSync(TARGET)) {
@@ -69,12 +70,12 @@ for (const step of STEPS) {
 
 const buf = fs.readFileSync(TARGET);
 const md5 = crypto.createHash('md5').update(buf).digest('hex');
-console.log(`apply-bin: ${CHECK ? '检查' : '完成'}三步；${path.relative(ROOT, TARGET)} md5=${md5}（${buf.length} 字节）`);
+console.log(`apply-bin: ${CHECK ? '检查' : '完成'}四步；${path.relative(ROOT, TARGET)} md5=${md5}（${buf.length} 字节）`);
 if (!CHECK) {
   // 三补丁全打后的已知 md5（K-1433 记录）。不一致只告警不改退出码：
   // 允许基线不同（例如上游更新过），但要让读者看见「和已知态不一样」。
-  const KNOWN = '3ef0bcb9f8e47bf36676e76a550d0757';
+  const KNOWN = '18e599a87059e1499f01cdc71c8e57c5';   // K-1456（四步：brush→minreq→seticon→noconfirm）
   if (md5 !== KNOWN) {
-    console.log(`apply-bin: ⚠️ md5 与 K-1433 记录的已知态不同（期望 ${KNOWN}）—— 若基线/上游有变动属预期，否则请查补丁是否全部命中`);
+    console.log(`apply-bin: ⚠️ md5 与 K-1456 记录的已知态不同（期望 ${KNOWN}）—— 若基线/上游有变动属预期，否则请查补丁是否全部命中`);
   }
 }
