@@ -94,8 +94,9 @@ node 40-build/appliers/dvcss-prereq.mjs --remove         # 删除 wrapper
 **一条命令验收（四链 + 四类）**：四条链各自跑完后，用交付自检确认「当前环境是否达标」：
 
 ```bash
-node 50-verify/deliver-check.mjs               # 静态：四链产物哈希 + 别名 + wrapper（无 GUI，秒级）
-node 50-verify/deliver-check.mjs --with-gui    # 静态 + 动态：部署探针 → 启动 → 验 History / 文件状态 / 截图
+node 50-verify/deliver-check.mjs               # L1 静态：四链产物哈希 + 别名 + wrapper + 能力可达性（git/关键类型/文档契约；无 GUI，秒级）
+node 50-verify/deliver-check.mjs --with-gui    # L1 + L2 动态：部署探针 → 启动 → 验 History / 文件状态 / 截图
+node 50-verify/deliver-check.mjs --full        # L1 + L2 + L3 预留（远程三/储藏三/revert 动态验证，未实现见 K-1475）
 ```
 
 判据：退出码 `0` 且输出末尾为「全部通过」；失败项会连同实际值一起列出。动态模式需要 `:303` 上的 Xvfb，跑完自动复原 `$APP/SourceTree.exe` 并清进程。

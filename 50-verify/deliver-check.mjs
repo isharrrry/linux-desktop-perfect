@@ -1,9 +1,10 @@
 #!/usr/bin/env node
-// 交付自检：四链（A/B/C/D）产物 + 四类操作（默认静态；--with-gui 追加动态验收）
+// 交付自检：四链（A/B/C/D）产物 + 四类操作 + 能力可达性
 //
 // 用法:
-//   node 50-verify/deliver-check.mjs                  # 静态
-//   node 50-verify/deliver-check.mjs --with-gui       # 静态 + 动态（需 Xvfb :303）
+//   node 50-verify/deliver-check.mjs                  # L1 静态（四链 + 四类前置 + 能力可达性）
+//   node 50-verify/deliver-check.mjs --with-gui       # L1 + L2 动态（需 Xvfb :303）
+//   node 50-verify/deliver-check.mjs --full           # L3 预留（远程三/储藏三/revert 动态验证，未实现见 K-1475）
 //   node 50-verify/deliver-check.mjs --json           # 机器可读
 //
 // 退出码: 0 全通过；1 有失败；2 环境缺失（静态都无法判定）
@@ -20,7 +21,20 @@ const FX = path.join(HOME, '.local/share/ldp/dotnet/shared/Microsoft.WindowsDesk
 const APP = process.env.ST_APP || '/tmp/stpkg/SourceTree/app-3.4.15';
 const WRAPPER_HOMES = ['/tmp/fakegit2', '/tmp/fakegit'];
 const GUI = process.argv.includes('--with-gui');
+const FULL = process.argv.includes('--full');
 const JSON_OUT = process.argv.includes('--json');
+
+// 能力可达性（L1 静态）：查的是「类型/方法名是否出现在 DLL 元数据字符串堆」，只读不解析、不改 DLL
+const CAPABILITY_PROBES = [
+  ['ITagSupport', 'SourceTree.Api.Dvcs.dll', '标签（K-1471）'],
+  ['IStashSupport', 'SourceTree.Api.Dvcs.dll', '储藏（K-1469/K-1470）'],
+  ['IPushSupport', 'SourceTree.Api.Dvcs.dll', '远程推送（K-1466/K-1467）'],
+  ['GetReverseCommitProcess', 'SourceTree.Dvcs.Git.dll', '撤销提交（K-1473）'],
+  ['RunThis', 'SourceTree.Dvcs.Git.dll', 'IRepoProcess 执行入口（K-1470）'],
+];
+const DOC_CONTRACTS = [
+  ['70-operate/启动器/程序化操作清单.md', /第\s*⑥\s*条|远程操作/, '程序化清单第 ⑥ 条（远程操作）'],
+];
 
 const KNOWN = {
   A_md5: '18e599a87059e1499f01cdc71c8e57c5',
@@ -91,6 +105,50 @@ function checkCategoriesOffline() {
   const handlerOk = exists(path.join(APP, 'SourceTree.Api.UI.Wpf.dll'));
   record('四类', '前置：四链齐备', results.every((r) => r.ok), results.every((r) => r.ok) ? '是' : '否');
   record('四类', '前置：APP 目录', handlerOk, APP);
+}
+
+// ---------- 静态：能力可达性（L1） ----------
+// 只读：读 DLL 字节流，检查元数据字符串堆是否含目标名称（类型名/方法名以 UTF-8 存在 #Strings 堆）
+function dllHasName(file, name) {
+  if (!exists(file)) return { ok: false, detail: `缺失 ${file}` };
+  const buf = fs.readFileSync(file);
+  const needle = Buffer.from(name, 'utf8');
+  return { ok: buf.includes(needle), detail: buf.includes(needle) ? '存在' : '未找到' };
+}
+
+function checkCapabilities() {
+  // git 可用
+  let gitOk = false;
+  let gitDetail = '';
+  try {
+    gitDetail = String(run('git', ['--version'], { timeout: 10000 })).trim();
+    gitOk = /^git version \d/.test(gitDetail);
+  } catch (e) {
+    gitDetail = String(e.message).slice(0, 80);
+  }
+  record('能力', 'git 可用', gitOk, gitDetail);
+
+  // 关键类型/方法（Cecil 类静态判定：DLL 元数据只读扫描）
+  if (!exists(APP)) {
+    record('能力', 'APP 目录缺失', false, `${APP} 不存在，跳过能力静态检查`);
+  } else {
+    for (const [name, dll, label] of CAPABILITY_PROBES) {
+      const r = dllHasName(path.join(APP, dll), name);
+      record('能力', `${name}（${label}）`, r.ok, r.detail);
+    }
+  }
+
+  // 文档契约
+  for (const [rel, re, label] of DOC_CONTRACTS) {
+    const p = path.join(ROOT, rel);
+    let ok = false;
+    let detail = '缺失';
+    if (exists(p)) {
+      ok = re.test(fs.readFileSync(p, 'utf8'));
+      detail = ok ? '存在' : '未匹配';
+    }
+    record('能力', label, ok, detail);
+  }
 }
 
 // ---------- 动态（--with-gui） ----------
@@ -174,7 +232,11 @@ try { checkChainB(); } catch (e) { record('B', 'B 链', false, e.message); }
 try { checkChainC(); } catch (e) { record('C', 'C 链', false, e.message); }
 try { checkChainD(); } catch (e) { record('D', 'D 链', false, e.message); }
 checkCategoriesOffline();
-if (GUI) {
+try { checkCapabilities(); } catch (e) { record('能力', '能力可达性', false, e.message); }
+if (FULL) {
+  console.log('[deliver-check] --full：L3 动态能力验证（远程三/储藏三/revert）未实现，见 K-1475；本次按 L2 执行。');
+}
+if (GUI || FULL) {
   try { checkChainDynamic(); } catch (e) { record('四类', '动态验收', false, e.message); }
 }
 
@@ -194,7 +256,7 @@ if (JSON_OUT) {
   console.log('');
   const fails = results.filter((r) => !r.ok);
   if (fails.length === 0) {
-    console.log(`[deliver-check] 全部通过（${results.length} 项）${GUI ? '' : '（静态模式，加 --with-gui 做动态验收）'}`);
+    console.log(`[deliver-check] 全部通过（${results.length} 项）${GUI || FULL ? '' : '（L1 静态，加 --with-gui 做 L2 动态验收）'}`);
   } else {
     console.log(`[deliver-check] ${fails.length}/${results.length} 项失败：`);
     for (const f of fails) console.log(`  - ${f.chain}/${f.item}: ${f.detail}`);
