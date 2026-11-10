@@ -1708,6 +1708,21 @@ namespace MS.Internal.FontCache
 
             familyName = familyName.Trim();
 
+            // ── WPF-on-Linux：Windows 专有族名 → 本机已装等价族（K-1399/K-1401 的 4 个 resolved=none）──
+            if (!OperatingSystem.IsWindows())
+            {
+                string _aliasFrom = familyName;
+                switch (familyName.ToUpperInvariant())
+                {
+                    case "MARLETT": familyName = "DejaVu Sans"; break;          // 树控件展开/折叠箭头
+                    case "SEGOE UI SEMIBOLD": familyName = "Noto Sans CJK SC"; break;  // 菜单粗体
+                    case "GLOBAL USER INTERFACE": familyName = "Noto Sans CJK SC"; break; // 系统 UI 别名
+                    case "ARIAL": familyName = "Liberation Sans"; break;        // 空字体族的规范名
+                }
+                if (_aliasFrom != familyName)
+                    Console.Error.WriteLine("[FONT_ALIAS] from=" + _aliasFrom + " to=" + familyName);
+            }
+
             // If we are referencing fonts from the system fonts, then it is cheap to lookup the 4 composite fonts
             // that ship with WPF. Also, it happens often that familyName is "Global User Interface".
             // So in this case we preceed looking into SystemComposite Fonts.
