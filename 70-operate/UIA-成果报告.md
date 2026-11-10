@@ -74,30 +74,30 @@ cp SourceTree.uia.dll $APP/SourceTree.exe
 
 **用户最初要求的四类操作，逐项状态如下。**
 
-| 操作 | 状态 | 实测证据（读数见 K-1404，实测 2026-11-10） |
+| 操作 | 状态 | 实测证据（**新读数见 K-1449，2026-11-11 四链齐备 + 使用方规则下重测**；旧读数为 K-1404，保留在行内作历史） |
 |---|---|---|
 | **文件状态（文件列表）** | **✅ 可用（需前置）** | K-1415/K-1416：满足前置（`GetHandler` 非 null）后，界面列出 `A  k146.txt`（截图 `50-verify/读数/K-1416/shot.png` 48347B），`git status` 子进程 rc=0 |
-| **提交查看**（History 视图）| **⚠️ 视图能开、历史提交未加载** | `LogVM=notnull`、`LogRows.Count=1`（仅工作副本行，K-1406）；**前置满足后是否随 `git log` 填充未验证** |
-| **差异对比** | **⚠️ 不崩溃但无可见效果** | `ShowDiffBetweenCommits(9a74d4a,657c444)` 返回正常（**不再复现 K-1275/K-1276 的崩溃**），但截图与基线 `sha256` 完全相同（`ed84afa6…`，39261B）⇒ 无 diff 窗口/内容 |
-| **提交操作** | **❌ 崩溃（新根因：Windows Principal）** | `ConfirmCommitCommand.Execute` → `PlatformNotSupportedException: Windows Principal functionality is not supported on this platform.`（`WindowsIdentity.GetCurrent` ← `AccountManager.GetDefaultUserInformation` ← `_CheckMinimumRequirementsBeforeEnterCommit`）；仓库无新提交 |
-| **切换分支** | **❌ 调用挂起** | `CheckoutBranch` 调用后 23s 无返回（日志止于调用行），`git branch --show-current` 仍为 `master`（`test-ops` 已建但未切换）|
+| **提交查看**（History 视图）| **✅ 可用（需前置）** | K-1449：切 `Log` 视图后 **tick5 `LogRows=35`**（截图 `50-verify/读数/K-1449/t22-diff.png` 75556B 列出多行提交）；[[旧状态（前置未满足时）]]：`LogRows.Count=1`、仅 Loading 占位（K-1406/K-1418，已被 K-1444/K-1448 修正）|
+| **差异对比** | **⚠️ 不崩溃但无可见效果（K-1449 未变）** | K-1449 复测：`ShowDiffBetweenCommits` 返回正常（不崩），但**仍无 diff 窗口/面板**；下一步查 `IDiffViewManager`/diff 面板模板（K-1449 与 `t22-diff.png`）|
+| **提交操作** | **✅ 可用（需前置）** | K-1449：`git log` = **`7ef8a0f fo retest commit`**、`git status --short` 空 ⇒ 提交真实完成；前置 = A/B/C/D 四链（K-1442/K-1444/K-1432 等）+ `CommitMsg` 可设（K-1400）；⚠️ **判据以进程外 `git log`/`git status` 为准**（UI 反射的 `staged` 提交后仍为 1，读数滞后）。[[旧状态（前置未满足时）]]：`PlatformNotSupportedException: Windows Principal …`（K-1404/K-1431）已由 K-1430/K-1432 修复 |
+| **切换分支** | **✅ 可用（需前置）** | K-1449：`CheckoutBranch("test-ops")` 正常返回、`git branch --show-current` = **`test-ops`**（截图 `t34-checkout.png`）；[[旧状态（前置未满足时）]]：调用 23s 无返回（K-1404）|
 
 ### 6.1 旧根因已被推翻：不是 `Tabs.Count = 0`
 
 **K-1373 实测 `RepositoryTabContainerViewModel.AddOrActivate("/tmp/stgit", (RepoViewMode)1, null)` 可用**（`TabsCount: 1`、崩溃=0、返回 `void` 不能 `pop`）。本表四类操作**全部是在已打开仓库、已拿到 `RepoTabViewModel` 实例的前提下**测的，因此：
 
 - 旧结论「`Tabs.Count = 0` ⇒ 所有操作不可用」（K-1343/K-1356）**只适用于 2026-11-02 之前的工具链**，现应作为历史记录保留；
-- 现在的真正瓶颈是**各自不同的具体缺口**：文件状态 = ✅ 可用但需前置配置（K-1415）；History 提交列表 = 视图能开、历史提交未加载（K-1406，前置后未复测）；差异 = 不崩溃但无可见效果；提交 = `System.Security.Principal.Windows` 不支持；切分支 = 调用不返回。
+- **2026-11-11 更新**：四链齐备后重测（K-1449）——文件状态 ✅、**History ✅（`LogRows=35`）**、**提交 ✅（`git log` 产生真实提交）**、**切分支 ✅（`show-current=test-ops`）**；**差异仍 ⚠️（返回正常但无 diff 窗口）**。⇒ 现在只剩差异一个功能缺口。
 
 ### 6.2 若要继续修（按 K-1404 的新缺口）
 
 | 操作 | 下一步 | 替代方案 |
 |---|---|---|
 | 提交 | 补最小 `WindowsIdentity`/`WindowsPrincipal` 支持，或跳过 `AccountManager.GetDefaultUserInformation`（任务 `tk_01M72M084MDGYDPBG6JDFZMZ5P`）| `git commit -m "msg"`（功能等价）|
-| 切换分支 | 定位 `CheckoutBranch` 挂起点（疑异步等待不回）| `git checkout <branch>` |
+| 切换分支 | **已完成**（K-1449：四链 + 使用方规则下 `CheckoutBranch` 正常返回）| — |
 | 差异 | 查 `ShowDiffBetweenCommits` 返回后为何无窗口（疑弹窗/`RenderTargetBitmap`，K-1308）| `git diff <a> <b>` |
 | 文件状态 | **已完成**（K-1415 前置配置 + K-1416 验证）；要常态化需把反射造配置固化成启动步骤 | — |
-| 提交查看（History）| 查前置满足后 `LogRows` 是否随 `git log` 填充（任务在跑）| `git log` |
+| 提交查看（History）| **已完成**（K-1444/K-1448：`WaitForMultipleObjectsEx` 降级后切视图 3s 内 `LogRows` 1→35）| — |
 
 ### 6.3 已可用的自动化手段
 
