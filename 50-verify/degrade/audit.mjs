@@ -32,8 +32,10 @@ for (const r of rows) {
 }
 // K-1323：K 号唯一性检查（只查正文条目；引用表行第 2 列是短值，不算正文）
 const looksBody = (l) => {
-  if (!/^\|\s*K-\d{3,4}\s*\|\s*(\*\*|🎯|🎉|⚠|✅|📋)/.test(l)) return false;
-  return (l.split('|')[2] || '').trim().length > 60;
+  if (!/^\|\s*K-\d{3,4}\s*\|/.test(l)) return false;
+  // 正文行满 5 列（至少 6 个管道）且第 2 列不是短引用值
+  const cells = l.split('|');
+  return cells.length >= 6 && (cells[2] || '').trim().length > 20;
 };
 const kIds = lines.filter(looksBody).map((l) => l.split('|')[1].trim());
 const dupK = [...new Set(kIds.filter((v, i, arr) => arr.indexOf(v) !== i))];
