@@ -2806,7 +2806,28 @@ int wpf_x11_moveresize_window(HWND hwnd, int x, int y, int w, int h)
     // 【TASK-0109 仪器】分支在这里定下来 —— 下面**照旧**二选一，语义一字未改；
     //   新增的只有"我走了哪一支"的产品自报（`W130A` §10-C 的缺口）。
     int branch_ewmh = (use_wm && a_net_moveresize_window) ? 1 : 0;
+    // 【K-1499】Popup / 菜单 / 提示框这类窗口**不受 WM 管理**：WM 会静默忽略发给它的
+    //   `_NET_MOVERESIZE_WINDOW` ⇒ 尺寸停在 1x1（WPF 已算出 220.17x84、HWND 仍是 1x1
+    //   的实测现象）。实测判据两条，命中任一就走裸 `XMoveResizeWindow`：
+    //     ① `override_redirect`（经典 Popup）；
+    //     ② **parent == root**（没有被 WM reparent 到 frame）—— SourceTree 的菜单 Popup
+    //        是非 override-redirect 但 parent 就是 root（实测 `Override Redirect State: no`
+    //        + `Parent window id: 0x520 (the root window)`），只判 ① 会漏掉它。
+    //   普通顶层窗口被 WM reparent 时 parent != root，仍走上面对 WM 的消息路径。
+    int direct_geometry = 0;
     if (branch_ewmh) {
+        XWindowAttributes wa;
+        if (XGetWindowAttributes(g_wpf.dpy, win, &wa) && wa.override_redirect) direct_geometry = 1;
+        if (!direct_geometry) {
+            Window rr = 0, pr = 0, *kids = NULL;
+            unsigned int nkids = 0;
+            if (XQueryTree(g_wpf.dpy, win, &rr, &pr, &kids, &nkids)) {
+                if (kids) XFree(kids);
+                if (pr && g_wpf.root && pr == g_wpf.root) direct_geometry = 1;
+            }
+        }
+    }
+    if (branch_ewmh && !direct_geometry) {
         XEvent e;
         memset(&e, 0, sizeof(e));
         e.xclient.type = ClientMessage;
@@ -2828,10 +2849,11 @@ int wpf_x11_moveresize_window(HWND hwnd, int x, int y, int w, int h)
     XUNLOCK();
     // 【TASK-0109 仪器】`site=moveresize` 分支自报：死 WM 残留时**必须是** `branch=fallback`
     //   （旧版恒走 `ewmh` ⇒ 判据侧只能靠外部推断，见 `W130A` §5 ★）。
-    wpf_wstate_diag("MOVERESIZE hwnd=0x%llx site=moveresize branch=%s has_wm=%d "
+    wpf_wstate_diag("MOVERESIZE hwnd=0x%llx site=moveresize branch=%s has_wm=%d direct=%d "
                     "req=%d,%d,%dx%d",
-                    (unsigned long long)(uintptr_t)hwnd, branch_ewmh ? "ewmh" : "fallback",
-                    use_wm, x, y, w, h);
+                    (unsigned long long)(uintptr_t)hwnd,
+                    branch_ewmh ? (direct_geometry ? "direct" : "ewmh") : "fallback",
+                    use_wm, direct_geometry, x, y, w, h);
     return 1;
 }
 
