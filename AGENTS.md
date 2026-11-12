@@ -42,8 +42,8 @@ node 30-design/checks/selftest.mjs        # 改规则/改检查器后必跑
 
 # 生成物与本体（改界面元素表或本体时加跑）
 node 30-design/设计文档包/界面图/build-wireframe.mjs --check
-python3 本体/本体校验.py
-node 本体/渲染校验.mjs
+python3 30-design/ontology/本体校验.py
+node 30-design/ontology/渲染校验.mjs
 ```
 
 五条文档门禁 + 三条生成物/本体校验全 `rc=0` 才算改动完成。若输出了新的 `ERROR`，先修文档，不要改脚本放宽规则；确需放宽，先改 `selftest.mjs` 的负向断言并写明理由。
@@ -70,5 +70,5 @@ node 本体/渲染校验.mjs
 | `40-build/` | 实现与派生 | Agent（applier 优先） |
 | `50-verify/` | 判据与记录 | Agent |
 | `60-deliver/`、`70-operate/` | 交付与运维 | 人 + Agent |
-| `本体/` | 运行时本体（类/关系/规则/动作/术语）+ 校验器 + 模型页 | 人 + Agent（需跑本体校验） |
+| `30-design/ontology/` | 运行时本体（类/关系/规则/动作/术语）+ 校验器 + 模型页 | 人 + Agent（需跑本体校验） |
 | `90-archive/` | 归档 | 只读 |

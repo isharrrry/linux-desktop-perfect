@@ -1,6 +1,6 @@
 <!--
   MOD-53 targets：让 UseWPF=true 在 Linux 解析到自产 pack（ADR-006、09 §4 补丁项 6/16/17）
-  由 samples/Directory.Build.props 引入；不改应用工程文件，应用侧只写 TargetFramework。
+  由 50-verify/samples/Directory.Build.props 引入；不改应用工程文件，应用侧只写 TargetFramework。
   解析链（03 §3.6.3）：FrameworkReference → WindowsDesktop 包版本 → RID 条件 → 自产 pack
   求值顺序要求：本文件必须在 Microsoft.WinFX.targets 之前求值，故 PbtLocator 写在这里而不是 targets 里。
 -->

@@ -1,0 +1,1219 @@
+{
+  "version": null,
+  "units": [
+    {
+      "name": "linux-desktop-perfect",
+      "kind": "package-set",
+      "root": "40-build",
+      "projects": [
+        "40-build/appliers/commit-minreq/commit-minreq.csproj",
+        "40-build/appliers/commit-noconfirm/commit-noconfirm.csproj",
+        "40-build/appliers/dw-fontstrip/dw-fontstrip.csproj",
+        "40-build/appliers/gong-dnd/gong-dnd.csproj",
+        "40-build/appliers/loglabel-brush/loglabel-brush.csproj",
+        "40-build/appliers/sdc-inject/sdc-inject.csproj",
+        "40-build/appliers/seticon-ret/seticon-ret.csproj",
+        "40-build/appliers/wb-registry/wb-registry.csproj",
+        "40-build/milcore-bridge/MilBridge.Linux.csproj",
+        "40-build/milcore/WpfGfx.Linux.csproj",
+        "40-build/system-drawing-common/System.Drawing.Common.csproj",
+        "40-build/system-drawing-common/SystemDrawingCommon.Linux.csproj"
+      ],
+      "src_dirs": [
+        "40-build/appliers/commit-minreq",
+        "40-build/appliers/commit-noconfirm",
+        "40-build/appliers/dw-fontstrip",
+        "40-build/appliers/gong-dnd",
+        "40-build/appliers/loglabel-brush",
+        "40-build/appliers/sdc-inject",
+        "40-build/appliers/seticon-ret",
+        "40-build/appliers/wb-registry",
+        "40-build/milcore",
+        "40-build/milcore-bridge",
+        "40-build/system-drawing-common"
+      ],
+      "loc": 73234,
+      "files": 346,
+      "kinds": {
+        "commit-minreq.csproj": "product",
+        "commit-noconfirm.csproj": "product",
+        "dw-fontstrip.csproj": "product",
+        "gong-dnd.csproj": "product",
+        "loglabel-brush.csproj": "product",
+        "sdc-inject.csproj": "product",
+        "seticon-ret.csproj": "product",
+        "wb-registry.csproj": "product",
+        "MilBridge.Linux.csproj": "product",
+        "WpfGfx.Linux.csproj": "product",
+        "System.Drawing.Common.csproj": "product",
+        "SystemDrawingCommon.Linux.csproj": "product"
+      },
+      "entries": [
+        "40-build/appliers/commit-minreq/Program.cs",
+        "40-build/appliers/commit-noconfirm/Program.cs",
+        "40-build/appliers/dw-fontstrip/Program.cs",
+        "40-build/appliers/gong-dnd/Program.cs",
+        "40-build/appliers/loglabel-brush/Program.cs",
+        "40-build/appliers/sdc-inject/Program.cs",
+        "40-build/appliers/seticon-ret/Program.cs",
+        "40-build/appliers/wb-registry/Program.cs"
+      ],
+      "type": "application",
+      "version": null,
+      "packed": []
+    },
+    {
+      "name": "linux-desktop-perfect",
+      "kind": "package-set",
+      "root": "50-verify",
+      "projects": [
+        "50-verify/external/textpatcher/TextPatcher.csproj",
+        "50-verify/external/uia/cecil-tools/UiaInvokeHelper.csproj",
+        "50-verify/external/uia/dump-tree-cs/DumpTree.csproj",
+        "50-verify/image/wic-app/WicApp.csproj",
+        "50-verify/text/page-app/PageApp.csproj"
+      ],
+      "src_dirs": [
+        "50-verify/external/textpatcher",
+        "50-verify/external/uia/cecil-tools",
+        "50-verify/external/uia/dump-tree-cs",
+        "50-verify/image/wic-app",
+        "50-verify/text/page-app"
+      ],
+      "loc": 2256,
+      "files": 13,
+      "kinds": {
+        "TextPatcher.csproj": "product",
+        "UiaInvokeHelper.csproj": "product",
+        "DumpTree.csproj": "product",
+        "WicApp.csproj": "product",
+        "PageApp.csproj": "product"
+      },
+      "entries": [
+        "50-verify/external/textpatcher/Program.cs",
+        "50-verify/external/uia/dump-tree-cs/Program.cs",
+        "50-verify/image/wic-app/Program.cs",
+        "50-verify/text/page-app/Program.cs"
+      ],
+      "type": "application",
+      "version": null,
+      "packed": []
+    },
+    {
+      "name": "linux-desktop-perfect",
+      "kind": "package-set",
+      "root": "src",
+      "projects": [
+        "40-build/system-drawing-common/src/System.Drawing.Common.csproj",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/CycleStub.PresentationFramework/CycleStub.PresentationFramework.Linux.csproj",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/CycleStub.PresentationUI/CycleStub.PresentationUI.Linux.csproj",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/CycleStub.ReachFramework/CycleStub.ReachFramework.Linux.csproj",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/DirectWrite/FallbackCriteria/FallbackCriteria.csproj",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/DirectWrite/FontEntryClosedLoop/DirectWrite.Linux.FontEntryClosedLoop.csproj",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/DirectWrite/Probe/DirectWrite.Linux.Probe.csproj",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/DirectWrite/Provider/DirectWrite.Linux.Provider.csproj",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/DirectWrite/SystemFontsProbe/DirectWrite.Linux.SystemFontsProbe.csproj",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/DirectWrite/Tests/DirectWrite.Linux.Tests.csproj",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/DirectWrite/WicClosedLoop/DirectWrite.Linux.WicClosedLoop.csproj",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/DirectWrite/WicSeamProbe/DirectWrite.Linux.WicSeamProbe.csproj",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/DirectWrite/WicWriteClosedLoop/DirectWrite.Linux.WicWriteClosedLoop.csproj",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/DirectWrite/WiringSmoke/DirectWrite.Linux.WiringSmoke.csproj",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/DirectWriteForwarder/DirectWriteForwarder.Linux.csproj",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationBuildTasks/PresentationBuildTasks.Linux.csproj",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationCore/PresentationCore.Linux.csproj",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework.Aero/PresentationFramework.Aero.Linux.csproj",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework.Aero2/PresentationFramework.Aero2.Linux.csproj",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework.AeroLite/PresentationFramework.AeroLite.Linux.csproj",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework.Classic/PresentationFramework.Classic.Linux.csproj",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework.ImplCycle/PresentationFramework.ImplCycle.csproj",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework.Luna/PresentationFramework.Luna.Linux.csproj",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework.Royale/PresentationFramework.Royale.Linux.csproj",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework/PresentationFramework.Linux.csproj",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/ReachFramework.ApiCycle/ReachFramework.ApiCycle.csproj",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/ReachFramework/ReachFramework.Linux.csproj",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/System.Printing/System.Printing.Linux.csproj",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/System.Windows.Controls.Ribbon/System.Windows.Controls.Ribbon.Linux.csproj",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/System.Windows.Extensions/System.Windows.Extensions.Linux.csproj",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/System.Windows.Input.Manipulations/System.Windows.Input.Manipulations.Linux.csproj",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/System.Windows.Presentation/System.Windows.Presentation.Linux.csproj",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/System.Windows.Primitives/System.Windows.Primitives.Linux.csproj",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/System.Xaml/System.Xaml.Linux.csproj",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/SystemPrinting.ApiCycle/SystemPrinting.ApiCycle.csproj",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/UIAutomationProvider/UIAutomationProvider.Linux.csproj",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/UIAutomationTypes/UIAutomationTypes.Linux.csproj",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/WindowsBase/WindowsBase.Linux.csproj",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/WpfGfx/WpfGfx.Linux.csproj",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/a11y/LdpA11y.csproj"
+      ],
+      "src_dirs": [
+        "40-build/system-drawing-common/src",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/CycleStub.PresentationFramework",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/CycleStub.PresentationUI",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/CycleStub.ReachFramework",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/DirectWrite/FallbackCriteria",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/DirectWrite/FontEntryClosedLoop",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/DirectWrite/Probe",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/DirectWrite/Provider",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/DirectWrite/SystemFontsProbe",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/DirectWrite/WicClosedLoop",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/DirectWrite/WicSeamProbe",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/DirectWrite/WicWriteClosedLoop",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/DirectWrite/WiringSmoke",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/DirectWriteForwarder",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationBuildTasks",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationCore",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework.Aero",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework.Aero2",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework.AeroLite",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework.Classic",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework.ImplCycle",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework.Luna",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework.Royale",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/ReachFramework",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/ReachFramework.ApiCycle",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/System.Printing",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/System.Windows.Controls.Ribbon",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/System.Windows.Extensions",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/System.Windows.Input.Manipulations",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/System.Windows.Presentation",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/System.Windows.Primitives",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/System.Xaml",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/SystemPrinting.ApiCycle",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/UIAutomationProvider",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/UIAutomationTypes",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/WindowsBase",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/WpfGfx",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/a11y"
+      ],
+      "loc": 179927,
+      "files": 468,
+      "kinds": {
+        "System.Drawing.Common.csproj": "product",
+        "CycleStub.PresentationFramework.Linux.csproj": "product",
+        "CycleStub.PresentationUI.Linux.csproj": "product",
+        "CycleStub.ReachFramework.Linux.csproj": "product",
+        "FallbackCriteria.csproj": "product",
+        "DirectWrite.Linux.FontEntryClosedLoop.csproj": "product",
+        "DirectWrite.Linux.Probe.csproj": "product",
+        "DirectWrite.Linux.Provider.csproj": "product",
+        "DirectWrite.Linux.SystemFontsProbe.csproj": "product",
+        "DirectWrite.Linux.Tests.csproj": "test",
+        "DirectWrite.Linux.WicClosedLoop.csproj": "product",
+        "DirectWrite.Linux.WicSeamProbe.csproj": "product",
+        "DirectWrite.Linux.WicWriteClosedLoop.csproj": "product",
+        "DirectWrite.Linux.WiringSmoke.csproj": "product",
+        "DirectWriteForwarder.Linux.csproj": "product",
+        "PresentationBuildTasks.Linux.csproj": "product",
+        "PresentationCore.Linux.csproj": "product",
+        "PresentationFramework.Aero.Linux.csproj": "product",
+        "PresentationFramework.Aero2.Linux.csproj": "product",
+        "PresentationFramework.AeroLite.Linux.csproj": "product",
+        "PresentationFramework.Classic.Linux.csproj": "product",
+        "PresentationFramework.ImplCycle.csproj": "product",
+        "PresentationFramework.Luna.Linux.csproj": "product",
+        "PresentationFramework.Royale.Linux.csproj": "product",
+        "PresentationFramework.Linux.csproj": "product",
+        "ReachFramework.ApiCycle.csproj": "product",
+        "ReachFramework.Linux.csproj": "product",
+        "System.Printing.Linux.csproj": "product",
+        "System.Windows.Controls.Ribbon.Linux.csproj": "product",
+        "System.Windows.Extensions.Linux.csproj": "product",
+        "System.Windows.Input.Manipulations.Linux.csproj": "product",
+        "System.Windows.Presentation.Linux.csproj": "product",
+        "System.Windows.Primitives.Linux.csproj": "product",
+        "System.Xaml.Linux.csproj": "product",
+        "SystemPrinting.ApiCycle.csproj": "product",
+        "UIAutomationProvider.Linux.csproj": "product",
+        "UIAutomationTypes.Linux.csproj": "product",
+        "WindowsBase.Linux.csproj": "product",
+        "WpfGfx.Linux.csproj": "product",
+        "LdpA11y.csproj": "product"
+      },
+      "entries": [
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/DirectWrite/FallbackCriteria/Program.cs",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/DirectWrite/FontEntryClosedLoop/Program.cs",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/DirectWrite/Probe/Program.cs",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/DirectWrite/SystemFontsProbe/Program.cs",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/DirectWrite/WicClosedLoop/Program.cs",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/DirectWrite/WicSeamProbe/Program.cs",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/DirectWrite/WicWriteClosedLoop/Program.cs",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/DirectWrite/WiringSmoke/Program.cs"
+      ],
+      "type": "application",
+      "version": null,
+      "packed": []
+    }
+  ],
+  "manifests": [
+    "40-build/appliers/commit-minreq/commit-minreq.csproj",
+    "40-build/appliers/commit-noconfirm/commit-noconfirm.csproj",
+    "40-build/appliers/dw-fontstrip/dw-fontstrip.csproj",
+    "40-build/appliers/gong-dnd/gong-dnd.csproj",
+    "40-build/appliers/loglabel-brush/loglabel-brush.csproj",
+    "40-build/appliers/sdc-inject/sdc-inject.csproj",
+    "40-build/appliers/seticon-ret/seticon-ret.csproj",
+    "40-build/appliers/wb-registry/wb-registry.csproj",
+    "40-build/milcore-bridge/MilBridge.Linux.csproj",
+    "40-build/milcore/WpfGfx.Linux.csproj",
+    "40-build/system-drawing-common/System.Drawing.Common.csproj",
+    "40-build/system-drawing-common/SystemDrawingCommon.Linux.csproj",
+    "40-build/system-drawing-common/src/System.Drawing.Common.csproj",
+    "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/CycleStub.PresentationFramework/CycleStub.PresentationFramework.Linux.csproj",
+    "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/CycleStub.PresentationUI/CycleStub.PresentationUI.Linux.csproj",
+    "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/CycleStub.ReachFramework/CycleStub.ReachFramework.Linux.csproj",
+    "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/DirectWrite/FallbackCriteria/FallbackCriteria.csproj",
+    "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/DirectWrite/FontEntryClosedLoop/DirectWrite.Linux.FontEntryClosedLoop.csproj",
+    "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/DirectWrite/Probe/DirectWrite.Linux.Probe.csproj",
+    "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/DirectWrite/Provider/DirectWrite.Linux.Provider.csproj",
+    "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/DirectWrite/SystemFontsProbe/DirectWrite.Linux.SystemFontsProbe.csproj",
+    "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/DirectWrite/Tests/DirectWrite.Linux.Tests.csproj",
+    "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/DirectWrite/WicClosedLoop/DirectWrite.Linux.WicClosedLoop.csproj",
+    "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/DirectWrite/WicSeamProbe/DirectWrite.Linux.WicSeamProbe.csproj",
+    "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/DirectWrite/WicWriteClosedLoop/DirectWrite.Linux.WicWriteClosedLoop.csproj",
+    "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/DirectWrite/WiringSmoke/DirectWrite.Linux.WiringSmoke.csproj",
+    "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/DirectWriteForwarder/DirectWriteForwarder.Linux.csproj",
+    "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationBuildTasks/PresentationBuildTasks.Linux.csproj",
+    "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationCore/PresentationCore.Linux.csproj",
+    "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework.Aero/PresentationFramework.Aero.Linux.csproj",
+    "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework.Aero2/PresentationFramework.Aero2.Linux.csproj",
+    "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework.AeroLite/PresentationFramework.AeroLite.Linux.csproj",
+    "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework.Classic/PresentationFramework.Classic.Linux.csproj",
+    "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework.ImplCycle/PresentationFramework.ImplCycle.csproj",
+    "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework.Luna/PresentationFramework.Luna.Linux.csproj",
+    "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework.Royale/PresentationFramework.Royale.Linux.csproj",
+    "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework/PresentationFramework.Linux.csproj",
+    "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/ReachFramework.ApiCycle/ReachFramework.ApiCycle.csproj",
+    "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/ReachFramework/ReachFramework.Linux.csproj",
+    "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/System.Printing/System.Printing.Linux.csproj",
+    "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/System.Windows.Controls.Ribbon/System.Windows.Controls.Ribbon.Linux.csproj",
+    "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/System.Windows.Extensions/System.Windows.Extensions.Linux.csproj",
+    "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/System.Windows.Input.Manipulations/System.Windows.Input.Manipulations.Linux.csproj",
+    "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/System.Windows.Presentation/System.Windows.Presentation.Linux.csproj",
+    "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/System.Windows.Primitives/System.Windows.Primitives.Linux.csproj",
+    "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/System.Xaml/System.Xaml.Linux.csproj",
+    "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/SystemPrinting.ApiCycle/SystemPrinting.ApiCycle.csproj",
+    "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/UIAutomationProvider/UIAutomationProvider.Linux.csproj",
+    "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/UIAutomationTypes/UIAutomationTypes.Linux.csproj",
+    "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/WindowsBase/WindowsBase.Linux.csproj",
+    "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/WpfGfx/WpfGfx.Linux.csproj",
+    "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/a11y/LdpA11y.csproj",
+    "50-verify/external/textpatcher/TextPatcher.csproj",
+    "50-verify/external/uia/cecil-tools/UiaInvokeHelper.csproj",
+    "50-verify/external/uia/dump-tree-cs/DumpTree.csproj",
+    "50-verify/image/wic-app/WicApp.csproj",
+    "50-verify/text/page-app/PageApp.csproj",
+    "samples/WinFormsBasics/WinFormsBasics.csproj",
+    "samples/WpfControlGallery/WpfControlGallery.csproj",
+    "samples/WpfFirstWindow/WpfFirstWindow.csproj",
+    "samples/WpfImageGallery/WpfImageGallery.csproj",
+    "samples/WpfMediaInk/WpfMediaInk.csproj",
+    "samples/WpfPrintDoc/WpfPrintDoc.csproj",
+    "samples/WpfTextDemo/WpfTextDemo.csproj"
+  ],
+  "slns": [],
+  "packed": [],
+  "groups": [
+    {
+      "name": "40-build·system-drawing-common（散件）",
+      "domain": "system-drawing-common/src",
+      "path": "40-build/system-drawing-common/src/ (root)",
+      "paths": [
+        "40-build/system-drawing-common/src/ (root)"
+      ],
+      "src_lines": 31,
+      "files": 1,
+      "cases": 0,
+      "test_files": 0,
+      "doc": true,
+      "sample_files": [
+        "40-build/system-drawing-common/src/SRDescriptionAttribute.cs"
+      ]
+    },
+    {
+      "name": "system-drawing-common·CommonInterop",
+      "domain": "system-drawing-common/src",
+      "path": "40-build/system-drawing-common/src/CommonInterop",
+      "paths": [
+        "40-build/system-drawing-common/src/CommonInterop"
+      ],
+      "src_lines": 613,
+      "files": 14,
+      "cases": 0,
+      "test_files": 0,
+      "doc": true,
+      "sample_files": [
+        "40-build/system-drawing-common/src/CommonInterop/AssemblyInfo.cs",
+        "40-build/system-drawing-common/src/CommonInterop/ConstsStub.cs",
+        "40-build/system-drawing-common/src/CommonInterop/FontConverterStub.cs",
+        "40-build/system-drawing-common/src/CommonInterop/Interop.HRESULT.cs",
+        "40-build/system-drawing-common/src/CommonInterop/Interop.IStream.cs"
+      ]
+    },
+    {
+      "name": "System·Drawing（散件）",
+      "domain": "system-drawing-common/src",
+      "path": "40-build/system-drawing-common/src/System/Drawing/ (root)",
+      "paths": [
+        "40-build/system-drawing-common/src/System/Drawing/ (root)"
+      ],
+      "src_lines": 24228,
+      "files": 88,
+      "cases": 0,
+      "test_files": 0,
+      "doc": true,
+      "sample_files": [
+        "40-build/system-drawing-common/src/System/Drawing/Bitmap.Unix.cs",
+        "40-build/system-drawing-common/src/System/Drawing/Bitmap.Windows.cs",
+        "40-build/system-drawing-common/src/System/Drawing/Bitmap.cs",
+        "40-build/system-drawing-common/src/System/Drawing/BitmapSelector.cs",
+        "40-build/system-drawing-common/src/System/Drawing/BitmapSuffixInSameAssemblyAttribute.cs"
+      ]
+    },
+    {
+      "name": "Drawing·Design",
+      "domain": "system-drawing-common/src",
+      "path": "40-build/system-drawing-common/src/System/Drawing/Design",
+      "paths": [
+        "40-build/system-drawing-common/src/System/Drawing/Design"
+      ],
+      "src_lines": 48,
+      "files": 1,
+      "cases": 0,
+      "test_files": 0,
+      "doc": true,
+      "sample_files": [
+        "40-build/system-drawing-common/src/System/Drawing/Design/CategoryNameCollection.cs"
+      ]
+    },
+    {
+      "name": "Drawing·Drawing2D",
+      "domain": "system-drawing-common/src",
+      "path": "40-build/system-drawing-common/src/System/Drawing/Drawing2D",
+      "paths": [
+        "40-build/system-drawing-common/src/System/Drawing/Drawing2D"
+      ],
+      "src_lines": 4128,
+      "files": 42,
+      "cases": 0,
+      "test_files": 0,
+      "doc": true,
+      "sample_files": [
+        "40-build/system-drawing-common/src/System/Drawing/Drawing2D/AdjustableArrowCap.Unix.cs",
+        "40-build/system-drawing-common/src/System/Drawing/Drawing2D/AdjustableArrowCap.cs",
+        "40-build/system-drawing-common/src/System/Drawing/Drawing2D/Blend.cs",
+        "40-build/system-drawing-common/src/System/Drawing/Drawing2D/BrushType.cs",
+        "40-build/system-drawing-common/src/System/Drawing/Drawing2D/ColorBlend.cs"
+      ]
+    },
+    {
+      "name": "Drawing·Imaging",
+      "domain": "system-drawing-common/src",
+      "path": "40-build/system-drawing-common/src/System/Drawing/Imaging",
+      "paths": [
+        "40-build/system-drawing-common/src/System/Drawing/Imaging"
+      ],
+      "src_lines": 5541,
+      "files": 42,
+      "cases": 0,
+      "test_files": 0,
+      "doc": true,
+      "sample_files": [
+        "40-build/system-drawing-common/src/System/Drawing/Imaging/BitmapData.Unix.cs",
+        "40-build/system-drawing-common/src/System/Drawing/Imaging/BitmapData.Windows.cs",
+        "40-build/system-drawing-common/src/System/Drawing/Imaging/BitmapData.cs",
+        "40-build/system-drawing-common/src/System/Drawing/Imaging/ColorAdjustType.cs",
+        "40-build/system-drawing-common/src/System/Drawing/Imaging/ColorChannelFlags.cs"
+      ]
+    },
+    {
+      "name": "Drawing·Internal",
+      "domain": "system-drawing-common/src",
+      "path": "40-build/system-drawing-common/src/System/Drawing/Internal",
+      "paths": [
+        "40-build/system-drawing-common/src/System/Drawing/Internal"
+      ],
+      "src_lines": 413,
+      "files": 4,
+      "cases": 0,
+      "test_files": 0,
+      "doc": true,
+      "sample_files": [
+        "40-build/system-drawing-common/src/System/Drawing/Internal/GPStream.cs",
+        "40-build/system-drawing-common/src/System/Drawing/Internal/GpPathData.cs",
+        "40-build/system-drawing-common/src/System/Drawing/Internal/ISystemEventTracker.cs",
+        "40-build/system-drawing-common/src/System/Drawing/Internal/SystemColorTracker.cs"
+      ]
+    },
+    {
+      "name": "Drawing·Printing",
+      "domain": "system-drawing-common/src",
+      "path": "40-build/system-drawing-common/src/System/Drawing/Printing",
+      "paths": [
+        "40-build/system-drawing-common/src/System/Drawing/Printing"
+      ],
+      "src_lines": 7904,
+      "files": 46,
+      "cases": 0,
+      "test_files": 0,
+      "doc": true,
+      "sample_files": [
+        "40-build/system-drawing-common/src/System/Drawing/Printing/DefaultPrintController.cs",
+        "40-build/system-drawing-common/src/System/Drawing/Printing/Duplex.cs",
+        "40-build/system-drawing-common/src/System/Drawing/Printing/InvalidPrinterException.Core.cs",
+        "40-build/system-drawing-common/src/System/Drawing/Printing/InvalidPrinterException.Serializable.cs",
+        "40-build/system-drawing-common/src/System/Drawing/Printing/InvalidPrinterException.cs"
+      ]
+    },
+    {
+      "name": "Drawing·Text",
+      "domain": "system-drawing-common/src",
+      "path": "40-build/system-drawing-common/src/System/Drawing/Text",
+      "paths": [
+        "40-build/system-drawing-common/src/System/Drawing/Text"
+      ],
+      "src_lines": 311,
+      "files": 8,
+      "cases": 0,
+      "test_files": 0,
+      "doc": true,
+      "sample_files": [
+        "40-build/system-drawing-common/src/System/Drawing/Text/FontCollection.cs",
+        "40-build/system-drawing-common/src/System/Drawing/Text/GenericFontFamilies.cs",
+        "40-build/system-drawing-common/src/System/Drawing/Text/HotkeyPrefix.cs",
+        "40-build/system-drawing-common/src/System/Drawing/Text/InstalledFontCollection.cs",
+        "40-build/system-drawing-common/src/System/Drawing/Text/PrivateFontCollection.Unix.cs"
+      ]
+    },
+    {
+      "name": "system-drawing-common·misc（散件）",
+      "domain": "system-drawing-common/src",
+      "path": "40-build/system-drawing-common/src/misc/ (root)",
+      "paths": [
+        "40-build/system-drawing-common/src/misc/ (root)"
+      ],
+      "src_lines": 382,
+      "files": 5,
+      "cases": 0,
+      "test_files": 0,
+      "doc": true,
+      "sample_files": [
+        "40-build/system-drawing-common/src/misc/CompModSwitches.cs",
+        "40-build/system-drawing-common/src/misc/DbgUtil.cs",
+        "40-build/system-drawing-common/src/misc/DpiHelper.cs",
+        "40-build/system-drawing-common/src/misc/ExternDll.Unix.cs",
+        "40-build/system-drawing-common/src/misc/ExternDll.cs"
+      ]
+    },
+    {
+      "name": "misc·GDI",
+      "domain": "system-drawing-common/src",
+      "path": "40-build/system-drawing-common/src/misc/GDI",
+      "paths": [
+        "40-build/system-drawing-common/src/misc/GDI"
+      ],
+      "src_lines": 1124,
+      "files": 10,
+      "cases": 0,
+      "test_files": 0,
+      "doc": true,
+      "sample_files": [
+        "40-build/system-drawing-common/src/misc/GDI/ApplyGraphicsProperties.cs",
+        "40-build/system-drawing-common/src/misc/GDI/DeviceContext.cs",
+        "40-build/system-drawing-common/src/misc/GDI/DeviceContextType.cs",
+        "40-build/system-drawing-common/src/misc/GDI/DeviceContexts.cs",
+        "40-build/system-drawing-common/src/misc/GDI/NativeMethods.cs"
+      ]
+    },
+    {
+      "name": "Microsoft.DotNet.Wpf.Linux·CycleStub.PresentationFramework",
+      "domain": "wpf-port/src",
+      "path": "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/CycleStub.PresentationFramework",
+      "paths": [
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/CycleStub.PresentationFramework"
+      ],
+      "src_lines": 262,
+      "files": 1,
+      "cases": 0,
+      "test_files": 0,
+      "doc": true,
+      "sample_files": [
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/CycleStub.PresentationFramework/ApiSubset.cs"
+      ]
+    },
+    {
+      "name": "Microsoft.DotNet.Wpf.Linux·CycleStub.PresentationUI",
+      "domain": "wpf-port/src",
+      "path": "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/CycleStub.PresentationUI",
+      "paths": [
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/CycleStub.PresentationUI"
+      ],
+      "src_lines": 400,
+      "files": 3,
+      "cases": 0,
+      "test_files": 0,
+      "doc": true,
+      "sample_files": [
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/CycleStub.PresentationUI/FindToolBar.ApiSubset.cs",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/CycleStub.PresentationUI/ThemeInfo.Linux.cs",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/CycleStub.PresentationUI/reapply-patches.py"
+      ]
+    },
+    {
+      "name": "Microsoft.DotNet.Wpf.Linux·CycleStub.ReachFramework",
+      "domain": "wpf-port/src",
+      "path": "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/CycleStub.ReachFramework",
+      "paths": [
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/CycleStub.ReachFramework"
+      ],
+      "src_lines": 101,
+      "files": 1,
+      "cases": 0,
+      "test_files": 0,
+      "doc": true,
+      "sample_files": [
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/CycleStub.ReachFramework/ApiSubset.cs"
+      ]
+    },
+    {
+      "name": "DirectWrite·FallbackCriteria",
+      "domain": "wpf-port/src",
+      "path": "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/DirectWrite/FallbackCriteria",
+      "paths": [
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/DirectWrite/FallbackCriteria"
+      ],
+      "src_lines": 1414,
+      "files": 4,
+      "cases": 0,
+      "test_files": 0,
+      "doc": true,
+      "sample_files": [
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/DirectWrite/FallbackCriteria/Program.cs",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/DirectWrite/FallbackCriteria/advance_from_font.py",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/DirectWrite/FallbackCriteria/eval-df1-criteria.py",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/DirectWrite/FallbackCriteria/seg-sampler.py"
+      ]
+    },
+    {
+      "name": "DirectWrite·FontEntryClosedLoop",
+      "domain": "wpf-port/src",
+      "path": "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/DirectWrite/FontEntryClosedLoop",
+      "paths": [
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/DirectWrite/FontEntryClosedLoop"
+      ],
+      "src_lines": 151,
+      "files": 1,
+      "cases": 0,
+      "test_files": 0,
+      "doc": true,
+      "sample_files": [
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/DirectWrite/FontEntryClosedLoop/Program.cs"
+      ]
+    },
+    {
+      "name": "DirectWrite·Probe",
+      "domain": "wpf-port/src",
+      "path": "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/DirectWrite/Probe",
+      "paths": [
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/DirectWrite/Probe"
+      ],
+      "src_lines": 412,
+      "files": 2,
+      "cases": 0,
+      "test_files": 0,
+      "doc": true,
+      "sample_files": [
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/DirectWrite/Probe/ProbeDigest.cs",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/DirectWrite/Probe/Program.cs"
+      ]
+    },
+    {
+      "name": "DirectWrite·Provider",
+      "domain": "wpf-port/src",
+      "path": "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/DirectWrite/Provider",
+      "paths": [
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/DirectWrite/Provider"
+      ],
+      "src_lines": 6000,
+      "files": 20,
+      "cases": 0,
+      "test_files": 0,
+      "doc": true,
+      "sample_files": [
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/DirectWrite/Provider/DefaultFontFamily.cs",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/DirectWrite/Provider/FaceSelector.cs",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/DirectWrite/Provider/FamilyCoverage.cs",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/DirectWrite/Provider/FamilyCoverageSelfTest.cs",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/DirectWrite/Provider/FontHandleTable.cs"
+      ]
+    },
+    {
+      "name": "DirectWrite·SystemFontsProbe",
+      "domain": "wpf-port/src",
+      "path": "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/DirectWrite/SystemFontsProbe",
+      "paths": [
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/DirectWrite/SystemFontsProbe"
+      ],
+      "src_lines": 164,
+      "files": 1,
+      "cases": 0,
+      "test_files": 0,
+      "doc": true,
+      "sample_files": [
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/DirectWrite/SystemFontsProbe/Program.cs"
+      ]
+    },
+    {
+      "name": "DirectWrite·WicClosedLoop",
+      "domain": "wpf-port/src",
+      "path": "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/DirectWrite/WicClosedLoop",
+      "paths": [
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/DirectWrite/WicClosedLoop"
+      ],
+      "src_lines": 545,
+      "files": 1,
+      "cases": 0,
+      "test_files": 0,
+      "doc": true,
+      "sample_files": [
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/DirectWrite/WicClosedLoop/Program.cs"
+      ]
+    },
+    {
+      "name": "DirectWrite·WicSeamProbe",
+      "domain": "wpf-port/src",
+      "path": "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/DirectWrite/WicSeamProbe",
+      "paths": [
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/DirectWrite/WicSeamProbe"
+      ],
+      "src_lines": 63,
+      "files": 1,
+      "cases": 0,
+      "test_files": 0,
+      "doc": true,
+      "sample_files": [
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/DirectWrite/WicSeamProbe/Program.cs"
+      ]
+    },
+    {
+      "name": "DirectWrite·WicWriteClosedLoop",
+      "domain": "wpf-port/src",
+      "path": "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/DirectWrite/WicWriteClosedLoop",
+      "paths": [
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/DirectWrite/WicWriteClosedLoop"
+      ],
+      "src_lines": 313,
+      "files": 1,
+      "cases": 0,
+      "test_files": 0,
+      "doc": true,
+      "sample_files": [
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/DirectWrite/WicWriteClosedLoop/Program.cs"
+      ]
+    },
+    {
+      "name": "DirectWrite·WiringSmoke",
+      "domain": "wpf-port/src",
+      "path": "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/DirectWrite/WiringSmoke",
+      "paths": [
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/DirectWrite/WiringSmoke"
+      ],
+      "src_lines": 666,
+      "files": 2,
+      "cases": 0,
+      "test_files": 0,
+      "doc": true,
+      "sample_files": [
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/DirectWrite/WiringSmoke/Program.cs",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/DirectWrite/WiringSmoke/fix-deps.py"
+      ]
+    },
+    {
+      "name": "Microsoft.DotNet.Wpf.Linux·DirectWriteForwarder",
+      "domain": "wpf-port/src",
+      "path": "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/DirectWriteForwarder",
+      "paths": [
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/DirectWriteForwarder"
+      ],
+      "src_lines": 1756,
+      "files": 4,
+      "cases": 0,
+      "test_files": 0,
+      "doc": true,
+      "sample_files": [
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/DirectWriteForwarder/AssemblyAttrs.cs",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/DirectWriteForwarder/ManagedSurface.cs",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/DirectWriteForwarder/NativeMirrors.cs",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/DirectWriteForwarder/ProviderAdapters.cs"
+      ]
+    },
+    {
+      "name": "Microsoft.DotNet.Wpf.Linux·PresentationBuildTasks",
+      "domain": "wpf-port/src",
+      "path": "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationBuildTasks",
+      "paths": [
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationBuildTasks"
+      ],
+      "src_lines": 1000,
+      "files": 3,
+      "cases": 0,
+      "test_files": 0,
+      "doc": true,
+      "sample_files": [
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationBuildTasks/NameFallbackResolver.cs",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationBuildTasks/ReflectionHelper.cs",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationBuildTasks/SR.g.cs"
+      ]
+    },
+    {
+      "name": "Microsoft.DotNet.Wpf.Linux·PresentationCore",
+      "domain": "wpf-port/src",
+      "path": "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationCore",
+      "paths": [
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationCore"
+      ],
+      "src_lines": 24176,
+      "files": 21,
+      "cases": 0,
+      "test_files": 0,
+      "doc": true,
+      "sample_files": [
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationCore/BitmapSource.Linux.cs",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationCore/CachedBitmap.Linux.cs",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationCore/FamilyCollection.Linux.cs",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationCore/FontCacheUtil.Linux.cs",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationCore/HwndKeyboardInputProvider.Linux.cs"
+      ]
+    },
+    {
+      "name": "Microsoft.DotNet.Wpf.Linux·PresentationFramework",
+      "domain": "wpf-port/src",
+      "path": "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework",
+      "paths": [
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework"
+      ],
+      "src_lines": 56758,
+      "files": 39,
+      "cases": 0,
+      "test_files": 0,
+      "doc": true,
+      "sample_files": [
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework/Baml2006SchemaContext.Linux.cs",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework/ContainerParaClient.Linux.cs",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework/DeferredTextReference.Linux.cs",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework/DocumentPageHost.Linux.cs",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework/DocumentPageView.Linux.cs"
+      ]
+    },
+    {
+      "name": "Microsoft.DotNet.Wpf.Linux·PresentationFramework.Classic",
+      "domain": "wpf-port/src",
+      "path": "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework.Classic",
+      "paths": [
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework.Classic"
+      ],
+      "src_lines": 218,
+      "files": 1,
+      "cases": 0,
+      "test_files": 0,
+      "doc": true,
+      "sample_files": [
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework.Classic/reapply-patches.py"
+      ]
+    },
+    {
+      "name": "Microsoft.DotNet.Wpf.Linux·ReachFramework",
+      "domain": "wpf-port/src",
+      "path": "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/ReachFramework",
+      "paths": [
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/ReachFramework"
+      ],
+      "src_lines": 407,
+      "files": 4,
+      "cases": 0,
+      "test_files": 0,
+      "doc": true,
+      "sample_files": [
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/ReachFramework/SR.Generated.MSInternal.cs",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/ReachFramework/SR.Generated.cs",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/ReachFramework/SR.g.cs",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/ReachFramework/reapply-patches.py"
+      ]
+    },
+    {
+      "name": "Microsoft.DotNet.Wpf.Linux·ReachFramework.ApiCycle",
+      "domain": "wpf-port/src",
+      "path": "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/ReachFramework.ApiCycle",
+      "paths": [
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/ReachFramework.ApiCycle"
+      ],
+      "src_lines": 4,
+      "files": 1,
+      "cases": 0,
+      "test_files": 0,
+      "doc": true,
+      "sample_files": [
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/ReachFramework.ApiCycle/AssemblyInfo.cs"
+      ]
+    },
+    {
+      "name": "Microsoft.DotNet.Wpf.Linux·System.Printing",
+      "domain": "wpf-port/src",
+      "path": "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/System.Printing",
+      "paths": [
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/System.Printing"
+      ],
+      "src_lines": 871,
+      "files": 2,
+      "cases": 0,
+      "test_files": 0,
+      "doc": true,
+      "sample_files": [
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/System.Printing/System.Printing.Managed.cs",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/System.Printing/System.Printing.Managed.internals.cs"
+      ]
+    },
+    {
+      "name": "Microsoft.DotNet.Wpf.Linux·System.Windows.Controls.Ribbon",
+      "domain": "wpf-port/src",
+      "path": "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/System.Windows.Controls.Ribbon",
+      "paths": [
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/System.Windows.Controls.Ribbon"
+      ],
+      "src_lines": 56,
+      "files": 1,
+      "cases": 0,
+      "test_files": 0,
+      "doc": true,
+      "sample_files": [
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/System.Windows.Controls.Ribbon/SR.Shim.cs"
+      ]
+    },
+    {
+      "name": "Microsoft.DotNet.Wpf.Linux·System.Windows.Extensions",
+      "domain": "wpf-port/src",
+      "path": "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/System.Windows.Extensions",
+      "paths": [
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/System.Windows.Extensions"
+      ],
+      "src_lines": 197,
+      "files": 1,
+      "cases": 0,
+      "test_files": 0,
+      "doc": true,
+      "sample_files": [
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/System.Windows.Extensions/System.Windows.Extensions.Linux.cs"
+      ]
+    },
+    {
+      "name": "Microsoft.DotNet.Wpf.Linux·System.Windows.Input.Manipulations",
+      "domain": "wpf-port/src",
+      "path": "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/System.Windows.Input.Manipulations",
+      "paths": [
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/System.Windows.Input.Manipulations"
+      ],
+      "src_lines": 32,
+      "files": 1,
+      "cases": 0,
+      "test_files": 0,
+      "doc": true,
+      "sample_files": [
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/System.Windows.Input.Manipulations/SR.g.cs"
+      ]
+    },
+    {
+      "name": "Microsoft.DotNet.Wpf.Linux·System.Xaml",
+      "domain": "wpf-port/src",
+      "path": "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/System.Xaml",
+      "paths": [
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/System.Xaml"
+      ],
+      "src_lines": 344,
+      "files": 1,
+      "cases": 0,
+      "test_files": 0,
+      "doc": true,
+      "sample_files": [
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/System.Xaml/SR.g.cs"
+      ]
+    },
+    {
+      "name": "Microsoft.DotNet.Wpf.Linux·SystemPrinting.ApiCycle",
+      "domain": "wpf-port/src",
+      "path": "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/SystemPrinting.ApiCycle",
+      "paths": [
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/SystemPrinting.ApiCycle"
+      ],
+      "src_lines": 14,
+      "files": 1,
+      "cases": 0,
+      "test_files": 0,
+      "doc": true,
+      "sample_files": [
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/SystemPrinting.ApiCycle/AssemblyInfo.cs"
+      ]
+    },
+    {
+      "name": "Microsoft.DotNet.Wpf.Linux·UIAutomationProvider",
+      "domain": "wpf-port/src",
+      "path": "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/UIAutomationProvider",
+      "paths": [
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/UIAutomationProvider"
+      ],
+      "src_lines": 22,
+      "files": 1,
+      "cases": 0,
+      "test_files": 0,
+      "doc": true,
+      "sample_files": [
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/UIAutomationProvider/SR.g.cs"
+      ]
+    },
+    {
+      "name": "Microsoft.DotNet.Wpf.Linux·UIAutomationTypes",
+      "domain": "wpf-port/src",
+      "path": "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/UIAutomationTypes",
+      "paths": [
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/UIAutomationTypes"
+      ],
+      "src_lines": 204,
+      "files": 2,
+      "cases": 0,
+      "test_files": 0,
+      "doc": true,
+      "sample_files": [
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/UIAutomationTypes/SR.g.cs",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/UIAutomationTypes/UiaCoreTypesApi.Linux.cs"
+      ]
+    },
+    {
+      "name": "Microsoft.DotNet.Wpf.Linux·WindowsBase",
+      "domain": "wpf-port/src",
+      "path": "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/WindowsBase",
+      "paths": [
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/WindowsBase"
+      ],
+      "src_lines": 10301,
+      "files": 10,
+      "cases": 0,
+      "test_files": 0,
+      "doc": true,
+      "sample_files": [
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/WindowsBase/DependencyObject.Linux.cs",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/WindowsBase/Dispatcher.Linux.cs",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/WindowsBase/DispatcherSynchronizationContext.Linux.cs",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/WindowsBase/EffectiveValueEntry.Linux.cs",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/WindowsBase/HwndWrapper.Linux.cs"
+      ]
+    },
+    {
+      "name": "WpfGfx·Commands",
+      "domain": "wpf-port/src",
+      "path": "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/WpfGfx/Commands",
+      "paths": [
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/WpfGfx/Commands"
+      ],
+      "src_lines": 5459,
+      "files": 9,
+      "cases": 0,
+      "test_files": 0,
+      "doc": false,
+      "sample_files": [
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/WpfGfx/Commands/MilBitmapSource.cs",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/WpfGfx/Commands/MilCommandDecoder.cs",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/WpfGfx/Commands/MilCommandDispatcher.cs",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/WpfGfx/Commands/MilCommandEncoder.cs",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/WpfGfx/Commands/MilCommandLayout.cs"
+      ]
+    },
+    {
+      "name": "WpfGfx·Contracts",
+      "domain": "wpf-port/src",
+      "path": "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/WpfGfx/Contracts",
+      "paths": [
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/WpfGfx/Contracts"
+      ],
+      "src_lines": 684,
+      "files": 5,
+      "cases": 0,
+      "test_files": 0,
+      "doc": false,
+      "sample_files": [
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/WpfGfx/Contracts/Interfaces.cs",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/WpfGfx/Contracts/MilCmd.cs",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/WpfGfx/Contracts/MilDrawCommand.cs",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/WpfGfx/Contracts/MilPrimitives.cs",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/WpfGfx/Contracts/MilResourceType.cs"
+      ]
+    },
+    {
+      "name": "WpfGfx·Interop",
+      "domain": "wpf-port/src",
+      "path": "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/WpfGfx/Interop",
+      "paths": [
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/WpfGfx/Interop"
+      ],
+      "src_lines": 11720,
+      "files": 23,
+      "cases": 0,
+      "test_files": 0,
+      "doc": true,
+      "sample_files": [
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/WpfGfx/Interop/AssemblyInfo.cs",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/WpfGfx/Interop/Duce.cs",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/WpfGfx/Interop/GlobalUsings.cs",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/WpfGfx/Interop/HResult.cs",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/WpfGfx/Interop/MilEnums.cs"
+      ]
+    },
+    {
+      "name": "WpfGfx·Rendering",
+      "domain": "wpf-port/src",
+      "path": "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/WpfGfx/Rendering",
+      "paths": [
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/WpfGfx/Rendering"
+      ],
+      "src_lines": 4822,
+      "files": 15,
+      "cases": 0,
+      "test_files": 0,
+      "doc": false,
+      "sample_files": [
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/WpfGfx/Rendering/AssemblyInfo.cs",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/WpfGfx/Rendering/DirtyRegionTracker.cs",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/WpfGfx/Rendering/DrawInstructionCensus.cs",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/WpfGfx/Rendering/GlyphRunCensus.cs",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/WpfGfx/Rendering/MilResourceProvider.cs"
+      ]
+    },
+    {
+      "name": "WpfGfx·Resources",
+      "domain": "wpf-port/src",
+      "path": "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/WpfGfx/Resources",
+      "paths": [
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/WpfGfx/Resources"
+      ],
+      "src_lines": 2057,
+      "files": 6,
+      "cases": 0,
+      "test_files": 0,
+      "doc": false,
+      "sample_files": [
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/WpfGfx/Resources/MilChannel.cs",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/WpfGfx/Resources/MilResourceTable.cs",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/WpfGfx/Resources/MilResources.cs",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/WpfGfx/Resources/MilVisualNode.cs",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/WpfGfx/Resources/TransformProvenance.cs"
+      ]
+    },
+    {
+      "name": "WpfGfx·Text",
+      "domain": "wpf-port/src",
+      "path": "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/WpfGfx/Text",
+      "paths": [
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/WpfGfx/Text"
+      ],
+      "src_lines": 1033,
+      "files": 9,
+      "cases": 0,
+      "test_files": 0,
+      "doc": true,
+      "sample_files": [
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/WpfGfx/Text/AssemblyInfo.cs",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/WpfGfx/Text/FontSet.cs",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/WpfGfx/Text/GlyphFaceCensus.cs",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/WpfGfx/Text/GlyphRunLayout.cs",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/WpfGfx/Text/GlyphRunPainter.cs"
+      ]
+    },
+    {
+      "name": "WpfGfx·Windowing",
+      "domain": "wpf-port/src",
+      "path": "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/WpfGfx/Windowing",
+      "paths": [
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/WpfGfx/Windowing"
+      ],
+      "src_lines": 1685,
+      "files": 6,
+      "cases": 0,
+      "test_files": 0,
+      "doc": false,
+      "sample_files": [
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/WpfGfx/Windowing/WindowEvent.cs",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/WpfGfx/Windowing/X11Display.cs",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/WpfGfx/Windowing/X11Native.cs",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/WpfGfx/Windowing/X11PresentationTarget.cs",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/WpfGfx/Windowing/X11Structs.cs"
+      ]
+    },
+    {
+      "name": "Microsoft.DotNet.Wpf.Linux·a11y",
+      "domain": "wpf-port/src",
+      "path": "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/a11y",
+      "paths": [
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/a11y"
+      ],
+      "src_lines": 893,
+      "files": 3,
+      "cases": 0,
+      "test_files": 0,
+      "doc": true,
+      "sample_files": [
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/a11y/StartupHook.cs",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/a11y/TreeDumper.cs",
+        "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/a11y/Win32ShimCoverage.cs"
+      ]
+    }
+  ],
+  "groups_by_software": {
+    "linux-desktop-perfect": [
+      "40-build·system-drawing-common（散件）",
+      "system-drawing-common·CommonInterop",
+      "System·Drawing（散件）",
+      "Drawing·Design",
+      "Drawing·Drawing2D",
+      "Drawing·Imaging",
+      "Drawing·Internal",
+      "Drawing·Printing",
+      "Drawing·Text",
+      "system-drawing-common·misc（散件）",
+      "misc·GDI",
+      "Microsoft.DotNet.Wpf.Linux·CycleStub.PresentationFramework",
+      "Microsoft.DotNet.Wpf.Linux·CycleStub.PresentationUI",
+      "Microsoft.DotNet.Wpf.Linux·CycleStub.ReachFramework",
+      "DirectWrite·FallbackCriteria",
+      "DirectWrite·FontEntryClosedLoop",
+      "DirectWrite·Probe",
+      "DirectWrite·Provider",
+      "DirectWrite·SystemFontsProbe",
+      "DirectWrite·WicClosedLoop",
+      "DirectWrite·WicSeamProbe",
+      "DirectWrite·WicWriteClosedLoop",
+      "DirectWrite·WiringSmoke",
+      "Microsoft.DotNet.Wpf.Linux·DirectWriteForwarder",
+      "Microsoft.DotNet.Wpf.Linux·PresentationBuildTasks",
+      "Microsoft.DotNet.Wpf.Linux·PresentationCore",
+      "Microsoft.DotNet.Wpf.Linux·PresentationFramework",
+      "Microsoft.DotNet.Wpf.Linux·PresentationFramework.Classic",
+      "Microsoft.DotNet.Wpf.Linux·ReachFramework",
+      "Microsoft.DotNet.Wpf.Linux·ReachFramework.ApiCycle",
+      "Microsoft.DotNet.Wpf.Linux·System.Printing",
+      "Microsoft.DotNet.Wpf.Linux·System.Windows.Controls.Ribbon",
+      "Microsoft.DotNet.Wpf.Linux·System.Windows.Extensions",
+      "Microsoft.DotNet.Wpf.Linux·System.Windows.Input.Manipulations",
+      "Microsoft.DotNet.Wpf.Linux·System.Xaml",
+      "Microsoft.DotNet.Wpf.Linux·SystemPrinting.ApiCycle",
+      "Microsoft.DotNet.Wpf.Linux·UIAutomationProvider",
+      "Microsoft.DotNet.Wpf.Linux·UIAutomationTypes",
+      "Microsoft.DotNet.Wpf.Linux·WindowsBase",
+      "WpfGfx·Commands",
+      "WpfGfx·Contracts",
+      "WpfGfx·Interop",
+      "WpfGfx·Rendering",
+      "WpfGfx·Resources",
+      "WpfGfx·Text",
+      "WpfGfx·Windowing",
+      "Microsoft.DotNet.Wpf.Linux·a11y"
+    ]
+  }
+}

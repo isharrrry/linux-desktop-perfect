@@ -23,8 +23,8 @@
     "界面设计说明": "30-design/设计文档包/界面设计说明.md",
     "README-核心包": "30-design/设计文档包/README-核心包.md",
     "已知坑与降级清单": "70-operate/已知坑清单.md",
-    "本体说明": "本体/本体说明.md",
-    "本体构建记录": "本体/本体构建记录.md",
+    "本体说明": "30-design/ontology/本体说明.md",
+    "本体构建记录": "30-design/ontology/本体构建记录.md",
     "破局思路": "70-operate/破局思路.md",
     "程序化操作清单": "70-operate/启动器/程序化操作清单.md",
     "交付说明": "60-deliver/README.md",
@@ -42,8 +42,8 @@
     "覆盖检查器": "30-design/checks/check-coverage.mjs",
     "自检": "30-design/checks/selftest.mjs",
     "界面图生成器": "30-design/设计文档包/界面图/build-wireframe.mjs",
-    "本体校验器": "本体/本体校验.py",
-    "本体渲染校验器": "本体/渲染校验.mjs"
+    "本体校验器": "30-design/ontology/本体校验.py",
+    "本体渲染校验器": "30-design/ontology/渲染校验.mjs"
   },
   "software": [
     {

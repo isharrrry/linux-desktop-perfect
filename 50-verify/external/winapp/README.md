@@ -6,7 +6,7 @@
 用途：验证本仓的**核心目标** ——
 「把 Windows 上编译好的 WPF 程序集拷过来，用我们构建的 `Microsoft.WindowsDesktop.App` 直接运行」。
 
-## 源项目的形状（与本仓 `samples/` 无关）
+## 源项目的形状（与本仓 `50-verify/samples/` 无关）
 
 - `net10.0-windows` + `UseWPF=true`
 - 一个 `Window`，含 `TextBlock`（`hello-from-windows`）、`Button`（`btn`）、`TextBlock`（`clicks=N`）

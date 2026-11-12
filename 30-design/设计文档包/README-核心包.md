@@ -101,8 +101,8 @@ node 30-design/checks/check-design-ids.mjs   # 编号族定义方 / 引用不悬
 node 30-design/checks/check-coverage.mjs     # REQ→MOD→ACC→TG→SCR 矩阵 / 12 项专有面
 node 30-design/checks/selftest.mjs           # 检查器负向自检
 node 30-design/设计文档包/界面图/build-wireframe.mjs --check   # 结构图与表同步
-python3 本体/本体校验.py                     # 本体 13 条判据 + 重生成模型页
-node 本体/渲染校验.mjs                       # 模型页 14 条断言
+python3 30-design/ontology/本体校验.py                     # 本体 13 条判据 + 重生成模型页
+node 30-design/ontology/渲染校验.mjs                       # 模型页 14 条断言
 ```
 
 **通过标准**：五条文档门禁 `rc=0`，且结构图 `--check` 与两条本体校验全 `rc=0`。出现新的 `ERROR` 先修文档，不要改脚本放宽规则。

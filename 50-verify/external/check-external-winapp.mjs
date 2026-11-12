@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // ACC-031（TG-EXT）：**外部程序集**能否直接运行 —— 本仓的核心目标验收。
 //
-// 为什么单独一条：ACC-001..030 测的全是 samples/ 里本仓自己编的样本。
+// 为什么单独一条：ACC-001..030 测的全是 50-verify/samples/ 里本仓自己编的样本。
 // 「Windows 上编译好的程序拷过来能跑」这件事，之前**零覆盖**。
 // 这里用 50-verify/external/winapp/（真实 Windows 机器上 dotnet build 出来的）当被测对象。
 //

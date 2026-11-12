@@ -23,7 +23,7 @@
 
 交付形态是**一个自包含的 .NET 运行时目录**：`~/.local/share/ldp/dotnet`
 （内含 `shared/Microsoft.WindowsDesktop.App/<版本>/` 的 WPF 程序集与 4 个原生 `.so`），
-以及**七个界面样本**（`samples/`），用来证明界面能在上面跑、且结构可被断言。
+以及**七个界面样本**（`50-verify/samples/`），用来证明界面能在上面跑、且结构可被断言。
 
 ## 2. 装什么（顺序不能变）
 
@@ -156,7 +156,7 @@ source ~/.local/share/ldp/dotnet/env.sh
 export DOTNET_ROOT=$HOME/.local/share/ldp/dotnet
 export DOTNET_ReadyToRun=0
 export WPF_LINUX_WIN32_SHIM=$DOTNET_ROOT/shared/Microsoft.WindowsDesktop.App/*/native/libwpfwin32.so
-dotnet samples/WpfFirstWindow/bin/Release/net10.0/WpfFirstWindow.dll
+dotnet 50-verify/samples/WpfFirstWindow/bin/Release/net10.0/WpfFirstWindow.dll
 ```
 
 需要 X 显示（真桌面或 `Xvfb :N -screen 0 1280x1024x24 &`）。
@@ -198,8 +198,8 @@ node 30-design/checks/check-design-ids.mjs     # 设计 ID 覆盖
 node 30-design/checks/check-coverage.mjs       # 追溯矩阵覆盖
 node 30-design/checks/selftest.mjs             # 判据自检
 node 30-design/设计文档包/界面图/build-wireframe.mjs --check
-python3 本体/本体校验.py && node 本体/渲染校验.mjs
-node samples/gen-samples.mjs --check
+python3 30-design/ontology/本体校验.py && node 30-design/ontology/渲染校验.mjs
+node 50-verify/samples/gen-samples.mjs --check
 node 40-build/appliers/apply.mjs --check
 
 # 【K-007】跑 ACC-012（剪贴板/拖放）前必须先编探针，否则判据会报"缺被测对象：bin/clip-probe"、

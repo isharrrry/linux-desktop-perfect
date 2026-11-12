@@ -1,0 +1,31 @@
+{
+  "screenshot": "50-verify/evidence/sourcetree/st-33-dialog-38074.png",
+  "size": "960x675",
+  "bytes": 38074,
+  "total_colors": 834,
+  "customer_area_colors": 537,
+  "dialog_window": {
+    "id": "0x800012",
+    "geometry": "271x87+505+407",
+    "map_state": "IsViewable",
+    "screenshot": "50-verify/evidence/sourcetree/st-33-dialog-window-2094.png",
+    "bytes": 2094,
+    "colors": 201
+  },
+  "main_window": {
+    "id": "0x800005",
+    "geometry": "960x675+160+112",
+    "note": "本次主窗口为 960x675（非 625x540）"
+  },
+  "patcher": "/tmp/SourceTree.dlg3.dll (tab-activate.cs + MessageBox.Show 纯IL, ST_PATCH_DLG=1)",
+  "logs": [
+    "[DLG] about to show MessageBox"
+  ],
+  "crash": 0,
+  "source": "DISPLAY=:303 xwd -root 全屏后裁主窗口区域(160,112,960x675)",
+  "k_records": [
+    "K-1240",
+    "K-1241"
+  ],
+  "verdict": "PASS"
+}

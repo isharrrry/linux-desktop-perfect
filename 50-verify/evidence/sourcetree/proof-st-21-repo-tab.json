@@ -1,0 +1,57 @@
+{
+  "generated": "2026-11-02T05:20:00+08:00",
+  "file": "50-verify/evidence/sourcetree/st-21-repo-tab-20725.png",
+  "method": "xwd 抓 X11 窗口（WID=8388613），tab-fix.cs 修复后运行",
+  "size_bytes": 20725,
+  "width": 625,
+  "height": 540,
+  "full_colors": 558,
+  "customer_area_colors": 268,
+  "top_colors_customer": [
+    {
+      "rgb": [
+        255,
+        255,
+        255
+      ],
+      "pixels": 220823
+    },
+    {
+      "rgb": [
+        245,
+        245,
+        245
+      ],
+      "pixels": 65061
+    },
+    {
+      "rgb": [
+        92,
+        119,
+        144
+      ],
+      "pixels": 1583
+    },
+    {
+      "rgb": [
+        51,
+        51,
+        51
+      ],
+      "pixels": 1565
+    },
+    {
+      "rgb": [
+        38,
+        143,
+        251
+      ],
+      "pixels": 1070
+    }
+  ],
+  "acceptance": {
+    "bytes_over_20000": true,
+    "colors_over_100": true
+  },
+  "note": "真实界面截图：标题栏蓝 #0747A6 + 橙 logo #FFAB00；客户区含白底、灰(245,245,245)、深灰文字(51,51,51)、蓝控件(38,143,251)"
+}

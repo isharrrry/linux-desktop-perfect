@@ -1,0 +1,26 @@
+{
+  "generated": "2026-11-02T05:25:00+08:00",
+  "file": "50-verify/evidence/sourcetree/st-22-menu-open-19833.png",
+  "method": "组合 patch：tab-fix(DataContext+ReopenTabs) → MenuFix.OpenFirst(IsSubmenuOpen=true) → xwd 抓图",
+  "size_bytes": 19833,
+  "width": 625,
+  "height": 540,
+  "full_colors": 569,
+  "customer_colors": 239,
+  "vs_baseline": {
+    "baseline": "st-21-repo-tab-20725.png",
+    "baseline_colors": 558,
+    "new_colors": 86,
+    "lost_colors": 75,
+    "diff_pixels": 23102,
+    "diff_pct": 6.85
+  },
+  "stdout": [
+    "[MENU] enter",
+    "[MENU] tab-fix done",
+    "[MENU] reopen done",
+    "[MENU] opening MenuItem",
+    "[MENU] done"
+  ],
+  "note": "菜单展开使全图颜色 558→569（+11），差异像素见 diff_pct；19833B 略低于 20000 阈值，客户区 239 色"
+}

@@ -149,7 +149,7 @@ namespace WpfGfx.Linux.Resources
         //
         //   【为什么**不**记 `RenderDiagnostics.RecordNotDrawn`】（**先看判据再动手的那一格**）
         //     `未画种类` 不是纯粹的诊断计数器，它是**一条冻死的验收判据的输入**：
-        //     `samples/WpfTextDemo/MainWindow.xaml:17-20` 的 `Border.Effect = DropShadowEffect`
+        //     `50-verify/samples/WpfTextDemo/MainWindow.xaml:17-20` 的 `Border.Effect = DropShadowEffect`
         //     经上游 `UIElement.cs:2761-2785` → `Visual.cs:1418-1450` → `exports.cs:1877-1884`
         //     **必然**发本命令 ⇒ 记进 `NotDrawn` 会把该样例的 `未画种类` 由 `0` 顶到 `≥1`
         //     ⇒ `run-wpftextdemo.sh:21` 的判据②＋冻死的 `ACCEPTANCE-BASELINE.md` 当场转红。

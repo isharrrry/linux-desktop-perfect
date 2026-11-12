@@ -1,0 +1,26 @@
+{
+  "screenshot": "50-verify/evidence/sourcetree/st-35-repodetails-27500.png",
+  "size": "625x521",
+  "bytes": 27500,
+  "total_colors": 413,
+  "customer_area_colors": 223,
+  "dialog_window": {
+    "id": "0x1000011",
+    "title": "Repository Details",
+    "geometry": "365x521+160+112",
+    "screenshot": "50-verify/evidence/sourcetree/st-35-repodetails-window-12393.png",
+    "bytes": 12393,
+    "colors": 335,
+    "note": "单窗 12393B 与 K-1122 记录的 st-24 完全一致 ⇒ 可复现"
+  },
+  "patcher": "/tmp/SourceTree.repo2.dll (tab-activate.cs + RepoDetailsWindow 纯IL, ST_DLG_TYPE=RepoDetailsWindow)",
+  "constructor": "ctor() 无参",
+  "crash": 0,
+  "source": "DISPLAY=:303 xwd -root 全屏后裁并集(160,112)-(785,633)",
+  "k_records": [
+    "K-1122",
+    "K-1243",
+    "K-1244"
+  ],
+  "verdict": "PASS"
+}

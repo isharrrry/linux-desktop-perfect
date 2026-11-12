@@ -12,7 +12,7 @@ const PROBES = [
 ];
 const missing = PROBES.filter((p) => !p.exists);
 const env = {
-    ...{ format: opts.format || "png", sample_images: exists("samples/WpfImageGallery/images") },
+    ...{ format: opts.format || "png", sample_images: exists("50-verify/samples/WpfImageGallery/images") },
     probes: Object.fromEntries(PROBES.map((p) => [p.path, p.exists ? 'present' : 'missing'])),
 };
 

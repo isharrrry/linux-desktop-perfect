@@ -6,7 +6,7 @@
 //
 // 用法：
 //   node 50-verify/fake/xvfb-session.mjs --self-test
-//   node 50-verify/fake/xvfb-session.mjs --dpi 144 --exec 'dotnet run --project samples/WpfFirstWindow'
+//   node 50-verify/fake/xvfb-session.mjs --dpi 144 --exec 'dotnet run --project 50-verify/samples/WpfFirstWindow'
 //   node 50-verify/fake/xvfb-session.mjs --display :97 --screen 1920x1080x24 --extensions randr,xinput2
 //
 // 已知偏差（必须显式，禁止静默）：

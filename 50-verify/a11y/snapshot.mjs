@@ -306,7 +306,7 @@ if (has('uia')) {
       'SCR-07': ['WinFormsBasics', 'WinFormsBasics'],
     };
     const [sampleDir, sampleTitle] = SCR_SAMPLE[SCR] || SCR_SAMPLE['SCR-01'];
-    const dll = path.resolve(ROOT, `samples/${sampleDir}/bin/Release/net10.0/${sampleDir}.dll`);
+    const dll = path.resolve(ROOT, `50-verify/samples/${sampleDir}/bin/Release/net10.0/${sampleDir}.dll`);
     const out = fs.openSync(path.join(OUT_DIR, 'app-uia.log'), 'w');
     app = spawn(path.join(DOTNET_ROOT, 'dotnet'), [dll, '--scr', SCR], {
       cwd: path.dirname(dll),

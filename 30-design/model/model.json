@@ -237,7 +237,7 @@
     "80-derived",
     "90-archive",
     "30-design/设计文档包/界面图",
-    "本体"
+    "30-design/ontology"
   ],
   "generatedDirs": [
     "40-build/build",

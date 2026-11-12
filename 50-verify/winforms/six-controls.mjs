@@ -23,7 +23,7 @@ const PROBES = [
 ];
 const missing = PROBES.filter((p) => !p.exists);
 const env = {
-    ...{ sample: exists("samples/WinFormsBasics/WinFormsBasics.csproj") },
+    ...{ sample: exists("50-verify/samples/WinFormsBasics/WinFormsBasics.csproj") },
     probes: Object.fromEntries(PROBES.map((p) => [p.path, p.exists ? 'present' : 'missing'])),
 };
 

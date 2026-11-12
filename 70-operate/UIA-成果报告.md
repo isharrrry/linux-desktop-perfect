@@ -4,18 +4,18 @@
 
 | 项 | 结果 | 证据 |
 |---|---|---|
-| **UIA 控件树枚举** | **140 控件 / 30 类** | `sourcetree-shots/proof-uia-tree-140.json` |
-| **几何布局** | **140 条 `{type,w,h}`，全部非零** | `sourcetree-shots/proof-uia-tree-geometry.json` |
+| **UIA 控件树枚举** | **140 控件 / 30 类** | `50-verify/evidence/sourcetree/proof-uia-tree-140.json` |
+| **几何布局** | **140 条 `{type,w,h}`，全部非零** | `50-verify/evidence/sourcetree/proof-uia-tree-geometry.json` |
 | **类别覆盖** | **6 类**（menu 9 / button 8 / text 7 / list 3 / tab 2 / scroll 3）| 同上 |
 | **菜单** | `MenuItem` ×7 | 同上 |
 | **工具栏按钮** | `Button` ×6 + `ToggleButton` ×2 | 同上 |
 | **仓库标签页** | `RepoTabPanel` **919.6×617** | 同上 |
 | **滚动条** | `ScrollViewer` / `ScrollBar` / `ScrollContentPresenter` | 同上 |
-| **布局可视化** | 140 个矩形的 SVG（22283 字节）| `sourcetree-shots/layout-tree.svg` |
-| **PNG 布局图（全量）** | **106 色 / 16139 字节**（1200x1720，140 个控件）| `sourcetree-shots/layout-tree.png` |
-| **PNG 按类对照（6/6 达标）** | menu 64001色/179127B · button 64001色/178911B · text 60001色/167817B · itemspresenter 20001色/56108B · tab 25601色/71420B · scroll 28001色/78371B | `sourcetree-shots/layout-*.png` |
-| **AT-SPI 通路** | `org.a11y.atspi.SourceTree` + 10 控件 | `sourcetree-shots/proof-uia-sourcetree.json` |
-| **AT-SPI frame name（已修复）** | **9/9 为 `'SourceTree'`**（不再空串）| `sourcetree-shots/proof-uia-sourcetree-v2.json` |
+| **布局可视化** | 140 个矩形的 SVG（22283 字节）| `50-verify/evidence/sourcetree/layout-tree.svg` |
+| **PNG 布局图（全量）** | **106 色 / 16139 字节**（1200x1720，140 个控件）| `50-verify/evidence/sourcetree/layout-tree.png` |
+| **PNG 按类对照（6/6 达标）** | menu 64001色/179127B · button 64001色/178911B · text 60001色/167817B · itemspresenter 20001色/56108B · tab 25601色/71420B · scroll 28001色/78371B | `50-verify/evidence/sourcetree/layout-*.png` |
+| **AT-SPI 通路** | `org.a11y.atspi.SourceTree` + 10 控件 | `50-verify/evidence/sourcetree/proof-uia-sourcetree.json` |
+| **AT-SPI frame name（已修复）** | **9/9 为 `'SourceTree'`**（不再空串）| `50-verify/evidence/sourcetree/proof-uia-sourcetree-v2.json` |
 | **shim 可构建 + 可复现** | `./build-shim.sh` ⇒ **783624 字节，md5 `17e6d15d...`（两次一致）** | K-1074 / K-1077 |
 | **可复现性** | 从入库代码重新生成 ⇒ **140 / 280 / 30 一致** | K-1028 |
 
@@ -32,7 +32,7 @@
 
 | 项 | 现状 | 证据 |
 |---|---|---|
-| **像素截图** | **✅ 已达成** | `sourcetree-shots/` 共 **26 张 PNG，其中 17 张 > 20000B**（如 `st-26` 37801B / `st-30` 47080B / `st-31` 36292B）；`xwd -root` + 裁剪法（K-1238）|
+| **像素截图** | **✅ 已达成** | `50-verify/evidence/sourcetree/` 共 **26 张 PNG，其中 17 张 > 20000B**（如 `st-26` 37801B / `st-30` 47080B / `st-31` 36292B）；`xwd -root` + 裁剪法（K-1238）|
 | **截图存证** | **✅ 已达成** | 11 张关键截图均有 `proof-*.json` 像素分析（`st-21`~`st-35`）|
 | **`RenderTargetBitmap`** | **❌ 不可用（确认）** | 构造成功但 `.Render()` 抛 `InvalidCastException`（栈：`MS.Internal.HRESULT.Check` ← `BitmapVisualManager.Render`）⇒ native 层不支持，**K-1308 复验确认** |
 | **`AutomationPeer.GetName()`** | **❌ 仍崩溃** | K-989；但 AT-SPI 侧的 `GetName` 可用（K-1249，返回 `('SourceTree',)`）|

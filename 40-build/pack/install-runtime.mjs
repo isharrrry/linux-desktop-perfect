@@ -69,7 +69,7 @@ if (has('smoke')) {
   // 冒烟：用安装好的根跑一个样本，抓「启动到哪一步」的可复算读数。
   // 会自起 Xvfb（无头会话基线：08 §3.1），并按 install-runtime 生成的启动环境注入
   // DOTNET_ReadyToRun=0（D-005）与 WPF_LINUX_WIN32_SHIM。
-  const sample = path.join(ROOT, 'samples/WpfFirstWindow/bin/Release/net10.0/WpfFirstWindow.dll');
+  const sample = path.join(ROOT, '50-verify/samples/WpfFirstWindow/bin/Release/net10.0/WpfFirstWindow.dll');
   if (!fs.existsSync(sample)) fail('LDP-E-PACK-205', `样本未构建：${path.relative(ROOT, sample)}（先跑 node 50-verify/build/build-sample.mjs）`);
   const shim = path.join(FX, 'libwpfwin32.so');
   const display = `:${90 + Math.floor(Math.random() * 9)}`;

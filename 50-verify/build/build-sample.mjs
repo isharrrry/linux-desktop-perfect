@@ -4,7 +4,7 @@ import { parseArgs, finish, exists, which, runCmd } from '../lib/run.mjs';
 
 const started = Date.now();
 const { opts } = parseArgs();
-const sample = 'samples/WpfFirstWindow/WpfFirstWindow.csproj';
+const sample = '50-verify/samples/WpfFirstWindow/WpfFirstWindow.csproj';
 const wantLog = Boolean(opts.log);
 const acc = wantLog ? 'ACC-002' : 'ACC-001';
 
