@@ -328,6 +328,12 @@ class SourcetreeBoot
         rc |= ReplaceStringsInType(Path.Combine(app, "SourceTree.Dvcs.Hg.dll"), "Mercurial",
             new Dictionary<string, string> { { "hg.exe", "hg" } }, check, log, "hg-all");
         rc |= ForceReturnString(Path.Combine(app, "SourceTree.Dvcs.Hg.dll"), "Mercurial", "get_ExeName", "hg", check, log, "hg-exename-force");
+        // 7) Mercurial 的版本不是执行 `hg --version`：Mercurial::GetVersionString 覆写为
+        //    GetVersionNumber(path) → ApplicationManager.GetVersionFromFile(path)，读的是 PE 文件
+        //    版本资源；Linux 的 shell 包装脚本没有版本资源 ⇒ 返回 null ⇒ 版本兼容判断（
+        //    StartsWith("3"/"4")）必然失败。直接让 GetVersionString 返回常量。
+        rc |= ForceReturnString(Path.Combine(app, "SourceTree.Dvcs.Hg.dll"), "Mercurial", "GetVersionString", "4.9.1", check, log, "hg-version");
+        rc |= ForceReturnString(Path.Combine(app, "SourceTree.Dvcs.Hg.dll"), "Mercurial", "GetVersionNumber", "4.9.1", check, log, "hg-versionnumber");
         foreach (var l in log) Console.WriteLine(l);
         Console.WriteLine(rc == 0 ? "STATUS=OK" : "STATUS=FAIL");
         return rc;
