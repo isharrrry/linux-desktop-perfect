@@ -309,6 +309,76 @@ class SourcetreeBoot
         return 0;
     }
 
+
+    // 8) Dragablz 的 DWM 颜色参数：DragablzColors 的 .cctor 调 GetWindowGlassBrush/
+    //    GetBalancedWindowGlassBrush，二者都 P/Invoke dwmapi.dll!#127
+    //    (DwmGetColorizationParameters)。本仓 shim 只导出 DwmGetColorizationColor，
+    //    序号导入直接 EntryPointNotFoundException，把 .cctor 拖成 TypeInitializationException
+    //    （XamlParseException: StaticExtension）。这两个 brush 只用于窗口玻璃效果，
+    //    在 Linux 上退化为固定色即可：方法体改为 new SolidColorBrush(Color.FromRgb(217,217,217))。
+    static int FixDragablzColors(string path, bool check, List<string> log)
+    {
+        var asm = Load(path);
+        var t = Types(asm).FirstOrDefault(x => x.FullName == "Dragablz.DragablzColors");
+        if (t == null) { log.Add("dragablz: NO_TYPE"); return 4; }
+        var cctor = t.Methods.FirstOrDefault(x => x.Name == ".cctor");
+        var fromRgb = cctor?.HasBody == true
+            ? cctor.Body.Instructions.Select(i => i.Operand).OfType<MethodReference>()
+                .FirstOrDefault(mr => mr.Name == "FromRgb" && mr.DeclaringType.Name == "Color")
+            : null;
+        int need = 0;
+        foreach (var name in new[] { "GetWindowGlassBrush", "GetBalancedWindowGlassBrush" })
+        {
+            var m = t.Methods.FirstOrDefault(x => x.Name == name);
+            if (m == null || !m.HasBody) { log.Add("dragablz-" + name + ": NO_METHOD"); return 4; }
+            bool already = !m.Body.Instructions.Any(i => i.OpCode == OpCodes.Call
+                && i.Operand is MethodReference r0 && r0.Name == "DwmGetColorizationParameters");
+            if (already) { log.Add("dragablz-" + name + ": ALREADY"); continue; }
+            need++;
+            if (check) { log.Add("dragablz-" + name + ": NEEDS"); continue; }
+            var brushCtor = m.Body.Instructions
+                .Where(i => i.OpCode == OpCodes.Newobj && i.Operand is MethodReference)
+                .Select(i => (MethodReference)i.Operand)
+                .FirstOrDefault(mr => mr.Name == ".ctor" && mr.DeclaringType.Name == "SolidColorBrush");
+            if (fromRgb == null || brushCtor == null) { log.Add("dragablz-" + name + ": NO_REF"); return 4; }
+            m.Body = new MethodBody(m);
+            var il = m.Body.GetILProcessor();
+            il.Emit(OpCodes.Ldc_I4, 217);
+            il.Emit(OpCodes.Ldc_I4, 217);
+            il.Emit(OpCodes.Ldc_I4, 217);
+            il.Emit(OpCodes.Call, fromRgb);
+            il.Emit(OpCodes.Newobj, brushCtor);
+            il.Emit(OpCodes.Ret);
+            log.Add("dragablz-" + name + ": PATCHED");
+        }
+        if (need > 0 && !check)
+        {
+            var tmp = path + ".tmp";
+            asm.Write(tmp, new WriterParameters { WriteSymbols = false });
+            File.Move(tmp, path, true);
+        }
+        return 0;
+    }
+
+    // 9) MainWindow_Loaded → SetAppID → WindowsAPICodePack Taskbar SHGetPropertyStoreForWindow：
+    //    COM 接口指针封送在 .NET Core/Linux 不支持（MarshalDirectiveException: parameter #3），
+    //    抛在 Loaded 事件里直接打崩进程。Linux 没有 Windows 任务栏，整个 SetAppID 置 ret。
+    static int RetMethod(string path, string typeName, string methodName, bool check, List<string> log, string label)
+    {
+        var asm = Load(path);
+        var t = Types(asm).FirstOrDefault(x => x.FullName == typeName);
+        var m = t?.Methods.FirstOrDefault(x => x.Name == methodName);
+        if (m == null || !m.HasBody) { log.Add(label + ": NO_METHOD"); return 4; }
+        if (IsRetOnly(m)) { log.Add(label + ": ALREADY"); return 0; }
+        if (check) { log.Add(label + ": NEEDS"); return 0; }
+        ToRet(m);
+        var tmp = path + ".tmp";
+        asm.Write(tmp, new WriterParameters { WriteSymbols = false });
+        File.Move(tmp, path, true);
+        log.Add(label + ": PATCHED");
+        return 0;
+    }
+
     static int Main(string[] argv)
     {
         if (argv.Length < 1) { Console.Error.WriteLine("用法: <appDir> [--check]"); return 2; }
@@ -334,6 +404,8 @@ class SourcetreeBoot
         //    StartsWith("3"/"4")）必然失败。直接让 GetVersionString 返回常量。
         rc |= ForceReturnString(Path.Combine(app, "SourceTree.Dvcs.Hg.dll"), "Mercurial", "GetVersionString", "4.9.1", check, log, "hg-version");
         rc |= ForceReturnString(Path.Combine(app, "SourceTree.Dvcs.Hg.dll"), "Mercurial", "GetVersionNumber", "4.9.1", check, log, "hg-versionnumber");
+        rc |= FixDragablzColors(Path.Combine(app, "Dragablz.dll"), check, log);
+        rc |= RetMethod(Path.Combine(app, "SourceTree.exe"), "SourceTree.MainWindow", "SetAppID", check, log, "setappid");
         foreach (var l in log) Console.WriteLine(l);
         Console.WriteLine(rc == 0 ? "STATUS=OK" : "STATUS=FAIL");
         return rc;
