@@ -31,6 +31,8 @@ check selftest node 30-design/checks/selftest.mjs
 # 团级断言：glob 必须交给 shell 展开（Node 20 不认 `--test` 的 glob，会报 Could not find；
 # Node 22.23 也不接受目录参数）。两种运行时都验证过：node20 与 node22 均 54/54 pass。
 check units    node --test 50-verify/units/*.test.js
+# 闸门覆盖登记（与 CI 的 coverage 步骤保持一致；本脚本只校验前缀清单，不跑覆盖率）
+check gate-coverage bash 50-verify/coverage.sh
 
 check abi-layout cc -fsyntax-only -std=gnu11 -Wall -Wextra -Wno-unused-parameter \
     -I40-build/native-shim/src 40-build/native-shim/tests/abi_layout.c
