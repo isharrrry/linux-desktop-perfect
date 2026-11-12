@@ -1,6 +1,6 @@
 'use strict';
 // 由 50-verify/units/gen-units.mjs 生成，勿手改。
-// 团：Microsoft.DotNet.Wpf.Linux·ReachFramework.ApiCycle
+// 团：Microsoft.DotNet.Wpf.Linux·ReachFramework
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -8,12 +8,15 @@ const path = require('node:path');
 
 const ROOT = path.resolve(__dirname, '..', '..');
 const FILES = [
-  "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/ReachFramework.ApiCycle/AssemblyInfo.cs"
+  "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/ReachFramework/SR.Generated.MSInternal.cs",
+  "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/ReachFramework/SR.Generated.cs",
+  "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/ReachFramework/SR.g.cs",
+  "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/ReachFramework/reapply-patches.py"
 ];
-const MIN_LOC = 4;
-const SYMBOL = "using";
+const MIN_LOC = 369;
+const SYMBOL = "SR";
 
-test("Microsoft.DotNet.Wpf.Linux·ReachFramework.ApiCycle · 静态事实", () => {
+test("Microsoft.DotNet.Wpf.Linux·ReachFramework · 静态事实", () => {
   let loc = 0;
   let biggest = FILES[0];
   let biggestSize = -1;

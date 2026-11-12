@@ -1,6 +1,6 @@
 'use strict';
 // 由 50-verify/units/gen-units.mjs 生成，勿手改。
-// 团：Microsoft.DotNet.Wpf.Linux·System.Windows.Extensions
+// 团：Microsoft.DotNet.Wpf.Linux·System.Windows.Input.Manipulations
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -8,12 +8,12 @@ const path = require('node:path');
 
 const ROOT = path.resolve(__dirname, '..', '..');
 const FILES = [
-  "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/System.Windows.Extensions/System.Windows.Extensions.Linux.cs"
+  "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/System.Windows.Input.Manipulations/SR.g.cs"
 ];
-const MIN_LOC = 178;
-const SYMBOL = "XamlAccessLevel";
+const MIN_LOC = 29;
+const SYMBOL = "SR";
 
-test("Microsoft.DotNet.Wpf.Linux·System.Windows.Extensions · 静态事实", () => {
+test("Microsoft.DotNet.Wpf.Linux·System.Windows.Input.Manipulations · 静态事实", () => {
   let loc = 0;
   let biggest = FILES[0];
   let biggestSize = -1;

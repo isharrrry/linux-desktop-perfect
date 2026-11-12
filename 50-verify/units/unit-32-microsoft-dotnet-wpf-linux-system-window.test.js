@@ -1,6 +1,6 @@
 'use strict';
 // 由 50-verify/units/gen-units.mjs 生成，勿手改。
-// 团：Microsoft.DotNet.Wpf.Linux·System.Windows.Controls.Ribbon
+// 团：Microsoft.DotNet.Wpf.Linux·System.Windows.Extensions
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -8,12 +8,12 @@ const path = require('node:path');
 
 const ROOT = path.resolve(__dirname, '..', '..');
 const FILES = [
-  "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/System.Windows.Controls.Ribbon/SR.Shim.cs"
+  "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/System.Windows.Extensions/System.Windows.Extensions.Linux.cs"
 ];
-const MIN_LOC = 51;
-const SYMBOL = "SR";
+const MIN_LOC = 178;
+const SYMBOL = "XamlAccessLevel";
 
-test("Microsoft.DotNet.Wpf.Linux·System.Windows.Controls.Ribbon · 静态事实", () => {
+test("Microsoft.DotNet.Wpf.Linux·System.Windows.Extensions · 静态事实", () => {
   let loc = 0;
   let biggest = FILES[0];
   let biggestSize = -1;
