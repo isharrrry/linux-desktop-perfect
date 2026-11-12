@@ -160,12 +160,18 @@ try {
 const idxReal = run(GEN_INDEX, ['--check']);
 check('正向（索引表）：仓内索引与矩阵同步 rc=0', idxReal.code === 0, `实际 rc=${idxReal.code}`);
 
-// ---------- 3.8 契约与清单生成物（存在才查，避免半成品仓误红） ----------
+// ---------- 3.8 契约与清单生成物（存在才查；缺本机专属输入时 SKIP，其余照常判 FAIL） ----------
 const contractChecks = [
   ['exports.txt', '50-verify/contract/gen-exports.mjs'],
   ['DUCE-LAYOUT.csv', '50-verify/contract/gen-duce-layout.mjs'],
   ['DLLIMPORT-INVENTORY.json', '50-verify/contract/scan-dllimport.mjs'],
   ['must-stub.json', '50-verify/contract/scan-must-stub.mjs'],
+];
+// 本机专属输入（上游快照不入库、NuGet 缓存不入库）缺失时的报错特征；命中即 SKIP，不算失败
+const ENV_INPUT_MISSING = [
+  /找不到 ref 包清单/,
+  /ENOENT[^\n]*40-build\/upstream/,
+  /ENOENT[^\n]*\.nuget\/packages/,
 ];
 let contractSeen = 0;
 for (const [label, rel] of contractChecks) {
@@ -173,7 +179,16 @@ for (const [label, rel] of contractChecks) {
   if (!fs.existsSync(abs)) continue;
   contractSeen += 1;
   const r = run(abs, ['--check']);
-  check(`契约生成物：${label} 同步 rc=0`, r.code === 0, `实际 rc=${r.code}`);
+  if (r.code === 0) {
+    check(`契约生成物：${label} 同步 rc=0`, true, '实际 rc=0');
+    continue;
+  }
+  const envLine = (r.out || '').split('\n').find((l) => ENV_INPUT_MISSING.some((re) => re.test(l)));
+  if (envLine) {
+    console.log(`SKIP 契约生成物：${label}（缺本机专属输入：${envLine.trim().slice(0, 140)}）`);
+    continue;
+  }
+  check(`契约生成物：${label} 同步 rc=0`, false, `实际 rc=${r.code}`);
 }
 if (!contractSeen) console.log('SKIP 契约生成物尚未落地（B3 未完成）');
 
