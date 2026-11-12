@@ -666,58 +666,6 @@
   },
   {
     "software": "linux-desktop-perfect",
-    "name": "Microsoft.DotNet.Wpf.Linux·PresentationFramework",
-    "domain": "wpf-port/src",
-    "paths": [
-      "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework"
-    ],
-    "files": [
-      "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework/Baml2006SchemaContext.Linux.cs",
-      "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework/ContainerParaClient.Linux.cs",
-      "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework/DeferredTextReference.Linux.cs",
-      "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework/DocumentPageHost.Linux.cs",
-      "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework/DocumentPageView.Linux.cs",
-      "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework/DocumentViewerBase.Linux.cs",
-      "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework/FigureParaClient.Linux.cs",
-      "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework/FlowDocumentFormatter.Linux.cs",
-      "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework/FlowDocumentPage.Linux.cs",
-      "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework/FlowDocumentPaginator.Linux.cs",
-      "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework/FlowDocumentReader.Linux.cs",
-      "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework/FlowDocumentView.Linux.cs",
-      "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework/FrameworkElement.Linux.cs",
-      "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework/IconHelper.Linux.cs",
-      "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework/MessageBox.Linux.cs",
-      "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework/PtsCache.Linux.cs",
-      "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework/PtsDegrade.cs",
-      "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework/PtsHelper.Linux.cs",
-      "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework/PtsPage.Linux.cs",
-      "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework/SR.g.cs",
-      "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework/SystemResources.Linux.cs",
-      "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework/TextBlock.Linux.cs",
-      "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework/TextBox.Linux.cs",
-      "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework/TextBoxBase.Linux.cs",
-      "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework/TextContainer.Linux.cs",
-      "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework/TextEditorTyping.Linux.cs",
-      "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework/TextParaClient.Linux.cs",
-      "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework/Window.Linux.cs",
-      "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework/WpfLinuxChainProbe.Linux.cs",
-      "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework/WpfLinuxCpDcpMapProbe.Linux.cs",
-      "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework/WpfLinuxEHandleProbe.Linux.cs",
-      "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework/WpfLinuxLineBreakProbe.Linux.cs",
-      "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework/WpfLinuxLsSessionProbe.Linux.cs",
-      "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework/WpfLinuxMessageBox.Linux.cs",
-      "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework/WpfLinuxPageVisProbe.Linux.cs",
-      "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework/WpfLinuxReaderPageHost.Linux.cs",
-      "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework/WpfLinuxSplashScreen.Linux.cs",
-      "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework/WpfLinuxTextParaChainProbe.Linux.cs",
-      "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework/WpfLinuxTextSrcProbe.Linux.cs"
-    ],
-    "tests": [
-      "50-verify/units/unit-27-microsoft-dotnet-wpf-linux-presentationf.test.js"
-    ]
-  },
-  {
-    "software": "linux-desktop-perfect",
     "name": "Microsoft.DotNet.Wpf.Linux·PresentationFramework.Classic",
     "domain": "wpf-port/src",
     "paths": [
@@ -727,7 +675,7 @@
       "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework.Classic/reapply-patches.py"
     ],
     "tests": [
-      "50-verify/units/unit-28-microsoft-dotnet-wpf-linux-presentationf.test.js"
+      "50-verify/units/unit-27-microsoft-dotnet-wpf-linux-presentationf.test.js"
     ]
   },
   {
@@ -744,7 +692,7 @@
       "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/ReachFramework/reapply-patches.py"
     ],
     "tests": [
-      "50-verify/units/unit-29-microsoft-dotnet-wpf-linux-reachframewor.test.js"
+      "50-verify/units/unit-28-microsoft-dotnet-wpf-linux-reachframewor.test.js"
     ]
   },
   {
@@ -758,7 +706,7 @@
       "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/ReachFramework.ApiCycle/AssemblyInfo.cs"
     ],
     "tests": [
-      "50-verify/units/unit-30-microsoft-dotnet-wpf-linux-reachframewor.test.js"
+      "50-verify/units/unit-29-microsoft-dotnet-wpf-linux-reachframewor.test.js"
     ]
   },
   {
@@ -773,7 +721,7 @@
       "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/System.Printing/System.Printing.Managed.internals.cs"
     ],
     "tests": [
-      "50-verify/units/unit-31-microsoft-dotnet-wpf-linux-system-printi.test.js"
+      "50-verify/units/unit-30-microsoft-dotnet-wpf-linux-system-printi.test.js"
     ]
   },
   {
@@ -787,7 +735,7 @@
       "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/System.Windows.Controls.Ribbon/SR.Shim.cs"
     ],
     "tests": [
-      "50-verify/units/unit-32-microsoft-dotnet-wpf-linux-system-window.test.js"
+      "50-verify/units/unit-31-microsoft-dotnet-wpf-linux-system-window.test.js"
     ]
   },
   {
@@ -801,7 +749,7 @@
       "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/System.Windows.Extensions/System.Windows.Extensions.Linux.cs"
     ],
     "tests": [
-      "50-verify/units/unit-33-microsoft-dotnet-wpf-linux-system-window.test.js"
+      "50-verify/units/unit-32-microsoft-dotnet-wpf-linux-system-window.test.js"
     ]
   },
   {
@@ -815,7 +763,7 @@
       "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/System.Windows.Input.Manipulations/SR.g.cs"
     ],
     "tests": [
-      "50-verify/units/unit-34-microsoft-dotnet-wpf-linux-system-window.test.js"
+      "50-verify/units/unit-33-microsoft-dotnet-wpf-linux-system-window.test.js"
     ]
   },
   {
@@ -829,7 +777,7 @@
       "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/System.Xaml/SR.g.cs"
     ],
     "tests": [
-      "50-verify/units/unit-35-microsoft-dotnet-wpf-linux-system-xaml.test.js"
+      "50-verify/units/unit-34-microsoft-dotnet-wpf-linux-system-xaml.test.js"
     ]
   },
   {
@@ -843,7 +791,7 @@
       "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/SystemPrinting.ApiCycle/AssemblyInfo.cs"
     ],
     "tests": [
-      "50-verify/units/unit-36-microsoft-dotnet-wpf-linux-systemprintin.test.js"
+      "50-verify/units/unit-35-microsoft-dotnet-wpf-linux-systemprintin.test.js"
     ]
   },
   {
@@ -857,7 +805,7 @@
       "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/UIAutomationProvider/SR.g.cs"
     ],
     "tests": [
-      "50-verify/units/unit-37-microsoft-dotnet-wpf-linux-uiautomationp.test.js"
+      "50-verify/units/unit-36-microsoft-dotnet-wpf-linux-uiautomationp.test.js"
     ]
   },
   {
@@ -872,7 +820,7 @@
       "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/UIAutomationTypes/UiaCoreTypesApi.Linux.cs"
     ],
     "tests": [
-      "50-verify/units/unit-38-microsoft-dotnet-wpf-linux-uiautomationt.test.js"
+      "50-verify/units/unit-37-microsoft-dotnet-wpf-linux-uiautomationt.test.js"
     ]
   },
   {
@@ -895,7 +843,7 @@
       "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/WindowsBase/reapply-patches.py"
     ],
     "tests": [
-      "50-verify/units/unit-39-microsoft-dotnet-wpf-linux-windowsbase.test.js"
+      "50-verify/units/unit-38-microsoft-dotnet-wpf-linux-windowsbase.test.js"
     ]
   },
   {
@@ -917,7 +865,7 @@
       "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/WpfGfx/Commands/MilVisualTransformDiag.cs"
     ],
     "tests": [
-      "50-verify/units/unit-40-wpfgfx-commands.test.js"
+      "50-verify/units/unit-39-wpfgfx-commands.test.js"
     ]
   },
   {
@@ -935,7 +883,7 @@
       "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/WpfGfx/Contracts/MilResourceType.cs"
     ],
     "tests": [
-      "50-verify/units/unit-41-wpfgfx-contracts.test.js"
+      "50-verify/units/unit-40-wpfgfx-contracts.test.js"
     ]
   },
   {
@@ -971,7 +919,7 @@
       "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/WpfGfx/Interop/Win32UiFont.cs"
     ],
     "tests": [
-      "50-verify/units/unit-42-wpfgfx-interop.test.js"
+      "50-verify/units/unit-41-wpfgfx-interop.test.js"
     ]
   },
   {
@@ -999,7 +947,7 @@
       "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/WpfGfx/Rendering/VisualBrushSource.cs"
     ],
     "tests": [
-      "50-verify/units/unit-43-wpfgfx-rendering.test.js"
+      "50-verify/units/unit-42-wpfgfx-rendering.test.js"
     ]
   },
   {
@@ -1018,7 +966,7 @@
       "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/WpfGfx/Resources/VisualProjection.cs"
     ],
     "tests": [
-      "50-verify/units/unit-44-wpfgfx-resources.test.js"
+      "50-verify/units/unit-43-wpfgfx-resources.test.js"
     ]
   },
   {
@@ -1040,7 +988,7 @@
       "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/WpfGfx/Text/TextRenderer.cs"
     ],
     "tests": [
-      "50-verify/units/unit-45-wpfgfx-text.test.js"
+      "50-verify/units/unit-44-wpfgfx-text.test.js"
     ]
   },
   {
@@ -1059,7 +1007,7 @@
       "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/WpfGfx/Windowing/X11Window.cs"
     ],
     "tests": [
-      "50-verify/units/unit-46-wpfgfx-windowing.test.js"
+      "50-verify/units/unit-45-wpfgfx-windowing.test.js"
     ]
   },
   {
@@ -1075,7 +1023,263 @@
       "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/a11y/Win32ShimCoverage.cs"
     ],
     "tests": [
-      "50-verify/units/unit-47-microsoft-dotnet-wpf-linux-a11y.test.js"
+      "50-verify/units/unit-46-microsoft-dotnet-wpf-linux-a11y.test.js"
+    ]
+  },
+  {
+    "software": "linux-desktop-perfect",
+    "name": "Microsoft.DotNet.Wpf.Linux·PresentationFramework·文档与分页",
+    "domain": "wpf-port/src",
+    "paths": [
+      "wpf-port/src"
+    ],
+    "files": [
+      "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework/ContainerParaClient.Linux.cs",
+      "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework/DeferredTextReference.Linux.cs",
+      "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework/DocumentPageHost.Linux.cs",
+      "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework/DocumentPageView.Linux.cs",
+      "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework/DocumentViewerBase.Linux.cs",
+      "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework/FigureParaClient.Linux.cs",
+      "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework/FlowDocumentFormatter.Linux.cs",
+      "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework/FlowDocumentPage.Linux.cs",
+      "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework/FlowDocumentPaginator.Linux.cs",
+      "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework/FlowDocumentReader.Linux.cs",
+      "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework/FlowDocumentView.Linux.cs",
+      "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework/PtsCache.Linux.cs",
+      "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework/PtsDegrade.cs",
+      "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework/PtsHelper.Linux.cs",
+      "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework/PtsPage.Linux.cs"
+    ],
+    "tests": [
+      "50-verify/units/unit-47-microsoft-dotnet-wpf-linux-presentationf.test.js"
+    ]
+  },
+  {
+    "software": "linux-desktop-perfect",
+    "name": "Microsoft.DotNet.Wpf.Linux·PresentationFramework·文本",
+    "domain": "wpf-port/src",
+    "paths": [
+      "wpf-port/src"
+    ],
+    "files": [
+      "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework/TextBlock.Linux.cs",
+      "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework/TextBox.Linux.cs",
+      "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework/TextBoxBase.Linux.cs",
+      "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework/TextContainer.Linux.cs",
+      "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework/TextEditorTyping.Linux.cs",
+      "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework/TextParaClient.Linux.cs"
+    ],
+    "tests": [
+      "50-verify/units/unit-48-microsoft-dotnet-wpf-linux-presentationf.test.js"
+    ]
+  },
+  {
+    "software": "linux-desktop-perfect",
+    "name": "Microsoft.DotNet.Wpf.Linux·PresentationFramework·探针",
+    "domain": "wpf-port/src",
+    "paths": [
+      "wpf-port/src"
+    ],
+    "files": [
+      "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework/WpfLinuxChainProbe.Linux.cs",
+      "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework/WpfLinuxCpDcpMapProbe.Linux.cs",
+      "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework/WpfLinuxEHandleProbe.Linux.cs",
+      "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework/WpfLinuxLineBreakProbe.Linux.cs",
+      "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework/WpfLinuxLsSessionProbe.Linux.cs",
+      "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework/WpfLinuxPageVisProbe.Linux.cs",
+      "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework/WpfLinuxTextParaChainProbe.Linux.cs",
+      "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework/WpfLinuxTextSrcProbe.Linux.cs"
+    ],
+    "tests": [
+      "50-verify/units/unit-49-microsoft-dotnet-wpf-linux-presentationf.test.js"
+    ]
+  },
+  {
+    "software": "linux-desktop-perfect",
+    "name": "Microsoft.DotNet.Wpf.Linux·PresentationFramework·窗口与构建",
+    "domain": "wpf-port/src",
+    "paths": [
+      "wpf-port/src"
+    ],
+    "files": [
+      "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework/Baml2006SchemaContext.Linux.cs",
+      "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework/FrameworkElement.Linux.cs",
+      "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework/IconHelper.Linux.cs",
+      "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework/MessageBox.Linux.cs",
+      "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework/SR.g.cs",
+      "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework/SystemResources.Linux.cs",
+      "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework/Window.Linux.cs",
+      "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework/WpfLinuxMessageBox.Linux.cs",
+      "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework/WpfLinuxReaderPageHost.Linux.cs",
+      "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationFramework/WpfLinuxSplashScreen.Linux.cs"
+    ],
+    "tests": [
+      "50-verify/units/unit-50-microsoft-dotnet-wpf-linux-presentationf.test.js"
+    ]
+  },
+  {
+    "software": "linux-desktop-perfect",
+    "name": "native-shim·核心与图形",
+    "domain": "native-shim/src",
+    "paths": [
+      "native-shim/src"
+    ],
+    "files": [
+      "40-build/native-shim/src/milqi_shim.c",
+      "40-build/native-shim/src/win32_abi.h",
+      "40-build/native-shim/src/win32_com_misc.c",
+      "40-build/native-shim/src/win32_core.c",
+      "40-build/native-shim/src/win32_gdi_dc.c",
+      "40-build/native-shim/src/win32_gdi_dc.h",
+      "40-build/native-shim/src/win32_gdi_text.c",
+      "40-build/native-shim/src/win32_gdip_render.c",
+      "40-build/native-shim/src/win32_gdiplus.c",
+      "40-build/native-shim/src/win32_internal.h",
+      "40-build/native-shim/src/win32_kernel32.c",
+      "40-build/native-shim/src/win32_misc.c",
+      "40-build/native-shim/src/win32_misc_ext.c",
+      "40-build/native-shim/src/win32_msg.c",
+      "40-build/native-shim/src/win32_oem.c",
+      "40-build/native-shim/src/win32_penimc.c",
+      "40-build/native-shim/src/win32_unicode_tables.c",
+      "40-build/native-shim/src/win32_user32x.c",
+      "40-build/native-shim/src/win32_x11.c"
+    ],
+    "tests": [
+      "50-verify/units/unit-51-native-shim.test.js"
+    ]
+  },
+  {
+    "software": "linux-desktop-perfect",
+    "name": "native-shim·系统集成",
+    "domain": "native-shim/src",
+    "paths": [
+      "native-shim/src"
+    ],
+    "files": [
+      "40-build/native-shim/src/win32_atspi.c",
+      "40-build/native-shim/src/win32_classification.c",
+      "40-build/native-shim/src/win32_clipboard.c",
+      "40-build/native-shim/src/win32_comstr.c",
+      "40-build/native-shim/src/win32_drm_stub.c",
+      "40-build/native-shim/src/win32_exports.c",
+      "40-build/native-shim/src/win32_ibus.c",
+      "40-build/native-shim/src/win32_imm.c",
+      "40-build/native-shim/src/win32_imm.h",
+      "40-build/native-shim/src/win32_isf.c",
+      "40-build/native-shim/src/win32_mmio.c",
+      "40-build/native-shim/src/win32_ole32.c",
+      "40-build/native-shim/src/win32_print_ext.c",
+      "40-build/native-shim/src/win32_psapi_dwm.c",
+      "40-build/native-shim/src/win32_pt.c",
+      "40-build/native-shim/src/win32_pts.c",
+      "40-build/native-shim/src/win32_shell32_ext.c",
+      "40-build/native-shim/src/win32_shlwapi_ext.c",
+      "40-build/native-shim/src/win32_unimpl_b.c",
+      "40-build/native-shim/src/win32_urlmon_ext.c",
+      "40-build/native-shim/src/win32_uxtheme.c",
+      "40-build/native-shim/src/win32_winforms_extra.c",
+      "40-build/native-shim/src/win32_winspool.c"
+    ],
+    "tests": [
+      "50-verify/units/unit-52-native-shim.test.js"
+    ]
+  },
+  {
+    "software": "linux-desktop-perfect",
+    "name": "milcore·渲染与命令",
+    "domain": "milcore",
+    "paths": [
+      "milcore"
+    ],
+    "files": [
+      "40-build/milcore/Commands/MilBitmapSource.cs",
+      "40-build/milcore/Commands/MilCommandDecoder.cs",
+      "40-build/milcore/Commands/MilCommandDispatcher.cs",
+      "40-build/milcore/Commands/MilCommandEncoder.cs",
+      "40-build/milcore/Commands/MilCommandLayout.cs",
+      "40-build/milcore/Commands/MilCommandStructs.cs",
+      "40-build/milcore/Commands/MilRenderData.cs",
+      "40-build/milcore/Commands/MilResource3D.cs",
+      "40-build/milcore/Commands/MilVisualTransformDiag.cs",
+      "40-build/milcore/Rendering/AssemblyInfo.cs",
+      "40-build/milcore/Rendering/DrawInstructionCensus.cs",
+      "40-build/milcore/Rendering/GlyphRunCensus.cs",
+      "40-build/milcore/Rendering/MilResourceProvider.cs",
+      "40-build/milcore/Rendering/PathGeometryParser.cs",
+      "40-build/milcore/Rendering/RenderDiagnostics.cs",
+      "40-build/milcore/Rendering/SkiaBrush.cs",
+      "40-build/milcore/Rendering/SkiaColor.cs",
+      "40-build/milcore/Rendering/SkiaEffect.cs",
+      "40-build/milcore/Rendering/SkiaGeometry.cs",
+      "40-build/milcore/Rendering/SkiaPen.cs",
+      "40-build/milcore/Rendering/SkiaRenderBackend.cs",
+      "40-build/milcore/Rendering/VisualBrushSource.cs"
+    ],
+    "tests": [
+      "50-verify/units/unit-53-milcore.test.js"
+    ]
+  },
+  {
+    "software": "linux-desktop-perfect",
+    "name": "milcore·Interop 与文本资源",
+    "domain": "milcore",
+    "paths": [
+      "milcore"
+    ],
+    "files": [
+      "40-build/milcore/Contracts/Interfaces.cs",
+      "40-build/milcore/Contracts/MilCmd.cs",
+      "40-build/milcore/Contracts/MilDrawCommand.cs",
+      "40-build/milcore/Contracts/MilPrimitives.cs",
+      "40-build/milcore/Contracts/MilResourceType.cs",
+      "40-build/milcore/Interop/AssemblyInfo.cs",
+      "40-build/milcore/Interop/Duce.cs",
+      "40-build/milcore/Interop/GlobalUsings.cs",
+      "40-build/milcore/Interop/HResult.cs",
+      "40-build/milcore/Interop/MilEnums.cs",
+      "40-build/milcore/Interop/MilExportTypes.cs",
+      "40-build/milcore/Interop/MilGeometryEngine.cs",
+      "40-build/milcore/Interop/MilHandleTables.cs",
+      "40-build/milcore/Interop/MilNative.Exports.cs",
+      "40-build/milcore/Interop/MilNative.FontFace.cs",
+      "40-build/milcore/Interop/MilNative.Geometry.cs",
+      "40-build/milcore/Interop/MilNative.Glyph.cs",
+      "40-build/milcore/Interop/MilNative.Media.cs",
+      "40-build/milcore/Interop/MilNative.Misc.cs",
+      "40-build/milcore/Interop/MilNative.NotificationWindow.cs",
+      "40-build/milcore/Interop/MilNative.Offscreen.cs",
+      "40-build/milcore/Interop/MilNative.Window.cs",
+      "40-build/milcore/Interop/MilNative.cs",
+      "40-build/milcore/Interop/MilPresentProbe.cs",
+      "40-build/milcore/Interop/MilPresentation.cs",
+      "40-build/milcore/Interop/MilValueTypes.cs",
+      "40-build/milcore/Interop/SkiaFontFileCache.cs",
+      "40-build/milcore/Interop/Win32UiFont.cs",
+      "40-build/milcore/Resources/MilChannel.cs",
+      "40-build/milcore/Resources/MilResourceTable.cs",
+      "40-build/milcore/Resources/MilResources.cs",
+      "40-build/milcore/Resources/MilVisualNode.cs",
+      "40-build/milcore/Resources/TransformProvenance.cs",
+      "40-build/milcore/Resources/VisualProjection.cs",
+      "40-build/milcore/Text/AssemblyInfo.cs",
+      "40-build/milcore/Text/FontSet.cs",
+      "40-build/milcore/Text/GlyphFaceCensus.cs",
+      "40-build/milcore/Text/GlyphRunLayout.cs",
+      "40-build/milcore/Text/GlyphRunPainter.cs",
+      "40-build/milcore/Text/GlyphRunRequest.cs",
+      "40-build/milcore/Text/MilGlyphRunAdapter.cs",
+      "40-build/milcore/Text/TextFontDescription.cs",
+      "40-build/milcore/Text/TextRenderer.cs",
+      "40-build/milcore/Windowing/WindowEvent.cs",
+      "40-build/milcore/Windowing/X11Display.cs",
+      "40-build/milcore/Windowing/X11Native.cs",
+      "40-build/milcore/Windowing/X11PresentationTarget.cs",
+      "40-build/milcore/Windowing/X11Structs.cs",
+      "40-build/milcore/Windowing/X11Window.cs"
+    ],
+    "tests": [
+      "50-verify/units/unit-54-milcore-interop.test.js"
     ]
   }
 ]
