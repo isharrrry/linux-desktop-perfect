@@ -1,0 +1,219 @@
+{
+  "40-build·system-drawing-common（散件）": [
+    "ACC-003",
+    "ACC-018",
+    "ACC-031"
+  ],
+  "system-drawing-common·CommonInterop": [
+    "ACC-012",
+    "ACC-029"
+  ],
+  "System·Drawing（散件）": [
+    "ACC-018",
+    "ACC-006"
+  ],
+  "Drawing·Design": [
+    "ACC-020",
+    "ACC-021"
+  ],
+  "Drawing·Drawing2D": [
+    "ACC-006",
+    "ACC-007"
+  ],
+  "Drawing·Imaging": [
+    "ACC-018",
+    "ACC-019"
+  ],
+  "Drawing·Internal": [
+    "ACC-029",
+    "ACC-030"
+  ],
+  "Drawing·Printing": [
+    "ACC-024",
+    "ACC-025"
+  ],
+  "Drawing·Text": [
+    "ACC-013",
+    "ACC-014",
+    "ACC-016"
+  ],
+  "system-drawing-common·misc（散件）": [
+    "ACC-029",
+    "ACC-030"
+  ],
+  "misc·GDI": [
+    "ACC-009",
+    "ACC-010"
+  ],
+  "Microsoft.DotNet.Wpf.Linux·CycleStub.PresentationFramework": [
+    "ACC-001",
+    "ACC-002",
+    "ACC-004",
+    "ACC-005"
+  ],
+  "Microsoft.DotNet.Wpf.Linux·CycleStub.PresentationUI": [
+    "ACC-001",
+    "ACC-002"
+  ],
+  "Microsoft.DotNet.Wpf.Linux·CycleStub.ReachFramework": [
+    "ACC-001",
+    "ACC-002"
+  ],
+  "DirectWrite·FallbackCriteria": [
+    "ACC-013",
+    "ACC-014"
+  ],
+  "DirectWrite·FontEntryClosedLoop": [
+    "ACC-013",
+    "ACC-016"
+  ],
+  "DirectWrite·Probe": [
+    "ACC-013"
+  ],
+  "DirectWrite·Provider": [
+    "ACC-013",
+    "ACC-014",
+    "ACC-016"
+  ],
+  "DirectWrite·SystemFontsProbe": [
+    "ACC-013"
+  ],
+  "DirectWrite·WicClosedLoop": [
+    "ACC-018",
+    "ACC-019"
+  ],
+  "DirectWrite·WicSeamProbe": [
+    "ACC-018"
+  ],
+  "DirectWrite·WicWriteClosedLoop": [
+    "ACC-018",
+    "ACC-019"
+  ],
+  "DirectWrite·WiringSmoke": [
+    "ACC-013",
+    "ACC-014"
+  ],
+  "Microsoft.DotNet.Wpf.Linux·DirectWriteForwarder": [
+    "ACC-013",
+    "ACC-014",
+    "ACC-016"
+  ],
+  "Microsoft.DotNet.Wpf.Linux·PresentationBuildTasks": [
+    "ACC-001",
+    "ACC-002"
+  ],
+  "Microsoft.DotNet.Wpf.Linux·PresentationCore": [
+    "ACC-006",
+    "ACC-007",
+    "ACC-009"
+  ],
+  "Microsoft.DotNet.Wpf.Linux·PresentationFramework.Classic": [
+    "ACC-020"
+  ],
+  "Microsoft.DotNet.Wpf.Linux·ReachFramework": [
+    "ACC-024",
+    "ACC-025"
+  ],
+  "Microsoft.DotNet.Wpf.Linux·ReachFramework.ApiCycle": [
+    "ACC-024"
+  ],
+  "Microsoft.DotNet.Wpf.Linux·System.Printing": [
+    "ACC-024"
+  ],
+  "Microsoft.DotNet.Wpf.Linux·System.Windows.Controls.Ribbon": [
+    "ACC-021"
+  ],
+  "Microsoft.DotNet.Wpf.Linux·System.Windows.Extensions": [
+    "ACC-027"
+  ],
+  "Microsoft.DotNet.Wpf.Linux·System.Windows.Input.Manipulations": [
+    "ACC-010"
+  ],
+  "Microsoft.DotNet.Wpf.Linux·System.Xaml": [
+    "ACC-001",
+    "ACC-002"
+  ],
+  "Microsoft.DotNet.Wpf.Linux·SystemPrinting.ApiCycle": [
+    "ACC-024"
+  ],
+  "Microsoft.DotNet.Wpf.Linux·UIAutomationProvider": [
+    "ACC-027"
+  ],
+  "Microsoft.DotNet.Wpf.Linux·UIAutomationTypes": [
+    "ACC-027"
+  ],
+  "Microsoft.DotNet.Wpf.Linux·WindowsBase": [
+    "ACC-009",
+    "ACC-011"
+  ],
+  "WpfGfx·Commands": [
+    "ACC-006",
+    "ACC-030"
+  ],
+  "WpfGfx·Contracts": [
+    "ACC-029"
+  ],
+  "WpfGfx·Interop": [
+    "ACC-029",
+    "ACC-012"
+  ],
+  "WpfGfx·Rendering": [
+    "ACC-007",
+    "ACC-008",
+    "ACC-026"
+  ],
+  "WpfGfx·Resources": [
+    "ACC-018",
+    "ACC-020"
+  ],
+  "WpfGfx·Text": [
+    "ACC-014",
+    "ACC-016"
+  ],
+  "WpfGfx·Windowing": [
+    "ACC-009",
+    "ACC-011",
+    "ACC-026"
+  ],
+  "Microsoft.DotNet.Wpf.Linux·a11y": [
+    "ACC-027"
+  ],
+  "Microsoft.DotNet.Wpf.Linux·PresentationFramework·文档与分页": [
+    "ACC-015",
+    "ACC-025"
+  ],
+  "Microsoft.DotNet.Wpf.Linux·PresentationFramework·文本": [
+    "ACC-014",
+    "ACC-013"
+  ],
+  "Microsoft.DotNet.Wpf.Linux·PresentationFramework·探针": [
+    "ACC-007",
+    "ACC-008"
+  ],
+  "Microsoft.DotNet.Wpf.Linux·PresentationFramework·窗口与构建": [
+    "ACC-009",
+    "ACC-011"
+  ],
+  "native-shim·核心与图形": [
+    "ACC-006",
+    "ACC-009",
+    "ACC-012",
+    "ACC-018"
+  ],
+  "native-shim·系统集成": [
+    "ACC-017",
+    "ACC-022",
+    "ACC-023",
+    "ACC-024",
+    "ACC-028"
+  ],
+  "milcore·渲染与命令": [
+    "ACC-006",
+    "ACC-007"
+  ],
+  "milcore·Interop 与文本资源": [
+    "ACC-014",
+    "ACC-018",
+    "ACC-029"
+  ]
+}
