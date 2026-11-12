@@ -72,3 +72,11 @@ test("Microsoft.DotNet.Wpf.Linux·PresentationFramework·文档与分页 · ACC 
   }
   console.log('ACC 锚定：' + withReading + '/' + Object.keys(ACC_CMDS).length + ' 条有本机读数');
 });
+
+test("Microsoft.DotNet.Wpf.Linux·PresentationFramework·文档与分页 · 闸门覆盖", () => {
+  const sh = fs.readFileSync(path.join(ROOT, '50-verify/coverage.sh'), 'utf8');
+  const prefixes = [...sh.matchAll(/'([\w.]+)\*'/g)].map((m) => m[1]);
+  assert.ok(prefixes.length > 0, 'coverage.sh 无包前缀');
+  const hit = FILES.filter((rel) => rel.split('/').slice(0, -1).some((d) => prefixes.some((p) => d.startsWith(p))));
+  assert.ok(hit.length > 0, '团内无文件落在 coverage.sh 前缀下');
+});

@@ -1,11 +1,13 @@
 #!/usr/bin/env node
-// 由 54 团校准配置生成「每团 2 条用例」：
+// 由 54 团校准配置生成「每团 3 条用例」：
 //   ① 静态事实断言（文件清单未漂移 / 非空 / 行数下界 / 代表文件含真实符号）
 //   ② ACC 判据锚定断言（该团关联的 ACC 在索引里有命令、命令脚本存在且语法可过、
 //      08 文档有该 ACC、若本机有读数则校验 acc/verdict 字段；读数缺失打印 SKIP 不判失败）
+//   ③ 闸门覆盖/入库断言（A 档：团内至少 1 个文件的祖先目录名匹配 50-verify/coverage.sh 的 PKGS 前缀；
+//      B 档兜底：团内全部文件出现在 `git ls-files` 里，防未跟踪文件混入）
 // 用法: node 50-verify/units/gen-units.mjs
 // 产物: 50-verify/units/unit-XX-<slug>.test.js（CommonJS，node:test）
-// 口径: kit 的 count_cases 只认 .js 里的 `test(`，不认 .mjs；每文件恰好 2 处 ⇒ cases=2。
+// 口径: kit 的 count_cases 只认 .js 里的 `test(`，不认 .mjs；每文件恰好 3 处 ⇒ cases=3。
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -17,6 +19,10 @@ const OUT = path.join(ROOT, '50-verify/units');
 
 const groups = JSON.parse(fs.readFileSync(CAL, 'utf8'));
 const accMap = JSON.parse(fs.readFileSync(ACCMAP, 'utf8'));
+// 闸门覆盖前缀（唯一事实源：coverage.sh；运行时断言会重新解析，改前缀会让对应用例变红）
+const COVERAGE = path.join(ROOT, '50-verify/coverage.sh');
+const PREFIXES = [...fs.readFileSync(COVERAGE, 'utf8').matchAll(/'([\w.]+)\*'/g)].map((m) => m[1]);
+if (!PREFIXES.length) throw new Error('coverage.sh 里没抓到任何包前缀');
 
 // 从索引生成器里抓 ACC → 单行命令（唯一事实源，不复制命令）
 const idxSrc = fs.readFileSync(IDX, 'utf8');
@@ -54,6 +60,8 @@ const accUse = {};
 
 groups.forEach((g, i) => {
   const files = [...new Set(g.files)].sort();
+  const covered = files.some((rel) =>
+    rel.split('/').slice(0, -1).some((d) => PREFIXES.some((p) => d.startsWith(p))));
   const abs = files.map((f) => path.join(ROOT, f));
   const sizes = abs.map((p) => fs.statSync(p).size);
   const loc = abs.reduce((n, p) => n + fs.readFileSync(p, 'utf8').split('\n').length, 0);
@@ -74,6 +82,20 @@ groups.forEach((g, i) => {
   reused.push(slug);
 
   const testFile = `${slug}.test.js`;
+  const third = covered
+    ? `test(${JSON.stringify(`${g.name} · 闸门覆盖`)}, () => {
+  const sh = fs.readFileSync(path.join(ROOT, '50-verify/coverage.sh'), 'utf8');
+  const prefixes = [...sh.matchAll(/'([\\w.]+)\\*'/g)].map((m) => m[1]);
+  assert.ok(prefixes.length > 0, 'coverage.sh 无包前缀');
+  const hit = FILES.filter((rel) => rel.split('/').slice(0, -1).some((d) => prefixes.some((p) => d.startsWith(p))));
+  assert.ok(hit.length > 0, '团内无文件落在 coverage.sh 前缀下');
+});`
+    : `test(${JSON.stringify(`${g.name} · 文件全部入库`)}, () => {
+  const out = execFileSync('git', ['-c', 'core.quotepath=false', 'ls-files', '-z'],
+    { cwd: ROOT, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
+  const tracked = new Set(out.split('\\0').filter(Boolean));
+  for (const rel of FILES) assert.ok(tracked.has(rel), '未跟踪文件：' + rel);
+});`;
   const body = `'use strict';
 // 由 50-verify/units/gen-units.mjs 生成，勿手改。
 // 团：${g.name}
@@ -129,6 +151,8 @@ test(${JSON.stringify(`${g.name} · ACC 判据锚定`)}, () => {
   }
   console.log('ACC 锚定：' + withReading + '/' + Object.keys(ACC_CMDS).length + ' 条有本机读数');
 });
+
+${third}
 `;
   fs.writeFileSync(path.join(OUT, testFile), body);
   g.tests = [`50-verify/units/${testFile}`];
@@ -136,6 +160,6 @@ test(${JSON.stringify(`${g.name} · ACC 判据锚定`)}, () => {
 });
 
 fs.writeFileSync(CAL, JSON.stringify(groups, null, 2) + '\n');
-console.log('generated ' + rows.length + ' unit tests (2 cases each) -> ' + path.relative(ROOT, OUT));
+console.log('generated ' + rows.length + ' unit tests (3 cases each) -> ' + path.relative(ROOT, OUT));
 console.log('updated ' + path.relative(ROOT, CAL) + ' (tests filled: ' + groups.filter((g) => g.tests.length).length + '/' + groups.length + ')');
 console.log('ACC distinct: ' + Object.keys(accUse).length + ', min groups per ACC: ' + Math.min(...Object.values(accUse)));

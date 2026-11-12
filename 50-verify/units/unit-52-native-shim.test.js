@@ -83,3 +83,10 @@ test("native-shim·系统集成 · ACC 判据锚定", () => {
   }
   console.log('ACC 锚定：' + withReading + '/' + Object.keys(ACC_CMDS).length + ' 条有本机读数');
 });
+
+test("native-shim·系统集成 · 文件全部入库", () => {
+  const out = execFileSync('git', ['-c', 'core.quotepath=false', 'ls-files', '-z'],
+    { cwd: ROOT, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
+  const tracked = new Set(out.split('\0').filter(Boolean));
+  for (const rel of FILES) assert.ok(tracked.has(rel), '未跟踪文件：' + rel);
+});

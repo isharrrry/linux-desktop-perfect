@@ -866,6 +866,9 @@
     ],
     "tests": [
       "50-verify/units/unit-39-wpfgfx-commands.test.js"
+    ],
+    "doc": [
+      "wpfgfx"
     ]
   },
   {
@@ -884,6 +887,9 @@
     ],
     "tests": [
       "50-verify/units/unit-40-wpfgfx-contracts.test.js"
+    ],
+    "doc": [
+      "wpfgfx"
     ]
   },
   {
@@ -920,6 +926,9 @@
     ],
     "tests": [
       "50-verify/units/unit-41-wpfgfx-interop.test.js"
+    ],
+    "doc": [
+      "wpfgfx"
     ]
   },
   {
@@ -948,6 +957,9 @@
     ],
     "tests": [
       "50-verify/units/unit-42-wpfgfx-rendering.test.js"
+    ],
+    "doc": [
+      "wpfgfx"
     ]
   },
   {
@@ -967,6 +979,9 @@
     ],
     "tests": [
       "50-verify/units/unit-43-wpfgfx-resources.test.js"
+    ],
+    "doc": [
+      "wpfgfx"
     ]
   },
   {
@@ -989,6 +1004,9 @@
     ],
     "tests": [
       "50-verify/units/unit-44-wpfgfx-text.test.js"
+    ],
+    "doc": [
+      "wpfgfx"
     ]
   },
   {
@@ -1008,6 +1026,9 @@
     ],
     "tests": [
       "50-verify/units/unit-45-wpfgfx-windowing.test.js"
+    ],
+    "doc": [
+      "wpfgfx"
     ]
   },
   {
