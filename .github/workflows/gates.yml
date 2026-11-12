@@ -22,10 +22,13 @@ jobs:
           node-version: '20'
       - name: 文档门禁 + C ABI 断言
         run: bash 50-verify/gates.sh
+      - name: 覆盖率闸门登记（coverage；不是行覆盖率，口径见脚本头）
+        run: bash 50-verify/coverage.sh
 
 # ---- 登记：本仓全部 csproj（kit 的 build_registry 分母，按同一 glob 生成，共 263 条）----
-# 说明：其中大部分位于 40-build/upstream（上游只读快照，CI checkout 后不存在），
-# 清单如实反映本地文件系统口径，不用 git ls-files 过滤。
+# 口径 2026-11-12 变更：评估改为排除 40-build/upstream，故 kit 的分母现为 64 条
+# （= 本文件中所有非 upstream 路径的命中数）。下面清单保留全量以兼容旧口径读数，
+# 多出的 upstream 条目在新口径下不计入分母，也不代表它们被 CI 校验。
 # 40-build/appliers/commit-minreq/commit-minreq.csproj
 # 40-build/appliers/commit-noconfirm/commit-noconfirm.csproj
 # 40-build/appliers/dw-fontstrip/dw-fontstrip.csproj
