@@ -28,6 +28,8 @@ check links    node 30-design/checks/check-links.mjs
 check package  node 30-design/checks/check-package.mjs
 check coverage node 30-design/checks/check-coverage.mjs
 check selftest node 30-design/checks/selftest.mjs
+# 团级断言：必须用 glob，不要传目录（Node 22.23 会把目录当模块而 fail）
+check units    node --test "50-verify/units/*.test.js"
 
 check abi-layout cc -fsyntax-only -std=gnu11 -Wall -Wextra -Wno-unused-parameter \
     -I40-build/native-shim/src 40-build/native-shim/tests/abi_layout.c
