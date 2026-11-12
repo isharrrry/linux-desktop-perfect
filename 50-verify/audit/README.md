@@ -9,6 +9,7 @@
 | 2026-11-12T0930 | **59.3** | 70.0 / 59.0 / 52.2 | [ASSESSMENT-linux-desktop-perfect.md](2026-11-12T0930/ASSESSMENT-linux-desktop-perfect.md) | 目录规整 + Issue 模板 + CI 门禁登记 + 关键路径文档；构建登记 0→1.0、文档 5/6、贡献 1.0；R4 仍触发 |
 | 2026-11-12T0935 | **60.8** | 70.0 / 59.0 / 55.6 | [SUMMARY.md](2026-11-12T0935/SUMMARY.md) | 新增 `CHANGELOG.md`（未发布段）：`doc_completeness` 5/6→6/6，+1.5；R4 仍触发 |
 | 2026-11-12T0937 | **64.4** | 82.0 / 59.0 / 55.6 | [SUMMARY.md](2026-11-12T0937/SUMMARY.md) | 47 团各 1 条机读断言：`weighted_completion` 0.5→0.7，+3.6（静态事实断言，形态对齐，见报告披露）；`gates.sh` 增 `units` 项 |
+| 2026-11-12T0951 | **64.4** | 82.0 / 59.0 / 55.6 | [SUMMARY.md](2026-11-12T0951/SUMMARY.md) | 0 增量：团 47→54（native-shim/milcore/PF 拆团）+ GitHub CI 转绿（run 43137279585）；两处根因与 K-1496 |
 
 ## 历史与证据中的旧路径
 
