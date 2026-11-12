@@ -254,6 +254,61 @@ class SourcetreeBoot
         return 0;
     }
 
+    // 9) 对某个类型的**全部方法**做 ldstr 替换（不知道具体方法名时用）
+    static int ReplaceStringsInType(string path, string typeName, Dictionary<string, string> map,
+        bool check, List<string> log, string tag)
+    {
+        var asm = Load(path);
+        var t = Types(asm).FirstOrDefault(x => x.Name == typeName);
+        if (t == null) { log.Add(tag + ": NO_TYPE"); return 4; }
+        int need = 0;
+        foreach (var m in t.Methods)
+        {
+            if (!m.HasBody) continue;
+            foreach (var ins in m.Body.Instructions)
+                if (ins.OpCode == OpCodes.Ldstr && map.ContainsKey((string)ins.Operand)) need++;
+        }
+        if (need == 0) { log.Add(tag + ": ALREADY"); return 0; }
+        if (check) { log.Add(tag + ": NEEDS " + need); return 0; }
+        foreach (var m in t.Methods)
+        {
+            if (!m.HasBody) continue;
+            foreach (var ins in m.Body.Instructions)
+                if (ins.OpCode == OpCodes.Ldstr && map.ContainsKey((string)ins.Operand)) ins.Operand = map[(string)ins.Operand];
+        }
+        var tmp = path + ".tmp";
+        asm.Write(tmp, new WriterParameters { WriteSymbols = false });
+        asm.Dispose();
+        File.Move(tmp, path, true);
+        log.Add(tag + ": PATCHED " + need);
+        return 0;
+    }
+
+    // 10) 把无参取字符串方法整体替换为 `ldstr <value>; ret`（ExeName 由字段/基类算出时用）
+    static int ForceReturnString(string path, string typeName, string methodName, string value,
+        bool check, List<string> log, string tag)
+    {
+        var asm = Load(path);
+        var t = Types(asm).FirstOrDefault(x => x.Name == typeName);
+        var m = t?.Methods.FirstOrDefault(x => x.Name == methodName);
+        if (m == null || !m.HasBody) { log.Add(tag + ": NO_METHOD"); return 4; }
+        if (m.Body.Instructions.Count == 2 && m.Body.Instructions[0].OpCode == OpCodes.Ldstr
+            && (string)m.Body.Instructions[0].Operand == value) { log.Add(tag + ": ALREADY"); return 0; }
+        if (check) { log.Add(tag + ": NEEDS"); return 0; }
+        m.Body.Instructions.Clear();
+        m.Body.Variables.Clear();
+        m.Body.ExceptionHandlers.Clear();
+        var il = m.Body.GetILProcessor();
+        il.Append(il.Create(OpCodes.Ldstr, value));
+        il.Append(il.Create(OpCodes.Ret));
+        var tmp = path + ".tmp";
+        asm.Write(tmp, new WriterParameters { WriteSymbols = false });
+        asm.Dispose();
+        File.Move(tmp, path, true);
+        log.Add(tag + ": PATCHED");
+        return 0;
+    }
+
     static int Main(string[] argv)
     {
         if (argv.Length < 1) { Console.Error.WriteLine("用法: <appDir> [--check]"); return 2; }
@@ -270,6 +325,9 @@ class SourcetreeBoot
         rc |= FixGitVersionRegex(Path.Combine(app, "SourceTree.Dvcs.Git.dll"), check, log);
         rc |= ReplaceStrings(Path.Combine(app, "SourceTree.Dvcs.Hg.dll"), "Mercurial", "get_ExeName",
             new Dictionary<string, string> { { "hg.exe", "hg" } }, check, log, "hg-exename");
+        rc |= ReplaceStringsInType(Path.Combine(app, "SourceTree.Dvcs.Hg.dll"), "Mercurial",
+            new Dictionary<string, string> { { "hg.exe", "hg" } }, check, log, "hg-all");
+        rc |= ForceReturnString(Path.Combine(app, "SourceTree.Dvcs.Hg.dll"), "Mercurial", "get_ExeName", "hg", check, log, "hg-exename-force");
         foreach (var l in log) Console.WriteLine(l);
         Console.WriteLine(rc == 0 ? "STATUS=OK" : "STATUS=FAIL");
         return rc;
