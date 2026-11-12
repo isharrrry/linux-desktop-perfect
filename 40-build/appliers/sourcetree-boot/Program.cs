@@ -194,6 +194,66 @@ class SourcetreeBoot
         return 0;
     }
 
+
+    // 7) Git 版本兼容正则的 Windows 假设：`Git::GetVersionString` 返回的是 git 的**完整输出**
+    //    （实测 `git version 2.34.1`），而 `CompatibilityVersion` 正则要求以版本号开头，
+    //    `GitVersionTwoConfiguration` 还要求 `2.x.y.<windows|msysgit|gvfs|vfs>` 四段。
+    //    两边都不满足 ⇒ `GetInstallationConfigurationsFromExe` 的版本过滤结果为空（第 4 关），
+    //    `CurrentInstallationConfiguration` 为 null，`AppRoot.DoWindowStartupTasks` NRE。
+    //    修法：放宽为 `^[^0-9]*<major>\.<minor>\.<patch>.*`（允许非数字前缀、后缀可选）。
+    static int FixGitVersionRegex(string path, bool check, List<string> log)
+    {
+        var asm = Load(path);
+        var targets = Types(asm)
+            .Where(t => t.Name.Contains("Version") && t.Name.EndsWith("Configuration"))
+            .Select(t => t.Methods.FirstOrDefault(m => m.Name == "get_CompatibilityVersion"))
+            .Where(m => m != null && m.HasBody)
+            .ToList();
+        if (targets.Count == 0) { log.Add("git-verregex: NO_METHOD"); return 4; }
+        int need = 0;
+        foreach (var m in targets)
+        {
+            var ld = m.Body.Instructions.FirstOrDefault(i => i.OpCode == OpCodes.Ldstr && ((string)i.Operand).StartsWith("^"));
+            if (ld == null) continue;
+            var cur = (string)ld.Operand;
+            if (cur.StartsWith("^[^0-9]*")) continue;   // 已 patch
+            var major = cur.StartsWith("^2") ? "2" : "1";
+            var want = "^[^0-9]*" + major + "\\.[0-9]+\\.[0-9]+.*";
+            if (cur == want) continue;
+            need++;
+            if (!check) ld.Operand = want;
+        }
+        if (need == 0) { log.Add("git-verregex: ALREADY"); return 0; }
+        if (check) { log.Add("git-verregex: NEEDS " + need); return 0; }
+        var tmp = path + ".tmp";
+        asm.Write(tmp, new WriterParameters { WriteSymbols = false });
+        asm.Dispose();
+        File.Move(tmp, path, true);
+        log.Add("git-verregex: PATCHED " + need);
+        return 0;
+    }
+
+
+    // 8) 本机无 hg：`Mercurial::DetermineAvailability`（void）置 ret —— 不做 Windows 式 Install、
+    //    不建 RepoHandlerHg（`GetHandler().CheckConfig()` 在无 hg 时也会抛）。Git 已有合法配置，
+    //    `AppRoot.DoWindowStartupTasks` 不再因「所有 DVCS 的 CurrentInstallationConfiguration 全 null」而 NRE。
+    static int FixHgDetect(string path, bool check, List<string> log)
+    {
+        var asm = Load(path);
+        var t = Types(asm).FirstOrDefault(x => x.Name == "Mercurial");
+        var m = t?.Methods.FirstOrDefault(x => x.Name == "DetermineAvailability");
+        if (m == null || !m.HasBody) { log.Add("hg-detect: NO_METHOD"); return 4; }
+        if (IsRetOnly(m)) { log.Add("hg-detect: ALREADY"); return 0; }
+        if (check) { log.Add("hg-detect: NEEDS"); return 0; }
+        ToRet(m);
+        var tmp = path + ".tmp";
+        asm.Write(tmp, new WriterParameters { WriteSymbols = false });
+        asm.Dispose();
+        File.Move(tmp, path, true);
+        log.Add("hg-detect: PATCHED");
+        return 0;
+    }
+
     static int Main(string[] argv)
     {
         if (argv.Length < 1) { Console.Error.WriteLine("用法: <appDir> [--check]"); return 2; }
@@ -207,6 +267,9 @@ class SourcetreeBoot
         rc |= FixOnboard(Path.Combine(app, "SourceTree.exe"), check, log);
         rc |= FixGitLookup(Path.Combine(app, "SourceTree.Dvcs.Git.dll"),
                            Path.Combine(app, "SourceTree.Api.Dvcs.dll"), check, log);
+        rc |= FixGitVersionRegex(Path.Combine(app, "SourceTree.Dvcs.Git.dll"), check, log);
+        rc |= ReplaceStrings(Path.Combine(app, "SourceTree.Dvcs.Hg.dll"), "Mercurial", "get_ExeName",
+            new Dictionary<string, string> { { "hg.exe", "hg" } }, check, log, "hg-exename");
         foreach (var l in log) Console.WriteLine(l);
         Console.WriteLine(rc == 0 ? "STATUS=OK" : "STATUS=FAIL");
         return rc;
