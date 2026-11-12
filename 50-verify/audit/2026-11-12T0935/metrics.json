@@ -1,0 +1,555 @@
+{
+  "commits": 1740,
+  "first": 1793356460,
+  "last": 1794447141,
+  "silence_days": 0,
+  "tags": [],
+  "branches": [
+    "main",
+    "origin/main"
+  ],
+  "src_lines": 0,
+  "test_lines": 0,
+  "tests": 0,
+  "fix_total": 137,
+  "fix_prod": 59,
+  "fix_by_how": {
+    "prefix": 137,
+    "subject": 0,
+    "issue-ref": 0
+  },
+  "fix_closure": 0.0,
+  "reopen_l1": 0.7288,
+  "regression_l1": 0.0,
+  "file_events": 75,
+  "reopen_l2_cross": 0.36,
+  "guard_ratio": 0.0064,
+  "guard_commits": 2,
+  "touch_commits": 311,
+  "authors": {
+    "the50w": 1740
+  },
+  "recent_authors": [
+    "the50w"
+  ],
+  "author_merged": {
+    "top_domain": "foxmail.com",
+    "top_share": 1.0,
+    "domains": 1
+  },
+  "doc_present": {
+    "README": true,
+    "LICENSE": true,
+    "CONTRIBUTING": true,
+    "ISSUE_TEMPLATE": true,
+    "CHANGELOG": true,
+    ".gitignore": true
+  },
+  "doc_hits": 6,
+  "tracked_commits": 1740,
+  "szz_lines": 203,
+  "szz_defective": 35,
+  "defective_fix_rate": 0.1724,
+  "szz_age_median": 0.0,
+  "szz_age_p90": 0.5,
+  "szz_pairs": [
+    {
+      "intro": 1793369163,
+      "fix": 1793377209,
+      "defective": false
+    },
+    {
+      "intro": 1793376518,
+      "fix": 1793377209,
+      "defective": false
+    },
+    {
+      "intro": 1793374424,
+      "fix": 1793377209,
+      "defective": false
+    },
+    {
+      "intro": 1793376926,
+      "fix": 1793377209,
+      "defective": false
+    },
+    {
+      "intro": 1793369163,
+      "fix": 1793377488,
+      "defective": false
+    },
+    {
+      "intro": 1793377209,
+      "fix": 1793377488,
+      "defective": true
+    },
+    {
+      "intro": 1793374424,
+      "fix": 1793377488,
+      "defective": false
+    },
+    {
+      "intro": 1793369163,
+      "fix": 1793377740,
+      "defective": false
+    },
+    {
+      "intro": 1793377488,
+      "fix": 1793377740,
+      "defective": true
+    },
+    {
+      "intro": 1793374424,
+      "fix": 1793377740,
+      "defective": false
+    },
+    {
+      "intro": 1793377740,
+      "fix": 1793377994,
+      "defective": true
+    },
+    {
+      "intro": 1793374424,
+      "fix": 1793377994,
+      "defective": false
+    },
+    {
+      "intro": 1793369163,
+      "fix": 1793378222,
+      "defective": false
+    },
+    {
+      "intro": 1793377994,
+      "fix": 1793378222,
+      "defective": true
+    },
+    {
+      "intro": 1793379191,
+      "fix": 1793379336,
+      "defective": false
+    },
+    {
+      "intro": 1793379191,
+      "fix": 1793379493,
+      "defective": false
+    },
+    {
+      "intro": 1793379336,
+      "fix": 1793379493,
+      "defective": true
+    },
+    {
+      "intro": 1793369163,
+      "fix": 1793381161,
+      "defective": false
+    },
+    {
+      "intro": 1793380847,
+      "fix": 1793381161,
+      "defective": true
+    },
+    {
+      "intro": 1793369163,
+      "fix": 1793382499,
+      "defective": false
+    },
+    {
+      "intro": 1793383788,
+      "fix": 1793384063,
+      "defective": false
+    },
+    {
+      "intro": 1793369163,
+      "fix": 1793384063,
+      "defective": false
+    },
+    {
+      "intro": 1793382598,
+      "fix": 1793384394,
+      "defective": false
+    },
+    {
+      "intro": 1793384201,
+      "fix": 1793384394,
+      "defective": false
+    },
+    {
+      "intro": 1793385173,
+      "fix": 1793385301,
+      "defective": false
+    },
+    {
+      "intro": 1793384743,
+      "fix": 1793385301,
+      "defective": false
+    },
+    {
+      "intro": 1793369163,
+      "fix": 1793391529,
+      "defective": false
+    },
+    {
+      "intro": 1793391348,
+      "fix": 1793391529,
+      "defective": false
+    },
+    {
+      "intro": 1793391956,
+      "fix": 1793392181,
+      "defective": false
+    },
+    {
+      "intro": 1793392091,
+      "fix": 1793392181,
+      "defective": false
+    },
+    {
+      "intro": 1793394550,
+      "fix": 1793395000,
+      "defective": false
+    },
+    {
+      "intro": 1793394662,
+      "fix": 1793395000,
+      "defective": false
+    },
+    {
+      "intro": 1793375635,
+      "fix": 1793396811,
+      "defective": false
+    },
+    {
+      "intro": 1793396695,
+      "fix": 1793396811,
+      "defective": true
+    },
+    {
+      "intro": 1793381427,
+      "fix": 1793406542,
+      "defective": false
+    },
+    {
+      "intro": 1793392726,
+      "fix": 1793406542,
+      "defective": false
+    },
+    {
+      "intro": 1793395504,
+      "fix": 1793406542,
+      "defective": false
+    },
+    {
+      "intro": 1793369163,
+      "fix": 1793406542,
+      "defective": false
+    },
+    {
+      "intro": 1793397786,
+      "fix": 1793406542,
+      "defective": false
+    },
+    {
+      "intro": 1793369163,
+      "fix": 1793407438,
+      "defective": false
+    },
+    {
+      "intro": 1793369163,
+      "fix": 1793408700,
+      "defective": false
+    },
+    {
+      "intro": 1793369163,
+      "fix": 1793408915,
+      "defective": false
+    },
+    {
+      "intro": 1793369163,
+      "fix": 1793409793,
+      "defective": false
+    },
+    {
+      "intro": 1793369163,
+      "fix": 1793413730,
+      "defective": false
+    },
+    {
+      "intro": 1793369163,
+      "fix": 1793414227,
+      "defective": false
+    },
+    {
+      "intro": 1793387378,
+      "fix": 1793414227,
+      "defective": true
+    },
+    {
+      "intro": 1793372524,
+      "fix": 1793414227,
+      "defective": false
+    },
+    {
+      "intro": 1793386937,
+      "fix": 1793414227,
+      "defective": false
+    },
+    {
+      "intro": 1793387135,
+      "fix": 1793414227,
+      "defective": false
+    },
+    {
+      "intro": 1793369163,
+      "fix": 1793414354,
+      "defective": false
+    },
+    {
+      "intro": 1793414227,
+      "fix": 1793414354,
+      "defective": true
+    },
+    {
+      "intro": 1793372524,
+      "fix": 1793414354,
+      "defective": false
+    },
+    {
+      "intro": 1793373631,
+      "fix": 1793415064,
+      "defective": false
+    },
+    {
+      "intro": 1793408278,
+      "fix": 1793415064,
+      "defective": false
+    },
+    {
+      "intro": 1793407942,
+      "fix": 1793415064,
+      "defective": false
+    },
+    {
+      "intro": 1793369163,
+      "fix": 1793415064,
+      "defective": false
+    },
+    {
+      "intro": 1793396271,
+      "fix": 1793415064,
+      "defective": false
+    },
+    {
+      "intro": 1793413252,
+      "fix": 1793415064,
+      "defective": false
+    },
+    {
+      "intro": 1793415064,
+      "fix": 1793415897,
+      "defective": true
+    },
+    {
+      "intro": 1793375635,
+      "fix": 1793423426,
+      "defective": false
+    },
+    {
+      "intro": 1793369163,
+      "fix": 1793426379,
+      "defective": false
+    },
+    {
+      "intro": 1793442694,
+      "fix": 1793443306,
+      "defective": false
+    },
+    {
+      "intro": 1793443201,
+      "fix": 1793443441,
+      "defective": false
+    },
+    {
+      "intro": 1793444413,
+      "fix": 1793444508,
+      "defective": false
+    },
+    {
+      "intro": 1793445272,
+      "fix": 1793445362,
+      "defective": false
+    },
+    {
+      "intro": 1793380228,
+      "fix": 1793445362,
+      "defective": false
+    },
+    {
+      "intro": 1793430953,
+      "fix": 1793449791,
+      "defective": false
+    },
+    {
+      "intro": 1793369163,
+      "fix": 1793449791,
+      "defective": false
+    },
+    {
+      "intro": 1793452383,
+      "fix": 1793452637,
+      "defective": true
+    },
+    {
+      "intro": 1793464616,
+      "fix": 1793464770,
+      "defective": false
+    },
+    {
+      "intro": 1793442509,
+      "fix": 1793464770,
+      "defective": false
+    },
+    {
+      "intro": 1793465848,
+      "fix": 1793466113,
+      "defective": true
+    },
+    {
+      "intro": 1793465926,
+      "fix": 1793466113,
+      "defective": true
+    },
+    {
+      "intro": 1793492756,
+      "fix": 1793493957,
+      "defective": false
+    }
+  ],
+  "cfr": 0.0017,
+  "monthly": {
+    "2026-10": {
+      "commits": 370,
+      "fixes": 77
+    },
+    "2026-11": {
+      "commits": 1370,
+      "fixes": 60
+    }
+  },
+  "build_registry_ratio": 1.0,
+  "gated_line_ratio": null,
+  "gated_prefixes": [],
+  "release_ready": 0.0,
+  "contribution_path": 1.0,
+  "version": null,
+  "latest_tag": null,
+  "changelog_aligned": false,
+  "tag_version_aligned": false,
+  "severity_distribution": {
+    "3": 3,
+    "2": 127,
+    "1": 7
+  },
+  "weighted_closed": 270,
+  "net_quality_delta": 109.0,
+  "net_quality_delta_30d": 109.0,
+  "defect_curve": [
+    {
+      "month": "2026-10",
+      "introduced": 73,
+      "fixed": 73,
+      "gap": 0
+    },
+    {
+      "month": "2026-11",
+      "introduced": 74,
+      "fixed": 74,
+      "gap": 0
+    }
+  ],
+  "poisson": {
+    "lambda": 10.172,
+    "k_observed": 35,
+    "p_value": 0.0
+  },
+  "hotspots": [
+    {
+      "group": "40-build·system-drawing-common（散件）",
+      "path": "system-drawing-common/src",
+      "fan_in": 0,
+      "churn": 0,
+      "cases": 0,
+      "lines": 31,
+      "score": 2.0
+    },
+    {
+      "group": "system-drawing-common·CommonInterop",
+      "path": "system-drawing-common/src",
+      "fan_in": 0,
+      "churn": 0,
+      "cases": 0,
+      "lines": 613,
+      "score": 2.0
+    },
+    {
+      "group": "System·Drawing（散件）",
+      "path": "system-drawing-common/src",
+      "fan_in": 0,
+      "churn": 0,
+      "cases": 0,
+      "lines": 24228,
+      "score": 2.0
+    },
+    {
+      "group": "Drawing·Design",
+      "path": "system-drawing-common/src",
+      "fan_in": 0,
+      "churn": 0,
+      "cases": 0,
+      "lines": 48,
+      "score": 2.0
+    },
+    {
+      "group": "Drawing·Drawing2D",
+      "path": "system-drawing-common/src",
+      "fan_in": 0,
+      "churn": 0,
+      "cases": 0,
+      "lines": 4128,
+      "score": 2.0
+    },
+    {
+      "group": "Drawing·Imaging",
+      "path": "system-drawing-common/src",
+      "fan_in": 0,
+      "churn": 0,
+      "cases": 0,
+      "lines": 5541,
+      "score": 2.0
+    },
+    {
+      "group": "Drawing·Internal",
+      "path": "system-drawing-common/src",
+      "fan_in": 0,
+      "churn": 0,
+      "cases": 0,
+      "lines": 413,
+      "score": 2.0
+    },
+    {
+      "group": "Drawing·Printing",
+      "path": "system-drawing-common/src",
+      "fan_in": 0,
+      "churn": 0,
+      "cases": 0,
+      "lines": 7904,
+      "score": 2.0
+    }
+  ],
+  "escape_rate": 0.0,
+  "dre": 1.0,
+  "coverage": {
+    "files": 0,
+    "avg_line_rate": null
+  },
+  "rtm_three_way": 0.0
+}

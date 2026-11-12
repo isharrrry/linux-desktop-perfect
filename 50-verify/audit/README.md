@@ -7,6 +7,7 @@
 | 2026-11-12T0919 | 42.6 | 30.0 / 59.0 / 42.2 | [ASSESSMENT-linux-desktop-perfect.md](2026-11-12T0919/ASSESSMENT-linux-desktop-perfect.md) | 迁移前基线；本目录原为仓根 `audit_out/`；未发布（tag=0），触发 R4/R6/R8 |
 | 2026-11-12T0927 | 47.0 | 30.0 / 59.0 / 52.0 | [SUMMARY.md](2026-11-12T0927/SUMMARY.md) | 目录规整（0 增量）+ Issue 模板（`doc_completeness` 4/6→5/6、`contribution_path` 0.5→1.0，+4.5）；未发布 |
 | 2026-11-12T0930 | **59.3** | 70.0 / 59.0 / 52.2 | [ASSESSMENT-linux-desktop-perfect.md](2026-11-12T0930/ASSESSMENT-linux-desktop-perfect.md) | 目录规整 + Issue 模板 + CI 门禁登记 + 关键路径文档；构建登记 0→1.0、文档 5/6、贡献 1.0；R4 仍触发 |
+| 2026-11-12T0935 | **60.8** | 70.0 / 59.0 / 55.6 | [SUMMARY.md](2026-11-12T0935/SUMMARY.md) | 新增 `CHANGELOG.md`（未发布段）：`doc_completeness` 5/6→6/6，+1.5；R4 仍触发 |
 
 ## 历史与证据中的旧路径
 
