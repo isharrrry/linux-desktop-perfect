@@ -1,0 +1,42 @@
+{
+  "linux-desktop-perfect": {
+    "score": 68.9,
+    "completion": 0.7,
+    "effective_weight": 76.0,
+    "layers": {
+      "completion": {
+        "score": 26.3,
+        "max": 30.0,
+        "pct": 87.6
+      },
+      "quality": {
+        "score": 9.4,
+        "max": 16.0,
+        "pct": 59.0
+      },
+      "shell": {
+        "score": 16.7,
+        "max": 30.0,
+        "pct": 55.6
+      }
+    },
+    "scores100": {
+      "weighted_completion": 70.0,
+      "gated_line_ratio": 98.8,
+      "build_registry_ratio": 100.0,
+      "defect_density": null,
+      "fix_closure_rate": null,
+      "reopen_proxy": 18.0,
+      "regression_proxy": 100.0,
+      "test_strength": null,
+      "release_ready": 0.0,
+      "doc_completeness": 100.0,
+      "contribution_path": 100.0,
+      "silence_days": 100.0,
+      "bus_factor": 33.3
+    },
+    "triggers": [
+      "R4 当前版本未发布 / 版本三处不一致"
+    ]
+  }
+}
