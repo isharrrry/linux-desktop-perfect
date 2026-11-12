@@ -134,6 +134,24 @@ class SourcetreeBoot
         return 0;
     }
 
+    // 5) 跳过首启向导，直接创建主窗口：
+    //    AppRoot.OnStartup 先调 OnboardIfRequired()（里面对话框式跑欢迎向导），随后无条件
+    //    创建 MainWindow 并 Show。把 OnboardIfRequired 整体替换为 ret，等价于「已完成引导」，
+    //    仍保留 OnStartup 的 MainWindow 创建路径，不改向导类本身（K-1498）。
+    static int FixOnboard(string path, bool check, List<string> log)
+    {
+        var asm = Load(path);
+        var t = Types(asm).FirstOrDefault(x => x.Name == "AppRoot");
+        var m = t?.Methods.FirstOrDefault(x => x.Name == "OnboardIfRequired");
+        if (m == null || !m.HasBody) { log.Add("onboard: NO_METHOD"); return 4; }
+        if (IsRetOnly(m)) { log.Add("onboard: ALREADY"); return 0; }
+        if (check) { log.Add("onboard: NEEDS"); return 0; }
+        ToRet(m);
+        asm.Write(path, new WriterParameters { WriteSymbols = false });
+        log.Add("onboard: PATCHED");
+        return 0;
+    }
+
     static int Main(string[] argv)
     {
         if (argv.Length < 1) { Console.Error.WriteLine("用法: <appDir> [--check]"); return 2; }
@@ -144,6 +162,7 @@ class SourcetreeBoot
         rc |= FixVsmef(Path.Combine(app, "Sourcetree.Composition.VSMef.Net48.dll"), check, log);
         rc |= FixApi(Path.Combine(app, "SourceTree.Api.dll"), check, log);
         rc |= FixExe(Path.Combine(app, "SourceTree.exe"), check, log);
+        rc |= FixOnboard(Path.Combine(app, "SourceTree.exe"), check, log);
         foreach (var l in log) Console.WriteLine(l);
         Console.WriteLine(rc == 0 ? "STATUS=OK" : "STATUS=FAIL");
         return rc;
