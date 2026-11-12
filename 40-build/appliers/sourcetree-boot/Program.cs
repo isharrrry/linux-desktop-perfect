@@ -137,7 +137,7 @@ class SourcetreeBoot
     // 5) 跳过首启向导，直接创建主窗口：
     //    AppRoot.OnStartup 先调 OnboardIfRequired()（里面对话框式跑欢迎向导），随后无条件
     //    创建 MainWindow 并 Show。把 OnboardIfRequired 整体替换为 ret，等价于「已完成引导」，
-    //    仍保留 OnStartup 的 MainWindow 创建路径，不改向导类本身（K-1498）。
+    //    仍保留 OnStartup 的 MainWindow 创建路径，不改向导类本身。
     static int FixOnboard(string path, bool check, List<string> log)
     {
         var asm = Load(path);
@@ -152,6 +152,48 @@ class SourcetreeBoot
         return 0;
     }
 
+    // 6) Git 安装探测的 Windows 假设：ExeName = "git.exe"、PATH 搜索用 `where`。
+    //    Linux 上命令叫 git、查找命令叫 which。只替换字符串常量，不改控制流。
+    //    注：改完实测 `which git` 已能返回 /usr/bin/git 且 `/usr/bin/git --version` 成功（git 2.34.1），
+    //    但仍有下游 `FileHelper.GetFileName` 的 `\\` 假设未解（卡点见 AIDash 本轮证据卡）。
+    static int FixGitLookup(string gitDll, string apiDvcsDll, bool check, List<string> log)
+    {
+        int rc = 0;
+        rc |= ReplaceStrings(gitDll, "Git", "get_ExeName",
+            new Dictionary<string, string> { { "git.exe", "git" } }, check, log, "git-exename");
+        rc |= ReplaceStrings(gitDll, "Git", "EnableDefaultSystemInstallation",
+            new Dictionary<string, string> { { "git.exe", "git" } }, check, log, "git-search");
+        rc |= ReplaceStrings(apiDvcsDll, "AbstractDvcs", "FindInstallationViaPathEnvVar",
+            new Dictionary<string, string> { { "where", "which" } }, check, log, "git-which");
+        return rc;
+    }
+
+    static int ReplaceStrings(string path, string typeName, string methodName,
+        Dictionary<string, string> map, bool check, List<string> log, string tag)
+    {
+        var asm = Load(path);
+        var t = Types(asm).FirstOrDefault(x => x.Name == typeName);
+        var m = t?.Methods.FirstOrDefault(x => x.Name == methodName);
+        if (m == null || !m.HasBody) { log.Add(tag + ": NO_METHOD"); return 4; }
+        int need = 0;
+        foreach (var ins in m.Body.Instructions)
+        {
+            if (ins.OpCode == OpCodes.Ldstr && map.ContainsKey((string)ins.Operand)) need++;
+        }
+        if (need == 0) { log.Add(tag + ": ALREADY"); return 0; }
+        if (check) { log.Add(tag + ": NEEDS " + need); return 0; }
+        foreach (var ins in m.Body.Instructions)
+        {
+            if (ins.OpCode == OpCodes.Ldstr && map.ContainsKey((string)ins.Operand)) ins.Operand = map[(string)ins.Operand];
+        }
+        var tmp = path + ".tmp";
+        asm.Write(tmp, new WriterParameters { WriteSymbols = false });
+        asm.Dispose();
+        File.Move(tmp, path, true);
+        log.Add(tag + ": PATCHED " + need);
+        return 0;
+    }
+
     static int Main(string[] argv)
     {
         if (argv.Length < 1) { Console.Error.WriteLine("用法: <appDir> [--check]"); return 2; }
@@ -163,6 +205,8 @@ class SourcetreeBoot
         rc |= FixApi(Path.Combine(app, "SourceTree.Api.dll"), check, log);
         rc |= FixExe(Path.Combine(app, "SourceTree.exe"), check, log);
         rc |= FixOnboard(Path.Combine(app, "SourceTree.exe"), check, log);
+        rc |= FixGitLookup(Path.Combine(app, "SourceTree.Dvcs.Git.dll"),
+                           Path.Combine(app, "SourceTree.Api.Dvcs.dll"), check, log);
         foreach (var l in log) Console.WriteLine(l);
         Console.WriteLine(rc == 0 ? "STATUS=OK" : "STATUS=FAIL");
         return rc;
