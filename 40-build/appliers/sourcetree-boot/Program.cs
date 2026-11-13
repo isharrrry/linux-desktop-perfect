@@ -379,17 +379,136 @@ class SourcetreeBoot
         return 0;
     }
 
+    // 11) 把某类型下**全部同名重载**的方法体替换为常量返回（kind: ret / null / true）。
+    //     用于运行时 PresentationCore.dll 与 app 侧几处「Windows 专有能力在 Linux 上不可用」的收口：
+    //       - HwndTarget/NotificationWindowHelper::Dispose → ret（K-1264 类：委托被 GC 的致命错）
+    //       - DataFormats::GetDataFormat（Int32/String 两个重载）→ ldnull; ret（占位实现会抛
+    //         PlatformNotSupportedException，GongSolutions DragDrop 的 .cctor 因此崩）
+    //       - ThemeImage::HandleDPIChanged → ret（打开仓库页即核心转储）
+    //       - NotificationsManager::ShowNotificationDialogWithYesConfirmation（2 个重载）→ ldc.i4.1; ret
+    //         （System.Drawing.Icon.FromHandle 在 Linux/Core 不支持，确认框构造抛 ArgumentException）
+    //     全部已 patch 时输出 `<label>: ALREADY`，--check 只报告不写盘。
+    static int SetAllMethodBodies(string path, string typeName, string methodName, string kind,
+        bool check, List<string> log, string label)
+    {
+        var asm = Load(path);
+        var t = Types(asm).FirstOrDefault(x => x.FullName == typeName);
+        if (t == null) { log.Add(label + ": NO_TYPE"); return 4; }
+        var ms = t.Methods.Where(m => m.Name == methodName && m.HasBody).ToList();
+        if (ms.Count == 0) { log.Add(label + ": NO_METHOD"); return 4; }
+        int need = 0;
+        foreach (var m in ms)
+        {
+            if (IsConstBody(m, kind)) continue;
+            need++;
+            if (check) continue;
+            m.Body.Instructions.Clear();
+            m.Body.Variables.Clear();
+            m.Body.ExceptionHandlers.Clear();
+            var il = m.Body.GetILProcessor();
+            if (kind == "null") il.Append(il.Create(OpCodes.Ldnull));
+            else if (kind == "true") il.Append(il.Create(OpCodes.Ldc_I4_1));
+            il.Append(il.Create(OpCodes.Ret));
+        }
+        if (need == 0) { log.Add(label + ": ALREADY"); return 0; }
+        if (check) { log.Add(label + ": NEEDS " + need); return 0; }
+        var tmp = path + ".tmp";
+        asm.Write(tmp, new WriterParameters { WriteSymbols = false });
+        asm.Dispose();
+        File.Move(tmp, path, true);
+        log.Add(label + ": PATCHED " + need);
+        return 0;
+    }
+
+    static bool IsConstBody(MethodDefinition m, string kind)
+    {
+        var ins = m.Body.Instructions;
+        if (kind == "ret") return ins.Count == 1 && ins[0].OpCode == OpCodes.Ret;
+        if (kind == "null") return ins.Count == 2 && ins[0].OpCode == OpCodes.Ldnull && ins[1].OpCode == OpCodes.Ret;
+        if (kind == "true") return ins.Count == 2 && ins[0].OpCode == OpCodes.Ldc_I4_1 && ins[1].OpCode == OpCodes.Ret;
+        return false;
+    }
+
+
+    // 12) SplashScreen：.NET 10 的 WindowsBase 里没有 System.Windows.SplashScreen（K-498），
+    //     SourceTree.App.Main 里 `newobj SplashScreen::.ctor` + `callvirt Show` 会让 host 在
+    //     TypeLoadException 上直接中止（连 Main 都进不去）。Main 里 splash 只用于启动画面，
+    //     Linux 上直接去掉：局部变量类型改 object、newobj → ldnull、Show → pop。
+    static int FixSplashScreen(string path, bool check, List<string> log)
+    {
+        var asm = Load(path);
+        int need = 0;
+        foreach (var t in Types(asm))
+        {
+            foreach (var m in t.Methods.Where(x => x.HasBody))
+            {
+                foreach (var v in m.Body.Variables)
+                    if (v.VariableType.FullName == "System.Windows.SplashScreen") need++;
+                foreach (var i in m.Body.Instructions)
+                {
+                    if (i.Operand is MethodReference mr && mr.DeclaringType.Name == "SplashScreen")
+                        need++;
+                }
+            }
+        }
+        if (need == 0) { log.Add("splash: ALREADY"); return 0; }
+        if (check) { log.Add("splash: NEEDS " + need); return 0; }
+        foreach (var t in Types(asm))
+        {
+            foreach (var m in t.Methods.Where(x => x.HasBody))
+            {
+                foreach (var v in m.Body.Variables)
+                    if (v.VariableType.FullName == "System.Windows.SplashScreen")
+                        v.VariableType = asm.MainModule.TypeSystem.Object;
+                var il = m.Body.GetILProcessor();
+                foreach (var i in m.Body.Instructions.ToList())
+                {
+                    if (!(i.Operand is MethodReference mr) || mr.DeclaringType.Name != "SplashScreen") continue;
+                    if (i.OpCode == OpCodes.Newobj)
+                    {
+                        // ctor 有 1 个参数（实测）：先 pop 掉参数，再压 null（栈效果与 newobj 一致）
+                        for (int k = 0; k < mr.Parameters.Count; k++)
+                            il.InsertBefore(i, il.Create(OpCodes.Pop));
+                        i.OpCode = OpCodes.Ldnull; i.Operand = null;
+                    }
+                    else if (i.OpCode == OpCodes.Callvirt && mr.Name == "Show")
+                    {
+                        // Show(Boolean) 实测：消耗 this + 1 个 bool、无返回 → 按参数数全部 pop
+                        int pops = mr.Parameters.Count + (mr.HasThis ? 1 : 0);
+                        for (int k = 0; k < pops - 1; k++)
+                            il.InsertBefore(i, il.Create(OpCodes.Pop));
+                        i.OpCode = OpCodes.Pop; i.Operand = null;
+                    }
+                }
+            }
+        }
+        var tmp = path + ".tmp";
+        asm.Write(tmp, new WriterParameters { WriteSymbols = false });
+        asm.Dispose();
+        File.Move(tmp, path, true);
+        log.Add("splash: PATCHED " + need);
+        return 0;
+    }
+
     static int Main(string[] argv)
     {
-        if (argv.Length < 1) { Console.Error.WriteLine("用法: <appDir> [--check]"); return 2; }
+        if (argv.Length < 1) { Console.Error.WriteLine("用法: <appDir> [--check] [--runtime <runtimeDir>]"); return 2; }
         var app = argv[0];
-        var check = argv.Length > 1 && argv[1] == "--check";
+        var check = argv.Contains("--check");
+        string runtime = null;
+        var ri = Array.IndexOf(argv, "--runtime");
+        if (ri >= 0 && ri + 1 < argv.Length) runtime = argv[ri + 1];
         var log = new List<string>();
         int rc = 0;
         rc |= FixVsmef(Path.Combine(app, "Sourcetree.Composition.VSMef.Net48.dll"), check, log);
         rc |= FixApi(Path.Combine(app, "SourceTree.Api.dll"), check, log);
         rc |= FixExe(Path.Combine(app, "SourceTree.exe"), check, log);
         rc |= FixOnboard(Path.Combine(app, "SourceTree.exe"), check, log);
+        rc |= FixSplashScreen(Path.Combine(app, "SourceTree.exe"), check, log);
+        // 13) Linux 上启动 pageant（Windows PE）会 Process.Start 抛 Win32Exception(8) Exec format error
+        //     并打崩进程；SSH agent 在 Linux 不需要，DefaultSshKeyManager 的 3 个 LaunchSshAgent 置 ret。
+        rc |= SetAllMethodBodies(Path.Combine(app, "SourceTree.exe"),
+            "SourceTree.Security.DefaultSshKeyManager", "LaunchSshAgent", "ret", check, log, "sshagent");
         rc |= FixGitLookup(Path.Combine(app, "SourceTree.Dvcs.Git.dll"),
                            Path.Combine(app, "SourceTree.Api.Dvcs.dll"), check, log);
         rc |= FixGitVersionRegex(Path.Combine(app, "SourceTree.Dvcs.Git.dll"), check, log);
@@ -406,6 +525,25 @@ class SourcetreeBoot
         rc |= ForceReturnString(Path.Combine(app, "SourceTree.Dvcs.Hg.dll"), "Mercurial", "GetVersionNumber", "4.9.1", check, log, "hg-versionnumber");
         rc |= FixDragablzColors(Path.Combine(app, "Dragablz.dll"), check, log);
         rc |= RetMethod(Path.Combine(app, "SourceTree.exe"), "SourceTree.MainWindow", "SetAppID", check, log, "setappid");
+        // 4 处「bin 级手改」收口（原来只在机器上改、不在 applier 里，部署不可复现）
+        rc |= SetAllMethodBodies(Path.Combine(app, "SourceTree.Api.UI.Wpf.dll"),
+            "SourceTree.Notifications.NotificationsManager",
+            "ShowNotificationDialogWithYesConfirmation", "true", check, log, "notif-dialog");
+        rc |= SetAllMethodBodies(Path.Combine(app, "SourceTree.UI.Theme.Wpf.dll"),
+            "SourceTree.UI.Theme.Wpf.Controls.ThemeImage",
+            "HandleDPIChanged", "ret", check, log, "theme-dpi");
+        if (runtime == null)
+        {
+            log.Add("runtime: SKIP (未传 --runtime)");
+        }
+        else
+        {
+            var pc = Path.Combine(runtime, "PresentationCore.dll");
+            rc |= SetAllMethodBodies(pc, "System.Windows.Interop.HwndTarget/NotificationWindowHelper",
+                "Dispose", "ret", check, log, "pc-notifwnd");
+            rc |= SetAllMethodBodies(pc, "System.Windows.DataFormats",
+                "GetDataFormat", "null", check, log, "pc-dataformats");
+        }
         foreach (var l in log) Console.WriteLine(l);
         Console.WriteLine(rc == 0 ? "STATUS=OK" : "STATUS=FAIL");
         return rc;
