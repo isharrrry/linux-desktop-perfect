@@ -33,6 +33,12 @@ check selftest node 30-design/checks/selftest.mjs
 check units    node --test 50-verify/units/*.test.js
 # 闸门覆盖登记（与 CI 的 coverage 步骤保持一致；本脚本只校验前缀清单，不跑覆盖率）
 check gate-coverage bash 50-verify/coverage.sh
+# 四类操作验证（需自产运行时 + X + app 部署；默认跳过，LDP_OPS=1 才跑）
+if [ "${LDP_OPS:-0}" = "1" ]; then
+    check ops node 50-verify/runtime/ops-check.mjs
+else
+    echo "SKIP ops（四类操作验证需运行时环境；设 LDP_OPS=1 开启）"
+fi
 
 check abi-layout cc -fsyntax-only -std=gnu11 -Wall -Wextra -Wno-unused-parameter \
     -I40-build/native-shim/src 40-build/native-shim/tests/abi_layout.c
