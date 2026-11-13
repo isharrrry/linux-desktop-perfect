@@ -829,10 +829,18 @@ uint64_t wpf_x11_create_window(wpf_window *w, const char *title)
     //   （`w->hwnd` 就是 X11 Window，见 `wpf_window.hwnd` 的注释）。
     //   防御：父窗口不存在 / 是 message-only（不是真 X 窗口）时退回 root，
     //   否则 `XCreateSimpleWindow` 会因 BadWindow 失败。
+    // 【K-1513】**带 owner 的顶层窗口（对话框）不能用 owner 作 X parent**：
+    //   用 owner 作 parent ⇒ 对话框成了 owner 的 X 子窗口，被裁切在父窗客户区里
+    //   （实测「选项」窗口被主窗口压住/截断）；正确语义是「独立顶层 + WM_TRANSIENT_FOR」，
+    //   由 WM 负责置顶与跟随。只有 WS_CHILD 的控件窗口才真做 X 子窗口。
     Window parent_xid = g_wpf.root;
+    Window owner_xid = 0;
     if (w->parent && !w->is_message_only) {
         wpf_window *pw = wpf_window_find(w->parent);
-        if (pw && pw->hwnd) parent_xid = (Window)pw->hwnd;
+        if (pw && pw->hwnd) {
+            if ((w->style & (int64_t)(int32_t)WS_CHILD) != 0) parent_xid = (Window)pw->hwnd;
+            else owner_xid = (Window)pw->hwnd;
+        }
     }
     XLOCK();
     Window xid = XCreateSimpleWindow(d, parent_xid,
@@ -841,6 +849,8 @@ uint64_t wpf_x11_create_window(wpf_window *w, const char *title)
                                      0, black, white);
     wpf_create_diag("CREATE", w, (uint64_t)xid);
     if (!xid) return 0;
+    /* 【K-1513】顶层窗口若有 owner，声明 transient 关系（WM 据此置顶/跟随；不裁切客户区） */
+    if (owner_xid) XSetTransientForHint(d, xid, owner_xid);
 
     // XStoreName 写的是 WM_NAME/STRING（latin-1），xwininfo/xdotool 读的就是它；
     // _NET_WM_NAME/UTF8_STRING 是给现代工具链读非 ASCII 标题用的。两个都写。
