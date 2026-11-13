@@ -67,6 +67,19 @@ static int read_ibus_address(char *out, size_t outsz)
     if (!home) return 0;
     char dir[512]; snprintf(dir, sizeof(dir), "%s/.config/ibus/bus", home);
 
+    // 【K-1512】bus 文件必须按 display 过滤：文件名形如 `<machine-id>-unix-<display>`，
+    //   `<display>` 是 `$DISPLAY` 冒号后的数字。此前**不看 display、只按 mtime 挑最新**
+    //   ⇒ 判据自己起的 Xvfb（如 `:107`）里的样本会连到桌面 `:0` 的 ibus，按键被 IME
+    //   预编辑路径吞掉（ACC-010 `type_text` 回归：X 事件到、`[IBUS] ProcessKeyEvent` 回
+    //   `handled=0`、`UpdatePreeditText` 频繁、TextBox 值始终为空）。找不到当前 display
+    //   的文件就**不启用** ibus（等价于「没有输入法服务器」的旧行为）。
+    char disp_suffix[32] = {0};
+    const char *disp = getenv("DISPLAY");
+    if (disp) {
+        const char *colon = strrchr(disp, ':');
+        if (colon) snprintf(disp_suffix, sizeof(disp_suffix), "-unix-%d", atoi(colon + 1));
+    }
+
     // 按修改时间挑最新的（ibus 重启会更新它）
     char best[512] = {0};
     time_t best_t = 0;
@@ -75,13 +88,14 @@ static int read_ibus_address(char *out, size_t outsz)
         struct dirent *e;
         while ((e = readdir(d)) != NULL) {
             if (e->d_name[0] == '.') continue;
+            if (disp_suffix[0] && !strstr(e->d_name, disp_suffix)) continue;
             char p[1024]; snprintf(p, sizeof(p), "%s/%s", dir, e->d_name);
             struct stat st;
             if (stat(p, &st) == 0 && st.st_mtime > best_t) { best_t = st.st_mtime; snprintf(best, sizeof(best), "%s", p); }
         }
         closedir(d);
     }
-    if (!best[0]) { ibus_diag("[IBUS] 找不到地址文件（%s）", dir); return 0; }
+    if (!best[0]) { ibus_diag("[IBUS] 当前 DISPLAY=%s 找不到地址文件（%s）", disp ? disp : "?", dir); return 0; }
 
     FILE *f = fopen(best, "r");
     if (!f) return 0;

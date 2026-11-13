@@ -695,15 +695,35 @@ static int wpf_x11_focus_is_echo(HWND h, int is_focus_in)
     return echo;
 }
 
+// 【K-1512】把受焦窗口上溯到「root 的直接子窗口」（顶层）。
+//   为什么：WPF 会在内部子窗口（如输入宿主）上调 SetFocus，而它自己的消息泵用
+//   `GetMessageW(hWnd=顶层 HwndSource)` 取消息；X 焦点若落在子窗口，键事件就投给子窗口
+//   ⇒ 主泵的 hwnd 过滤把它跳过 ⇒ `WM_CHAR` 永远派发不到 TextBox（ACC-010
+//   `type_text` 回归的最后一跳：`[MSGFLOW] skip msg=0x0102 … 原因=hwndFilter`）。
+//   归一化后焦点所在窗口与主泵一致，与 Win32 语义（焦点=线程内窗口，泵可取全线程消息）对齐。
+static Window wpf_x11_top_level_xid(Window w)
+{
+    Window cur = w;
+    for (int i = 0; i < 32; i++) {
+        Window root_r = 0, parent_r = 0, *children = NULL;
+        unsigned int n = 0;
+        if (!XQueryTree(g_wpf.dpy, cur, &root_r, &parent_r, &children, &n)) break;
+        if (children) XFree(children);
+        if (!parent_r || parent_r == g_wpf.root || parent_r == root_r) break;
+        cur = parent_r;
+    }
+    return cur;
+}
+
 void wpf_x11_set_input_focus(HWND hwnd)
 {
     if (!hwnd) return;
     if (!wpf_x11_ensure()) { wpf_key_diag("SETFOCUS 跳过：X 不可用"); return; }
     XLOCK();
-    XSetInputFocus(g_wpf.dpy, (Window)(uintptr_t)hwnd, RevertToParent, CurrentTime);
+    XSetInputFocus(g_wpf.dpy, wpf_x11_top_level_xid((Window)(uintptr_t)hwnd), RevertToParent, CurrentTime);
     XFlush(g_wpf.dpy);
     XUNLOCK();
-    wpf_x11_focus_note_request(hwnd);
+    { Window top = wpf_x11_top_level_xid((Window)(uintptr_t)hwnd); wpf_x11_focus_note_request((HWND)(uintptr_t)top); (void)top; }
     wpf_xim_attach_ic((Window)(uintptr_t)hwnd);   // D-014 第二步：焦点窗口的输入上下文
     // 【补丁 F8（D-008 最后一跳）】**激活语义**必须同步派发。
     //   修前本函数只做 X 侧的 XSetInputFocus，一个消息都不发；而 X 的 FocusIn 回送
