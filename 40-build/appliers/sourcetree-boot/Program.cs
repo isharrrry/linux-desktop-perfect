@@ -490,6 +490,45 @@ class SourcetreeBoot
         return 0;
     }
 
+    // 14) RepositoryMonitorManager.OnStartUp 用 Observable.FromEventPattern 反射订阅
+    //     Application.Activated；解析 System.Runtime.InteropServices.WindowsRuntime.EventRegistrationToken
+    //     时从 mscorlib 4.0.0.0 找不到 → TypeLoadException → The application is terminating（K-1503）。
+    //     只删 FromEventPattern..stfld 段（保留 add_Deactivated）；OnExit 对订阅字段有 null 检查。
+    static int FixRmStartup(string path, bool check, List<string> log)
+    {
+        var asm = Load(path);
+        var m = Types(asm).FirstOrDefault(x => x.Name == "RepositoryMonitorManager")?
+            .Methods.FirstOrDefault(x => x.Name == "OnStartUp");
+        if (m == null || !m.HasBody) { log.Add("rm-startup: NO_METHOD"); return 4; }
+        var body = m.Body;
+        bool hasFromEvent = body.Instructions.Any(i => i.OpCode == OpCodes.Call &&
+            (i.Operand?.ToString() ?? "").Contains("FromEventPattern"));
+        if (!hasFromEvent) { log.Add("rm-startup: ALREADY"); return 0; }
+        if (check) { log.Add("rm-startup: NEEDS"); return 0; }
+        var start = body.Instructions.First(i => i.OpCode == OpCodes.Call &&
+            (i.Operand?.ToString() ?? "").Contains("Application::get_Current"));
+        var end = body.Instructions.FirstOrDefault(i => i.OpCode == OpCodes.Stfld &&
+            (i.Operand?.ToString() ?? "").Contains("_applicationActivatedSubscription"));
+        if (end == null) { log.Add("rm-startup: NO_END"); return 4; }
+        var toRemove = new List<Instruction>();
+        bool inRange = false;
+        foreach (var i in body.Instructions)
+        {
+            if (i == start) inRange = true;
+            if (inRange) toRemove.Add(i);
+            if (i == end) break;
+        }
+        var il = body.GetILProcessor();
+        foreach (var i in toRemove) il.Remove(i);
+        body.Variables.Clear();
+        var tmp = path + ".tmp";
+        asm.Write(tmp, new WriterParameters { WriteSymbols = false });
+        asm.Dispose();
+        File.Move(tmp, path, true);
+        log.Add($"rm-startup: PATCHED removed={toRemove.Count}");
+        return 0;
+    }
+
     static int Main(string[] argv)
     {
         if (argv.Length < 1) { Console.Error.WriteLine("用法: <appDir> [--check] [--runtime <runtimeDir>]"); return 2; }
@@ -525,6 +564,7 @@ class SourcetreeBoot
         rc |= ForceReturnString(Path.Combine(app, "SourceTree.Dvcs.Hg.dll"), "Mercurial", "GetVersionNumber", "4.9.1", check, log, "hg-versionnumber");
         rc |= FixDragablzColors(Path.Combine(app, "Dragablz.dll"), check, log);
         rc |= RetMethod(Path.Combine(app, "SourceTree.exe"), "SourceTree.MainWindow", "SetAppID", check, log, "setappid");
+        rc |= FixRmStartup(Path.Combine(app, "SourceTree.Api.UI.Wpf.dll"), check, log);
         // 4 处「bin 级手改」收口（原来只在机器上改、不在 applier 里，部署不可复现）
         rc |= SetAllMethodBodies(Path.Combine(app, "SourceTree.Api.UI.Wpf.dll"),
             "SourceTree.Notifications.NotificationsManager",
