@@ -408,6 +408,7 @@ class SourcetreeBoot
             var il = m.Body.GetILProcessor();
             if (kind == "null") il.Append(il.Create(OpCodes.Ldnull));
             else if (kind == "true") il.Append(il.Create(OpCodes.Ldc_I4_1));
+            else if (kind == "false") il.Append(il.Create(OpCodes.Ldc_I4_0));
             il.Append(il.Create(OpCodes.Ret));
         }
         if (need == 0) { log.Add(label + ": ALREADY"); return 0; }
@@ -426,6 +427,7 @@ class SourcetreeBoot
         if (kind == "ret") return ins.Count == 1 && ins[0].OpCode == OpCodes.Ret;
         if (kind == "null") return ins.Count == 2 && ins[0].OpCode == OpCodes.Ldnull && ins[1].OpCode == OpCodes.Ret;
         if (kind == "true") return ins.Count == 2 && ins[0].OpCode == OpCodes.Ldc_I4_1 && ins[1].OpCode == OpCodes.Ret;
+        if (kind == "false") return ins.Count == 2 && ins[0].OpCode == OpCodes.Ldc_I4_0 && ins[1].OpCode == OpCodes.Ret;
         return false;
     }
 
@@ -608,6 +610,11 @@ class SourcetreeBoot
         rc |= RetMethod(Path.Combine(app, "SourceTree.exe"), "SourceTree.MainWindow", "SetAppID", check, log, "setappid");
         rc |= FixRmStartup(Path.Combine(app, "SourceTree.Api.UI.Wpf.dll"), check, log);
         rc |= FixRepoProcess(Path.Combine(app, "SourceTree.Api.UI.Wpf.dll"), check, log);
+        // 8) LibGit2Sharp 原生库 git2-106a5f2.so 全盘不可得（NuGet 缓存与 app 目录都没有），
+        //    每次启动/仓库操作都要走一遍 DllNotFoundException（20+ 行日志 + 异常路径开销）。
+        //    ShouldUseLibGit 直接返回 false，走 bin\git.exe 路径（行为等价、无异常噪声）。
+        rc |= SetAllMethodBodies(Path.Combine(app, "SourceTree.Dvcs.Git.dll"),
+            "SourceTree.Repo.RepoHandlerGit", "ShouldUseLibGit", "false", check, log, "no-libgit");
         // 4 处「bin 级手改」收口（原来只在机器上改、不在 applier 里，部署不可复现）
         rc |= SetAllMethodBodies(Path.Combine(app, "SourceTree.Api.UI.Wpf.dll"),
             "SourceTree.Notifications.NotificationsManager",

@@ -98,6 +98,19 @@ else
   echo "   --no-shim：跳过"
 fi
 
+say "4.5/6 用 unzip 预解压 mcmw.zip → hg_extras（7z.exe 是 PE32，Linux 无法执行）"
+CFG="$HOME/.local/share/Atlassian/SourceTree"
+if [ -f "$CFG/mcmw.zip" ]; then
+  mkdir -p "$CFG/hg_extras"
+  if command -v unzip >/dev/null 2>&1; then
+    unzip -oq "$CFG/mcmw.zip" -d "$CFG/hg_extras" && echo "   已解压到 $CFG/hg_extras"
+  else
+    echo "   [WARN] 缺 unzip，跳过（SourceTree 会调 7z.exe → Exec format error / [999]）" >&2
+  fi
+else
+  echo "   [SKIP] 无 $CFG/mcmw.zip"
+fi
+
 say "5/6 生成 ~/bin 启动前置包装（which/git/hg）"
 mkdir -p "$HOME/bin"
 cat > "$HOME/bin/which" <<'EOS'
