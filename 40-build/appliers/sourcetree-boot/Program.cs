@@ -195,6 +195,45 @@ class SourcetreeBoot
     }
 
 
+    // 14) FileHelper.OpenFile 用 rundll32.exe 打开文件（Windows 的 "OpenAs" 方式）：
+    //     Linux 上先 Process.Start(file) 失败（文件不可执行 → Permission denied），
+    //     再走 rundll32.exe → 同样失败 → FailureHandler 弹错（实测「忽略的编辑」「编辑配置文件」）。
+    //     修法：把 rundll32.exe 换成 xdg-open，并把 "shell32.dll, OpenAs_RunDLL " 的拼接去掉，
+    //     让调用变成 Process.Start("xdg-open", file)。
+    static int FixOpenFile(string path, bool check, List<string> log)
+    {
+        var asm = Load(path);
+        var t = Types(asm).FirstOrDefault(x => x.FullName == "SourceTree.Utils.FileHelper");
+        var m = t?.Methods.FirstOrDefault(x => x.Name == "OpenFile" && x.HasBody);
+        if (m == null) { log.Add("openfile: NO_METHOD"); return 4; }
+        var il = m.Body.Instructions;
+        int idx = -1;
+        for (int i = 0; i < il.Count; i++)
+        {
+            if (il[i].OpCode == OpCodes.Ldstr && (string)il[i].Operand == "xdg-open")
+            { log.Add("openfile: ALREADY"); return 0; }
+            if (il[i].OpCode == OpCodes.Ldstr && (string)il[i].Operand == "rundll32.exe")
+            { idx = i; break; }
+        }
+        if (idx < 0) { log.Add("openfile: NO_RUNDLL32"); return 4; }
+        if (check) { log.Add("openfile: NEEDS"); return 0; }
+        il[idx].Operand = "xdg-open";
+        int nop = 0;
+        for (int i = idx + 1; i < Math.Min(idx + 6, il.Count); i++)
+        {
+            if (il[i].OpCode == OpCodes.Ldstr && ((string)il[i].Operand).StartsWith("shell32.dll"))
+            { il[i].OpCode = OpCodes.Nop; il[i].Operand = null; nop++; }
+            else if (il[i].OpCode == OpCodes.Call && il[i].Operand is MethodReference mr && mr.Name == "Concat")
+            { il[i].OpCode = OpCodes.Nop; il[i].Operand = null; nop++; break; }
+        }
+        var tmp = path + ".tmp";
+        asm.Write(tmp, new WriterParameters { WriteSymbols = false });
+        asm.Dispose();
+        File.Move(tmp, path, true);
+        log.Add("openfile: PATCHED nop=" + nop);
+        return 0;
+    }
+
     // 7) Git 版本兼容正则的 Windows 假设：`Git::GetVersionString` 返回的是 git 的**完整输出**
     //    （实测 `git version 2.34.1`），而 `CompatibilityVersion` 正则要求以版本号开头，
     //    `GitVersionTwoConfiguration` 还要求 `2.x.y.<windows|msysgit|gvfs|vfs>` 四段。
@@ -585,6 +624,7 @@ class SourcetreeBoot
         int rc = 0;
         rc |= FixVsmef(Path.Combine(app, "Sourcetree.Composition.VSMef.Net48.dll"), check, log);
         rc |= FixApi(Path.Combine(app, "SourceTree.Api.dll"), check, log);
+        rc |= FixOpenFile(Path.Combine(app, "SourceTree.Api.dll"), check, log);
         rc |= FixExe(Path.Combine(app, "SourceTree.exe"), check, log);
         rc |= FixOnboard(Path.Combine(app, "SourceTree.exe"), check, log);
         rc |= FixSplashScreen(Path.Combine(app, "SourceTree.exe"), check, log);
