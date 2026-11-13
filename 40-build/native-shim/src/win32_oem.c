@@ -296,3 +296,36 @@ uint32_t SHAppBarMessage(int32_t dwMessage, SH_APPBARDATA *abd)
     return 0;
 }
 // ── ★TASK-0747 段结束（以下不属于本段）───────────────────────────────────────
+
+// ── advapi32：凭据管理器（Credential Manager）──────────────────────────────
+// 【为什么必须有】SourceTree 的「选项」窗口切到凭据/身份相关 tab 时会 P/Invoke
+//   `advapi32!CredReadW`；本 shim 没有该导出 ⇒
+//   `EntryPointNotFoundException: Unable to find an entry point named 'CredReadW' in shared library 'advapi32.dll'`
+//   （实测：选项窗口点几下 tab 直接把进程打崩）。
+//   口径：Linux 上不存在 Windows 凭据管理器 ⇒ **如实返回「查不到」**（ERROR_NOT_FOUND = 1168），
+//   既不伪装成功，也不把异常留给调用方去崩。
+#define LDP_ERROR_NOT_FOUND 1168u
+
+BOOL CredReadW(const uint16_t *target, DWORD type, DWORD flags, void **cred)
+{
+    (void)target; (void)type; (void)flags;
+    if (cred) *cred = NULL;
+    wpf_set_last_error(LDP_ERROR_NOT_FOUND);
+    return 0;
+}
+
+BOOL CredWriteW(const void *cred, DWORD flags)
+{
+    (void)cred; (void)flags;
+    wpf_set_last_error(LDP_ERROR_NOT_FOUND);
+    return 0;
+}
+
+BOOL CredDeleteW(const uint16_t *target, DWORD type, DWORD flags)
+{
+    (void)target; (void)type; (void)flags;
+    wpf_set_last_error(LDP_ERROR_NOT_FOUND);
+    return 0;
+}
+
+BOOL CredFree(void *cred) { (void)cred; return 1; }

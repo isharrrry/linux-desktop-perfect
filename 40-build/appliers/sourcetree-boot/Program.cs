@@ -610,6 +610,13 @@ class SourcetreeBoot
         rc |= RetMethod(Path.Combine(app, "SourceTree.exe"), "SourceTree.MainWindow", "SetAppID", check, log, "setappid");
         rc |= FixRmStartup(Path.Combine(app, "SourceTree.Api.UI.Wpf.dll"), check, log);
         rc |= FixRepoProcess(Path.Combine(app, "SourceTree.Api.UI.Wpf.dll"), check, log);
+        // 12) SourceTree.View.Dialogs.NotificationDialogWindow.SetIcon(VistaTaskDialogIcon) 是 void，
+        //     内部调 DialogIconUtil.GetDialogIcon → System.Drawing.Icon.FromHandle，
+        //     后者在 Linux/Core 不支持（System.Drawing.Common 仅 Windows）⇒ ArgumentException: handle。
+        //     弹错误框时必崩（实测：点「资源管理器」→ ShowErrorDialog → 构造窗口 → 崩）。
+        //     置 ret：弹框不再设置图标，但窗口照常显示。
+        rc |= SetAllMethodBodies(Path.Combine(app, "SourceTree.Api.UI.Wpf.dll"),
+            "SourceTree.View.Dialogs.NotificationDialogWindow", "SetIcon", "ret", check, log, "ndw-seticon");
         // 8) LibGit2Sharp 原生库 git2-106a5f2.so 全盘不可得（NuGet 缓存与 app 目录都没有），
         //    每次启动/仓库操作都要走一遍 DllNotFoundException（20+ 行日志 + 异常路径开销）。
         //    ShouldUseLibGit 直接返回 false，走 bin\git.exe 路径（行为等价、无异常噪声）。
@@ -633,6 +640,11 @@ class SourcetreeBoot
                 "Dispose", "ret", check, log, "pc-notifwnd");
             rc |= SetAllMethodBodies(pc, "System.Windows.DataFormats",
                 "GetDataFormat", "null", check, log, "pc-dataformats");
+            // 13) DataFormats.GetDataObject 是占位实现、直接抛 PlatformNotSupportedException
+            //     （"Linux 侧剪贴板/DnD 需 X11 selection/Xdnd 实现"）。点菜单等路径会调它，
+            //     日志里先出现 3 次被吞、第 4 次没兜住就打崩进程。置 null：调用方按"空剪贴板"处理。
+            rc |= SetAllMethodBodies(pc, "System.Windows.Clipboard",
+                "GetDataObject", "null", check, log, "pc-getdataobject");
         }
         foreach (var l in log) Console.WriteLine(l);
         Console.WriteLine(rc == 0 ? "STATUS=OK" : "STATUS=FAIL");
