@@ -555,23 +555,28 @@ class SourcetreeBoot
         if (m == null || !m.HasBody) { log.Add("repo-process: NO_METHOD"); return 4; }
         // 旧版降级补丁（ret-only）：无法从 ret 重建原方法，要求先恢复备份再跑
         if (IsRetOnly(m)) { log.Add("repo-process: NEEDS_RESTORE"); return 4; }
-        // 已带 try/catch（本版补丁）→ 幂等
-        if (m.Body.ExceptionHandlers.Count > 0) { log.Add("repo-process: ALREADY"); return 0; }
+        // 旧版 try/catch 补丁写出的 IL 非法（InvalidProgramException: InternalProcessOnExited），
+        // 同样无法就地修，要求先恢复 .bak-proc 再重跑
+        var exited = Types(asm).FirstOrDefault(x => x.Name == "RepoProcess")?
+            .Methods.FirstOrDefault(x => x.Name == "InternalProcessOnExited");
+        if (exited != null && exited.HasBody && exited.Body.ExceptionHandlers.Count > 0)
+        { log.Add("repo-process: NEEDS_RESTORE"); return 4; }
+        // 不再动 InternalProcessOnExited（异常处理器会生成非法 IL），
+        // 改为只改 DetermineSuccess 里真正读 Process.ExitCode 的那一条 callvirt：
+        //   _exitCode = _internalProcess.ExitCode;  →  _exitCode = 0;
+        // 保留完整回调链（不再抛 "must exit before requested information"，也不因 ret 掉回调而永久等待）。
+        var dm = Types(asm).FirstOrDefault(x => x.Name == "RepoProcess")?
+            .Methods.FirstOrDefault(x => x.Name == "DetermineSuccess");
+        if (dm == null || !dm.HasBody) { log.Add("repo-process: NO_DETERMINE"); return 4; }
+        var call = dm.Body.Instructions.FirstOrDefault(i =>
+            (i.OpCode == OpCodes.Callvirt || i.OpCode == OpCodes.Call) &&
+            (i.Operand?.ToString() ?? "") == "System.Int32 System.Diagnostics.Process::get_ExitCode()");
+        if (call == null) { log.Add("repo-process: ALREADY"); return 0; }
         if (check) { log.Add("repo-process: NEEDS"); return 0; }
-        var il = m.Body.GetILProcessor();
-        var first = m.Body.Instructions.First();
-        var handlerStart = il.Create(OpCodes.Pop);
-        var handlerEnd = il.Create(OpCodes.Ret);
-        il.Append(handlerStart);
-        il.Append(handlerEnd);
-        m.Body.ExceptionHandlers.Add(new ExceptionHandler(ExceptionHandlerType.Catch)
-        {
-            CatchType = asm.MainModule.ImportReference(typeof(Exception)),
-            TryStart = first,
-            TryEnd = handlerStart,
-            HandlerStart = handlerStart,
-            HandlerEnd = handlerEnd,
-        });
+        var il = dm.Body.GetILProcessor();
+        var pop = il.Create(OpCodes.Pop);
+        il.Replace(call, pop);
+        il.InsertAfter(pop, il.Create(OpCodes.Ldc_I4_0));
         asm.Write(path, new WriterParameters { WriteSymbols = false });
         log.Add("repo-process: PATCHED");
         return 0;
