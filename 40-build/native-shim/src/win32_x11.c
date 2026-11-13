@@ -847,6 +847,20 @@ uint64_t wpf_x11_create_window(wpf_window *w, const char *title)
                                      w->x, w->y,
                                      (unsigned int)width, (unsigned int)height,
                                      0, black, white);
+    /* 【K-1514】**WS_POPUP 顶层窗口必须 override_redirect**：
+       否则被 xfwm4 等 WM 接管 → reparent 到 frame 并按 placement policy **居中**，
+       WPF 算好的位置（PlacementTarget 下方）被丢掉（实测菜单 Popup 落在屏幕中心
+       1423,929 而非 191,139）。Windows 语义下菜单/提示类 popup 也不受 WM 管理。
+       条件排除带标题/可调边框的窗口（那类对话框需要 WM 装饰与 transient 语义）。 */
+    if (((w->style & (int64_t)(int32_t)WS_POPUP) != 0) &&
+        ((w->style & (int64_t)(int32_t)WS_CHILD) == 0) &&
+        ((w->style & (int64_t)(int32_t)0x00C00000) == 0) &&   /* WS_CAPTION */
+        ((w->style & (int64_t)(int32_t)0x00040000) == 0)) {    /* WS_THICKFRAME */
+        XSetWindowAttributes ora;
+        memset(&ora, 0, sizeof(ora));
+        ora.override_redirect = True;
+        XChangeWindowAttributes(d, xid, CWOverrideRedirect, &ora);
+    }
     wpf_create_diag("CREATE", w, (uint64_t)xid);
     if (!xid) return 0;
     /* 【K-1513】顶层窗口若有 owner，声明 transient 关系（WM 据此置顶/跟随；不裁切客户区） */
