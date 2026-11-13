@@ -494,6 +494,26 @@ class SourcetreeBoot
     //     Application.Activated；解析 System.Runtime.InteropServices.WindowsRuntime.EventRegistrationToken
     //     时从 mscorlib 4.0.0.0 找不到 → TypeLoadException → The application is terminating（K-1503）。
     //     只删 FromEventPattern..stfld 段（保留 add_Deactivated）；OnExit 对订阅字段有 null 检查。
+    // RepoProcess 的完成回调竞态：InternalProcessOnExited 里当 _blocking=true 时跳过 WaitForExit，
+    // 随后 DoCompletionFunctions → DetermineSuccess 读 Process.ExitCode 抛
+    // "Process must exit before requested information can be determined"；
+    // 改成无条件 WaitForExit 后，Process 已被 Dispose 的路径又抛 "No process is associated with this object"。
+    // 因此把该回调整体置 ret：命令行照常执行（RunThis/Run 同步路径不受影响），只放弃异步完成回调。
+    // 降级：提交命令的 Success/ExitCode 不刷新（提交本身成功，git log 可见）。
+    static int FixRepoProcess(string path, bool check, List<string> log)
+    {
+        var asm = Load(path);
+        var m = Types(asm).FirstOrDefault(x => x.Name == "RepoProcess")?
+            .Methods.FirstOrDefault(x => x.Name == "InternalProcessOnExited");
+        if (m == null || !m.HasBody) { log.Add("repo-process: NO_METHOD"); return 4; }
+        if (IsRetOnly(m)) { log.Add("repo-process: ALREADY"); return 0; }
+        if (check) { log.Add("repo-process: NEEDS"); return 0; }
+        ToRet(m);
+        asm.Write(path, new WriterParameters { WriteSymbols = false });
+        log.Add("repo-process: PATCHED");
+        return 0;
+    }
+
     static int FixRmStartup(string path, bool check, List<string> log)
     {
         var asm = Load(path);
@@ -565,6 +585,7 @@ class SourcetreeBoot
         rc |= FixDragablzColors(Path.Combine(app, "Dragablz.dll"), check, log);
         rc |= RetMethod(Path.Combine(app, "SourceTree.exe"), "SourceTree.MainWindow", "SetAppID", check, log, "setappid");
         rc |= FixRmStartup(Path.Combine(app, "SourceTree.Api.UI.Wpf.dll"), check, log);
+        rc |= FixRepoProcess(Path.Combine(app, "SourceTree.Api.UI.Wpf.dll"), check, log);
         // 4 处「bin 级手改」收口（原来只在机器上改、不在 applier 里，部署不可复现）
         rc |= SetAllMethodBodies(Path.Combine(app, "SourceTree.Api.UI.Wpf.dll"),
             "SourceTree.Notifications.NotificationsManager",
