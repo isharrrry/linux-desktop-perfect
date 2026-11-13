@@ -685,6 +685,18 @@ class SourcetreeBoot
             //     日志里先出现 3 次被吞、第 4 次没兜住就打崩进程。置 null：调用方按"空剪贴板"处理。
             rc |= SetAllMethodBodies(pc, "System.Windows.Clipboard",
                 "GetDataObject", "null", check, log, "pc-getdataobject");
+            // 14) MS.Internal.RegistryKeys.ReadLocalMachineBool 在 Linux 上抛
+            //     PlatformNotSupportedException（Registry is not supported on this platform）。
+            //     触发链：键盘输入 → TextBox.Text 变更 → TextBoxAutomationPeer.RaiseValuePropertyChangedEvent
+            //     → AutomationPeer.ProviderFromPeer → ElementProxy..ctor → RegistryKeys.ReadLocalMachineBool
+            //     → 未处理异常，导致 ACC-010 type_text 拿不到值（value 仍为 ""）。
+            //     置 false：注册表项按「不存在」处理，与 Windows 默认值语义一致。
+            var wb = Path.Combine(runtime, "WindowsBase.dll");
+            var rb = SetAllMethodBodies(wb, "MS.Internal.RegistryKeys",
+                "ReadLocalMachineBool", "false", check, log, "wb-regbool");
+            if (rb == 4) rb = SetAllMethodBodies(pc, "MS.Internal.RegistryKeys",
+                "ReadLocalMachineBool", "false", check, log, "pc-regbool");
+            rc |= rb;
         }
         foreach (var l in log) Console.WriteLine(l);
         Console.WriteLine(rc == 0 ? "STATUS=OK" : "STATUS=FAIL");
