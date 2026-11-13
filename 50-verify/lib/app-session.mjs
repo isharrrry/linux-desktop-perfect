@@ -23,7 +23,7 @@ export function which(bin) {
 }
 
 export function sampleDir(name) {
-  return path.join(ROOT, 'samples', name, 'bin/Release/net10.0');
+  return path.join(ROOT, '50-verify', 'samples', name, 'bin/Release/net10.0');
 }
 
 export function sampleDll(name) {
