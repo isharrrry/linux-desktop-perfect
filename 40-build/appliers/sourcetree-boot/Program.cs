@@ -500,15 +500,37 @@ class SourcetreeBoot
     // 改成无条件 WaitForExit 后，Process 已被 Dispose 的路径又抛 "No process is associated with this object"。
     // 因此把该回调整体置 ret：命令行照常执行（RunThis/Run 同步路径不受影响），只放弃异步完成回调。
     // 降级：提交命令的 Success/ExitCode 不刷新（提交本身成功，git log 可见）。
+    // K-1505 → K-1506：不再把 InternalProcessOnExited 整体置 ret（那会让所有依赖完成回调的
+    // 调用永久等待 → 启动卡死白屏），改为「保留原回调，整段包 try/catch」：
+    //   remove_Exited → if(!_blocking) WaitForExit() → DoCompletionFunctions()
+    // 两个已知抛出点（Process.ExitCode 的 "must exit before requested information" 与
+    // Process 已 Dispose 的 "No process is associated"）都被 catch 吞掉，回调照常返回，
+    // 调用方不再卡死；命令行本身不受影响。
     static int FixRepoProcess(string path, bool check, List<string> log)
     {
         var asm = Load(path);
         var m = Types(asm).FirstOrDefault(x => x.Name == "RepoProcess")?
             .Methods.FirstOrDefault(x => x.Name == "InternalProcessOnExited");
         if (m == null || !m.HasBody) { log.Add("repo-process: NO_METHOD"); return 4; }
-        if (IsRetOnly(m)) { log.Add("repo-process: ALREADY"); return 0; }
+        // 旧版降级补丁（ret-only）：无法从 ret 重建原方法，要求先恢复备份再跑
+        if (IsRetOnly(m)) { log.Add("repo-process: NEEDS_RESTORE"); return 4; }
+        // 已带 try/catch（本版补丁）→ 幂等
+        if (m.Body.ExceptionHandlers.Count > 0) { log.Add("repo-process: ALREADY"); return 0; }
         if (check) { log.Add("repo-process: NEEDS"); return 0; }
-        ToRet(m);
+        var il = m.Body.GetILProcessor();
+        var first = m.Body.Instructions.First();
+        var handlerStart = il.Create(OpCodes.Pop);
+        var handlerEnd = il.Create(OpCodes.Ret);
+        il.Append(handlerStart);
+        il.Append(handlerEnd);
+        m.Body.ExceptionHandlers.Add(new ExceptionHandler(ExceptionHandlerType.Catch)
+        {
+            CatchType = asm.MainModule.ImportReference(typeof(Exception)),
+            TryStart = first,
+            TryEnd = handlerStart,
+            HandlerStart = handlerStart,
+            HandlerEnd = handlerEnd,
+        });
         asm.Write(path, new WriterParameters { WriteSymbols = false });
         log.Add("repo-process: PATCHED");
         return 0;
