@@ -125,11 +125,12 @@ sleep 0.6
 EOS
 cat > "$HOME/bin/git" <<'EOS'
 #!/bin/sh
-# 同上：给自己一点存活时间，避免调用方读 stdout 时进程已退
-sleep 0.4
+# 同上：给自己一点存活时间，避免调用方读 stdout 时进程已退。
+# 0.4 是早期过冲值（启动多花 ~1s）；实测 0.05 在连续 5 次启动中 999=0，故降到 0.05。
+sleep 0.05
 /usr/bin/git "$@"
 rc=$?
-sleep 0.4
+sleep 0.05
 exit $rc
 EOS
 cat > "$HOME/bin/hg" <<'EOS'
@@ -138,6 +139,14 @@ cat > "$HOME/bin/hg" <<'EOS'
 echo "4.9.1"
 EOS
 chmod +x "$HOME/bin/which" "$HOME/bin/git" "$HOME/bin/hg"
+# 源码树会用「工作目录/bin\git.exe」的相对路径调 git（文件名含反斜杠），
+# 这里为常见仓库位置补同名包装（存在才写，避免污染无关目录）。
+for repo in /tmp/stgit /tmp; do
+  [ -d "$repo" ] || continue
+  printf '#!/bin/sh\nsleep 0.05\n/usr/bin/git "$@"\nrc=$?\nsleep 0.05\nexit $rc\n' > "$repo/bin\git.exe"
+  chmod +x "$repo/bin\git.exe"
+  echo "   已写 $repo/bin\git.exe"
+done
 echo "   已写 $HOME/bin/{which,git,hg}"
 
 say "6/6 完成"
