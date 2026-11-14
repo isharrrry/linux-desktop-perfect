@@ -399,6 +399,71 @@ class SourcetreeBoot
         return 0;
     }
 
+    // DragablzItem 的 RenderTransform 是 VSM 动画（ScaleTransform，ScaleX/Y 读 1 但渲染用 0），
+    // 导致整棵 DragablzItem 子树（tab 标题 stgit、关闭按钮 ×）不渲染。修法：
+    //   1) 给 OnApplyTemplate 的闭包加字段 formItem，存 this；
+    //   2) 把「跳过 BeginInvoke 块」的 brfalse 目标改到 BeginInvoke 前的 ldarg.0，
+    //      使回调无条件排队（默认 _seizeDragWithTemplate=false 时会跳过整块）；
+    //   3) 回调里先 BeginAnimation(RenderTransformProperty, null) 清掉 VSM 动画，再设 RenderTransform=Identity。
+    static int FixDragablzTransform(string appPath, string runtimePath, bool check, List<string> log)
+    {
+        var dll = Path.Combine(appPath, "Dragablz.dll");
+        if (!File.Exists(dll)) { log.Add("dragablz-rt: NO_DLL"); return 4; }
+        var asm = Load(dll);
+        var itemType = Types(asm).FirstOrDefault(x => x.FullName == "Dragablz.DragablzItem");
+        var closure = Types(asm).FirstOrDefault(x => x.FullName == "Dragablz.DragablzItem/<>c__DisplayClass88_0");
+        if (itemType == null || closure == null) { log.Add("dragablz-rt: NO_TYPE"); return 4; }
+        var lambda = closure.Methods.FirstOrDefault(m => m.Name == "<OnApplyTemplate>b__0");
+        var onApply = itemType.Methods.FirstOrDefault(m => m.Name == "OnApplyTemplate");
+        if (lambda?.HasBody != true || onApply?.HasBody != true) { log.Add("dragablz-rt: NO_METHOD"); return 4; }
+        if (closure.Fields.Any(f => f.Name == "formItem")) { log.Add("dragablz-rt: ALREADY"); return 0; }
+        if (check) { log.Add("dragablz-rt: NEEDS"); return 0; }
+
+        var pc = Load(Path.Combine(runtimePath, "PresentationCore.dll"));
+        var getIdentity = pc.MainModule.GetType("System.Windows.Media.Transform").Properties.First(p => p.Name == "Identity").GetMethod;
+        var setRT = pc.MainModule.GetType("System.Windows.UIElement").Properties.First(p => p.Name == "RenderTransform").SetMethod;
+        var beginAnim = pc.MainModule.GetType("System.Windows.UIElement").Methods.First(m => m.Name == "BeginAnimation");
+        var rtProp = pc.MainModule.GetType("System.Windows.UIElement").Fields.First(f => f.Name == "RenderTransformProperty");
+        var mod = asm.MainModule;
+        var rGetIdentity = mod.ImportReference(getIdentity);
+        var rSetRT = mod.ImportReference(setRT);
+        var rBeginAnim = mod.ImportReference(beginAnim);
+        var rRtProp = mod.ImportReference(rtProp);
+
+        var field = new FieldDefinition("formItem", FieldAttributes.Public, itemType);
+        closure.Fields.Add(field);
+
+        var onIl = onApply.Body.GetILProcessor();
+        var stloc0 = onApply.Body.Instructions.First(i => i.OpCode == OpCodes.Stloc_0);
+        onIl.InsertAfter(stloc0, onIl.Create(OpCodes.Ldloc_0));
+        onIl.InsertAfter(stloc0.Next, onIl.Create(OpCodes.Ldarg_0));
+        onIl.InsertAfter(stloc0.Next.Next, onIl.Create(OpCodes.Stfld, field));
+
+        var lamIl = lambda.Body.GetILProcessor();
+        var ret = lambda.Body.Instructions.Last(i => i.OpCode == OpCodes.Ret);
+        lamIl.InsertBefore(ret, lamIl.Create(OpCodes.Ldarg_0));
+        lamIl.InsertBefore(ret, lamIl.Create(OpCodes.Ldfld, field));
+        lamIl.InsertBefore(ret, lamIl.Create(OpCodes.Ldsfld, rRtProp));
+        lamIl.InsertBefore(ret, lamIl.Create(OpCodes.Ldnull));
+        lamIl.InsertBefore(ret, lamIl.Create(OpCodes.Callvirt, rBeginAnim));
+        lamIl.InsertBefore(ret, lamIl.Create(OpCodes.Ldarg_0));
+        lamIl.InsertBefore(ret, lamIl.Create(OpCodes.Ldfld, field));
+        lamIl.InsertBefore(ret, lamIl.Create(OpCodes.Call, rGetIdentity));
+        lamIl.InsertBefore(ret, lamIl.Create(OpCodes.Callvirt, rSetRT));
+
+        var list2 = onApply.Body.Instructions.ToList();
+        var bix = list2.FindIndex(i => i.OpCode == OpCodes.Callvirt && (i.Operand?.ToString() ?? "").Contains("BeginInvoke"));
+        var brf = list2.FirstOrDefault(i => (i.OpCode == OpCodes.Brfalse_S || i.OpCode == OpCodes.Brfalse) && i.Operand is Instruction);
+        if (bix <= 7 || brf == null) { log.Add("dragablz-rt: NO_ANCHOR"); return 4; }
+        brf.Operand = list2[bix - 7];
+
+        var tmp = dll + ".tmp";
+        asm.Write(tmp, new WriterParameters { WriteSymbols = false });
+        File.Move(tmp, dll, true);
+        log.Add("dragablz-rt: PATCHED");
+        return 0;
+    }
+
     // 9) MainWindow_Loaded → SetAppID → WindowsAPICodePack Taskbar SHGetPropertyStoreForWindow：
     //    COM 接口指针封送在 .NET Core/Linux 不支持（MarshalDirectiveException: parameter #3），
     //    抛在 Loaded 事件里直接打崩进程。Linux 没有 Windows 任务栏，整个 SetAppID 置 ret。
@@ -702,6 +767,7 @@ class SourcetreeBoot
             if (rb == 4) rb = SetAllMethodBodies(pc, "MS.Internal.RegistryKeys",
                 "ReadLocalMachineBool", "false", check, log, "pc-regbool");
             rc |= rb;
+            rc |= FixDragablzTransform(app, runtime, check, log);
         }
         foreach (var l in log) Console.WriteLine(l);
         Console.WriteLine(rc == 0 ? "STATUS=OK" : "STATUS=FAIL");
