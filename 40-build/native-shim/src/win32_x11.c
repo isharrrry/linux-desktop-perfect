@@ -25,6 +25,7 @@
 
 #include <X11/Xatom.h>
 #include <X11/Xutil.h>
+#include <X11/cursorfont.h>
 #include <stdio.h>
 #include <stdarg.h>
 #include <stdlib.h>
@@ -1578,6 +1579,73 @@ static int wpf_x11_sync_window_state(HWND h, const char *where,
 // 指针抓取态（供 MotionNotify 自愈判断；定义必须在使用点之前）
 static int g_x11_grabbed = 0;
 
+// ── 【波 60】边缘缩放光标 + 边缘命中兜底 ─────────────────────────────────────
+//   背景：WPF 的 `wpf_core_nc_hit_test` 对普通窗口常回 `HTCLIENT`（`ResizeMode`/`WindowChrome`
+//   未覆盖的边缘），于是 shim 既不会进入 resize 分支，也不会给用户任何"可拖拽"的视觉反馈。
+//   这里做两件事：① 自己按窗口几何判定边缘（5px 内）补 `HT*`；② motion 时切换 X 光标形状。
+#define WPF_EDGE_PX 5
+
+static int wpf_x11_edge_hit(HWND h, int x_root, int y_root)
+{
+    wpf_lock();
+    wpf_window *wi = wpf_window_find(h);
+    int x = wi ? wi->x : 0, y = wi ? wi->y : 0;
+    int w = wi ? wi->width : 0, hh = wi ? wi->height : 0;
+    int top = (wi && !wi->is_message_only && wi->parent == NULL) ? 1 : 0;
+    pthread_mutex_unlock(&g_wpf.lock);
+    if (!top || w <= 0 || hh <= 0) return HTCLIENT;
+    int lx = x_root - x, ly = y_root - y;
+    if (lx < 0 || ly < 0 || lx > w || ly > hh) return HTCLIENT;
+    int L = lx < WPF_EDGE_PX, R = lx > w - WPF_EDGE_PX;
+    int T = ly < WPF_EDGE_PX, B = ly > hh - WPF_EDGE_PX;
+    if (T && L) return HTTOPLEFT;
+    if (T && R) return HTTOPRIGHT;
+    if (B && L) return HTBOTTOMLEFT;
+    if (B && R) return HTBOTTOMRIGHT;
+    if (L) return HTLEFT;
+    if (R) return HTRIGHT;
+    if (T) return HTTOP;
+    if (B) return HTBOTTOM;
+    return HTCLIENT;
+}
+
+static void wpf_x11_apply_edge_cursor(HWND h, int ht)
+{
+    Display *d = g_wpf.dpy;
+    if (!d) return;
+    static Cursor c_l = 0, c_r = 0, c_t = 0, c_b = 0, c_tl = 0, c_tr = 0, c_bl = 0, c_br = 0;
+    static HWND last_h = 0;
+    static int last_ht = -1;
+    if (h == last_h && ht == last_ht) return;   // 高频 motion 去重
+    last_h = h; last_ht = ht;
+    XLOCK();
+    if (!c_l) {
+        c_l  = XCreateFontCursor(d, XC_left_side);
+        c_r  = XCreateFontCursor(d, XC_right_side);
+        c_t  = XCreateFontCursor(d, XC_top_side);
+        c_b  = XCreateFontCursor(d, XC_bottom_side);
+        c_tl = XCreateFontCursor(d, XC_top_left_corner);
+        c_tr = XCreateFontCursor(d, XC_top_right_corner);
+        c_bl = XCreateFontCursor(d, XC_bottom_left_corner);
+        c_br = XCreateFontCursor(d, XC_bottom_right_corner);
+    }
+    Cursor c = None;
+    switch (ht) {
+        case HTLEFT: c = c_l; break;
+        case HTRIGHT: c = c_r; break;
+        case HTTOP: c = c_t; break;
+        case HTBOTTOM: c = c_b; break;
+        case HTTOPLEFT: c = c_tl; break;
+        case HTTOPRIGHT: c = c_tr; break;
+        case HTBOTTOMLEFT: c = c_bl; break;
+        case HTBOTTOMRIGHT: c = c_br; break;
+        default: break;
+    }
+    XDefineCursor(d, (Window)(uintptr_t)h, c);
+    XUNLOCK();
+    wpf_nc_diag("EDGE-CURSOR hwnd=0x%llx ht=%d", (unsigned long long)(uintptr_t)h, ht);
+}
+
 int wpf_x11_pump_into_queue(wpf_thread *t)
 {
     if (!g_wpf.dpy) return 0;
@@ -1975,6 +2043,15 @@ int wpf_x11_pump_into_queue(wpf_thread *t)
             //   ② 也让"按在边框上但没拖"不会意外开始缩放。
             if (b == Button1 && down) {
                 int ht = wpf_core_nc_hit_test(h, ev.xbutton.x_root, ev.xbutton.y_root);
+                // 【波 60】WPF 回 HTCLIENT 时用本地边缘判定兜底（普通窗口的 ResizeMode 常未覆盖边缘）
+                if (ht == HTCLIENT) {
+                    int eht = wpf_x11_edge_hit(h, ev.xbutton.x_root, ev.xbutton.y_root);
+                    if (eht != HTCLIENT) {
+                        wpf_nc_diag("EDGE-FALLBACK hwnd=0x%llx WPF 回 HTCLIENT，本地边缘判定=%d",
+                                    (unsigned long long)(uintptr_t)h, eht);
+                        ht = eht;
+                    }
+                }
                 {   // 【波 59 仪器】每一次按键都打"问到的命中码"（含 HTCLIENT）：
                     //   判据"拖不动"必须能区分"没问/问回客户区/问回非客户区但 WM 不搬"三种现场。
                     wpf_lock();
@@ -2127,6 +2204,8 @@ int wpf_x11_pump_into_queue(wpf_thread *t)
                             (unsigned long long)(uintptr_t)h, g_nc_ht, dx, dy, nw, nh, nx, ny);
                 break;   // 拖动期间**不发** WM_MOUSEMOVE（Win32 的模态 move loop 同样不发）
             }
+            // 【波 60】非拖动时的边缘光标：让用户看到"这里可以拖"
+            wpf_x11_apply_edge_cursor(h, wpf_x11_edge_hit(h, ev.xmotion.x_root, ev.xmotion.y_root));
             WPARAM mk = xstate_to_mk(ev.xmotion.state, 0);
             push(t, h, WM_MOUSEMOVE, mk, xy_lparam(ev.xmotion.x, ev.xmotion.y),
                  ev.xmotion.x, ev.xmotion.y);
