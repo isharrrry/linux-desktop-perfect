@@ -1776,6 +1776,20 @@ int wpf_x11_pump_into_queue(wpf_thread *t)
                 push(t, h, WM_SHOWWINDOW, 1, 0, 0, 0);
                 produced++;
             }
+            // ── 【波 60 · 工作区切换白屏】MapNotify 后补一条 `WM_PAINT` ────────────────
+            //   现场：RDP 里 Ctrl+滚轮切工作区再切回，窗口 `IsViewable` 600x518 但截图 **1 色**，
+            //   且 `windowmap` / `windowsize 601` 都救不回来，只能重启进程（重启后 726 色）。
+            //   机制：切工作区时 WM 对窗口 `unmap`→`map`，X 侧合成表面（backing/XCBSurface）
+            //   已丢；X 只保证"新暴露区域"发 `Expose`，被 unmap 过的整窗不保证补发。
+            //   WPF 的渲染线程在 surface 丢失后不会自己重建，必须收到 `WM_PAINT`
+            //   （`HwndTarget` 的脏区/重绘入口）才会重新提交一帧。
+            //   Win32 的 USER32 在 `ShowWindow(SW_SHOW)` 之后同样会触发 WM_PAINT，语义对齐。
+            //   【波 60 第二次】这里必须用**异步投递** `PostMessageW` 而不是 `push` 同步入队：
+            //   实测 `push` 版在"首次 map"就会同步派发 WM_PAINT，撞上 WPF 启动期的渲染线程
+            //   初始化 ⇒ 窗口 2304x1440 但截图 1 色（白屏），回滚即恢复 726 色。
+            //   `PostMessageW` 走队列、由事件泵下一轮处理，避开启动重入。
+            PostMessageW(h, WM_PAINT, 0, 0);
+            produced++;
             break;
         }
 
