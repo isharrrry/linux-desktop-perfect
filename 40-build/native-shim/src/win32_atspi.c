@@ -548,6 +548,8 @@ int32_t WindowPattern_WaitForInputIdle(void) { return E_NOTIMPL; }
 
 #define WPF_ATSPI_MAX_NODES 64
 #define WPF_ATSPI_PATH_ROOT "/org/a11y/atspi/accessible/wpf/root"
+/* PM-0109：org.a11y.atspi.Cache 的规范对象路径（at-spi2-core xml/Cache.xml） */
+#define WPF_ATSPI_PATH_CACHE "/org/a11y/atspi/cache"
 
 typedef struct {
     char path[128];                 // D-Bus 对象路径
@@ -572,6 +574,8 @@ uint64_t g_atspi_pending_action_hwnd = 0;
 typedef void (*wpf_atspi_action_invoker_t)(uint64_t hwnd);
 static wpf_atspi_action_invoker_t g_action_invoker = NULL;
 static int g_atspi_tree_ready = 0;
+/* PM-0109：registry 用 Properties.Set 写回来的 Application.Id（-1 = 未设置） */
+static int g_atspi_app_id = -1;
 
 static wpf_atspi_node *atspi_node_find(uint64_t hwnd)
 {
@@ -602,6 +606,64 @@ static void atspi_append_ref(DBusMessageIter *arr, const char *bus, const char *
     dbus_message_iter_close_container(arr, &st);
 }
 
+/* 【PM-0109】Cache.GetItems 的应答体：a((so)(so)(so)iiassusau)。
+ *   让「规范路径 /org/a11y/atspi/cache」和「app root」两个调用点复用同一份实现：
+ *   libatspi 2.44 实测把 GetItems 发在 app root 上（diag：path=/org/a11y/atspi/accessible/wpf/root）。 */
+static void atspi_reply_cache_items(DBusMessageIter *it)
+{
+    DBusMessageIter arr;
+    dbus_message_iter_open_container(it, DBUS_TYPE_ARRAY,
+                                     "((so)(so)(so)iiassusau)", &arr);
+    int frame_cnt = 0;
+    for (int k = 0; k < g_node_count; ++k)
+        if (g_nodes[k].alive && g_nodes[k].hwnd != 0) ++frame_cnt;
+    int idx = 0;
+    for (int k = 0; k < g_node_count; ++k) {
+        if (!g_nodes[k].alive) continue;
+        wpf_atspi_node *cn = &g_nodes[k];
+        int is_root = (cn->hwnd == 0);
+        DBusMessageIter item;
+        dbus_message_iter_open_container(&arr, DBUS_TYPE_STRUCT, NULL, &item);
+        atspi_append_ref(&item, g_bus_name, cn->path);
+        atspi_append_ref(&item, g_bus_name, WPF_ATSPI_PATH_ROOT);
+        if (is_root)
+            atspi_append_ref(&item, "", "/org/a11y/atspi/null");
+        else
+            atspi_append_ref(&item, g_bus_name, WPF_ATSPI_PATH_ROOT);
+        dbus_int32_t index = is_root ? -1 : idx++;
+        dbus_int32_t child_count = is_root ? frame_cnt : 0;
+        dbus_message_iter_append_basic(&item, DBUS_TYPE_INT32, &index);
+        dbus_message_iter_append_basic(&item, DBUS_TYPE_INT32, &child_count);
+        DBusMessageIter ifaces;
+        dbus_message_iter_open_container(&item, DBUS_TYPE_ARRAY, "s", &ifaces);
+        const char *i_acc = "org.a11y.atspi.Accessible";
+        dbus_message_iter_append_basic(&ifaces, DBUS_TYPE_STRING, &i_acc);
+        if (cn->has_action) {
+            const char *i_act = "org.a11y.atspi.Action";
+            dbus_message_iter_append_basic(&ifaces, DBUS_TYPE_STRING, &i_act);
+        }
+        dbus_message_iter_close_container(&item, &ifaces);
+        const char *nm = cn->name;
+        dbus_message_iter_append_basic(&item, DBUS_TYPE_STRING, &nm);
+        dbus_uint32_t role = is_root ? 75 : 23;   /* APPLICATION / FRAME */
+        dbus_message_iter_append_basic(&item, DBUS_TYPE_UINT32, &role);
+        const char *desc = "";
+        dbus_message_iter_append_basic(&item, DBUS_TYPE_STRING, &desc);
+        DBusMessageIter states;
+        dbus_message_iter_open_container(&item, DBUS_TYPE_ARRAY, "u", &states);
+        /* 两个 uint32 = 64 位状态位：SHOWING(25)|VISIBLE(30)|ENABLED(8)|
+           SENSITIVE(24)|RESIZABLE(21) */
+        dbus_uint32_t st0 = (1u << 25) | (1u << 30) | (1u << 8) |
+                            (1u << 24) | (1u << 21);
+        dbus_uint32_t st1 = 0;
+        dbus_message_iter_append_basic(&states, DBUS_TYPE_UINT32, &st0);
+        dbus_message_iter_append_basic(&states, DBUS_TYPE_UINT32, &st1);
+        dbus_message_iter_close_container(&item, &states);
+        dbus_message_iter_close_container(&arr, &item);
+    }
+    dbus_message_iter_close_container(it, &arr);
+}
+
 static DBusHandlerResult atspi_msg_handler(DBusConnection *conn, DBusMessage *msg, void *data)
 {
     (void)data;
@@ -626,6 +688,55 @@ static DBusHandlerResult atspi_msg_handler(DBusConnection *conn, DBusMessage *ms
              && strcmp(iface, "org.a11y.atspi.Action") != 0)
         return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
 
+    /* 【PM-0109】org.a11y.atspi.Cache 挂在规范路径 /org/a11y/atspi/cache
+     *   （at-spi2-core xml/Cache.xml）。pyatspi 建对象缓存时先调这里的 GetItems；
+     *   该路径修前没有注册对象路径 ⇒ 回 UnknownMethod ⇒ 控件枚举恒为空
+     *   （运维实测 `GetItems ... Cache doesn't exist`）。
+     *   返回签名 a((so)(so)(so)iiassusau)：
+     *     accessible 引用 / application 引用 / parent 引用 /
+     *     index / childCount / interfaces / name / role / description / states */
+    if (strcmp(path, WPF_ATSPI_PATH_CACHE) == 0) {
+        DBusMessage *creply = dbus_message_new_method_return(msg);
+        if (!creply) return DBUS_HANDLER_RESULT_NEED_MEMORY;
+        DBusMessageIter cit;
+        dbus_message_iter_init_append(creply, &cit);
+        if (strcmp(member, "GetItems") == 0) {
+            atspi_reply_cache_items(&cit);
+        } else if (strcmp(member, "Get") == 0) {
+            const char *want_prop = NULL;
+            DBusMessageIter in;
+            if (dbus_message_iter_init(msg, &in)
+                && dbus_message_iter_get_arg_type(&in) == DBUS_TYPE_STRING
+                && dbus_message_iter_next(&in)
+                && dbus_message_iter_get_arg_type(&in) == DBUS_TYPE_STRING)
+                dbus_message_iter_get_basic(&in, &want_prop);
+            if (want_prop && strcmp(want_prop, "version") == 0) {
+                DBusMessageIter var;
+                dbus_uint32_t ver = 1;   /* 1 = 不要求 Ready 信号；GetItems 版本 1 就有 */
+                dbus_message_iter_open_container(&cit, DBUS_TYPE_VARIANT, "u", &var);
+                dbus_message_iter_append_basic(&var, DBUS_TYPE_UINT32, &ver);
+                dbus_message_iter_close_container(&cit, &var);
+            } else {
+                dbus_message_unref(creply);
+                return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+            }
+        } else if (strcmp(member, "Introspect") == 0) {
+            const char *cxml =
+                "<node><interface name='org.a11y.atspi.Cache'>"
+                "<method name='GetItems'><arg direction='out' "
+                "type='a((so)(so)(so)iiassusau)'/></method>"
+                "<property name='version' type='u' access='read'/>"
+                "</interface></node>";
+            dbus_message_iter_append_basic(&cit, DBUS_TYPE_STRING, &cxml);
+        } else {
+            dbus_message_unref(creply);
+            return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+        }
+        dbus_connection_send(conn, creply, NULL);
+        dbus_message_unref(creply);
+        return DBUS_HANDLER_RESULT_HANDLED;
+    }
+
     wpf_atspi_node *n = atspi_node_by_path(path);
     if (!n) return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
     const char *bus = g_bus_name;
@@ -637,7 +748,11 @@ static DBusHandlerResult atspi_msg_handler(DBusConnection *conn, DBusMessage *ms
     /* K-1186：打印每个 member（调试用） */
     atspi_diag("[ATSPI] member=%s iface=%s path=%s", member, iface ? iface : "(null)", path);
 
-    if (strcmp(member, "GetName") == 0) {
+    if (strcmp(member, "GetItems") == 0) {
+        /* PM-0109：libatspi 2.44 把 Cache.GetItems 发在 app root 上（实测 path=root），
+           不只发规范路径 /org/a11y/atspi/cache —— 两个落点都接。 */
+        atspi_reply_cache_items(&it);
+    } else if (strcmp(member, "GetName") == 0) {
         /* K-1184：`Accessible.GetName`（无参）返回节点名；`Action.GetName(i)`（带参）返回 action 名 */
         int argi = -1;
         if (dbus_message_get_args(msg, NULL, DBUS_TYPE_INT32, &argi, DBUS_TYPE_INVALID)
@@ -747,6 +862,12 @@ static DBusHandlerResult atspi_msg_handler(DBusConnection *conn, DBusMessage *ms
             dbus_message_iter_open_container(&it, DBUS_TYPE_VARIANT, "i", &var);
             dbus_message_iter_append_basic(&var, DBUS_TYPE_INT32, &na);
             dbus_message_iter_close_container(&it, &var);
+        } else if (want_prop && (strcmp(want_prop, "Id") == 0 || strcmp(want_prop, "id") == 0)) {
+            /* PM-0109：registry 用 Properties.Get 读回 Application.Id */
+            dbus_int32_t aid = (dbus_int32_t)g_atspi_app_id;
+            dbus_message_iter_open_container(&it, DBUS_TYPE_VARIANT, "i", &var);
+            dbus_message_iter_append_basic(&var, DBUS_TYPE_INT32, &aid);
+            dbus_message_iter_close_container(&it, &var);
         } else if (want_prop && (strcmp(want_prop, "parent") == 0 || strcmp(want_prop, "Parent") == 0)) {
             const char *pp = (n->hwnd == 0) ? "" : WPF_ATSPI_PATH_ROOT;
             DBusMessageIter st;
@@ -760,6 +881,33 @@ static DBusHandlerResult atspi_msg_handler(DBusConnection *conn, DBusMessage *ms
             dbus_message_unref(reply);
             return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
         }
+    } else if (strcmp(member, "Set") == 0) {
+        /* 【PM-0109】registry 会用 `Properties.Set` 把 Application.Id 写回来，
+         *   修前这里走 fallback ⇒ UnknownMethod ⇒ Id 没设上。
+         *   参数是 (ssv)：iface / 属性名 / variant 值。 */
+        const char *want_iface = NULL, *want_prop = NULL;
+        DBusMessageIter in;
+        if (dbus_message_iter_init(msg, &in)) {
+            if (dbus_message_iter_get_arg_type(&in) == DBUS_TYPE_STRING)
+                dbus_message_iter_get_basic(&in, &want_iface);
+            if (dbus_message_iter_next(&in)
+                && dbus_message_iter_get_arg_type(&in) == DBUS_TYPE_STRING)
+                dbus_message_iter_get_basic(&in, &want_prop);
+            if (dbus_message_iter_next(&in)
+                && dbus_message_iter_get_arg_type(&in) == DBUS_TYPE_VARIANT) {
+                DBusMessageIter var;
+                dbus_message_iter_recurse(&in, &var);
+                if (dbus_message_iter_get_arg_type(&var) == DBUS_TYPE_INT32) {
+                    dbus_int32_t id = 0;
+                    dbus_message_iter_get_basic(&var, &id);
+                    g_atspi_app_id = (int)id;
+                    atspi_diag("[ATSPI] Properties.Set: %s.%s = %d（已收下）",
+                               want_iface ? want_iface : "(null)",
+                               want_prop ? want_prop : "(null)", (int)id);
+                }
+            }
+        }
+        /* 空 body 的 method return（reply 已在上面建好） */
     } else if (strcmp(member, "GetInterfaces") == 0) {
         /* K-1180：告诉 libatspi 本节点有哪些接口（否则 get_action_iface 返回 None） */
         DBusMessageIter arr;
@@ -887,6 +1035,12 @@ void wpf_atspi_register_window(uint64_t hwnd, const char *title)
     static int root_done = 0;
     if (!root_done) {
         atspi_register_node(WPF_ATSPI_PATH_ROOT, "SourceTree", "application", 0);
+        /* PM-0109：Cache 接口的对象路径（规范路径，见 at-spi2-core xml/Cache.xml） */
+        if (!dbus_connection_register_object_path(g_bus, WPF_ATSPI_PATH_CACHE,
+                                                  &g_atspi_vtbl, NULL))
+            atspi_diag("[ATSPI] Cache 路径注册失败: %s", WPF_ATSPI_PATH_CACHE);
+        else
+            atspi_diag("[ATSPI] Cache 路径已注册: %s", WPF_ATSPI_PATH_CACHE);
         root_done = 1;
     }
     char path[128];
