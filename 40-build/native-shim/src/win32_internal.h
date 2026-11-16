@@ -706,7 +706,7 @@ unsigned wpf_paint_count_get(void);
 int     wpf_queue_pop(wpf_thread *t, WPF_MSG *out, HWND filter, UINT lo, UINT hi);
 void    wpf_queue_wake(wpf_thread *t);
 int     wpf_queue_count(wpf_thread *t);
-int64_t wpf_timer_next_deadline(void);         // -1 = 没有定时器
+int64_t wpf_timer_next_deadline(const wpf_thread *owner);         // -1 = 没有定时器
 void    wpf_timer_fire_due(wpf_thread *t);     // 到期的定时器 → WM_TIMER / 回调
 LRESULT wpf_dispatch_to_window(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp);
 

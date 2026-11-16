@@ -416,12 +416,20 @@ int wpf_queue_pop(wpf_thread *t, WPF_MSG *out, HWND hwndFilter, UINT lo, UINT hi
 }
 
 // ── 定时器 ─────────────────────────────────────────────────────────────────
-int64_t wpf_timer_next_deadline(void)
+int64_t wpf_timer_next_deadline(const wpf_thread *owner)
 {
+    // 【PM-0107】只统计 owner == 本线程的定时器。
+    //   修前遍历**全局**链取最早 deadline，而 wpf_timer_fire_due 只触发本线程的定时器
+    //   ⇒ 链上只要留着一条本线程永远不会触发的定时器（owner 不泵/已退出），它的
+    //   deadline 就永远在过去 ⇒ compute_timeout 恒返回 0 ⇒ poll 不再阻塞、泵空转
+    //   （实测 173% CPU、syscr 每秒上万）。Win32 语义：SetTimer 的定时器归属于
+    //   创建它的线程，别的线程的定时器本来就不该改变本线程的等待时长。
     wpf_lock();
     int64_t best = -1;
-    for (wpf_timer *t = g_wpf.timers; t; t = t->next)
+    for (wpf_timer *t = g_wpf.timers; t; t = t->next) {
+        if (t->owner_thread != (void *)owner) continue;
         if (best < 0 || (int64_t)t->deadline_ms < best) best = (int64_t)t->deadline_ms;
+    }
     pthread_mutex_unlock(&g_wpf.lock);
     return best;
 }
@@ -744,8 +752,7 @@ static int wait_for_input(wpf_thread *t, int timeout_ms)
 // 把「下一个定时器到期」折算成 poll 的 timeout（毫秒）。无定时器 → -1（无限等）。
 static int compute_timeout(const wpf_thread *t)
 {
-    (void)t;
-    int64_t d = wpf_timer_next_deadline();
+    int64_t d = wpf_timer_next_deadline(t);
     if (d < 0) return -1;
     int64_t now = (int64_t)wpf_now_ms();
     int64_t delta = d - now;
