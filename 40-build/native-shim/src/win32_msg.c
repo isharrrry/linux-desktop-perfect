@@ -1450,8 +1450,14 @@ DWORD MsgWaitForMultipleObjectsEx(DWORD nCount, const HANDLE *pHandles, DWORD ms
         }
         int due_timer = 0;
         int64_t nd = -1;
-        for (wpf_timer *it = g_wpf.timers; it; it = it->next)
+        for (wpf_timer *it = g_wpf.timers; it; it = it->next) {
+            // 【PM-0107 第二落点】与 compute_timeout 同一个 bug：只看本线程的定时器。
+            //   修前这里遍历**全局**表，别的线程留下的过期定时器（owner 不泵/已退出）
+            //   会让这里恒真 ⇒ Dispatcher.IsInputPending() 恒真 ⇒ WPF 每轮给自己挂
+            //   1ms 的 TIMERID_BACKGROUND ⇒ 主线程千次/秒唤醒（实测 syscr 2215/s）。
+            if (it->owner_thread != (void *)t) continue;
             if (nd < 0 || (int64_t)it->deadline_ms < nd) nd = (int64_t)it->deadline_ms;
+        }
         if (nd >= 0 && (int64_t)wpf_now_ms() >= nd) due_timer = 1;
         pthread_mutex_unlock(&g_wpf.lock);
 
