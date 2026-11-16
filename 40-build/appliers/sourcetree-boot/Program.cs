@@ -400,67 +400,141 @@ class SourcetreeBoot
     }
 
     // DragablzItem 的 RenderTransform 是 VSM 动画（ScaleTransform，ScaleX/Y 读 1 但渲染用 0），
-    // 导致整棵 DragablzItem 子树（tab 标题 stgit、关闭按钮 ×）不渲染。修法：
-    //   1) 给 OnApplyTemplate 的闭包加字段 formItem，存 this；
-    //   2) 把「跳过 BeginInvoke 块」的 brfalse 目标改到 BeginInvoke 前的 ldarg.0，
-    //      使回调无条件排队（默认 _seizeDragWithTemplate=false 时会跳过整块）；
-    //   3) 回调里先 BeginAnimation(RenderTransformProperty, null) 清掉 VSM 动画，再设 RenderTransform=Identity。
+    // 导致整棵 DragablzItem 子树（tab 标题 stgit、关闭按钮 ×）不渲染（K-1506）。
+    //
+    // 旧版补丁（已废弃，见 K-1506 补记 / PM-0105）：给 OnApplyTemplate 的闭包加 formItem 字段，
+    // 把 brfalse 目标改成无条件排队。但那个回调体本身就是「对模板 Thumb 伪造一次左键按下」
+    // （<>c__DisplayClass88_0::<OnApplyTemplate>b__0 IL_0000-0027），原义只在
+    // _seizeDragWithTemplate=true（真的靠模板在拖 tab）时才该跑。无条件跑 ⇒ 每个新 tab 伪造
+    // MouseLeftButtonDown ⇒ Thumb.OnMouseLeftButtonDown 抢捕获 ⇒ 立刻 OnLostMouseCapture
+    // ⇒ Thumb.CancelDrag ⇒ DragablzItem.ThumbOnDragCompleted ⇒ StackOrganiser.OrganiseOnDragCompleted
+    // ⇒ _siblingItemLocationOnDragStart[item] 缺键 ⇒ KeyNotFoundException（有 WM 新建 tab 时崩）。
+    // 同一改动的另一种先兆：Identity 在 Loaded 之前就落到控件上，VSM 的 RenderTransform.ScaleX
+    // 触发器路径解析失败 ⇒ InvalidOperationException（无 WM 启动时崩）。
+    //
+    // 本版：不碰 Dragablz 的拖拽逻辑，只加一个静态方法并挂到 Loaded 事件上。
+    //   1) DragablzItem 加 private static void LinuxFixRenderTransform(object, RoutedEventArgs)：
+    //      BeginAnimation(RenderTransformProperty, null); RenderTransform = Transform.Identity;
+    //   2) OnApplyTemplate 末尾 this.Loaded += LinuxFixRenderTransform。
+    //      样式里的 VSM EventTrigger 是更早注册的 routed handler，先跑且此时 RenderTransform
+    //      还是样式给的 ScaleTransform，路径解析得通；我们随后把动画清掉、transform 拍平成
+    //      Identity。旧版把 Identity 提前到 Loaded 之前，正是路径解析崩的来源。
     static int FixDragablzTransform(string appPath, string runtimePath, bool check, List<string> log)
     {
         var dll = Path.Combine(appPath, "Dragablz.dll");
         if (!File.Exists(dll)) { log.Add("dragablz-rt: NO_DLL"); return 4; }
         var asm = Load(dll);
         var itemType = Types(asm).FirstOrDefault(x => x.FullName == "Dragablz.DragablzItem");
-        var closure = Types(asm).FirstOrDefault(x => x.FullName == "Dragablz.DragablzItem/<>c__DisplayClass88_0");
-        if (itemType == null || closure == null) { log.Add("dragablz-rt: NO_TYPE"); return 4; }
-        var lambda = closure.Methods.FirstOrDefault(m => m.Name == "<OnApplyTemplate>b__0");
+        if (itemType == null) { log.Add("dragablz-rt: NO_TYPE"); return 4; }
         var onApply = itemType.Methods.FirstOrDefault(m => m.Name == "OnApplyTemplate");
-        if (lambda?.HasBody != true || onApply?.HasBody != true) { log.Add("dragablz-rt: NO_METHOD"); return 4; }
-        if (closure.Fields.Any(f => f.Name == "formItem")) { log.Add("dragablz-rt: ALREADY"); return 0; }
+        if (onApply?.HasBody != true) { log.Add("dragablz-rt: NO_METHOD"); return 4; }
+        if (itemType.Methods.Any(m => m.Name == "LinuxFixRenderTransform")) { log.Add("dragablz-rt: ALREADY"); return 0; }
+        // 旧版补丁的痕迹在字节里（闭包字段 formItem + 被改写的 brfalse），无法就地升级
+        if (Types(asm).Any(t => t.Fields.Any(f => f.Name == "formItem")))
+        { log.Add("dragablz-rt: NEEDS_RESTORE (旧补丁 formItem)"); return 4; }
         if (check) { log.Add("dragablz-rt: NEEDS"); return 0; }
 
         var pc = Load(Path.Combine(runtimePath, "PresentationCore.dll"));
-        var getIdentity = pc.MainModule.GetType("System.Windows.Media.Transform").Properties.First(p => p.Name == "Identity").GetMethod;
-        var setRT = pc.MainModule.GetType("System.Windows.UIElement").Properties.First(p => p.Name == "RenderTransform").SetMethod;
-        var beginAnim = pc.MainModule.GetType("System.Windows.UIElement").Methods.First(m => m.Name == "BeginAnimation");
-        var rtProp = pc.MainModule.GetType("System.Windows.UIElement").Fields.First(f => f.Name == "RenderTransformProperty");
+        var pfw = Load(Path.Combine(runtimePath, "PresentationFramework.dll"));
+        var wb = Load(Path.Combine(runtimePath, "WindowsBase.dll"));
         var mod = asm.MainModule;
+        var uiElement = pc.MainModule.GetType("System.Windows.UIElement");
+        var getIdentity = pc.MainModule.GetType("System.Windows.Media.Transform").Properties.First(p => p.Name == "Identity").GetMethod;
+        var setRT = uiElement.Properties.First(p => p.Name == "RenderTransform").SetMethod;
+        var beginAnim = uiElement.Methods.First(m => m.Name == "BeginAnimation");
+        var rtProp = uiElement.Fields.First(f => f.Name == "RenderTransformProperty");
+        var addLoaded = pfw.MainModule.GetType("System.Windows.FrameworkElement").Events.First(e => e.Name == "Loaded").AddMethod;
+        var getDisp = wb.MainModule.GetType("System.Windows.Threading.DispatcherObject")
+            .Properties.First(p => p.Name == "Dispatcher").GetMethod;
+        var beginInvoke3 = wb.MainModule.GetType("System.Windows.Threading.Dispatcher").Methods
+            .First(m => m.Name == "BeginInvoke" && m.Parameters.Count == 3
+                        && m.Parameters[0].ParameterType.Name == "DispatcherPriority"
+                        && m.Parameters[2].ParameterType.FullName == "System.Object");
+
+        var objType = mod.TypeSystem.Object;
+        var voidType = mod.TypeSystem.Void;
+        var actionOfObj = new GenericInstanceType(new TypeReference("System", "Action`1", mod, mod.TypeSystem.CoreLibrary));
+        actionOfObj.GenericArguments.Add(objType);
+        var actionCtor = new MethodReference(".ctor", voidType, actionOfObj) { HasThis = true };
+        actionCtor.Parameters.Add(new ParameterDefinition(objType));
+        actionCtor.Parameters.Add(new ParameterDefinition(mod.TypeSystem.IntPtr));
+        var handlerType = mod.ImportReference(addLoaded.Parameters[0].ParameterType);
+        var handlerCtor = new MethodReference(".ctor", voidType, handlerType) { HasThis = true };
+        handlerCtor.Parameters.Add(new ParameterDefinition(objType));
+        handlerCtor.Parameters.Add(new ParameterDefinition(mod.TypeSystem.IntPtr));
+
+        var rUiElement = mod.ImportReference(uiElement);
         var rGetIdentity = mod.ImportReference(getIdentity);
         var rSetRT = mod.ImportReference(setRT);
         var rBeginAnim = mod.ImportReference(beginAnim);
         var rRtProp = mod.ImportReference(rtProp);
+        var rAddLoaded = mod.ImportReference(addLoaded);
+        var rGetDisp = mod.ImportReference(getDisp);
+        var rBeginInvoke3 = mod.ImportReference(beginInvoke3);
+        var rActionCtor = mod.ImportReference(actionCtor);
+        var rHandlerCtor = mod.ImportReference(handlerCtor);
+        var routedArgs = mod.ImportReference(pc.MainModule.GetType("System.Windows.RoutedEventArgs"));
 
-        var field = new FieldDefinition("formItem", FieldAttributes.Public, itemType);
-        closure.Fields.Add(field);
+        // 真正改状态的静态方法；只从 Normal 优先级的排队项里进来。
+        var apply = new MethodDefinition("LinuxFixApply",
+            MethodAttributes.Private | MethodAttributes.Static | MethodAttributes.HideBySig, voidType);
+        apply.Parameters.Add(new ParameterDefinition("item", ParameterAttributes.None, objType));
+        itemType.Methods.Add(apply);
+        apply.Body = new MethodBody(apply) { MaxStackSize = 8 };
+        var aIl = apply.Body.GetILProcessor();
+        aIl.Emit(OpCodes.Ldarg_0);
+        aIl.Emit(OpCodes.Castclass, rUiElement);
+        aIl.Emit(OpCodes.Ldsfld, rRtProp);
+        aIl.Emit(OpCodes.Ldnull);
+        aIl.Emit(OpCodes.Callvirt, rBeginAnim);
+        aIl.Emit(OpCodes.Ldarg_0);
+        aIl.Emit(OpCodes.Castclass, rUiElement);
+        aIl.Emit(OpCodes.Call, rGetIdentity);
+        aIl.Emit(OpCodes.Callvirt, rSetRT);
+        aIl.Emit(OpCodes.Ret);
 
-        var onIl = onApply.Body.GetILProcessor();
-        var stloc0 = onApply.Body.Instructions.First(i => i.OpCode == OpCodes.Stloc_0);
-        onIl.InsertAfter(stloc0, onIl.Create(OpCodes.Ldloc_0));
-        onIl.InsertAfter(stloc0.Next, onIl.Create(OpCodes.Ldarg_0));
-        onIl.InsertAfter(stloc0.Next.Next, onIl.Create(OpCodes.Stfld, field));
+        // Loaded 处理器：先把 Handled 置真，掐掉样式里那条 VSM RunStoryboard 触发器，
+        // 再同步把 RenderTransform 拍平成 Identity。
+        // 依据：v2 实验已证明本 handler 排在样式 EventTrigger 之前（那次没置 Handled，
+        // 触发器照跑，Identity 先落 → 'RenderTransform.ScaleX' 路径解析崩 7 次）；
+        // 而 v3/v4 只在事后 BeginAnimation(null) 收不掉 Storyboard 时钟 —— 实测
+        // HasAnimatedProperties=True、主线程 96%、8/8 栈在 AnimatedRenderMessageHandler，
+        // 也就是 MediaContext 每帧仍要 tick。没有 Storyboard 才没有时钟。
+        var setHandled = pc.MainModule.GetType("System.Windows.RoutedEventArgs")
+            .Methods.First(m => m.Name == "set_Handled");
+        var rSetHandled = mod.ImportReference(setHandled);
 
-        var lamIl = lambda.Body.GetILProcessor();
-        var ret = lambda.Body.Instructions.Last(i => i.OpCode == OpCodes.Ret);
-        lamIl.InsertBefore(ret, lamIl.Create(OpCodes.Ldarg_0));
-        lamIl.InsertBefore(ret, lamIl.Create(OpCodes.Ldfld, field));
-        lamIl.InsertBefore(ret, lamIl.Create(OpCodes.Ldsfld, rRtProp));
-        lamIl.InsertBefore(ret, lamIl.Create(OpCodes.Ldnull));
-        lamIl.InsertBefore(ret, lamIl.Create(OpCodes.Callvirt, rBeginAnim));
-        lamIl.InsertBefore(ret, lamIl.Create(OpCodes.Ldarg_0));
-        lamIl.InsertBefore(ret, lamIl.Create(OpCodes.Ldfld, field));
-        lamIl.InsertBefore(ret, lamIl.Create(OpCodes.Call, rGetIdentity));
-        lamIl.InsertBefore(ret, lamIl.Create(OpCodes.Callvirt, rSetRT));
+        var helper = new MethodDefinition("LinuxFixRenderTransform",
+            MethodAttributes.Private | MethodAttributes.Static | MethodAttributes.HideBySig, voidType);
+        helper.Parameters.Add(new ParameterDefinition("sender", ParameterAttributes.None, objType));
+        helper.Parameters.Add(new ParameterDefinition("e", ParameterAttributes.None, routedArgs));
+        itemType.Methods.Add(helper);
+        helper.Body = new MethodBody(helper) { MaxStackSize = 8 };
+        var hIl = helper.Body.GetILProcessor();
+        hIl.Emit(OpCodes.Ldarg_1);
+        hIl.Emit(OpCodes.Ldc_I4_1);
+        hIl.Emit(OpCodes.Callvirt, rSetHandled);
+        hIl.Emit(OpCodes.Ldarg_0);
+        hIl.Emit(OpCodes.Call, apply);
+        hIl.Emit(OpCodes.Ret);
 
-        var list2 = onApply.Body.Instructions.ToList();
-        var bix = list2.FindIndex(i => i.OpCode == OpCodes.Callvirt && (i.Operand?.ToString() ?? "").Contains("BeginInvoke"));
-        var brf = list2.FirstOrDefault(i => (i.OpCode == OpCodes.Brfalse_S || i.OpCode == OpCodes.Brfalse) && i.Operand is Instruction);
-        if (bix <= 7 || brf == null) { log.Add("dragablz-rt: NO_ANCHOR"); return 4; }
-        brf.Operand = list2[bix - 7];
+        var il = onApply.Body.GetILProcessor();
+        var ret = onApply.Body.Instructions.Last(i => i.OpCode == OpCodes.Ret);
+        foreach (var ins in new[]
+        {
+            il.Create(OpCodes.Ldarg_0),
+            il.Create(OpCodes.Ldnull),                // delegate target
+            il.Create(OpCodes.Ldftn, helper),
+            il.Create(OpCodes.Newobj, rHandlerCtor),
+            il.Create(OpCodes.Callvirt, rAddLoaded),
+        }) il.InsertBefore(ret, ins);
+        if (onApply.Body.MaxStackSize < 8) onApply.Body.MaxStackSize = 8;
 
         var tmp = dll + ".tmp";
         asm.Write(tmp, new WriterParameters { WriteSymbols = false });
+        asm.Dispose();
         File.Move(tmp, dll, true);
-        log.Add("dragablz-rt: PATCHED");
+        log.Add("dragablz-rt: PATCHED (Loaded handler)");
         return 0;
     }
 
