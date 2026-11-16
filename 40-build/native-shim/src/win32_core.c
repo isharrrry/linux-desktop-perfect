@@ -1148,6 +1148,12 @@ static HWND create_window_utf8(uint32_t dwExStyle, const char *cls,
     if (!w->is_message_only)
         wpf_atspi_register_window((uint64_t)w->hwnd, title);
 
+    /* 【PM-0109 · K-629 对称补齐】AT-SPI 注册会走 Xlib/D-Bus，这些不维护 Win32 的
+       `last_error`；WPF 在窗口创建后会读它，读到脏值就抛 `Win32Exception(1400)`
+       （"The application is terminating"）。`win32_x11.c:879-884` 那条建窗路径
+       已经补了 `wpf_set_last_error(0)`，这里（WPF 实际走的路径）漏了。 */
+    wpf_set_last_error(0);
+
     /* 【K-896】**必须在 UI 线程发 `WM_GETOBJECT`**：`HwndSubclass.SubclassWndProc`
      *   （`HwndSubclass.cs:295`）只在 `Dispatcher.FromThread(Thread.CurrentThread) != null`
      *   时才把消息转发给 `HwndWrapper.WndProc` 的 hook 链（`HwndTargetFilterMessage` 等）。
