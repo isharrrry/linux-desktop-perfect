@@ -52,6 +52,23 @@ static void wpf_msgflow_snapshot(wpf_thread *t, char *buf, size_t cap);   // v2 
 #define WPF_QNODE_MAGIC  0x51A7u
 #define WPF_QCORRUPT_MAX 32
 static uint64_t      s_push_seq;          // 进程内单调入队序号
+
+/* 【PM-0106 验收 · 质量 09:26 要求】`WPF_LINUX_WATCHDOG_MS=<ms>`（默认关）：
+   测量 UI 线程「上一次泵返回 → 这一次进泵」的间隔。派发（`DispatchMessageW` →
+   WndProc → `SetWindowPos` → …）发生在两次 `GetMessageW` 之间，所以这个间隔
+   就是主线程被派发占住的时间；超过阈值打一行 `[WATCHDOG] stall=<ms>`。
+   这是**直接**测量「UI 线程连续阻塞」，补 `has_ewmh_wm` 的 dt 覆盖不到的段。 */
+static uint64_t g_wd_last_ms = 0;
+static int wpf_watchdog_ms(void)
+{
+    static int v = -1;
+    if (v < 0) {
+        const char *e = getenv("WPF_LINUX_WATCHDOG_MS");
+        v = (e && *e) ? atoi(e) : 0;
+        if (v < 0) v = 0;
+    }
+    return v;
+}
 static unsigned long s_last_push_tid;     // 最后一次写队列的 tid
 static int           s_qcorrupt_lines;
 
@@ -919,6 +936,22 @@ BOOL GetMessageW(WPF_MSG *msg, HWND hwnd, UINT lo, UINT hi)
     wpf_global_init();
     if (!msg) { wpf_set_last_error(87); return (BOOL)-1; }
     wpf_thread *t = wpf_thread_self();
+    /* 【WATCHDOG】进泵时量「上一次泵返回 → 现在」的间隔（= 派发占用时长）。 */
+    {
+        const int wd = wpf_watchdog_ms();
+        if (wd > 0 && g_wd_last_ms > 0) {
+            uint64_t gap = wpf_now_ms() - g_wd_last_ms;
+            if (gap >= (uint64_t)wd) {
+                static int s_wd_n = 0;
+                if (s_wd_n < 500) {
+                    s_wd_n++;
+                    fprintf(stderr, "[WATCHDOG] stall=%llums tid=%lu api=GetMessageW\n",
+                            (unsigned long long)gap, wpf_msgflow_tid());
+                    fflush(stderr);
+                }
+            }
+        }
+    }
     /* K-1227 已回退：登记 g_pump_thread 后推送该线程导致启动崩溃 */
     /* K-1228：`WPF_FAKE_KEYS="40,40,13"`（VK 码，逗号分隔）⇒ 启动 ~3s 后依次入队
        WM_KEYDOWN/WM_KEYUP。作用与 `WPF_FAKE_CLICK` 相同：**在 GetMessageW 内直投当前线程**，
@@ -970,6 +1003,7 @@ BOOL GetMessageW(WPF_MSG *msg, HWND hwnd, UINT lo, UINT hi)
 
     for (;;) {
         if (pump_once(t, msg, hwnd, lo, hi)) {
+            g_wd_last_ms = wpf_now_ms();             // 【WATCHDOG】泵返回时刻
             if (msg->message == WM_QUIT) return 0;   // Win32：取到 WM_QUIT → 返回 FALSE
             return 1;
         }
@@ -981,6 +1015,7 @@ BOOL GetMessageW(WPF_MSG *msg, HWND hwnd, UINT lo, UINT hi)
             memset(msg, 0, sizeof(*msg));
             msg->message = WM_QUIT;
             msg->wParam = (WPARAM)quit;
+            g_wd_last_ms = wpf_now_ms();             // 【WATCHDOG】泵返回时刻
             return 0;
         }
         int timeout = compute_timeout(t);
