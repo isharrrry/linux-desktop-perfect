@@ -941,8 +941,8 @@ class SourcetreeBoot
             "ShowNotificationDialogWithYesConfirmation", "true", check, log, "notif-dialog");
         rc |= SetAllMethodBodies(Path.Combine(app, "SourceTree.UI.Theme.Wpf.dll"),
             "SourceTree.UI.Theme.Wpf.Controls.ThemeImage",
-            "HandleDPIChanged", "themesrc", check, log, "theme-dpi");
-        rc |= FixThemeImageLoad(Path.Combine(app, "SourceTree.UI.Theme.Wpf.dll"), check, log);
+            "HandleDPIChanged", "ret", check, log, "theme-dpi");
+        rc |= FixThemeOnRender(Path.Combine(app, "SourceTree.UI.Theme.Wpf.dll"), check, log);
         if (runtime == null)
         {
             log.Add("runtime: SKIP (未传 --runtime)");
