@@ -1600,6 +1600,23 @@ WNDPROC wpf_shadow_get_proc(HWND hwnd)
 }
 static void wpf_shadow_set_proc(HWND hwnd, WNDPROC proc)
 {
+    /* 【PM-0111】现场实测（1/1-0923）：`SetWindowLongPtr(GWL_WNDPROC)` 会以
+       **空句柄**进来（`[SETWNDLONG-SHADOW] hwnd=(nil)`）。修前把它存进影子表，
+       而派发端 `proc==NULL` 时又回查影子表 ⇒ 任何 hwnd 为空的消息（线程消息、
+       `PostThreadMessage`、WM_NULL 唤醒）都会把这条空句柄条目当窗口过程调用，
+       WPF 侧拿到 hwnd=NULL 抛 `InvalidOperationException` ⇒ fail-fast。
+       空句柄**不存**：它不对应任何窗口，存了只会污染派发表。 */
+    if (!hwnd) {
+        static int s_warned = 0;
+        if (!s_warned) {
+            s_warned = 1;
+            fprintf(stderr,
+                    "[SHADOW-NULL] SetWindowLongPtr(GWL_WNDPROC) 收到空句柄 proc=%p "
+                    "⇒ 不写入影子表（PM-0111）\n", (void *)proc);
+            fflush(stderr);
+        }
+        return;
+    }
     for (int i = 0; i < g_shadow_count; ++i)
         if (g_shadow_proc[i].hwnd == hwnd) { g_shadow_proc[i].proc = proc; return; }
     if (g_shadow_count < WPF_SHADOW_MAX) {

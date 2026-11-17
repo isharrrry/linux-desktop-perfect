@@ -694,8 +694,11 @@ LRESULT wpf_dispatch_to_window(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
         SendMessageW(hwnd, 0x003D /*WM_GETOBJECT*/, 0, (LPARAM)(intptr_t)-4 /*OBJID_CLIENT*/);
     }
 
-    /* 【K-891】查不到 `w` 时回查影子表（`HwndSubclass` 对未知 hwnd 的 wndproc 写入） */
-    if (!proc) {
+    /* 【K-891】查不到 `w` 时回查影子表（`HwndSubclass` 对未知 hwnd 的 wndproc 写入）
+       【PM-0111】`hwnd` 为空时**不许**回查：空句柄不是窗口（线程消息/唤醒消息），
+       影子表里即便有历史条目也不能拿它当窗口过程调用（实测 WPF 侧会抛
+       InvalidOperationException ⇒ fail-fast）。 */
+    if (!proc && hwnd) {
         extern WNDPROC wpf_shadow_get_proc(HWND hwnd);
         proc = wpf_shadow_get_proc(hwnd);
         if (proc && msg == 0x003D && getenv("WPF_LINUX_UIA_DIAG"))
