@@ -481,6 +481,15 @@ static Atom a_net_wm_state_maximized_vert = 0;
 static Atom a_net_wm_moveresize = 0;
 static Atom a_net_moveresize_window = 0;
 static Atom a_net_supporting_wm_check = 0;
+/* 【PM-0106】`has_ewmh_wm` 的结果缓存：-1 = 未探测；0/1 = 上次结论。
+   失效条件**唯一且简单**：**TTL 5 s**（到点重探）。刻意**不**订阅 root 的
+   `PropertyChangeMask`——根事件洪泛，改动面大于收益（架构 09:19 口径）。
+   5 s 是为了保住「死 WM 残留」的自愈能力（`wpf_wmcheck_stale_notice_once`），
+   不退化成进程级永久缓存。`WPF_LINUX_FORCE_REPROBE=1` 可强制每次重探（诊断）。
+   热路径（缓存命中）不取 XLOCK、不发任何等回复的 X 请求。 */
+#define WPF_EWMH_CACHE_TTL_MS 5000u
+static int      g_ewmh_wm_cached = -1;
+static uint64_t g_ewmh_wm_cached_ms = 0;
 static Atom a_motif_wm_hints = 0;
 
 // ── 连接 ───────────────────────────────────────────────────────────────────
@@ -2789,23 +2798,52 @@ static void wpf_wmcheck_stale_notice_once(unsigned long wm_win, int xerr)
 int wpf_x11_has_ewmh_wm(void)
 {
     if (!wpf_x11_ensure()) return 0;
+    /* 【PM-0106 诊断】`WPF_LINUX_XSYNC_DIAG=1` ⇒ 入口/出口各一行，外加每次同步
+       X 往返的返回码与耗时。用途：区分「卡在函数里」和「只是慢」——卡住时日志
+       会停在 entry，能看到最后完成到哪一步；默认关（不设环境变量时只有一次
+       getenv），不改语义。 */
+    const int xdiag = getenv("WPF_LINUX_XSYNC_DIAG") != NULL;
+    const uint64_t t0 = xdiag ? wpf_now_ms() : 0;
+    if (xdiag)
+        fprintf(stderr, "[XSYNC] entry tid=%lu t0=%llu\n",
+                (unsigned long)pthread_self(), (unsigned long long)t0);
+    /* 【PM-0106】热路径：TTL 内缓存命中 ⇒ 不取 XLOCK、不发等回复的 X 请求。 */
+    {
+        const uint64_t now_c = wpf_now_ms();
+        if (g_ewmh_wm_cached >= 0
+            && !getenv("WPF_LINUX_FORCE_REPROBE")
+            && (now_c - g_ewmh_wm_cached_ms) < (uint64_t)WPF_EWMH_CACHE_TTL_MS) {
+            if (xdiag)
+                fprintf(stderr, "[XSYNC] cache hit found=%d age=%llums（不取 XLOCK、不发 X 请求）\n",
+                        g_ewmh_wm_cached, (unsigned long long)(now_c - g_ewmh_wm_cached_ms));
+            return g_ewmh_wm_cached;
+        }
+    }
     int found = 0, xerr = 0;
     unsigned long wm_win = 0, prop_n = 0;
     XLOCK();
     Atom type = 0; int fmt = 0;
     unsigned long n = 0, left = 0;
     unsigned char *data = NULL;
-    if (a_net_supporting_wm_check &&
-        XGetWindowProperty(g_wpf.dpy, g_wpf.root, a_net_supporting_wm_check, 0, 1, False,
-                           XA_WINDOW, &type, &fmt, &n, &left, &data) == Success &&
-        data && n >= 1 && fmt == 32) {
-        // format=32 ⇒ 一个 `long` 元素；`Window` 就是 `XID` —— **必须掩到 32 位**：
-        // Xlib 把 32 位属性值放进 `long` 时**会做符号扩展**（实测：写 `0xdeadbeef`
-        // 读回 `0xffffffffdeadbeef`），不掩的话下面按 `resourceid` 过滤会失配。
-        wm_win = ((unsigned long)(*(Window *)data)) & 0xffffffffUL;
-        prop_n = n;
-        found = 1;
+    int prop_rc = -1;
+    if (a_net_supporting_wm_check) {
+        prop_rc = (int)XGetWindowProperty(g_wpf.dpy, g_wpf.root, a_net_supporting_wm_check,
+                                          0, 1, False, XA_WINDOW,
+                                          &type, &fmt, &n, &left, &data);
+        if (prop_rc == Success && data && n >= 1 && fmt == 32) {
+            // format=32 ⇒ 一个 `long` 元素；`Window` 就是 `XID` —— **必须掩到 32 位**：
+            // Xlib 把 32 位属性值放进 `long` 时**会做符号扩展**（实测：写 `0xdeadbeef`
+            // 读回 `0xffffffffdeadbeef`），不掩的话下面按 `resourceid` 过滤会失配。
+            wm_win = ((unsigned long)(*(Window *)data)) & 0xffffffffUL;
+            prop_n = n;
+            found = 1;
+        }
     }
+    if (xdiag)
+        fprintf(stderr, "[XSYNC] GetProperty rc=%d atom=%s type=%lu fmt=%d n=%lu found=%d dt=%llums\n",
+                prop_rc, a_net_supporting_wm_check ? "present" : "absent",
+                (unsigned long)type, fmt, n, found,
+                (unsigned long long)(wpf_now_ms() - t0));
     if (data) XFree(data);
 
     if (found && (wm_win == 0 || wm_win == (unsigned long)g_wpf.root)) {
@@ -2817,12 +2855,21 @@ int wpf_x11_has_ewmh_wm(void)
         XErrorHandler old = XSetErrorHandler(wpf_wmcheck_err_handler);
         g_wmcheck_res = wm_win & 0xffffffffUL; g_wmcheck_err = 0;
         XWindowAttributes attrs;
+        const uint64_t t_attrs0 = xdiag ? wpf_now_ms() : 0;
         int st = (int)XGetWindowAttributes(g_wpf.dpy, (Window)wm_win, &attrs);
+        const uint64_t t_attrs1 = xdiag ? wpf_now_ms() : 0;
         XSync(g_wpf.dpy, False);            // 逼出异步错（此刻临时处理器还装着）
+        const uint64_t t_sync1 = xdiag ? wpf_now_ms() : 0;
         XSetErrorHandler(old);              // **换回**（全局状态必须复原）
         xerr = g_wmcheck_err;
         g_wmcheck_res = 0; g_wmcheck_err = 0;
         if (st == 0 || xerr != 0) found = 0;
+        if (xdiag)
+            fprintf(stderr,
+                    "[XSYNC] GetAttrs st=%d d_attrs=%llums d_sync=%llums wm_win=0x%lx xerr=%d dt=%llums\n",
+                    st, (unsigned long long)(t_attrs1 - t_attrs0),
+                    (unsigned long long)(t_sync1 - t_attrs1),
+                    wm_win, xerr, (unsigned long long)(t_sync1 - t0));
     }
     XUNLOCK();
 
@@ -2833,6 +2880,11 @@ int wpf_x11_has_ewmh_wm(void)
         wpf_wstate_diag("WMCHECK atom=%s prop_n=%lu wm_win=0x%lx xerr=%d ⇒ has_ewmh_wm=%d",
                         a_net_supporting_wm_check ? "present" : "absent",
                         prop_n, wm_win, xerr, found);
+    if (xdiag)
+        fprintf(stderr, "[XSYNC] exit found=%d xerr=%d prop_n=%lu wm_win=0x%lx dt=%llums（写缓存）\n",
+                found, xerr, prop_n, wm_win, (unsigned long long)(wpf_now_ms() - t0));
+    g_ewmh_wm_cached = found;
+    g_ewmh_wm_cached_ms = wpf_now_ms();
     return found;
 }
 
