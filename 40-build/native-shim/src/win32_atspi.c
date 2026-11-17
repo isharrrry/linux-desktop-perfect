@@ -948,16 +948,39 @@ static DBusHandlerResult atspi_msg_handler(DBusConnection *conn, DBusMessage *ms
         }
         dbus_message_iter_close_container(&it, &arr);
     } else if (strcmp(member, "DoAction") == 0) {
-        /* K-1251：不再依赖 WPF 侧注册回调。DoAction 只**置一个待处理标志**并返回 TRUE，
+        /* K-1251：不再依赖 WPF 侧注册回调。DoAction 只**置一个待处理标志**，
            真正的点击由 `GetMessageW` 在 UI 线程上用**已验证有效的**
            `wpf_queue_push(wpf_thread_self(), WM_LBUTTONDOWN/UP)` 注入
            （与 `WPF_FAKE_CLICK` 同一机制，K-1228/K-1239 证明它有效）。
-           这样避免 K-1227 的「投给 g_pump_thread 崩溃」问题。 */
-        if (n && n->has_action) {
-            g_atspi_pending_action_hwnd = n->hwnd ? n->hwnd : (uint64_t)(uintptr_t)g_focus_window;
-            atspi_diag("[ATSPI] DoAction：置待处理标志 hwnd=0x%llx", (unsigned long long)g_atspi_pending_action_hwnd);
+           这样避免 K-1227 的「投给 g_pump_thread 崩溃」问题。
+
+           【PM-0109 修】修前两个缺陷（Python 档 2 实测：3 次 DoAction 全返回
+           true、像素差 0、`[ATSPI-ACTION]` 0 条）：
+           ① 只要 has_action 就返回 TRUE —— 无 hwnd、无 focus、索引非法时也报成功，
+              验收脚本会误判「能驱动」；
+           ② pending 标志只在 `GetMessageW` **入口**检查，而 UI 线程此刻阻塞在
+              该函数内部的 poll 里 ⇒ 只置标志不唤醒，永远没人消费。
+           现在：索引只认 0；无目标返回 FALSE；置标志后补一条 WM_NULL 唤醒
+           目标窗口的 owner 线程，下一次进 `GetMessageW` 入口就会注入。 */
+        dbus_int32_t idx = -1;
+        DBusMessageIter din;
+        if (dbus_message_iter_init(msg, &din)
+            && dbus_message_iter_get_arg_type(&din) == DBUS_TYPE_INT32)
+            dbus_message_iter_get_basic(&din, &idx);
+        uint64_t target = 0;
+        if (n && n->has_action && (idx == 0 || idx == -1))
+            target = n->hwnd ? n->hwnd : (uint64_t)(uintptr_t)g_focus_window;
+        if (target) {
+            g_atspi_pending_action_hwnd = target;
+            atspi_diag("[ATSPI] DoAction：置待处理标志 hwnd=0x%llx idx=%d",
+                       (unsigned long long)target, (int)idx);
+            /* 唤醒 owner 线程（PostMessageW 内部按窗口 owner 路由 + wake） */
+            if (!PostMessageW((HWND)(uintptr_t)target, 0 /*WM_NULL*/, 0, 0)) {
+                g_atspi_pending_action_hwnd = 0;
+                target = 0;
+            }
         }
-        dbus_bool_t r = (n && n->has_action) ? TRUE : FALSE;
+        dbus_bool_t r = target ? TRUE : FALSE;
         dbus_message_iter_append_basic(&it, DBUS_TYPE_BOOLEAN, &r);
     } else if (strcmp(member, "GetActionName") == 0 || strcmp(member, "GetActionDescription") == 0 || strcmp(member, "GetKeyBinding") == 0
                || strcmp(member, "GetName") == 0 || strcmp(member, "GetDescription") == 0 || strcmp(member, "getKeyBinding") == 0) {
