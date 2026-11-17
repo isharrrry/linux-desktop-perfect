@@ -649,6 +649,7 @@ void     wpf_x11_iconify(HWND hwnd);                            // XIconifyWindo
 //   只查属性会让下游两条路（`win32_x11.c` 的 moveresize ／ `win32_core.c:653` 的窗态）
 //   都走 `XSendEvent` 而**静默失效**。射程 = 这两个调用点（全仓再无第三处）。
 int      wpf_x11_has_ewmh_wm(void);
+void     wpf_shadow_dump_stats(void);
 // 把客户区改到 (x,y,w,h) —— **走 WM**（`_NET_MOVERESIZE_WINDOW`）：WM 会连窗框一起摆。
 //   【为什么不用 `_NET_WM_MOVERESIZE`】那条"把拖动交给 WM"的消息虽然在 xfwm4 的
 //   `_NET_SUPPORTED` 里，但**实测无效**（按住左键期间从外部单独发它，窗口纹丝不动；

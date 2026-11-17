@@ -1080,6 +1080,10 @@ static HWND create_window_utf8(uint32_t dwExStyle, const char *cls,
     w->hwnd = (HWND)(uintptr_t)xid;
     pthread_mutex_unlock(&g_wpf.lock);
 
+    /* 【PM-0111 验收】diag 开启时打一行影子表读数（质量要 null_slots 可观测） */
+    if (getenv("WPF_LINUX_UIA_DIAG") || getenv("WPF_LINUX_WNDPROC_DIAG"))
+        wpf_shadow_dump_stats();
+
     // ── 建窗消息序列：WM_NCCREATE → WM_CREATE。**message-only 窗口也必须发** ──
     // 【首版为什么错，以及错成了什么】
     //   首版判断"message-only 窗口不需要 hooks"就跳过了这两条消息。结果：
@@ -1592,6 +1596,19 @@ LONG GetWindowLong(HWND h, int i) { return GetWindowLongW(h, i); }
 static struct { HWND hwnd; WNDPROC proc; } g_shadow_proc[WPF_SHADOW_MAX];
 static int g_shadow_count = 0;
 
+/* 【PM-0111 验收】影子表读数。质量契约：必须能观测到 `null_slots=0`，
+   否则「表里无 NULL 槽」只能算 NEED-EVIDENCE。diag 开启时在建窗与每次写入后各打。 */
+void wpf_shadow_dump_stats(void)
+{
+    int entries = 0, null_slots = 0;
+    for (int i = 0; i < g_shadow_count; ++i) {
+        ++entries;
+        if (!g_shadow_proc[i].hwnd) ++null_slots;
+    }
+    fprintf(stderr, "[SHADOW-TABLE] entries=%d null_slots=%d\n", entries, null_slots);
+    fflush(stderr);
+}
+
 WNDPROC wpf_shadow_get_proc(HWND hwnd)
 {
     /* 【PM-0111】K-891 原裁定：NULL 不落地、只告警。这里做函数级防御——
@@ -1615,8 +1632,8 @@ static void wpf_shadow_set_proc(HWND hwnd, WNDPROC proc)
         if (!s_warned) {
             s_warned = 1;
             fprintf(stderr,
-                    "[SHADOW-NULL] SetWindowLongPtr(GWL_WNDPROC) 收到空句柄 proc=%p "
-                    "⇒ 不写入影子表（PM-0111）\n", (void *)proc);
+                    "[SHADOW-NULL] hwnd=(nil) GWL_WNDPROC -> %p rejected"
+                    "（不写入影子表，PM-0111）\n", (void *)proc);
             fflush(stderr);
         }
         return;
@@ -1633,6 +1650,14 @@ static void wpf_shadow_set_proc(HWND hwnd, WNDPROC proc)
         g_shadow_proc[WPF_SHADOW_MAX - 1].hwnd = hwnd;
         g_shadow_proc[WPF_SHADOW_MAX - 1].proc = proc;
         if (!s_warned) { s_warned = 1; fprintf(stderr, "[SHADOW-FULL] 影子表已满(%d)，改为覆盖最后槽位\n", WPF_SHADOW_MAX); fflush(stderr); }
+    }
+    /* 每次写入后更新读数（有界，防日志风暴） */
+    {
+        static int s_dump_n = 0;
+        if (s_dump_n < 50 && (getenv("WPF_LINUX_UIA_DIAG") || getenv("WPF_LINUX_WNDPROC_DIAG"))) {
+            s_dump_n++;
+            wpf_shadow_dump_stats();
+        }
     }
 }
 
