@@ -1594,6 +1594,10 @@ static int g_shadow_count = 0;
 
 WNDPROC wpf_shadow_get_proc(HWND hwnd)
 {
+    /* 【PM-0111】K-891 原裁定：NULL 不落地、只告警。这里做函数级防御——
+       即使历史版本的表里已经存在 NULL 槽位（本机 1/1-0923 实测写过一次），
+       查表也必须返回 0，绝不能把某个 proc 当成「空句柄窗口」的过程调用。 */
+    if (!hwnd) return NULL;
     for (int i = 0; i < g_shadow_count; ++i)
         if (g_shadow_proc[i].hwnd == hwnd) return g_shadow_proc[i].proc;
     return NULL;
