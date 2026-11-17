@@ -281,7 +281,11 @@ namespace System.Windows.Interop
                     // MITIGATION: HANDLED_KEYDOWN_STILL_GENERATES_CHARS
                     if(HwndSource._eatCharMessages)
                     {
-                        WpfLinuxInputTrace.ProviderChar("被 _eatCharMessages 门住 ⇒ 丢弃", false, true, handled);
+                        // 【PM-0121】只吞「紧邻的一条」WM_CHAR，吞完立即复位（大肥鱼 2026-11-17 定）。
+                        //   修前：该标志只在**下一条 WM_KEYDOWN** 时复位 ⇒ ibus CommitText 只投 WM_CHAR、
+                        //   不带前置 KEYDOWN ⇒ 一旦被上一条 handled 的键置 true，后续提交字符全被丢掉。
+                        HwndSource._eatCharMessages = false;
+                        WpfLinuxInputTrace.ProviderChar("被 _eatCharMessages 门住 ⇒ 丢弃（已复位）", false, true, handled);
                         break;
                     }
 

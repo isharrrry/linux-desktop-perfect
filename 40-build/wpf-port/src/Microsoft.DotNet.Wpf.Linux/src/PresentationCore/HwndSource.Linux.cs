@@ -2404,8 +2404,13 @@ namespace System.Windows.Interop
                 WpfLinuxInputTrace.PreprocessCharEntry(msgdata.msg.hwnd, msgdata.msg.message, msgdata.msg.wParam,
                                                        _eatCharMessages, IsInExclusiveMenuMode);
 
+                // 【PM-0121】吞掉紧邻的一条 WM_CHAR 后立即复位（大肥鱼 2026-11-17 定），
+                //   避免该标志在「只有 WM_CHAR、没有 WM_KEYDOWN」的 ibus CommitText 路径上永久卡住。
+                bool eatOneChar = _eatCharMessages;
+                if (eatOneChar) _eatCharMessages = false;
+
                 // MITIGATION: HANDLED_KEYDOWN_STILL_GENERATES_CHARS
-                if(!_eatCharMessages)
+                if(!eatOneChar)
                 {
                     msgdata.handled = ((IKeyboardInputSink)this).TranslateChar(ref msgdata.msg, modifierKeys);
                     WpfLinuxInputTrace.PreprocessCharStep("TranslateChar", msgdata.handled);
