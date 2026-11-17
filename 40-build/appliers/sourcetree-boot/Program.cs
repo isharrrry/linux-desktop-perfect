@@ -587,6 +587,23 @@ class SourcetreeBoot
             if (kind == "null") il.Append(il.Create(OpCodes.Ldnull));
             else if (kind == "true") il.Append(il.Create(OpCodes.Ldc_I4_1));
             else if (kind == "false") il.Append(il.Create(OpCodes.Ldc_I4_0));
+            else if (kind == "themesrc")
+            {
+                // UX 纠正：OnRender 读私有字段 _currentSource（不是 DP ImageSource），
+                //   且 DP 的 PropertyChangedCallback 是 null ⇒ 只 set_ImageSource 不会出图。
+                var getLight = asm.MainModule.ImportReference(t.Methods.First(x => x.Name == "get_LightThemeImageSource"));
+                var srcField = asm.MainModule.ImportReference(t.Fields.First(x => x.Name == "_currentSource"));
+                var invRef = FindInvalidate(asm);
+                il.Append(il.Create(OpCodes.Ldarg_0));
+                il.Append(il.Create(OpCodes.Ldarg_0));
+                il.Append(il.Create(OpCodes.Callvirt, getLight));
+                il.Append(il.Create(OpCodes.Stfld, srcField));
+                if (invRef != null)
+                {
+                    il.Append(il.Create(OpCodes.Ldarg_0));
+                    il.Append(il.Create(OpCodes.Callvirt, invRef));
+                }
+            }
             il.Append(il.Create(OpCodes.Ret));
         }
         if (need == 0) { log.Add(label + ": ALREADY"); return 0; }
@@ -599,6 +616,107 @@ class SourcetreeBoot
         return 0;
     }
 
+
+    // 取 UIElement::InvalidateVisual 的引用（同程序集里若有现成引用就复用，否则按基类作用域构造）
+    static MethodReference FindInvalidate(AssemblyDefinition asm)
+    {
+        foreach (var ty in Types(asm))
+            foreach (var m in ty.Methods.Where(x => x.HasBody))
+                foreach (var i in m.Body.Instructions)
+                    if (i.Operand is MethodReference mr && mr.Name == "InvalidateVisual")
+                        return asm.MainModule.ImportReference(mr);
+        var t = Types(asm).FirstOrDefault(x => x.FullName == "SourceTree.UI.Theme.Wpf.Controls.ThemeImage");
+        if (t?.BaseType == null) return null;
+        // 实测：System.Windows.UIElement 在 **PresentationCore**（不在 WindowsBase/FrameworkElement 的 scope）。
+        // 用程序集里已有的 PresentationCore 类型引用取 scope：DrawingContext（OnRender 签名里就有）。
+        IMetadataScope pcScope = null;
+        foreach (var ty in Types(asm))
+            foreach (var mm in ty.Methods.Where(x => x.HasBody))
+                foreach (var i in mm.Body.Instructions)
+                    if (i.Operand is MethodReference mr && mr.DeclaringType?.Name == "DrawingContext")
+                    { pcScope = mr.DeclaringType.Scope; break; }
+        if (pcScope == null) return null;
+        var ui = new TypeReference("System.Windows", "UIElement", asm.MainModule, pcScope);
+        var inv = new MethodReference("InvalidateVisual", asm.MainModule.TypeSystem.Void, ui) { HasThis = true };
+        return asm.MainModule.ImportReference(inv);
+    }
+
+    // PM-0108 A2：DpiImage_Loaded 原来要求 MainWindow is PerMonitorDpiWindow，Linux 门槛过不去 ⇒
+    // 改成无条件调 HandleDPIChanged(0, null)（只选源，不碰 PerMonitorDpiWindow）。
+    static int FixThemeImageLoad(string path, bool check, List<string> log)
+    {
+        var asm = Load(path);
+        var t = Types(asm).FirstOrDefault(x => x.FullName == "SourceTree.UI.Theme.Wpf.Controls.ThemeImage");
+        if (t == null) { log.Add("theme-load: NO_TYPE"); return 4; }
+        var m = t.Methods.FirstOrDefault(x => x.Name == "DpiImage_Loaded" && x.HasBody);
+        if (m == null) { log.Add("theme-load: NO_METHOD"); return 4; }
+        var target = t.Methods.First(x => x.Name == "HandleDPIChanged");
+        var ins = m.Body.Instructions;
+        bool already = ins.Count == 5
+            && ins[0].OpCode == OpCodes.Ldarg_0
+            && ins[1].OpCode == OpCodes.Ldc_R8
+            && ins[2].OpCode == OpCodes.Ldnull
+            && ins[3].OpCode == OpCodes.Call
+            && (ins[3].Operand?.ToString() ?? "").Contains("HandleDPIChanged")
+            && ins[4].OpCode == OpCodes.Ret;
+        if (already) { log.Add("theme-load: ALREADY"); return 0; }
+        if (check) { log.Add("theme-load: NEEDS 1"); return 0; }
+        m.Body.Instructions.Clear();
+        m.Body.Variables.Clear();
+        m.Body.ExceptionHandlers.Clear();
+        var il = m.Body.GetILProcessor();
+        il.Append(il.Create(OpCodes.Ldarg_0));
+        il.Append(il.Create(OpCodes.Ldc_R8, 0.0));
+        il.Append(il.Create(OpCodes.Ldnull));
+        il.Append(il.Create(OpCodes.Call, asm.MainModule.ImportReference(target)));
+        il.Append(il.Create(OpCodes.Ret));
+        var tmp = path + ".tmp";
+        asm.Write(tmp, new WriterParameters { WriteSymbols = false });
+        asm.Dispose();
+        File.Move(tmp, path, true);
+        log.Add("theme-load: PATCHED 1");
+        return 0;
+    }
+
+
+    // PM-0108 A'：OnRender 开头兜底选源（UX 建议，时序安全：绘制时 Light 一定已设好）
+    //   ldarg.0; ldfld _currentSource; brtrue ORIG;
+    //   ldarg.0; ldarg.0; callvirt get_LightThemeImageSource; stfld _currentSource;
+    // ORIG: <原 15 条>
+    static int FixThemeOnRender(string path, bool check, List<string> log)
+    {
+        var asm = Load(path);
+        var t = Types(asm).FirstOrDefault(x => x.FullName == "SourceTree.UI.Theme.Wpf.Controls.ThemeImage");
+        if (t == null) { log.Add("theme-onrender: NO_TYPE"); return 4; }
+        var m = t.Methods.FirstOrDefault(x => x.Name == "OnRender" && x.HasBody);
+        if (m == null) { log.Add("theme-onrender: NO_METHOD"); return 4; }
+        var ins = m.Body.Instructions;
+        bool already = ins.Count > 3
+            && ins[0].OpCode == OpCodes.Ldarg_0
+            && ins[1].OpCode == OpCodes.Ldfld
+            && (ins[1].Operand?.ToString() ?? "").Contains("_currentSource")
+            && ins[2].OpCode == OpCodes.Brtrue;
+        if (already) { log.Add("theme-onrender: ALREADY"); return 0; }
+        if (check) { log.Add("theme-onrender: NEEDS 1"); return 0; }
+        var srcField = asm.MainModule.ImportReference(t.Fields.First(x => x.Name == "_currentSource"));
+        var getLight = asm.MainModule.ImportReference(t.Methods.First(x => x.Name == "get_LightThemeImageSource"));
+        var first = ins[0];
+        var il = m.Body.GetILProcessor();
+        il.InsertBefore(first, il.Create(OpCodes.Ldarg_0));
+        il.InsertBefore(first, il.Create(OpCodes.Ldfld, srcField));
+        il.InsertBefore(first, il.Create(OpCodes.Brtrue, first));
+        il.InsertBefore(first, il.Create(OpCodes.Ldarg_0));
+        il.InsertBefore(first, il.Create(OpCodes.Ldarg_0));
+        il.InsertBefore(first, il.Create(OpCodes.Callvirt, getLight));
+        il.InsertBefore(first, il.Create(OpCodes.Stfld, srcField));
+        var tmp = path + ".tmp";
+        asm.Write(tmp, new WriterParameters { WriteSymbols = false });
+        asm.Dispose();
+        File.Move(tmp, path, true);
+        log.Add("theme-onrender: PATCHED 1");
+        return 0;
+    }
+
     static bool IsConstBody(MethodDefinition m, string kind)
     {
         var ins = m.Body.Instructions;
@@ -606,6 +724,17 @@ class SourcetreeBoot
         if (kind == "null") return ins.Count == 2 && ins[0].OpCode == OpCodes.Ldnull && ins[1].OpCode == OpCodes.Ret;
         if (kind == "true") return ins.Count == 2 && ins[0].OpCode == OpCodes.Ldc_I4_1 && ins[1].OpCode == OpCodes.Ret;
         if (kind == "false") return ins.Count == 2 && ins[0].OpCode == OpCodes.Ldc_I4_0 && ins[1].OpCode == OpCodes.Ret;
+        // PM-0108 A：ThemeImage.HandleDPIChanged 的「只选源」实现（写私有字段 _currentSource）
+        if (kind == "themesrc")
+            return ins.Count == 7
+                && ins[0].OpCode == OpCodes.Ldarg_0
+                && ins[1].OpCode == OpCodes.Ldarg_0
+                && (ins[2].Operand?.ToString() ?? "").Contains("get_LightThemeImageSource")
+                && ins[3].OpCode == OpCodes.Stfld
+                && (ins[3].Operand?.ToString() ?? "").Contains("_currentSource")
+                && ins[4].OpCode == OpCodes.Ldarg_0
+                && (ins[5].Operand?.ToString() ?? "").Contains("InvalidateVisual")
+                && ins[6].OpCode == OpCodes.Ret;
         return false;
     }
 
@@ -812,7 +941,8 @@ class SourcetreeBoot
             "ShowNotificationDialogWithYesConfirmation", "true", check, log, "notif-dialog");
         rc |= SetAllMethodBodies(Path.Combine(app, "SourceTree.UI.Theme.Wpf.dll"),
             "SourceTree.UI.Theme.Wpf.Controls.ThemeImage",
-            "HandleDPIChanged", "ret", check, log, "theme-dpi");
+            "HandleDPIChanged", "themesrc", check, log, "theme-dpi");
+        rc |= FixThemeImageLoad(Path.Combine(app, "SourceTree.UI.Theme.Wpf.dll"), check, log);
         if (runtime == null)
         {
             log.Add("runtime: SKIP (未传 --runtime)");
