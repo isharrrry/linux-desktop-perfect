@@ -111,10 +111,14 @@ namespace System.Windows
         public static readonly string XamlPackage = "XamlPackage";
 
         /// <summary>[PNSE] 依赖 OLE 格式注册表的 id 分配。</summary>
-        public static DataFormat GetDataFormat(int id) => OleNotSupported.Throw<DataFormat>(nameof(GetDataFormat));
+        // 【PM-0114】与现役件 `fefe5757` 行为一致：返回 null（部署件 IL 实测为 `ldnull; ret`）。
+        //   修前 HEAD 抛 `PlatformNotSupportedException` ⇒ `GongSolutions.Wpf.DragDrop..cctor` 炸
+        //   ⇒ `XamlParseException` ⇒ 应用启动即中止（质量实测两版各 8 次命中）。
+        //   真实现（OLE 格式表 / 剪贴板注册）另记 PM-0114 后续，不挡重编。
+        public static DataFormat GetDataFormat(int id) => null;
 
         /// <summary>[PNSE] 依赖 OLE 格式注册表的 id 分配。</summary>
-        public static DataFormat GetDataFormat(string format) => OleNotSupported.Throw<DataFormat>(nameof(GetDataFormat));
+        public static DataFormat GetDataFormat(string format) => null;
     }
 
     /// <summary>
