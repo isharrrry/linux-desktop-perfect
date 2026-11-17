@@ -1,13 +1,19 @@
 // ⚠️ 本文件由 src/WpfGfx.Linux.Native/tools/patch-shared-hwndwrapper-diag.py **生成**，不要手改。
 //
-// 内容 = 上游 `Shared/MS/Win32/HwndWrapper.cs` 逐字复制 + **补丁 P 的一处诊断接线**：
-//   在**上游本来就有的** `_handle == 0`（建窗失败）分支里，多打一行 stderr，内容是 shim 的
-//   `WpfLinuxWin32_LastError()`（`dpy_error` + `XSetErrorHandler` 抓到的 `x_error`）。
-//   不抛、不吞、不改返回值、不动 `CreateWindowEx` 调用 —— 只是"让失败自己说话"。
+// 内容 = 上游 `Shared/MS/Win32/HwndWrapper.cs` 逐字复制 + **补丁 P**（建窗失败诊断）+ **补丁 Q**（PM-0111）：
+//   P：在**上游本来就有的** `_handle == 0`（建窗失败）分支里，多打一行 stderr，内容是 shim 的
+//      `WpfLinuxWin32_LastError()`（`dpy_error` + `XSetErrorHandler` 抓到的 `x_error`）。
+//      不抛、不吞、不改返回值、不动 `CreateWindowEx` 调用 —— 只是"让失败自己说话"。
+//   Q：把建窗时传给 `RegisterClassEx` 的 `initialWndProc` 从**局部变量**改成**字段**
+//      （`_initialWndProc`），活到窗口销毁。上游只保证它活到 `CreateWindowEx` 返回；
+//      如果某个窗口没走完 `HwndSubclass` 的自我挂载，GC 掉它之后任何同步派发
+//      （`SetWindowPos → WM_SIZE/WM_MOVE`）都会命中
+//      "A callback was made on a garbage collected delegate" ⇒ fail-fast（PM-0111）。
+//      不改调用顺序、不改行为，只改生命周期。
 // 目标程序集 = **WindowsBase**（`Dispatcher..ctor → MessageOnlyHwndWrapper → HwndWrapper` 都在这）。
 // 每次运行该脚本都从上游重读重生成；锚点计数对不上时**报错退出**，不静默产出未打补丁的副本。
 //
-// ↓↓↓ 以下为上游原文（仅补丁 P 的一处有改动）↓↓↓
+// ↓↓↓ 以下为上游原文（仅补丁 P/Q 的几处有改动）↓↓↓
 // Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 
@@ -77,7 +83,8 @@ namespace MS.Win32
             // Subclass.WndProc will install a better delegate (to the same function) when it
             // processes the first message.
             // But this first delegate needs be held alive until then.
-            NativeMethods.WndProc initialWndProc = new NativeMethods.WndProc(hwndSubclass.SubclassWndProc);
+            // [补丁 Q / PM-0111] 存字段（不是局部变量）：活到窗口销毁，不再赌「第一条消息会挂载」。
+            _initialWndProc = new NativeMethods.WndProc(hwndSubclass.SubclassWndProc);
 
             // The class name is a concat of AppName, ThreadName, and RandomNumber.
             // Register will fail if the string gets over 255 in length.
@@ -102,7 +109,7 @@ namespace MS.Win32
 
             wc_d.cbSize        = Marshal.SizeOf(typeof(NativeMethods.WNDCLASSEX_D));
             wc_d.style         = classStyle;
-            wc_d.lpfnWndProc   = initialWndProc;
+            wc_d.lpfnWndProc   = _initialWndProc;
             wc_d.cbClsExtra    = 0;
             wc_d.cbWndExtra    = 0;
             wc_d.hInstance     = hInstance;
@@ -148,7 +155,7 @@ namespace MS.Win32
                     hwndSubclass.Dispose();
                 }
             }
-            GC.KeepAlive(initialWndProc);
+            GC.KeepAlive(_initialWndProc);   // [补丁 Q] 字段已常驻，本句只为与上游对齐
         }
 
 
@@ -247,27 +254,14 @@ namespace MS.Win32
 
         private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
         {
-            // 【P25】这是**真正生效的** WndProc（上游 Shared/MS/Win32/HwndWrapper.cs 在
-            //   WindowsBase.Linux.csproj:431 被 Compile Remove，换成了本文件）。
-            //   之前的 P21/P24 加在被 Remove 的那份上 ⇒ 从来没被编译 ⇒ 读数 0 次是构建问题。
-            //   这里必须重新放一条，才能看到 WM_DROPFILES 到底有没有进 WndProc、_hooks 有几条。
+            // 【WPF-on-Linux 补丁 P21】诊断：WM_DROPFILES 是否真的到达 WPF 的窗口过程。
+            //   为什么要在这一层：P20 在 `HwndTargetFilterMessage`（hook 链中的一环）里处理
+            //   WM_DROPFILES，而实测那行诊断 0 次 —— 所以要先确认消息有没有进到 WndProc 入口，
+            //   再往下才是"它没被派发给那一个 hook"的问题（D-011 第十一步）。
             if (msg == 0x0233 /* WM_DROPFILES */)
             {
-                string hookNames = "null";
-                if (_hooks != null)
-                {
-                    var names = new System.Text.StringBuilder();
-                    foreach (object h in _hooks)
-                    {
-                        if (h is HwndWrapperHook hw)
-                            names.Append(hw.Method.DeclaringType?.Name).Append('.').Append(hw.Method.Name).Append(';');
-                        else
-                            names.Append("<").Append(h == null ? "null" : h.GetType().Name).Append(">;");
-                    }
-                    hookNames = names.Length == 0 ? "(empty)" : names.ToString();
-                }
-                Console.Error.WriteLine("[P25] HwndWrapper.Linux.WndProc 收到 WM_DROPFILES hwnd=0x"
-                    + hwnd.ToInt64().ToString("x") + " hooks=" + hookNames);
+                Console.Error.WriteLine("[P21] HwndWrapper.WndProc 收到 WM_DROPFILES hwnd=0x" + hwnd.ToInt64().ToString("x")
+                    + " wParam=0x" + wParam.ToInt64().ToString("x") + " hooks=" + ((_hooks == null) ? 0 : System.Linq.Enumerable.Count(System.Linq.Enumerable.Cast<object>(_hooks))));
                 Console.Error.Flush();
             }
 
@@ -281,15 +275,6 @@ namespace MS.Win32
                 foreach(HwndWrapperHook hook in _hooks)
                 {
                     result = hook(hwnd, msg, wParam, lParam, ref handled);
-                    // 【P26】看 WM_DROPFILES 是不是被前面的 hook 提前 handled=true 截断了
-                    //   （P25 显示 _hooks 里确实有 HwndTargetFilterMessage，它在最后一条，
-                    //    若前面某条置了 handled，后面的就都不会执行 ⇒ P20 自然 0 次）。
-                    if (msg == 0x0233)
-                    {
-                        Console.Error.WriteLine("[P26] " + hook.Method.DeclaringType?.Name + "." + hook.Method.Name
-                            + " → handled=" + handled + " wParam=0x" + wParam.ToInt64().ToString("x"));
-                        Console.Error.Flush();
-                    }
 
                     CheckForCreateWindowFailure(result, handled);
 
@@ -407,6 +392,12 @@ namespace MS.Win32
         private int _ownerThreadID;
         
         private HwndWrapperHook _wndProc;
+
+        // [补丁 Q / PM-0111] 建窗时交给 RegisterClassEx 的那个委托必须活到窗口销毁：
+        //   它是 shim 里该窗口的默认类过程（GWL_WNDPROC 初始值）。HwndSubclass 的自我挂载
+        //   依赖窗口收到第一条消息；挂载没生效时，GC 掉本委托后任何同步派发都会
+        //   "A callback was made on a garbage collected delegate" ⇒ fail-fast。
+        private NativeMethods.WndProc _initialWndProc;
         private bool _isDisposed;
 
         private bool _isInCreateWindow = false;     // debugging variable (temporary)
