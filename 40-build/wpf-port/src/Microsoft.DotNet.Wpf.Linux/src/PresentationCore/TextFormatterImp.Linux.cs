@@ -359,7 +359,7 @@ namespace MS.Internal.TextFormatting
         internal static TextLine TryFormatLine(TextSource textSource, int cpFirst, double paragraphWidth,
                                               double pixelsPerDip, bool alwaysCollapsible, double lineHeight,
                                               double indentDip = 0, double paragraphIndentDip = 0,
-                                              TextRunProperties paragraphDefault = null)   // ★D-T5-R
+                                              TextRunProperties paragraphDefault = null, bool wrap = true)   // ★D-T5-R
         {
             ++s_calls;
             try
@@ -402,7 +402,8 @@ namespace MS.Internal.TextFormatting
                             //   `ParagraphBreakRun : TextEndOfParagraph`）⇒ 段末行的末 span 用它 ⇒
                             //   `Line.FormattingResult`（`Line.cs:928-936`，**只认** `ParagraphBreakRun`／
                             //   `LineBreakRun`）报 `fsflrEndOfParagraph` ⇒ 驱动在段末收束、**不再越界探 Block**。
-                            eopRun: eolRun);
+                            eopRun: eolRun,
+                            wrap: wrap);
 
                 if (lines == null || lines.Count == 0) { ++s_failed; s_lastFail = "工厂返回 0 行"; return null; }
 
@@ -680,6 +681,13 @@ namespace MS.Internal.TextFormatting
             TextRunCache                textRunCache
             )
         {
+            // 【PM-0118】上游 `MS/internal/TextFormatting/FormatSettings.cs:168` 同款：
+            //   `paragraphWidth <= 0` ⇒ 不限宽（`SimpleTextLine.cs:105`: 0 = format width unlimited）。
+            //   `FormattedText.MaxTextWidth` 默认 0（文档 `FormattedText.cs:1243`：0 = 尽可能宽）；
+            //   修前 0 被原样交给折行引擎 ⇒ 每字符一行（diff 栏竖排）。
+            //   ⚠️ 只在**真排版**入口钳位；`TryMinMaxParagraphWidth` 的 0 是「求最小宽」的哨兵，绝不能钳。
+            if (paragraphWidth <= 0) paragraphWidth = Constants.RealInfiniteWidth;
+
             EventTrace.EasyTraceEvent(EventTrace.Keyword.KeywordText, EventTrace.Level.Verbose, EventTrace.Event.WClientStringBegin, "TextFormatterImp.FormatLineInternal Start");
 
             // prepare formatting settings
@@ -738,6 +746,8 @@ namespace MS.Internal.TextFormatting
                     //   内容起点 = `Indent + ParagraphIndent`。
                     indentDip: paragraphProperties.Indent,
                     paragraphIndentDip: paragraphProperties.ParagraphIndent
+                    ,
+                    wrap: settings.Pap.Wrap
                     ) as TextLine;
             }
 
@@ -774,6 +784,8 @@ namespace MS.Internal.TextFormatting
                     //   它的**非 null + `Typeface` 非 null** 已由 `FormatLineInternal` 起点的
                     //   `ArgumentNullException.ThrowIfNull` 一族机器强制 ⇒ 恰好满足 `ResolveFont`。
                     paragraphDefault: paragraphProperties.DefaultTextRunProperties
+                    ,
+                    wrap: settings.Pap.Wrap
                     ) as TextLine;
             }
 

@@ -1797,6 +1797,8 @@ namespace WpfLinux.Shims.PresentationCore
             var lines = new List<HbLineRange>();
             int len = end - start;
             if (len <= 0) { lines.Add(new HbLineRange { Start = start, End = start }); return lines; }  // 空段落 ⇒ 空行
+            // 【PM-0118】NoWrap：不折行 ⇒ 整段一行（硬断仍由 LayoutText 切段）。
+            if (!wrap) { lines.Add(new HbLineRange { Start = start, End = end }); return lines; }
 
             System.Threading.Interlocked.Increment(ref ParagraphsBroken);
 
@@ -4831,7 +4833,7 @@ namespace WpfLinux.Shims.PresentationCore
         /// </summary>
         internal static TextLine TryFormatLine(TextSource textSource, int cpFirst, double paragraphWidth,
                                               double pixelsPerDip, bool alwaysCollapsible, double lineHeight,
-                                              double indentDip = 0, double paragraphIndentDip = 0)
+                                              double indentDip = 0, double paragraphIndentDip = 0, bool wrap = true)
         {
             ++Calls;
             if (!Enabled) { Bail(ref BailNoSwitch, "回退开关关（" + HbTextLineScaffold.EnableEnvVar + " 或 " + FallbackEnvVar + "=0）"); return null; }
@@ -4869,7 +4871,8 @@ namespace WpfLinux.Shims.PresentationCore
                     // ── ★T-A30（`PRECOND-LINEMODEL-ELEMENT-SAFE-STARTS`）：**严格档**也把段末 EOL run 透到工厂 ──
                     //   `eolRun` = `TryCollect` 在段末取到的**源自己的**那个 run（宿主 PtsHost 给 `ParagraphBreakRun`）
                     //   ⇒ 段末行的末 span 用它 ⇒ `Line.FormattingResult` 报 `fsflrEndOfParagraph` ⇒ 驱动在段末收束。
-                    eopRun: eolRun);
+                    eopRun: eolRun,
+                    wrap: wrap);
                 s_cache = new ParaCache { Source = textSource, Start = cpFirst, Lines = lines };
                 HbTextLine first = s_cache.LineAt(cpFirst);
                 if (first == null) { Bail(ref BailException, "缓存里没有该行"); return null; }
