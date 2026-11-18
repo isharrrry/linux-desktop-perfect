@@ -233,6 +233,7 @@ static DBusHandlerResult ibus_filter(DBusConnection *conn, DBusMessage *msg, voi
     if (dbus_message_is_signal(msg, IBUS_IC_IFACE, "ShowPreeditText"))   { g_composing = 1; }
     if (dbus_message_is_signal(msg, IBUS_IC_IFACE, "HidePreeditText"))   { g_composing = 0; }
 
+    wpf_ibus_touch();
     if (dbus_message_is_signal(msg, IBUS_IC_IFACE, "CommitText")) {
         g_composing = 0;
         // 【ACC-017 / K-094】ibus 的 `CommitText` 参数**不是**裸 STRING（实测 `get_args(STRING)` 失败）。
@@ -332,8 +333,11 @@ static DBusHandlerResult ibus_filter(DBusConnection *conn, DBusMessage *msg, voi
 // ibus 的 `ProcessKeyEvent(keyval:u32, keycode:u32, state:u32)` 语义与 X 完全一致：
 //   keyval 来自 `XLookupKeysym`，state 直接用 X 的修饰键位。
 // 返回 1 表示 ibus **消费**了这个键（调用方不要再翻译成 WM_KEYDOWN）。
+void wpf_ibus_touch(void);   /* 【PM-0117】活动时间戳（定义在下方 pump 前） */
+
 int wpf_ibus_process_key(unsigned int keyval, unsigned int keycode, unsigned int state, unsigned int *out_keyval)
 {
+    wpf_ibus_touch();
     /* 【PM-0121】WPF_LINUX_IBUS=0：完全不把键交给 ibus（键盘逃生档） */
     if (wpf_ibus_mode() == 2) return 0;
     if (!g_ibus_ok || !g_conn || !g_ic_path[0]) { ibus_diag("[IBUS] process_key 跳过：ok=%d conn=%p ic=%s", g_ibus_ok, (void*)g_conn, g_ic_path); return 0; }
@@ -392,14 +396,46 @@ int wpf_ibus_process_key(unsigned int keyval, unsigned int keycode, unsigned int
 // 【为什么不在事件泵里阻塞】D-Bus 的 `send_with_reply_and_block` 只在 ProcessKeyEvent
 //   里用（有 1s 超时，且用户按键本身就是异步的），而**信号**必须靠这里轮询收，
 //   一轮最多读几条消息，绝不阻塞 X 事件循环。
+/* 【PM-0117】空闲门：ibus 泵原先是「每个消息循环拍 × 4 次非阻塞 `recvmsg`」
+   ⇒ 空闲实测 ~1548 次/秒 EAGAIN 空转（占 CPU 的大头之一）。
+   语义不变的做法：只有**最近动过 ibus**（发过键、收到 preedit/commit、初始化）才去轮询；
+   空闲超过 WPF_IBUS_IDLE_MS（默认 250ms）就直接返回，一次系统调用都不做。
+   `WPF_LINUX_IBUS_PUMP_IDLE_MS=0` 恢复旧行为（诊断/对照用）。 */
+static uint64_t g_ibus_last_activity_ms;
+
+static unsigned ibus_idle_ms(void)
+{
+    const char *e = getenv("WPF_LINUX_IBUS_PUMP_IDLE_MS");
+    if (e && *e == '0' && e[1] == '\0') return 0;      /* 0 = 关闭空闲门 */
+    if (e && *e) { int v = atoi(e); if (v > 0) return (unsigned)v; }
+    return 250;
+}
+
+void wpf_ibus_touch(void)
+{
+    extern uint64_t wpf_now_ms(void);
+    g_ibus_last_activity_ms = wpf_now_ms();
+}
+
 void wpf_ibus_pump(void)
 {
     // 【ACC-017 / K-091】懒初始化：第一次 pump 时去连 ibus。
     //   放在这里而不是启动路径，是因为：`wpf_x11_ensure` 早于窗口创建，那时还没有 hwnd 可绑；
     //   而 pump 是事件泵每次循环都调的，窗口一定已经在了。
     static int tried = 0;
-    if (!g_conn && !tried) { tried = 1; wpf_ibus_init(); }
+    if (!g_conn && !tried) { tried = 1; wpf_ibus_init(); wpf_ibus_touch(); }
     if (!g_conn) return;
+
+    /* 【PM-0117】空闲门（见上） */
+    {
+        unsigned idle = ibus_idle_ms();
+        if (idle != 0) {
+            extern uint64_t wpf_now_ms(void);
+            uint64_t now = wpf_now_ms();
+            if (g_ibus_last_activity_ms == 0) g_ibus_last_activity_ms = now;
+            if (now - g_ibus_last_activity_ms > idle) return;   /* 空闲：零系统调用 */
+        }
+    }
     // 一次最多读 4 条，避免单次循环太久
     for (int i = 0; i < 4; ++i) {
         if (!dbus_connection_read_write(g_conn, 0)) return;   // 0ms = 非阻塞
