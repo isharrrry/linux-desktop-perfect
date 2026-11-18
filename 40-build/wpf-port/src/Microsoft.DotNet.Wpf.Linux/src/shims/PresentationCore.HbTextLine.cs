@@ -2823,6 +2823,9 @@ namespace WpfLinux.Shims.PresentationCore
         private bool _hasCollapsed;
         private bool _disposed;
 
+        // PM-0132：缓存里的行对象是否已被 Dispose（只读，诊断用）。
+        internal bool IsDisposedCached { get { return _disposed; } }
+
         /// <summary>单 run 便捷构造（B1 原型路径 / 整串就是一行）。</summary>
         internal HbTextLine(HbTextRun run, HbShapedRun shaped, GlyphTypeface glyphTypeface, float pixelsPerDip)
             : this(run, shaped, glyphTypeface, pixelsPerDip, shaped.Text, 0, null, 0, false, false, false, false, 0,
@@ -4297,6 +4300,24 @@ namespace WpfLinux.Shims.PresentationCore
 
         private static ParaCache s_cache;
 
+        // ── PM-0132：缓存命中是否**复用**行对象 ──
+        // 复用会让 FormattedText.LineEnumerator 的 using 收尾 Dispose 掉同一实例的后续枚举
+        // ⇒ ObjectDisposedException（先读 Width 再 DrawText 必现）。
+        // 默认**不复用**（对齐上游“每次 FormatLine 重新建行”）；旧行为用 WPF_LINUX_TEXTLINE_CACHE=1 开回。
+        private static readonly bool CacheReuse = CacheFlag(Environment.GetEnvironmentVariable("WPF_LINUX_TEXTLINE_CACHE"));
+        private static readonly bool CacheDiag = CacheFlag(Environment.GetEnvironmentVariable("WPF_LINUX_TEXTLINE_CACHE_DIAG"));
+        internal static long CacheStaleDisposed;
+
+        private static bool CacheFlag(string v)
+        {
+            if (string.IsNullOrEmpty(v)) return false;
+            v = v.Trim();
+            return v == "1"
+                || string.Equals(v, "true", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(v, "on", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(v, "yes", StringComparison.OrdinalIgnoreCase);
+        }
+
         /// <summary>
         /// 回退开关：**默认开**（主控 2026-09-11 批准的设计）。
         ///
@@ -4844,7 +4865,24 @@ namespace WpfLinux.Shims.PresentationCore
                 if (c != null && ReferenceEquals(c.Source, textSource) && c.Contains(cpFirst))
                 {
                     HbTextLine hit = c.LineAt(cpFirst);
-                    if (hit != null) { ++Handled; return hit; }
+                    if (hit != null)
+                    {
+                        // PM-0132：默认不复用；只有 WPF_LINUX_TEXTLINE_CACHE=1 才把行对象交给后续枚举。
+                        if (CacheReuse)
+                        {
+                            if (hit.IsDisposedCached) ++CacheStaleDisposed;
+                            if (CacheDiag)
+                                Console.Error.WriteLine("[HB_CACHE] cpFirst=" + cpFirst + " lines=" + c.Lines.Count
+                                    + " hash0=" + System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(hit)
+                                    + " reuse=1 stale=" + (hit.IsDisposedCached ? 1 : 0));
+                            ++Handled; return hit;
+                        }
+                        if (CacheDiag)
+                            Console.Error.WriteLine("[HB_CACHE] cpFirst=" + cpFirst + " lines=" + c.Lines.Count
+                                + " hash0=" + System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(hit)
+                                + " reuse=0 stale=" + (hit.IsDisposedCached ? 1 : 0)
+                                + (hit.IsDisposedCached ? "" : " width=" + hit.Width.ToString("F2")));
+                    }
                 }
 
                 string text; HbFontPlan plan; GlyphTypeface[] faces; RunFace primaryRun; TextRunProperties primaryProps;
