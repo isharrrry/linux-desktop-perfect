@@ -145,6 +145,7 @@ static int atspi_address(char *out, size_t outsz)
 //   必须有线程持续 `read_write_dispatch`。否则注册的方法永远不被调用。
 static void *atspi_pump_thread(void *arg)
 {
+    pthread_setname_np(pthread_self(), "atspi-pump");   /* 【PM-0135】线程名便于诊断对号 */
     (void)arg;
     if (!g_bus) return NULL;
     atspi_diag("[ATSPI] 泵线程开始");

@@ -10,6 +10,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <pthread.h>
+#include <sys/syscall.h>
 #include <stdarg.h>   // 【波 58】wpf_wmsize_diag 的可变参数
 #include <stddef.h>   // ★W70A（D-G72）：GetMonitorInfoW 要用 offsetof 读 cbSize 边界
 #include <stdio.h>
@@ -737,6 +738,9 @@ static int wpf_core_is_toplevel(HWND hwnd)
 
 /* 【PM-0135】当前线程名（诊断用）：`pthread_getname_np` + `_Thread_local` 缓冲；取不到时返回 "-"。
    大肥鱼要的回答「NCHIT/PUSH 分别是哪条线程」需要名字而不是裸指针，故两处诊断都带它。 */
+/* 【PM-0135】当前线程的内核 tid（与 /proc/<pid>/task/<tid> 对得上；pthread_t 指针不好比对） */
+long wpf_shim_tid(void) { return (long)syscall(SYS_gettid); }
+
 const char *wpf_shim_thread_name(void)
 {
     static _Thread_local char buf[32];
@@ -764,8 +768,10 @@ int wpf_core_nc_hit_test(HWND hwnd, int x_root, int y_root)
     void *owner = w ? w->owner_thread : NULL;
     if (owner && owner != me) {
         if (getenv("WPF_LINUX_NCHIT_DIAG"))
-            fprintf(stderr, "[NCHIT] cross-thread hwnd=0x%llx cur=%p cname=%s owner=%p guard=%d\n",
-                    (unsigned long long)(uintptr_t)hwnd, me, wpf_shim_thread_name(), owner,
+            fprintf(stderr, "[NCHIT] cross-thread hwnd=0x%llx tid=%ld wtid=%u cname=%s owner=%p owner_wtid=%u guard=%d\n",
+                    (unsigned long long)(uintptr_t)hwnd, wpf_shim_tid(),
+                    (unsigned)WPF_THREAD_ID(me), wpf_shim_thread_name(),
+                    owner, (unsigned)WPF_THREAD_ID(owner),
                     getenv("WPF_LINUX_NCHIT_GUARD") ? 1 : 0);
         if (getenv("WPF_LINUX_NCHIT_GUARD"))
             return HTCLIENT;

@@ -26,6 +26,7 @@
 
 #define _GNU_SOURCE
 #include <dlfcn.h>
+#include <execinfo.h>
 #include "win32_internal.h"
 #include <X11/Xlib.h>
 
@@ -725,6 +726,41 @@ LRESULT wpf_dispatch_to_window(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
 {
     WNDPROC proc = NULL;
     wpf_global_init();
+
+    /* ══ 【PM-0135】跨线程派发：这里是全部 6 个调用点的**唯一落点** ══════════════════
+       `SendMessageW` / `DispatchMessageW` / `wpf_core_nc_hit_test`（WM_NCHITTEST）/
+       `WM_GETMINMAXINFO` 都从这里进托管 WndProc。非 owner 线程直调 ⇒ WPF 钩子链在错误线程
+       跑 ⇒ `Visual.VerifyAccess` 抛「调用线程无法访问该对象」。
+         · `WPF_LINUX_XDISPATCH_DIAG=1`  → **只在第一次命中**打一整条调用栈（谁在派发）
+         · `WPF_LINUX_XDISPATCH_GUARD=1` → 跨线程不直调，按消息给默认返回（NCHITTEST→HTCLIENT，其余 0）
+       两个 env 默认都不设 ⇒ 行为与修前逐字一致。 */
+    {
+        void *owner = NULL;
+        wpf_lock();
+        wpf_window *own = wpf_window_find(hwnd);
+        if (own) owner = own->owner_thread;
+        pthread_mutex_unlock(&g_wpf.lock);
+        void *me = (void *)wpf_thread_self();
+        if (owner && owner != me) {
+            static int bt_shown = 0;
+            if (!bt_shown && getenv("WPF_LINUX_XDISPATCH_DIAG")) {
+                extern long wpf_shim_tid(void);
+                extern const char *wpf_shim_thread_name(void);
+                bt_shown = 1;
+                void *bt[24];
+                int n = backtrace(bt, 24);
+                fprintf(stderr,
+                        "[XDISPATCH] cross-thread hwnd=0x%llx msg=0x%04x tid=%ld wtid=%u cname=%s owner=%p owner_wtid=%u\n",
+                        (unsigned long long)(uintptr_t)hwnd, (unsigned)msg, wpf_shim_tid(),
+                        (unsigned)WPF_THREAD_ID(me), wpf_shim_thread_name(),
+                        owner, (unsigned)WPF_THREAD_ID(owner));
+                backtrace_symbols_fd(bt, n, 2);
+                fflush(stderr);
+            }
+            if (getenv("WPF_LINUX_XDISPATCH_GUARD"))
+                return (msg == WM_NCHITTEST) ? HTCLIENT : 0;
+        }
+    }
 
     // ── 波 51 · `TASK-0108` 的 `P3`：托管侧的**私有告示消息**在这里落地 ────────────────────
     // 【为什么拦在**这里**】本函数是 `SendMessageW`（`:837`）与 `DispatchMessageW`（`:744`）的
