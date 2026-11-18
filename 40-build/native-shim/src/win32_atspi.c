@@ -546,16 +546,19 @@ int32_t WindowPattern_WaitForInputIdle(void) { return E_NOTIMPL; }
 // 但拿不到按钮/输入框级的控件（那需要 WPF 的 AutomationPeer 桥接）。
 // ═══════════════════════════════════════════════════════════════════════════
 
-#define WPF_ATSPI_MAX_NODES 64
+#define WPF_ATSPI_MAX_NODES 512
 #define WPF_ATSPI_PATH_ROOT "/org/a11y/atspi/accessible/wpf/root"
 /* PM-0109：org.a11y.atspi.Cache 的规范对象路径（at-spi2-core xml/Cache.xml） */
 #define WPF_ATSPI_PATH_CACHE "/org/a11y/atspi/cache"
 
 typedef struct {
     char path[128];                 // D-Bus 对象路径
-    char name[256];                 // 窗口标题
-    char role[32];                  // "application" / "frame"
+    char name[256];                 // 窗口标题 / 控件名
+    char role[32];                  // "application" / "frame" / "push button" …
+    uint32_t role_id;               // AT-SPI Role 数值（Cache 用；由注册方给，避免猜）
     uint64_t hwnd;                  // 关联的 HWND（0 = 应用 root）
+    int parent_index;               // 【PM-0109】父节点在 g_nodes 里的下标（-1 = 无父）
+    int bounds[4];                  // 【PM-0109】x,y,w,h（设备像素，0 表示未知）
     int registered;                 // 是否已注册到 D-Bus
     int alive;
     /* K-1161（T3）：Action 接口数据（由 WPF 侧通过 wpf_atspi_set_action 提供） */
@@ -589,6 +592,45 @@ static wpf_atspi_node *atspi_node_by_path(const char *path)
     for (int i = 0; i < g_node_count; ++i)
         if (g_nodes[i].alive && strcmp(g_nodes[i].path, path) == 0) return &g_nodes[i];
     return NULL;
+}
+
+/* 【PM-0109】role 字符串 → AT-SPI Role 数值。只映射已知的几种；未知返回 0（ROLE_INVALID），
+ *   调用方（托管侧）也可以在新 API 里直接给 role_id，优先级高于这里的映射。 */
+static uint32_t atspi_role_id_for(const char *role)
+{
+    if (!role || !*role) return 0;
+    if (strcmp(role, "application") == 0) return 75;
+    if (strcmp(role, "frame") == 0) return 23;
+    if (strcmp(role, "dialog") == 0) return 16;
+    if (strcmp(role, "panel") == 0) return 39;
+    if (strcmp(role, "push button") == 0) return 43;
+    if (strcmp(role, "toggle button") == 0) return 44;
+    if (strcmp(role, "page tab") == 0) return 37;
+    if (strcmp(role, "table cell") == 0) return 56;
+    if (strcmp(role, "table") == 0) return 55;
+    if (strcmp(role, "label") == 0) return 28;
+    if (strcmp(role, "text") == 0) return 46;
+    if (strcmp(role, "menu") == 0) return 33;
+    if (strcmp(role, "menu item") == 0) return 34;
+    if (strcmp(role, "scroll bar") == 0) return 60;
+    if (strcmp(role, "list") == 0) return 50;
+    return 0;
+}
+
+/* 【PM-0109】给未实现的控件层留的最小查询：某节点的子节点个数（Cache/ChildCount 用）。 */
+static int atspi_child_count(int index)
+{
+    if (index < 0 || index >= g_node_count || !g_nodes[index].alive) return 0;
+    const wpf_atspi_node *n = &g_nodes[index];
+    int cnt = 0;
+    if (n->hwnd == 0) {                       /* 应用 root → 顶层窗口 */
+        for (int i = 0; i < g_node_count; ++i)
+            if (g_nodes[i].alive && g_nodes[i].hwnd != 0 && g_nodes[i].parent_index < 0) ++cnt;
+    } else {                                  /* 窗口 → 它的控件 */
+        for (int i = 0; i < g_node_count; ++i)
+            if (g_nodes[i].alive && g_nodes[i].parent_index == index) ++cnt;
+    }
+    return cnt;
 }
 
 // ── D-Bus 方法处理器 ────────────────────────────────────────────────────────
@@ -631,7 +673,8 @@ static void atspi_reply_cache_items(DBusMessageIter *it)
         else
             atspi_append_ref(&item, g_bus_name, WPF_ATSPI_PATH_ROOT);
         dbus_int32_t index = is_root ? -1 : idx++;
-        dbus_int32_t child_count = is_root ? frame_cnt : 0;
+        int cc = atspi_child_count(k);
+        dbus_int32_t child_count = (dbus_int32_t)cc;
         dbus_message_iter_append_basic(&item, DBUS_TYPE_INT32, &index);
         dbus_message_iter_append_basic(&item, DBUS_TYPE_INT32, &child_count);
         DBusMessageIter ifaces;
@@ -645,7 +688,7 @@ static void atspi_reply_cache_items(DBusMessageIter *it)
         dbus_message_iter_close_container(&item, &ifaces);
         const char *nm = cn->name;
         dbus_message_iter_append_basic(&item, DBUS_TYPE_STRING, &nm);
-        dbus_uint32_t role = is_root ? 75 : 23;   /* APPLICATION / FRAME */
+        dbus_uint32_t role = cn->role_id ? cn->role_id : (is_root ? 75u : 23u);
         dbus_message_iter_append_basic(&item, DBUS_TYPE_UINT32, &role);
         const char *desc = "";
         dbus_message_iter_append_basic(&item, DBUS_TYPE_STRING, &desc);
@@ -785,9 +828,22 @@ static DBusHandlerResult atspi_msg_handler(DBusConnection *conn, DBusMessage *ms
          *   当前线程有 Dispatcher，见 K-895）。改在 `create_window_utf8`（UI 线程）里发。 */
         DBusMessageIter arr;
         dbus_message_iter_open_container(&it, DBUS_TYPE_ARRAY, "(so)", &arr);
+        int ni = (int)(n - g_nodes);
         for (int i = 0; i < g_node_count; ++i)
-            if (g_nodes[i].alive && g_nodes[i].hwnd != 0 && n->hwnd == 0)
+        {
+            if (!g_nodes[i].alive) continue;
+            if (n->hwnd == 0)
+            {
+                /* 应用 root → 顶层窗口 */
+                if (g_nodes[i].hwnd != 0 && g_nodes[i].parent_index < 0)
+                    atspi_append_ref(&arr, bus, g_nodes[i].path);
+            }
+            else if (g_nodes[i].parent_index == ni)
+            {
+                /* 【PM-0109】窗口/节点 → 它下面注册的控件（托管侧 wpf_atspi_register_control 填的） */
                 atspi_append_ref(&arr, bus, g_nodes[i].path);
+            }
+        }
         dbus_message_iter_close_container(&it, &arr);
     } else if (strcmp(member, "GetChildAtIndex") == 0) {
         // 读取请求的 index 参数
@@ -1042,7 +1098,10 @@ static int atspi_register_node(const char *path, const char *name, const char *r
     snprintf(n->path, sizeof(n->path), "%s", path);
     snprintf(n->name, sizeof(n->name), "%s", name ? name : "");
     snprintf(n->role, sizeof(n->role), "%s", role ? role : "unknown");
+    n->role_id = atspi_role_id_for(role);      /* 【PM-0109】窗口/应用节点自带 role 数值 */
     n->hwnd = hwnd;
+    n->parent_index = -1;
+    n->bounds[0] = n->bounds[1] = n->bounds[2] = n->bounds[3] = 0;
     n->alive = 1;
     if (!dbus_connection_register_object_path(g_bus, n->path, &g_atspi_vtbl, NULL))
         return 0;
@@ -1071,6 +1130,72 @@ void wpf_atspi_register_window(uint64_t hwnd, const char *title)
     /* 【K-1069】WPF 从不调 `SetWindowTextW`（K-1068 实测 `[SETTEXT]` 0 次）⇒ title 永远空
      *   ⇒ frame 的 name 是空串。兜底：空 title 时用 "SourceTree"。 */
     atspi_register_node(path, (title && *title) ? title : "SourceTree", "frame", hwnd);
+}
+
+/* ══ 【PM-0109 档 1】控件层注册（托管侧调用）══════════════════════════════════
+ * 背景：原先 `atspi_register_node` 只被 `wpf_atspi_register_window` 调用 ⇒ 树里只有窗口，
+ *   `GetChildren` 对窗口返回 0 ⇒ 任何 AT-SPI 客户端都只能看到 3 个 frame。
+ *   要看到控件层，必须由**托管侧**（能看见 WPF 视觉树/AutomationPeer 的一侧）逐控件报上来；
+ *   shim 只管把它们挂进 D-Bus 树并按 path 服务 GetChildren。
+ *
+ * 契约（托管侧在 UI 线程、布局完成后调用）：
+ *   - hwnd：该控件所属窗口（必须已 `wpf_atspi_register_window` 注册过）；
+ *   - id：同一 hwnd 下唯一（建议用 AutomationPeer 的稳定序号或 hash）；
+ *   - role：AT-SPI 角色名（"push button"/"page tab"/"table cell"…），原样透传；
+ *   - role_id：AT-SPI Role 数值；传 0 时由 shim 按 role 名映射；
+ *   - x,y,w,h：设备像素；全 0 表示未知（不影响枚举，只影响 GetExtents）；
+ *   - has_action：1 = 该控件可 Invoke（tier 1 只要求枚举，可为 0）。
+ *   返回 1 成功；0 = AT-SPI 未就绪 / 父窗口未注册 / 超上限。
+ */
+int wpf_atspi_register_control(uint64_t hwnd, int id, const char *name, const char *role,
+                               uint32_t role_id, int32_t x, int32_t y, int32_t w, int32_t h,
+                               int has_action)
+{
+    if (!atspi_ensure() || !g_bus) return 0;
+    wpf_atspi_node *parent = atspi_node_find(hwnd);
+    if (!parent || parent->hwnd == 0) return 0;          /* 必须挂在窗口下 */
+    int pidx = (int)(parent - g_nodes);
+
+    char path[128];
+    snprintf(path, sizeof(path), "%s/ctl_%d", parent->path, id);
+
+    wpf_atspi_node *n = atspi_node_by_path(path);
+    if (!n) {
+        if (g_node_count >= WPF_ATSPI_MAX_NODES) return 0;
+        n = &g_nodes[g_node_count];
+        memset(n, 0, sizeof(*n));
+        snprintf(n->path, sizeof(n->path), "%s", path);
+        if (!dbus_connection_register_object_path(g_bus, n->path, &g_atspi_vtbl, NULL))
+            return 0;
+        n->registered = 1;
+        g_node_count++;
+    }
+    n->alive = 1;
+    n->hwnd = hwnd;
+    n->parent_index = pidx;
+    snprintf(n->name, sizeof(n->name), "%s", name ? name : "");
+    snprintf(n->role, sizeof(n->role), "%s", role ? role : "unknown");
+    n->role_id = role_id ? role_id : atspi_role_id_for(role);
+    n->bounds[0] = x; n->bounds[1] = y; n->bounds[2] = w; n->bounds[3] = h;
+    n->has_action = has_action ? 1 : 0;
+    atspi_diag("[ATSPI] 注册控件 path=%s name=%s role=%s id=%d", n->path, n->name, n->role, id);
+    return 1;
+}
+
+/* 清掉某窗口下已注册的整棵控件子树（重新布局/窗口销毁前调）。 */
+void wpf_atspi_clear_controls(uint64_t hwnd)
+{
+    if (!atspi_ensure() || !g_bus) return;
+    wpf_atspi_node *parent = atspi_node_find(hwnd);
+    if (!parent || parent->hwnd == 0) return;
+    int pidx = (int)(parent - g_nodes);
+    for (int i = 0; i < g_node_count; ++i) {
+        if (!g_nodes[i].alive || g_nodes[i].parent_index != pidx) continue;
+        if (g_nodes[i].registered)
+            dbus_connection_unregister_object_path(g_bus, g_nodes[i].path);
+        memset(&g_nodes[i], 0, sizeof(g_nodes[i]));
+    }
+    atspi_diag("[ATSPI] 清空控件子树 hwnd=0x%llx", (unsigned long long)hwnd);
 }
 
 // 【对外】【K-655】窗口标题变化时更新 AT-SPI node 的 name
