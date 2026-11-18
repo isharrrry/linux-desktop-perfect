@@ -66,6 +66,12 @@ static int wpf_ibus_mode(void)
 static int  g_composing = 0;
 int wpf_ibus_is_composing(void) { return g_composing; }
 
+/* 【PM-0125 v6/v7】`CommitText` 的单调计数：符号键要先等它真的到达，才能保证顺序。
+   为什么不用 `g_composing`：那个标志只在收到 `HidePreeditText` 时才清，符号到达那一刻它本来就是 false，
+   等它等于没等。`wpf_x11.c` 的符号前置 flush 用这个计数判断「提交是否真的到了」。 */
+static int g_commit_seq = 0;
+int wpf_ibus_commit_seq(void) { return g_commit_seq; }
+
 static void ibus_diag(const char *fmt, ...)
 {
     if (!getenv("WPF_LINUX_KEY_DIAG")) return;
@@ -236,6 +242,7 @@ static DBusHandlerResult ibus_filter(DBusConnection *conn, DBusMessage *msg, voi
     wpf_ibus_touch();
     if (dbus_message_is_signal(msg, IBUS_IC_IFACE, "CommitText")) {
         g_composing = 0;
+        ++g_commit_seq;                 /* 【PM-0125】提交已到达，符号键可以放行了 */
         // 【ACC-017 / K-094】ibus 的 `CommitText` 参数**不是**裸 STRING（实测 `get_args(STRING)` 失败）。
         //   类型可能是 VARIANT（`IBusText` 对象）或 STRUCT。这里把实际签名打出来，一次看清。
         if (getenv("WPF_LINUX_KEY_DIAG")) {

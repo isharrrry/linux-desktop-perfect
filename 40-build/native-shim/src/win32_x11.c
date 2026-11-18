@@ -1972,6 +1972,72 @@ int wpf_x11_pump_into_queue(wpf_thread *t)
                Win32 语义：组词期间按键**照常投 WM_KEYDOWN/KEYUP**，只压掉 `WM_CHAR`
                （字符由 ibus 的 `CommitText` 负责，否则会重复插入）。 */
             int suppress_char = composing_before;
+            /* 【PM-0125 去重】ibus 在场时，字符所有权归 ibus（CommitText）：按键路径只发 WM_KEYDOWN。
+               背景：端口把 `_eatCharMessages` 修成「只吞紧邻一条」之后，按键路径与 CommitText
+               两条都活 ⇒ 打 `xyz` 得到 `xyzxyz`。门控 `WPF_LINUX_IBUS_DEDUP=1`，且仅在 ibus 真在用
+               时生效（`WPF_LINUX_IBUS=0` 的逃生档行为不变）；默认关 ⇒ 行为与修前一致。 */
+            if (wpf_ibus_available() && getenv("WPF_LINUX_IBUS_DEDUP")) {
+                /* 【PM-0125 v3】字符所有权按**键类**划分：
+                     · 拉丁字母 —— 归 ibus：按键路径不发 `WM_CHAR`，字符由 `CommitText` 交付；
+                     · 组词中的空格 —— 归 ibus（它是选候选/提交键，不能重复投递）；
+                     · 其余（符号/数字等）—— **即使处在组词态也走按键路径**：
+                       实测 `a-b@c` 里 `-`/`@` 既不进 preedit 也不进 CommitText（commit 只有 3 个字母），
+                       压掉就只有丢字。 */
+                int is_letter = ((ks >= 0x41 && ks <= 0x5A) || (ks >= 0x61 && ks <= 0x7A));
+                int is_space = (ks == 0x20);
+                /* 【PM-0125 v7】组词标志必须在**问完 ibus 之后**再读一次：v6 是在 `ProcessKeyEvent`
+                   之前读的，而 ibus 的 preedit 是 D-Bus 异步信号，`:10` 上那一刻还没派发
+                   ⇒ 读到上一拍的 `false`，整段 flush 被跳过（`a-b@c` → `a-@bc` 的成因）。 */
+                extern void wpf_ibus_pump(void);
+                extern int wpf_ibus_commit_seq(void);
+                wpf_ibus_pump();                 /* 先派发已到达的 preedit/commit 信号 */
+                int composing_now = wpf_ibus_is_composing();
+                /* 【PM-0125 v7a】flush 只对**可打印的非字母键**（符号/数字/标点）触发。
+                   功能键（Shift/Super/BackSpace/方向键/Return…）不该触发提交，否则每个 Shift
+                   都白等 100ms —— 实测 `ks=0xffe3 / 0xff08` 全走了 flush、各等满 100ms。 */
+                int printable = (ks >= 0x20 && ks <= 0x7e);
+                if (is_letter)                                  suppress_char = 1;
+                else if (is_space && (composing_now || composing_before)) suppress_char = 1;
+                else if (!printable)                            suppress_char = 0;   /* 功能键：不打 flush */
+                else {
+                    /* 【PM-0125 v4】符号/数字在组词态到达：**先 flush 当前组词再插符号**，
+                       否则符号会立即插入、字母等 Return 才提交 ⇒ `a-b@c` 变成 `-@abc`。
+                       做法：把一条 Return 送给 ibus（引擎借它提交候选/原始串），
+                       再泵一次信号把 CommitText 派发掉，然后本键走按键路径。 */
+                    /* 【PM-0125 v7】v6 在 `:10` 仍 FAIL 的原因（实测 `a-b@c` → `a-@bc`）：
+                       v6 在**问 ibus 之前**就读了 `composing_before`，而 ibus 的 preedit 是
+                       D-Bus 异步信号，可能要到下一轮 pump 才派发 ⇒ `@` 到达时读到的还是上一拍的
+                       false，整段 flush 被跳过；符号立即插入、`b` 之后才随 `bc` 一起提交（拆两次）。
+                       v7 改成**问完再判**：本条键已经过同步的 `ProcessKeyEvent`，
+                       先泵一轮把已到达的 preedit 信号派发掉，再读组词标志；判定组词后送 Return，
+                       并等「提交真的到达 + 连续 3ms 无新提交」才放行符号 —— 只等一次 `CommitText`
+                       不够（`:10` 会拆成多次），100ms 上限，超时按原行为放行并打诊断，绝不吞键。 */
+                    if (composing_now || composing_before) {
+                        int seq0 = wpf_ibus_commit_seq();
+                        wpf_ibus_process_key(0xff0d /*Return*/, 36, 0, NULL);
+                        int waited = 0, quiet = 0, got = 0, cap_ms = 100;
+                        while (waited < cap_ms) {
+                            wpf_ibus_pump();
+                            int s = wpf_ibus_commit_seq();
+                            /* 每来一次提交都重置安静窗：`:10` 上同一次 flush 可能拆成多次 CommitText */
+                            if (s != seq0) { got = 1; seq0 = s; quiet = 0; }
+                            else if (got && ++quiet >= 3) break;
+                            usleep(1000);
+                            ++waited;
+                        }
+                        if (getenv("WPF_LINUX_KEY_DIAG")) {
+                            fprintf(stderr, "[IBUS] flush ks=0x%lx before=%d now=%d commit=%d wait_ms=%d\n",
+                                    (unsigned long)ks, composing_before, composing_now, got, waited);
+                            fflush(stderr);
+                            if (!got) {
+                                fprintf(stderr, "[IBUS] flush 未收到 CommitText：%dms 后放行符号\n", waited);
+                                fflush(stderr);
+                            }
+                        }
+                    }
+                    suppress_char = 0;
+                }
+            }
             uint32_t vk = keysym_to_vk(ks);
             // 字符用 Xlib 按**当前修饰键**翻译的结果（补丁 F1）：
             //   旧版把未按 Shift 的 keysym 直接当字符 ⇒ `Shift+a` 也产小写 'a'（大写丢失）。
