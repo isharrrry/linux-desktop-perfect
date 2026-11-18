@@ -1383,9 +1383,11 @@ static void push(wpf_thread *t, HWND hwnd, uint32_t msg, WPARAM wp, LPARAM lp,
        说明差异不在 target 选择，而在调用线程身份（FAKE_CLICK 在 GetMessageW 内调用）。 */
     /* K-1225：线程路由诊断（仅 WPF_LINUX_PUSH_DIAG=1 时打印，运行期零开销） */
     if (getenv("WPF_LINUX_PUSH_DIAG")) {
-        fprintf(stderr, "[PUSH] hwnd=0x%lx msg=0x%04x pump_tid=%lu owner=%p target=%p\n",
+        extern const char *wpf_shim_thread_name(void);   /* 【PM-0135】线程名（win32_core.c 定义） */
+        fprintf(stderr, "[PUSH] hwnd=0x%lx msg=0x%04x pump_tid=%lu pname=%s owner=%p target=%p\n",
                 (unsigned long)hwnd, (unsigned)msg,
-                (unsigned long)(uintptr_t)pthread_self(), owner_thr, (void *)target);
+                (unsigned long)(uintptr_t)pthread_self(), wpf_shim_thread_name(),
+                owner_thr, (void *)target);
         fflush(stderr);
     }
     if (getenv("WPF_LINUX_XDND_DIAG") && msg == 0x0233 /* WM_DROPFILES */) {

@@ -735,6 +735,17 @@ static int wpf_core_is_toplevel(HWND hwnd)
     return top;
 }
 
+/* 【PM-0135】当前线程名（诊断用）：`pthread_getname_np` + `_Thread_local` 缓冲；取不到时返回 "-"。
+   大肥鱼要的回答「NCHIT/PUSH 分别是哪条线程」需要名字而不是裸指针，故两处诊断都带它。 */
+const char *wpf_shim_thread_name(void)
+{
+    static _Thread_local char buf[32];
+    buf[0] = '\0';
+    if (pthread_getname_np(pthread_self(), buf, sizeof(buf)) != 0 || buf[0] == '\0')
+        snprintf(buf, sizeof(buf), "-");
+    return buf;
+}
+
 int wpf_core_nc_hit_test(HWND hwnd, int x_root, int y_root)
 {
     if (!hwnd) return HTCLIENT;
@@ -753,8 +764,8 @@ int wpf_core_nc_hit_test(HWND hwnd, int x_root, int y_root)
     void *owner = w ? w->owner_thread : NULL;
     if (owner && owner != me) {
         if (getenv("WPF_LINUX_NCHIT_DIAG"))
-            fprintf(stderr, "[NCHIT] cross-thread hwnd=0x%llx cur=%p owner=%p guard=%d\n",
-                    (unsigned long long)(uintptr_t)hwnd, me, owner,
+            fprintf(stderr, "[NCHIT] cross-thread hwnd=0x%llx cur=%p cname=%s owner=%p guard=%d\n",
+                    (unsigned long long)(uintptr_t)hwnd, me, wpf_shim_thread_name(), owner,
                     getenv("WPF_LINUX_NCHIT_GUARD") ? 1 : 0);
         if (getenv("WPF_LINUX_NCHIT_GUARD"))
             return HTCLIENT;
