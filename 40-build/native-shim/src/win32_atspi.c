@@ -812,8 +812,11 @@ static DBusHandlerResult atspi_msg_handler(DBusConnection *conn, DBusMessage *ms
     } else if (strcmp(member, "GetRole") == 0) {
         /* 【K-625】AT-SPI 的 `GetRole` 返回 uint32 role 码（pyatspi 用它，
          *   不是 `GetRoleName`）。`AT_SPI_ROLE_APPLICATION = 75`，
-         *   `AT_SPI_ROLE_FRAME = 23`。 */
-        dbus_uint32_t role = (n->hwnd == 0) ? 75 : 23;
+         *   `AT_SPI_ROLE_FRAME = 23`。
+         *   【PM-0109 修正】原来对**所有**节点都返回 75/23 ⇒ 控件节点（ctl_*）也报 frame。
+         *   现在按节点自己的 `role_id` 返回（缺省才回落到 root=75 / 窗口=23）。 */
+        dbus_uint32_t role = n->role_id ? n->role_id
+                                        : (dbus_uint32_t)((n->hwnd == 0) ? 75 : 23);
         dbus_message_iter_append_basic(&it, DBUS_TYPE_UINT32, &role);
     } else if (strcmp(member, "GetChildren") == 0) {
         /* 【K-667】**触发 WPF 创建 UIA provider**：主窗口（`HwndSource`）不走
