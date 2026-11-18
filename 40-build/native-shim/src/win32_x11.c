@@ -1013,9 +1013,38 @@ void wpf_x11_map(HWND hwnd, int map)
         wpf_lock();
         wpf_window *w = wpf_window_find(hwnd);
         int topmost = (w != NULL) && !(w->is_message_only);
+        /* 【PM-0111】WS_EX_TRANSPARENT（tooltip 等点透 popup）不夺焦、且要设空输入区。 */
+        int transparent = (w != NULL) && (((uint32_t)w->exstyle & 0x00000020u) != 0);
         pthread_mutex_unlock(&g_wpf.lock);
-        if (topmost) wpf_x11_set_input_focus(hwnd);
+        if (topmost && !transparent) wpf_x11_set_input_focus(hwnd);
+        if (transparent) wpf_x11_set_input_transparent(hwnd, 1);
     }
+}
+
+/* 【PM-0111 · tooltip popup 不可见】把 Win32 的 `WS_EX_TRANSPARENT` 真正落到 X：
+   transparent=1 ⇒ 空输入形状（点透，指针事件仍归下面的主窗，不再产生 LeaveNotify）；
+   transparent=0 ⇒ 恢复整窗输入形状。X 的 ShapeInput 是唯一能让 override-redirect
+   弹窗在**输入层**透明的机制；只存 exstyle 不落地时，popup 一盖住指针主窗就收到
+   LeaveNotify ⇒ WPF 判鼠标离开 ⇒ tooltip 被立刻收起（PM-0111 实测链）。 */
+void wpf_x11_set_input_transparent(HWND hwnd, int transparent)
+{
+    if (!hwnd) return;
+    if (!wpf_x11_ensure()) return;
+    XLOCK();
+    XRectangle r;
+    if (transparent) {
+        r.x = 0; r.y = 0; r.width = 0; r.height = 0;
+    } else {
+        XWindowAttributes wa;
+        if (!XGetWindowAttributes(g_wpf.dpy, (Window)(uintptr_t)hwnd, &wa)) { XUNLOCK(); return; }
+        r.x = 0; r.y = 0;
+        r.width = (unsigned short)(wa.width > 0 ? wa.width : 1);
+        r.height = (unsigned short)(wa.height > 0 ? wa.height : 1);
+    }
+    XShapeCombineRectangles(g_wpf.dpy, (Window)(uintptr_t)hwnd, ShapeInput,
+                            0, 0, &r, 1, ShapeSet, Unsorted);
+    XFlush(g_wpf.dpy);
+    XUNLOCK();
 }
 
 int wpf_x11_moveresize_window(HWND hwnd, int x, int y, int w, int h);  /* 定义在下方 */
@@ -2263,6 +2292,10 @@ int wpf_x11_pump_into_queue(wpf_thread *t)
             break;
 
         case LeaveNotify:
+            /* 【PM-0111】只有 NotifyNormal 才是"指针真的离开"；Grab/Ungrab 引起的
+               LeaveNotify 是抓取态切换的副作用，翻成 WM_MOUSELEAVE 会让 WPF 误判
+               鼠标离开（tooltip 被立刻收起就是这条链）。 */
+            if (ev.xcrossing.mode != NotifyNormal) break;
             push(t, (HWND)(uintptr_t)ev.xcrossing.window, WM_MOUSELEAVE, 0, 0,
                  ev.xcrossing.x, ev.xcrossing.y);
             produced++;

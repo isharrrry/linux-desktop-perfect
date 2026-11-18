@@ -1744,6 +1744,12 @@ INT_PTR SetWindowLongPtrW(HWND hwnd, int nIndex, INT_PTR dwNewLong)
         *slot = (int64_t)dwNewLong;
         pthread_mutex_unlock(&g_wpf.lock);
         wpf_set_last_error(0);
+        /* 【PM-0111】WS_EX_TRANSPARENT 变化必须落到 X 的输入形状。 */
+        if (nIndex == GWL_EXSTYLE) {
+            int old_t = (((uint32_t)old) & 0x00000020u) != 0;
+            int new_t = (((uint32_t)dwNewLong) & 0x00000020u) != 0;
+            if (old_t != new_t) wpf_x11_set_input_transparent(hwnd, new_t);
+        }
         return old;
     }
     pthread_mutex_unlock(&g_wpf.lock);

@@ -24,6 +24,7 @@
 
 #include "win32_abi.h"
 #include <X11/Xlib.h>
+#include <X11/extensions/shape.h>
 #include <pthread.h>
 #include <stddef.h>
 #include <time.h>
@@ -562,6 +563,7 @@ FARPROC GetProcAddressW(HMODULE, const char *);
 HMODULE GetModuleHandleW(const uint16_t *);
 int     wpf_x11_ensure(void);
 void    wpf_x11_set_input_focus(HWND hwnd);
+void    wpf_x11_set_input_transparent(HWND hwnd, int transparent);
 
 // XIM（D-014）：有输入法服务器时才真正建 IC；无服务器时这些入口都是 no-op。
 //   判据（ACC-017）读 `wpf_xim_ic_count()` 与符号计数来区分"入口没接"和"环境没引擎"。
