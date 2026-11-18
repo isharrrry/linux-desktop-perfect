@@ -573,6 +573,10 @@ static int g_node_count = 0;
 
 /* K-1251：AT-SPI DoAction 的「待注入点击」目标窗口（0 = 无待处理） */
 uint64_t g_atspi_pending_action_hwnd = 0;
+/* 【PM-0109 档2】控件动作的注入坐标（-1 = 未知 ⇒ 回退 hwnd/env 默认）。
+   DoAction 时取控件 bounds 中心；真正的注入点在 win32_msg.c 的 GetMessageW 里。 */
+int g_atspi_pending_action_x = -1;
+int g_atspi_pending_action_y = -1;
 
 /* K-1161：WPF 侧注册的「执行 action」回调（Cecil 注入时传入） */
 typedef void (*wpf_atspi_action_invoker_t)(uint64_t hwnd);
@@ -986,7 +990,7 @@ static DBusHandlerResult atspi_msg_handler(DBusConnection *conn, DBusMessage *ms
         /* K-1250：若 WPF 侧还没设置 action，则按需补一个默认 action（"激活窗口"），
            让 NActions>=1、GetName(0)/GetActions 有真实数据。
            这样外部（pyatspi/gdbus）就能看到可执行的 action 项。 */
-        if (n && !n->has_action) {
+        if (n && !n->has_action && n->parent_index < 0) {
             snprintf(n->action_name, sizeof(n->action_name), "%s", "激活窗口");
             snprintf(n->action_desc, sizeof(n->action_desc), "%s", "Activate this window");
             n->has_action = 1;
@@ -1032,11 +1036,25 @@ static DBusHandlerResult atspi_msg_handler(DBusConnection *conn, DBusMessage *ms
             target = n->hwnd ? n->hwnd : (uint64_t)(uintptr_t)g_focus_window;
         if (target) {
             g_atspi_pending_action_hwnd = target;
+            g_atspi_pending_action_x = g_atspi_pending_action_y = -1;
+            /* 【PM-0109 档2】控件有 bounds ⇒ 注入坐标取中心；没有则回退 hwnd/env 默认 */
+            if (n && n->parent_index >= 0 && n->bounds[2] > 0 && n->bounds[3] > 0) {
+                g_atspi_pending_action_x = n->bounds[0] + n->bounds[2] / 2;
+                g_atspi_pending_action_y = n->bounds[1] + n->bounds[3] / 2;
+                atspi_diag("[ATSPI] DoAction：控件 bounds=[%d,%d %dx%d] ⇒ 注入点 %d,%d",
+                           n->bounds[0], n->bounds[1], n->bounds[2], n->bounds[3],
+                           g_atspi_pending_action_x, g_atspi_pending_action_y);
+            } else if (n && n->parent_index >= 0) {
+                atspi_diag("[ATSPI] DoAction：控件无 bounds，回退窗口默认坐标（非控件动作）");
+            }
             atspi_diag("[ATSPI] DoAction：置待处理标志 hwnd=0x%llx idx=%d",
                        (unsigned long long)target, (int)idx);
             /* 唤醒 owner 线程（PostMessageW 内部按窗口 owner 路由 + wake） */
             if (!PostMessageW((HWND)(uintptr_t)target, 0 /*WM_NULL*/, 0, 0)) {
                 g_atspi_pending_action_hwnd = 0;
+                g_atspi_pending_action_x = g_atspi_pending_action_y = -1;
+                atspi_diag("[ATSPI] DoAction：PostMessage 唤醒失败，动作取消 hwnd=0x%llx",
+                           (unsigned long long)target);
                 target = 0;
             }
         }
@@ -1204,7 +1222,13 @@ int wpf_atspi_register_control(uint64_t hwnd, int id, const char *name, const ch
     snprintf(n->role, sizeof(n->role), "%s", role ? role : "unknown");
     n->role_id = role_id ? role_id : atspi_role_id_for(role);
     n->bounds[0] = x; n->bounds[1] = y; n->bounds[2] = w; n->bounds[3] = h;
-    n->has_action = has_action ? 1 : 0;
+    /* 銆怭M-0109 妗?銆戞帶浠惰妭鐐归粯璁ゅ叿澶囥€岀偣鍑汇€嶅姩浣滐細娉ㄥ叆鐐圭敤 bounds 涓績锛沑n       娌℃湁 bounds 鐨勬帶浠舵墠涓嶇粰鍔ㄤ綔锛堟棤娉曞畾浣嶏級銆傛ˉ涓嶄紶 has_action 涔熻兘椹卞姩銆?*/
+    n->has_action = (has_action || (w > 0 && h > 0)) ? 1 : 0;
+    /* 【PM-0109 档2】控件节点的动作是「点击」，不再沿用窗口级「激活窗口」 */
+    if (n->has_action) {
+        snprintf(n->action_name, sizeof(n->action_name), "%s", "点击");
+        snprintf(n->action_desc, sizeof(n->action_desc), "%s", n->name);
+    }
     atspi_diag("[ATSPI] 注册控件 path=%s name=%s role=%s id=%d", n->path, n->name, n->role, id);
     return 1;
 }

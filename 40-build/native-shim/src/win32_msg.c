@@ -1038,6 +1038,9 @@ BOOL GetMessageW(WPF_MSG *msg, HWND hwnd, UINT lo, UINT hi)
     if (g_atspi_pending_action_hwnd) {
         HWND ah = (HWND)(uintptr_t)g_atspi_pending_action_hwnd;
         g_atspi_pending_action_hwnd = 0;
+        /* 【PM-0109 档2】取出控件 bounds 中心（-1 表示没有） */
+        int pax = g_atspi_pending_action_x, pay = g_atspi_pending_action_y;
+        g_atspi_pending_action_x = g_atspi_pending_action_y = -1;
         if (ah) {
             WPF_MSG dm, um;
             memset(&dm, 0, sizeof dm);
@@ -1047,7 +1050,19 @@ BOOL GetMessageW(WPF_MSG *msg, HWND hwnd, UINT lo, UINT hi)
             um.message = 0x0202;  /* WM_LBUTTONUP   */
             /* K-1252：坐标可配置（`WPF_ATSPI_ACTION_XY="x,y"`，默认 20,20） */
             int ax = 20, ay = 20;
-            {
+            if (pax >= 0 && pay >= 0) {
+                /* 控件坐标：先用注册来的中心；若越出窗口范围，说明注册方给的是屏幕坐标，
+                   换算成窗内坐标再用（DoAction 不再用 (20,20) 冒充控件动作）。 */
+                ax = pax; ay = pay;
+                wpf_window *aw = wpf_window_find(ah);
+                if (aw && g_wpf.dpy && (ax < 0 || ay < 0 || ax >= aw->width || ay >= aw->height)) {
+                    Window _ch; int _wx = 0, _wy = 0; unsigned _mk = 0;
+                    if (XTranslateCoordinates(g_wpf.dpy, DefaultRootWindow(g_wpf.dpy),
+                                              (Window)(uintptr_t)ah, ax, ay, &_wx, &_wy, &_ch)) {
+                        ax = _wx; ay = _wy;
+                    }
+                }
+            } else {
                 const char *xy = getenv("WPF_ATSPI_ACTION_XY");
                 if (xy && *xy) { sscanf(xy, "%d,%d", &ax, &ay); }
             }

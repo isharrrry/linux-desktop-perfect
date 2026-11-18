@@ -468,6 +468,9 @@ void wpf_global_init(void);
 extern HWND g_focus_window;
 /* K-1251：AT-SPI DoAction 的待注入点击目标（0=无） */
 extern uint64_t g_atspi_pending_action_hwnd;
+/* 【PM-0109 档2】控件动作注入坐标（-1 = 未设置） */
+extern int g_atspi_pending_action_x;
+extern int g_atspi_pending_action_y;
 extern HWND g_capture_window;
 
 // win32_core.c：某个窗口的创建线程 id（口径 = wpf_thread* 地址的低 31 位）。
