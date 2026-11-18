@@ -111,11 +111,82 @@ wpf_thread *wpf_pump_thread_get(void) { return __atomic_load_n(&g_pump_thread, _
 static unsigned g_paint_count = 0;
 unsigned wpf_paint_count_get(void) { return __atomic_load_n(&g_paint_count, __ATOMIC_ACQUIRE); }
 
+/* 【PM-0102 按需渲染 · 空闲 timer 合流】env 门控、默认关。
+   规则：仅在「最近 1s 无输入消息」时，把 elapse<=20ms 的消息型定时器压到最多 10Hz（100ms 一拍）。
+   任何输入消息到来 ⇒ 立即恢复原频率（下一拍就会放行）。 */
+static int s_idle_throttle = -1;
+static unsigned long long s_last_input_ms = 0;
+static unsigned long long s_last_timer_post_ms = 0;
+static unsigned g_throttle_skipped = 0;
+
+static int wpf_idle_throttle_enabled(void)
+{
+    if (s_idle_throttle < 0) {
+        s_idle_throttle = getenv("WPF_LINUX_IDLE_TIMER_THROTTLE") ? 1 : 0;
+        if (s_idle_throttle) s_last_input_ms = wpf_now_ms();
+    }
+    return s_idle_throttle == 1;
+}
+
+static int wpf_idle_throttle_skip(unsigned long long now)
+{
+    if (now - s_last_input_ms < 1000) return 0;
+    if (now - s_last_timer_post_ms < 100) { __atomic_add_fetch(&g_throttle_skipped, 1, __ATOMIC_RELAXED); return 1; }
+    s_last_timer_post_ms = now;
+    return 0;
+}
+
+
+/* 【PM-0102 按需渲染】消息流量统计（env 门控、默认关、每秒一行累计值）。
+   目的：判断「空闲 10fps commit」是被 shim 的 WM_PAINT/WM_TIMER 风暴驱动，还是 WPF 内部循环。 */
+static unsigned g_stat_timer = 0, g_stat_size = 0, g_stat_pos = 0, g_stat_dispatch = 0;
+#define MSGSTAT_TIMER_SLOTS 64
+static unsigned g_timer_cnt[MSGSTAT_TIMER_SLOTS];
+static unsigned g_timer_elapse[MSGSTAT_TIMER_SLOTS];
+static unsigned long long g_stat_last_ms = 0;
+static void wpf_msgstat_report(void)
+{
+    if (!getenv("WPF_LINUX_MSGSTAT")) return;
+    unsigned long long now = wpf_now_ms();
+    if (g_stat_last_ms == 0) { g_stat_last_ms = now; return; }
+    if (now - g_stat_last_ms < 1000) return;
+    g_stat_last_ms = now;
+    fprintf(stderr, "[MSGSTAT] paint=%u timer=%u size=%u pos=%u dispatch=%u t=%llums",
+            wpf_paint_count_get(),
+            __atomic_load_n(&g_stat_timer, __ATOMIC_RELAXED),
+            __atomic_load_n(&g_stat_size, __ATOMIC_RELAXED),
+            __atomic_load_n(&g_stat_pos, __ATOMIC_RELAXED),
+            __atomic_load_n(&g_stat_dispatch, __ATOMIC_RELAXED),
+            now);
+    for (unsigned i = 0; i < MSGSTAT_TIMER_SLOTS; ++i) {
+        unsigned c = __atomic_load_n(&g_timer_cnt[i], __ATOMIC_RELAXED);
+        if (c) fprintf(stderr, " t%u=%u(e%ums)", i, c, g_timer_elapse[i]);
+    }
+    if (wpf_idle_throttle_enabled()) fprintf(stderr, " thr=%u", __atomic_load_n(&g_throttle_skipped, __ATOMIC_RELAXED));
+    fprintf(stderr, "\n");
+    fflush(stderr);
+}
+
 void wpf_queue_push(wpf_thread *t, const WPF_MSG *m)
 {
     if (!t) return;
     if (m->message == 0x000F /* WM_PAINT */)
         __atomic_add_fetch(&g_paint_count, 1, __ATOMIC_RELAXED);
+    else if ((m->message >= 0x0100 && m->message <= 0x010B) /* WM_KEY* */ ||
+             (m->message >= 0x0200 && m->message <= 0x020E) /* WM_MOUSE* */ ||
+             m->message == 0x00FF /* WM_INPUT */ ||
+             m->message == 0x0233 /* WM_DROPFILES */)
+        s_last_input_ms = wpf_now_ms();
+    else if (m->message == 0x0113 /* WM_TIMER */)
+    {
+        __atomic_add_fetch(&g_stat_timer, 1, __ATOMIC_RELAXED);
+        unsigned tid = (unsigned)(uintptr_t)m->wParam;
+        if (tid < MSGSTAT_TIMER_SLOTS) __atomic_add_fetch(&g_timer_cnt[tid], 1, __ATOMIC_RELAXED);
+    }
+    else if (m->message == 0x0005 /* WM_SIZE */)
+        __atomic_add_fetch(&g_stat_size, 1, __ATOMIC_RELAXED);
+    else if (m->message == 0x0047 /* WM_WINDOWPOSCHANGED */)
+        __atomic_add_fetch(&g_stat_pos, 1, __ATOMIC_RELAXED);
     wpf_msg_node *n = (wpf_msg_node *)malloc(sizeof(wpf_msg_node));
     if (!n) return;
     n->mods = (uint8_t)(s_push_mods & 0xFF);   // [D-K1] 随消息带走"事件时刻"的修饰位（bit4=左键，D-008）
@@ -480,6 +551,8 @@ void wpf_timer_fire_due(wpf_thread *t)
         if (proc) {
             proc(hwnd, WM_TIMER, id, (DWORD)now);   // 不持锁调用（回调可能再进 shim）
         } else {
+            if (elapse > 0 && elapse <= 20 && wpf_idle_throttle_enabled() && wpf_idle_throttle_skip(now))
+                continue;   // 本拍丢弃；deadline 已推进，下一拍重新判定
             WPF_MSG m;
             memset(&m, 0, sizeof(m));
             m.hwnd = hwnd;
@@ -494,6 +567,16 @@ void wpf_timer_fire_due(wpf_thread *t)
 
 UINT_PTR SetTimer(HWND hwnd, UINT_PTR id, UINT elapse, TIMERPROC proc)
 {
+    if (getenv("WPF_LINUX_MSGSTAT")) {
+        static int s_settimer_logged = 0;
+        if (s_settimer_logged < 120) {
+            ++s_settimer_logged;
+            fprintf(stderr, "[SETTIMER] hwnd=%p id=%llu elapse=%ums proc=%p\n",
+                    (void *)hwnd, (unsigned long long)id, elapse, (void *)proc);
+            fflush(stderr);
+        }
+        if (id < MSGSTAT_TIMER_SLOTS) g_timer_elapse[id] = elapse;
+    }
     wpf_global_init();
     if (elapse == 0) elapse = 1;          // Win32 的 USER_TIMER_MINIMUM，取 1ms 更贴近 Linux 习惯
 
@@ -1140,6 +1223,8 @@ int wpf_keystate_dispatch_mods(uint8_t *out)
 LRESULT DispatchMessageW(const WPF_MSG *msg)
 {
     if (!msg) return 0;
+    __atomic_add_fetch(&g_stat_dispatch, 1, __ATOMIC_RELAXED);
+    wpf_msgstat_report();
     // ComponentDispatcher.RaiseThreadMessage 之外的正常路径；
     // Dispatcher 只在未处理时才会调到这里。
     // [D-K1 · 波 20] 派发期间把"这条消息的修饰位快照"暴露出去 ⇒ `GetKeyState` 在**派发期**读到的

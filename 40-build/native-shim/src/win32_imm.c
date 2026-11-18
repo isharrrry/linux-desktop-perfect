@@ -47,11 +47,24 @@ static void imm_diag(const char *fmt, ...)
 
 // libwpfwin32.so 内部已实现 PostMessageW；这里只声明（避免把 win32_abi.h 的整套 typedef 拖进来）
 extern int PostMessageW(void *hwnd, unsigned msg, uintptr_t wparam, intptr_t lparam);
+extern void *GetFocus(void);   /* win32_core.c：最近一次 SetFocus 的窗口 */
+
+/* 【PM-0121-B】IME 的投递目标：**焦点窗口优先**，退回去 g_himc.hwnd。
+   历史缺陷：`g_himc.hwnd` 会被最后一次 `wpf_imm_bind_hwnd` 覆盖成 `.NET-BroadcastEventWindow`
+   （隐藏广播窗，实测 0x40000b），于是 `CommitText="ab"` 的两个码元全投进了那个不可见的窗口
+   ⇒ 用户打的字一行都进不了 UI（日志 `[IMM] post_char U+0061 -> hwnd=0x40000b`）。 */
+static void *imm_target_hwnd(void)
+{
+    void *f = GetFocus();
+    if (f) return f;
+    return g_himc.hwnd;
+}
 
 static void post_ime(unsigned msg, intptr_t lparam)
 {
-    if (!g_himc.hwnd) return;
-    PostMessageW(g_himc.hwnd, msg, 0, lparam);
+    void *target = imm_target_hwnd();
+    if (!target) return;
+    PostMessageW(target, msg, 0, lparam);
     if (msg == WM_IME_COMPOSITION) g_stats.composition_msgs++;
 }
 
@@ -67,11 +80,13 @@ void wpf_imm_post_char(uint16_t ch)
 {
     // 【ACC-017 / K-082】诊断：把每个投递的码元打出来（env 门控）。
     //   实测发现 commit 6 次，但 `WM_CHAR|post_char` 日志只有 2 处 ⇒ 投递链路有丢失，必须逐个可观测。
+    void *target = imm_target_hwnd();
     if (getenv("WPF_LINUX_KEY_DIAG")) {
-        fprintf(stderr, "[IMM] post_char U+%04X -> hwnd=%p\n", (unsigned)ch, g_himc.hwnd);
+        fprintf(stderr, "[IMM] post_char U+%04X -> hwnd=%p focus=%p bind=%p\n",
+                (unsigned)ch, target, GetFocus(), g_himc.hwnd);
         fflush(stderr);
     }
-    if (!g_himc.hwnd) return;
+    if (!target) return;
     // 【ACC-017 / K-096】`lParam` 必须按 Windows 规范构造，不能传常数 1。
     //   WM_CHAR 的 lParam：bit0-15 重复计数(1)、bit16-23 扫描码、bit24 扩展位、bit31 转换位(0=按下)。
     //   WPF 的 `HwndSource` 会把 lParam 传进 `TextComposition`，全 0 可能被当成异常输入丢掉。
@@ -81,8 +96,8 @@ void wpf_imm_post_char(uint16_t ch)
         //   之前写成"先 WM_CHAR 再 WM_KEYDOWN 再 WM_CHAR" ⇒ 每个字被 WPF 吃了两遍 ⇒
         //   截图里出现 `你你好好`（K-095 实测）。这里修正为标准的两次投递。
         intptr_t lp = (intptr_t)(1u | ((uint32_t)0x1E << 16));
-        PostMessageW(g_himc.hwnd, 0x0100 /*WM_KEYDOWN*/, (uintptr_t)0, lp);
-        PostMessageW(g_himc.hwnd, WM_CHAR, (uintptr_t)ch, lp);
+        PostMessageW(target, 0x0100 /*WM_KEYDOWN*/, (uintptr_t)0, lp);
+        PostMessageW(target, WM_CHAR, (uintptr_t)ch, lp);
     }
     if (g_himc.available) g_stats.composition_msgs++;
 }

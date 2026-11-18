@@ -1738,12 +1738,32 @@ int wpf_x11_pump_into_queue(wpf_thread *t)
         }
 
         switch (ev.type) {
-        case Expose:
+        case Expose: {
+            // 【PM-0116】X `Expose` 是 `WM_PAINT` 的第二条来源（绕过 `g_paint_pending`）。
+            //   `xexpose` 自带 x/y/width/height ⇒ 直接记进脏区累加器，让 `BeginPaint`
+            //   返回真实暴露矩形而不是整窗。每一条都记（count 只是同批剩余数）。
+            {
+                extern void wpf_dirty_note_expose(HWND, int32_t, int32_t, int32_t, int32_t);
+                wpf_dirty_note_expose((HWND)(uintptr_t)ev.xexpose.window,
+                                      ev.xexpose.x, ev.xexpose.y,
+                                      (int32_t)ev.xexpose.width, (int32_t)ev.xexpose.height);
+            }
+            if (getenv("WPF_LINUX_DIRTY_DIAG")) {
+                static int exn = 0;
+                if (exn++ < 200) {
+                    fprintf(stderr, "[EXPOSE] hwnd=0x%llx xywh=(%d,%d,%d,%d) count=%d\n",
+                            (unsigned long long)(uintptr_t)ev.xexpose.window,
+                            ev.xexpose.x, ev.xexpose.y,
+                            ev.xexpose.width, ev.xexpose.height, ev.xexpose.count);
+                    fflush(stderr);
+                }
+            }
             if (ev.xexpose.count == 0) {
                 push(t, (HWND)(uintptr_t)ev.xexpose.window, WM_PAINT, 0, 0, 0, 0);
                 produced++;
             }
             break;
+        }
 
         case ConfigureNotify: {
             HWND h = (HWND)(uintptr_t)ev.xconfigure.window;
@@ -1865,6 +1885,9 @@ int wpf_x11_pump_into_queue(wpf_thread *t)
             //   实测 `push` 版在"首次 map"就会同步派发 WM_PAINT，撞上 WPF 启动期的渲染线程
             //   初始化 ⇒ 窗口 2304x1440 但截图 1 色（白屏），回滚即恢复 726 色。
             //   `PostMessageW` 走队列、由事件泵下一轮处理，避开启动重入。
+            // 【PM-0116 v5】这条是**有意整窗重绘**（切工作区后 surface 已丢），不走 `g_paint_pending`。
+            //   显式记一条整窗脏区 ⇒ `BeginPaint` 的读数落在 `fullnote=` 上，不再混进 `fallback=`。
+            { extern void wpf_dirty_note_full(HWND); wpf_dirty_note_full(h); }
             PostMessageW(h, WM_PAINT, 0, 0);
             produced++;
             break;
@@ -1912,7 +1935,12 @@ int wpf_x11_pump_into_queue(wpf_thread *t)
                     break;
                 }
             }
-            if (composing_before) { produced++; break; }   // 组词中：键已交给 ibus，不再翻译成 WM_CHAR
+            /* 【PM-0121-A】组词态**不能整条丢 KeyPress**：
+               旧实现在这里 `break` ⇒ 组词期间只有 KeyRelease 被翻译，`WM_KEYDOWN` 一条都到不了应用
+               ⇒ 回车（提交键）、退格、方向键全部失效（实测：Return 只剩 `KEYUP`，`KEYDOWN` 消失）。
+               Win32 语义：组词期间按键**照常投 WM_KEYDOWN/KEYUP**，只压掉 `WM_CHAR`
+               （字符由 ibus 的 `CommitText` 负责，否则会重复插入）。 */
+            int suppress_char = composing_before;
             uint32_t vk = keysym_to_vk(ks);
             // 字符用 Xlib 按**当前修饰键**翻译的结果（补丁 F1）：
             //   旧版把未按 Shift 的 keysym 直接当字符 ⇒ `Shift+a` 也产小写 'a'（大写丢失）。
@@ -1946,7 +1974,8 @@ int wpf_x11_pump_into_queue(wpf_thread *t)
             //     · 字符按**修饰键**翻译（Shift/CapsLock/CapsLock+Shift），死键/组合键不产单字符
             //       ⇒ 用 `XLookupString` 而不是裸 keysym（旧版丢 Shift，见上）。
             const char *why = NULL;
-            if (isUp)                                       why = "释放事件不产字符";
+            if (suppress_char)                              why = "组词中不产 WM_CHAR（字符由 ibus CommitText 投递）";
+            else if (isUp)                                  why = "释放事件不产字符";
             else if (ctrlDown && !altDown)                  why = "Ctrl 组合不产字符（Win32 语义：Ctrl+A 应是全选）";
             else if (chn != 1)                              why = "XLookupString 未给出单字符（死键/组合/非打印键）";
             else if ((unsigned char)chbuf[0] < 0x20)        why = "控制字符（<0x20）不产 WM_CHAR";

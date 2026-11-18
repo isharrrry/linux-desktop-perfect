@@ -43,6 +43,23 @@ static DBusHandlerResult ibus_filter(DBusConnection *conn, DBusMessage *msg, voi
 static DBusConnection *g_conn = NULL;
 static char g_ic_path[256];
 static int  g_ibus_ok = 0;
+
+/* 【PM-0121】ibus 介入模式（预算一次，进程内不变）：
+ *   0 = full    —— 现状：每个键问 ibus，handled=TRUE 就吞键（中文输入需要）
+ *   1 = observe —— 照问、照打诊断，但**忽略 handled**（键全部放行）：用来在恢复键盘的同时抓回复原文
+ *   2 = off     —— 完全不问 ibus（`WPF_LINUX_IBUS=0`）：键盘最快的逃生档
+ */
+static int wpf_ibus_mode(void)
+{
+    static int m = -1;
+    if (m >= 0) return m;
+    const char *e = getenv("WPF_LINUX_IBUS");
+    if (!e || !*e)                      m = 0;   /* 默认：现状 */
+    else if (strcmp(e, "0") == 0)       m = 2;   /* 应急：不介入 */
+    else if (strcmp(e, "observe") == 0) m = 1;   /* 观测：照问不吞 */
+    else                                m = 0;
+    return m;
+}
 // 【ACC-017 / K-097】组词状态：ibus 异步回 `UpdatePreeditText` 表示"正在组词"，
 //   期间原始按键**不该**进 TextBox（否则会看到 `nihao 你好`）。
 //   不能用 `ProcessKeyEvent` 的返回值判断 —— 实测它一律返回 FALSE（K-092/K-096）。
@@ -317,6 +334,8 @@ static DBusHandlerResult ibus_filter(DBusConnection *conn, DBusMessage *msg, voi
 // 返回 1 表示 ibus **消费**了这个键（调用方不要再翻译成 WM_KEYDOWN）。
 int wpf_ibus_process_key(unsigned int keyval, unsigned int keycode, unsigned int state, unsigned int *out_keyval)
 {
+    /* 【PM-0121】WPF_LINUX_IBUS=0：完全不把键交给 ibus（键盘逃生档） */
+    if (wpf_ibus_mode() == 2) return 0;
     if (!g_ibus_ok || !g_conn || !g_ic_path[0]) { ibus_diag("[IBUS] process_key 跳过：ok=%d conn=%p ic=%s", g_ibus_ok, (void*)g_conn, g_ic_path); return 0; }
     DBusMessage *m = dbus_message_new_method_call(IBUS_SERVICE, g_ic_path, IBUS_IC_IFACE, "ProcessKeyEvent");
     if (!m) return 0;
@@ -328,10 +347,27 @@ int wpf_ibus_process_key(unsigned int keyval, unsigned int keycode, unsigned int
     dbus_message_iter_append_basic(&it, DBUS_TYPE_UINT32, &st);
 
     DBusError err; dbus_error_init(&err);
-    DBusMessage *r = dbus_connection_send_with_reply_and_block(g_conn, m, 1000, &err);
+    /* 【PM-0121】原来是 1000ms：libpinyin 慢回一拍就把 UI 卡满一秒（"打字卡"的直接来源）。
+       50ms 后慢回复只丢本次咨询、不再拖住界面；正常的 libpinyin 回复在 1–5ms 量级。 */
+    struct timespec t0, t1;
+    clock_gettime(CLOCK_MONOTONIC, &t0);
+    DBusMessage *r = dbus_connection_send_with_reply_and_block(g_conn, m, 50, &err);
+    clock_gettime(CLOCK_MONOTONIC, &t1);
+    double elapsed_ms = (t1.tv_sec - t0.tv_sec) * 1000.0 + (t1.tv_nsec - t0.tv_nsec) / 1e6;
     dbus_message_unref(m);
     int handled = 0;
-    if (!r) { if (err.message) { ibus_diag("[IBUS] ProcessKeyEvent 失败：%s", err.message); } dbus_error_free(&err); return 0; }
+    if (!r) {
+        if (getenv("WPF_LINUX_KEY_DIAG")) {
+            fprintf(stderr, "[IBUS] key=0x%x kc=%u st=0x%x handled=-1 mode=%s err=%s ms=%.1f\n",
+                    keyval, keycode, state,
+                    wpf_ibus_mode() == 1 ? "observe" : (wpf_ibus_mode() == 2 ? "off" : "full"),
+                    err.message ? err.message : "(none)", elapsed_ms);
+            fflush(stderr);
+        }
+        if (err.message) { ibus_diag("[IBUS] ProcessKeyEvent 失败：%s", err.message); }
+        dbus_error_free(&err);
+        return 0;
+    }
     dbus_bool_t h = FALSE;
     dbus_uint32_t got = 0;
     if (dbus_message_get_args(r, &err, DBUS_TYPE_BOOLEAN, &h, DBUS_TYPE_UINT32, &got, DBUS_TYPE_INVALID)) {
@@ -339,10 +375,16 @@ int wpf_ibus_process_key(unsigned int keyval, unsigned int keycode, unsigned int
         if (out_keyval) *out_keyval = got;
     } else { dbus_error_free(&err); }
     dbus_message_unref(r);
+    int mode = wpf_ibus_mode();
     if (getenv("WPF_LINUX_KEY_DIAG")) {
-        fprintf(stderr, "[IBUS] ProcessKeyEvent(kv=0x%x kc=%u st=0x%x) -> handled=%d out=0x%x\n",
-                keyval, keycode, state, handled, (unsigned)got); fflush(stderr);
+        fprintf(stderr, "[IBUS] key=0x%x kc=%u st=0x%x handled=%d mode=%s out=0x%x ms=%.1f\n",
+                keyval, keycode, state, handled,
+                mode == 1 ? "observe" : (mode == 2 ? "off" : "full"),
+                (unsigned)got, elapsed_ms);
+        fflush(stderr);
     }
+    /* observe：照问、照记，但把键放行（不吞） */
+    if (mode == 1) return 0;
     return handled;
 }
 

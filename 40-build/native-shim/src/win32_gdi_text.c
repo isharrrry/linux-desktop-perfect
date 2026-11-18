@@ -295,6 +295,8 @@ intptr_t UiaReturnRawElementProvider(void *hwnd, intptr_t wParam, intptr_t lPara
      *   这里借 `UiaReturnRawElementProvider` 被调的时机（K-948 已证）补投一次。 */
     if (getenv("WPF_LINUX_UIA_KICK_PAINT")) {
         extern int PostMessageW(void *hwnd, unsigned int msg, intptr_t w, intptr_t l);
+        /* 【PM-0116 v5】补投的 WM_PAINT 同样是**有意整窗**：进记账，落 fullnote，不污染 fallback。 */
+        { extern void wpf_dirty_note_full(void *); wpf_dirty_note_full(hwnd); }
         PostMessageW(hwnd, 0x000F /* WM_PAINT */, 0, 0);
     }
     /* 【K-949】`el` 现在是 `GCHandle`（K-948 的方案，非 COM 指针）⇒ **禁止读 vtable**

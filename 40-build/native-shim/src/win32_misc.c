@@ -16,6 +16,7 @@
 #include "win32_gdi_dc.h"
 
 #include <dlfcn.h>
+#include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -194,6 +195,129 @@ int SetEnhMetaFileBits(UINT cb, const uint8_t *bits) { (void)cb; (void)bits; ret
 // 绘制路径：我们的呈现不走 GDI（走 MIL/DUCE → M1 的 Skia 后端），
 // 所以 BeginPaint/EndPaint 只需要**配对返回成功**，让上层把「重绘开始/结束」
 // 这段包起来。返回 FALSE 会让 HwndTarget 在 layered window 路径上抛异常。
+//
+// 【PM-0116】真实脏区（env `WPF_LINUX_DIRTY_RECT=1`，默认关）：
+//   现状（改前）：`InvalidateRect` 只置 `g_paint_pending`、不记矩形；`BeginPaint`
+//   恒把 `rcPaint` 填成整窗 ⇒ `HwndTarget.DoPaint`（HwndTarget.Linux.cs:1422）
+//   每条 `WM_PAINT` 都转发成整窗 `MILCMD_TARGET_INVALIDATE`（cov=1.000）。
+//   本段按窗口累加脏矩形：`rc == NULL` 记整窗、空矩形不记；`BeginPaint` 取走后清空；
+//   未开启 / 没有记录 / 记录无效时一律退回整窗（保守，绝不留白）。
+//   规矩：出现「标志已置但无矩形」必须按整窗兜底**并计数**，不许静默吞掉。
+// 【PM-0116 v5】nreq=本批并集调用次数（矩形 + 整窗标记）、nexpose=其中来自 X Expose 的条数。
+//   为什么要记：质量要求「每次 BeginPaint 报 pending 数 / 累计面积 / 返回 rc，三者自洽」，
+//   没有这两个计数就无法证明 rc 是从哪几条脏区并出来的。
+typedef struct { HWND hwnd; int32_t l, t, r, b; int32_t full; int32_t pending; int32_t nreq; int32_t nexpose; } wpf_dirty_slot;
+#define WPF_DIRTY_SLOTS 64
+static wpf_dirty_slot g_dirty[WPF_DIRTY_SLOTS];
+static pthread_mutex_t g_dirty_lock = PTHREAD_MUTEX_INITIALIZER;
+static long g_dirty_fallback_full;     // 「pending 置了但无矩形」兜底次数
+static long g_dirty_taken;             // 成功返回局部矩形的次数
+static long g_dirty_rgn_fallbacks;     // InvalidateRgn/RedrawWindow 区域被退整窗的次数（不静默）
+static long g_dirty_fullnotes;        // 【v5】有意整窗（MapNotify/UIA 补投）被取走的次数
+
+static int wpf_dirty_enabled(void)
+{
+    static int e = -1;
+    if (e < 0) e = getenv("WPF_LINUX_DIRTY_RECT") ? 1 : 0;
+    return e;
+}
+
+static wpf_dirty_slot *wpf_dirty_slot_of(HWND h, int create)
+{
+    wpf_dirty_slot *freeSlot = NULL;
+    for (int i = 0; i < WPF_DIRTY_SLOTS; ++i) {
+        if (g_dirty[i].hwnd == h) return &g_dirty[i];
+        if (!freeSlot && !g_dirty[i].hwnd) freeSlot = &g_dirty[i];
+    }
+    if (!create || !freeSlot) return NULL;
+    memset(freeSlot, 0, sizeof(*freeSlot));
+    freeSlot->hwnd = h;
+    return freeSlot;
+}
+
+// rc == NULL ⇒ 整窗；空矩形忽略；否则并集。is_expose 只用于来源计数，不改变合并语义。
+static void wpf_dirty_union_src(HWND h, const WPF_RECT *rc, int is_expose)
+{
+    if (!h) return;
+    pthread_mutex_lock(&g_dirty_lock);
+    wpf_dirty_slot *e = wpf_dirty_slot_of(h, 1);
+    if (!e) { pthread_mutex_unlock(&g_dirty_lock); return; }
+    if (!rc) {
+        e->full = 1;
+    } else if (rc->right > rc->left && rc->bottom > rc->top) {
+        if (!e->pending && !e->full) {
+            e->l = rc->left; e->t = rc->top; e->r = rc->right; e->b = rc->bottom;
+        } else {
+            if (rc->left   < e->l) e->l = rc->left;
+            if (rc->top    < e->t) e->t = rc->top;
+            if (rc->right  > e->r) e->r = rc->right;
+            if (rc->bottom > e->b) e->b = rc->bottom;
+        }
+    } else {
+        pthread_mutex_unlock(&g_dirty_lock);   // 空矩形不记脏
+        return;
+    }
+    ++e->nreq;
+    if (is_expose) ++e->nexpose;
+    e->pending = 1;
+    pthread_mutex_unlock(&g_dirty_lock);
+}
+
+static void wpf_dirty_union(HWND h, const WPF_RECT *rc)
+{
+    wpf_dirty_union_src(h, rc, 0);
+}
+
+// 取走并清空；返回 1 表示拿到了有效局部矩形（full 时也返回 1 并置 *full）。
+// 【PM-0116 v5】同时带出本批记账明细，供 [DIRTY] 对账：
+//   *req = 本批并集调用次数；*acc = 并集后的面积（整窗标记为 -1）；*exp = 其中 Expose 来源条数。
+//   自洽规则（质量口径）：req==0 ⇒ 必然走整窗兜底且 fallback 递增；
+//   req>0 && *acc>=0 ⇒ 返回 rc 必须等于 *acc 对应的并集矩形（钳到窗口内）；*acc==-1 ⇒ 返回整窗且 fullnote 递增。
+static int wpf_dirty_take(HWND h, WPF_RECT *out, int *full, int *req, long *acc, int *exp)
+{
+    int got = 0;
+    *req = 0; *acc = 0; *exp = 0;
+    pthread_mutex_lock(&g_dirty_lock);
+    wpf_dirty_slot *e = wpf_dirty_slot_of(h, 0);
+    if (e) {
+        *req = e->nreq;
+        *exp = e->nexpose;
+        if (e->full) { *full = 1; *acc = -1; got = 1; }
+        else if (e->pending && e->r > e->l && e->b > e->t) {
+            out->left = e->l; out->top = e->t; out->right = e->r; out->bottom = e->b;
+            *acc = (long)(e->r - e->l) * (long)(e->b - e->t);
+            *full = 0; got = 1;
+        }
+        e->pending = 0; e->full = 0; e->l = e->t = e->r = e->b = 0;
+        e->nreq = 0; e->nexpose = 0;
+    }
+    pthread_mutex_unlock(&g_dirty_lock);
+    return got;
+}
+
+// 【PM-0116】X `Expose` 事件自带的矩形直接进脏区累加器。
+//   为什么需要：`WM_PAINT` 有两条来源——① `wpf_paint_flush`（由 `InvalidateRect` 置位）；
+//   ② X `Expose` 直接在 `win32_x11.c` 里 `push(WM_PAINT)`，**绕过 `g_paint_pending`**。
+//   后者没有矩形记录 ⇒ `BeginPaint` 只能退整窗。这里把 expose 的 x/y/w/h 记进去。
+void wpf_dirty_note_expose(HWND h, int32_t x, int32_t y, int32_t w, int32_t hh)
+{
+    if (!wpf_dirty_enabled()) return;
+    WPF_RECT rc = { x, y, x + w, y + hh };
+    wpf_dirty_union_src(h, &rc, 1);
+}
+
+// 【PM-0116 v5】**有意整窗**的重绘点也要进记账。
+//   为什么要：`WM_PAINT` 还有两处直接 `PostMessageW` —— `win32_x11.c` 的 MapNotify
+//   （切工作区后 surface 已丢，必须整窗重画）和 `win32_gdi_text.c` 的 UIA 补投。
+//   它们绕过 `g_paint_pending`，若不记账，`BeginPaint` 只能落进「pending 置了但没有矩形」
+//   的 fallback 计数 ⇒ **有意的整窗**被混进**异常兜底**，读数分不清是谁。
+//   这里显式记整窗，落在 `fullnote=` 上；`fallback=` 只留给真正的异常。
+void wpf_dirty_note_full(HWND h)
+{
+    if (!wpf_dirty_enabled()) return;
+    wpf_dirty_union_src(h, NULL, 0);
+}
+
 BOOL BeginPaint(HWND h, WPF_PAINTSTRUCT *ps)
 {
     /* 【K-965】诊断 */
@@ -226,6 +350,41 @@ BOOL BeginPaint(HWND h, WPF_PAINTSTRUCT *ps)
         if (w) {
             ps->rcPaint.left = 0; ps->rcPaint.top = 0;
             ps->rcPaint.right = w->width; ps->rcPaint.bottom = w->height;
+
+            // 【PM-0116】脏区开启时，优先返回真实局部矩形；无有效记录 ⇒ 退回整窗并计数。
+            if (wpf_dirty_enabled()) {
+                WPF_RECT dr; int full = 0; int req = 0; int exp = 0; long acc = 0;
+                int got = wpf_dirty_take(h, &dr, &full, &req, &acc, &exp);
+                if (got) {
+                    if (full) {
+                        ++g_dirty_fullnotes;            // 有意整窗（MapNotify/UIA 补投）
+                    } else {
+                        if (dr.left < 0) dr.left = 0;
+                        if (dr.top < 0) dr.top = 0;
+                        if (dr.right > w->width) dr.right = w->width;
+                        if (dr.bottom > w->height) dr.bottom = w->height;
+                        if (dr.right > dr.left && dr.bottom > dr.top) {
+                            ps->rcPaint.left = dr.left; ps->rcPaint.top = dr.top;
+                            ps->rcPaint.right = dr.right; ps->rcPaint.bottom = dr.bottom;
+                            ++g_dirty_taken;
+                        }
+                    }
+                } else {
+                    ++g_dirty_fallback_full;   // 「标志已置但无矩形」⇒ 整窗兜底，计数不吞
+                }
+                if (getenv("WPF_LINUX_DIRTY_DIAG")) {
+                    static int dn = 0;
+                    if (dn++ < 200) {
+                        fprintf(stderr, "[DIRTY] hwnd=%p rc=(%d,%d)-(%d,%d) taken=%ld fallback=%ld rgnfb=%ld"
+                                        " req=%d acc=%ld exp=%d fullnote=%ld\n",
+                                (void *)h, (int)ps->rcPaint.left, (int)ps->rcPaint.top,
+                                (int)ps->rcPaint.right, (int)ps->rcPaint.bottom,
+                                g_dirty_taken, g_dirty_fallback_full, g_dirty_rgn_fallbacks,
+                                req, acc, exp, g_dirty_fullnotes);
+                        fflush(stderr);
+                    }
+                }
+            }
         }
         // 【ACC-028 / K-163】**在 BeginPaint 里直接把背景画掉**。
         //   为什么放在这里：K-162 证实控件分成两类 ——
@@ -360,22 +519,61 @@ BOOL EndPaint(HWND h, const WPF_PAINTSTRUCT *ps)
 //   => 结果：`/tmp/wfout/WfApp.dll`（标准 WinForms）启动、窗口 map、控件都建好了，**内容一片空白**。
 //   修法：**合并投递** —— 置一个 pending 标志，由事件泵每轮循环末尾统一投一次 WM_PAINT，
 //   多个 Invalidate 合并成一次，不会形成重绘风暴（K-140 担心的正是风暴）。
-static void *g_paint_hwnd = NULL;
-static int   g_paint_pending = 0;
+// 【PM-0116 v3】WM_PAINT 投递按 hwnd 分别记账。
+//   旧实现只有一个 `g_paint_hwnd`（只记第一个 hwnd）⇒ 多窗口时 `InvalidateRect(h2)`
+//   的 WM_PAINT 会投给 `h1`，h2 的脏区永远不刷。现在每个 hwnd 一条 pending 位。
+typedef struct { void *hwnd; int pending; } wpf_paint_slot;
+#define WPF_PAINT_SLOTS 64
+static wpf_paint_slot g_paint_slots[WPF_PAINT_SLOTS];
+static pthread_mutex_t g_paint_lock = PTHREAD_MUTEX_INITIALIZER;
 
-void wpf_paint_note(void *hwnd) { if (!g_paint_hwnd) g_paint_hwnd = hwnd; }
-void *wpf_paint_target(void) { return g_paint_hwnd; }
+static void wpf_paint_mark(void *hwnd)
+{
+    if (!hwnd) return;
+    pthread_mutex_lock(&g_paint_lock);
+    wpf_paint_slot *freeSlot = NULL;
+    for (int i = 0; i < WPF_PAINT_SLOTS; ++i) {
+        if (g_paint_slots[i].hwnd == hwnd) { g_paint_slots[i].pending = 1; pthread_mutex_unlock(&g_paint_lock); return; }
+        if (!freeSlot && !g_paint_slots[i].hwnd) freeSlot = &g_paint_slots[i];
+    }
+    if (freeSlot) { freeSlot->hwnd = hwnd; freeSlot->pending = 1; }
+    pthread_mutex_unlock(&g_paint_lock);
+}
+
+void wpf_paint_note(void *hwnd) { wpf_paint_mark(hwnd); }
+
+void *wpf_paint_target(void)
+{
+    void *r = NULL;
+    pthread_mutex_lock(&g_paint_lock);
+    for (int i = 0; i < WPF_PAINT_SLOTS; ++i)
+        if (g_paint_slots[i].hwnd && g_paint_slots[i].pending) { r = g_paint_slots[i].hwnd; break; }
+    pthread_mutex_unlock(&g_paint_lock);
+    return r;
+}
 
 void wpf_paint_flush(void)
 {
-    if (!g_paint_pending || !g_paint_hwnd) return;
-    g_paint_pending = 0;
-    PostMessageW(g_paint_hwnd, 0x000F /*WM_PAINT*/, 0, 0);
+    void *hs[WPF_PAINT_SLOTS];
+    int n = 0;
+    pthread_mutex_lock(&g_paint_lock);
+    for (int i = 0; i < WPF_PAINT_SLOTS; ++i) {
+        if (!g_paint_slots[i].hwnd || !g_paint_slots[i].pending) continue;
+        g_paint_slots[i].pending = 0;
+        hs[n++] = g_paint_slots[i].hwnd;
+    }
+    pthread_mutex_unlock(&g_paint_lock);
+    if (n > 0 && getenv("WPF_LINUX_DIRTY_DIAG")) {
+        fprintf(stderr, "[PAINTPOST] flush n=%d first=%p\n", n, (void *)hs[0]);
+        fflush(stderr);
+    }
+    for (int i = 0; i < n; ++i)
+        PostMessageW(hs[i], 0x000F /*WM_PAINT*/, 0, 0);
 }
 
 BOOL InvalidateRect(HWND h, const void *rc, BOOL erase)
 {
-    (void)rc; (void)erase;
+    (void)erase;
     /* 【K-965】诊断：`WM_PAINT` 缺失排查 */
     if (getenv("WPF_LINUX_PAINT_DIAG")) {
         static int n = 0;
@@ -383,10 +581,17 @@ BOOL InvalidateRect(HWND h, const void *rc, BOOL erase)
     }
     if (!h) return 1;
     wpf_paint_note(h);
-    g_paint_pending = 1;
+    // 【PM-0116】rc == NULL ⇒ 整窗；空矩形忽略；否则并集进累加器。
+    if (wpf_dirty_enabled()) wpf_dirty_union(h, (const WPF_RECT *)rc);
     return 1;
 }
-BOOL InvalidateRgn(HWND h, void *rgn, BOOL erase) { (void)rgn; (void)erase; return InvalidateRect(h, NULL, erase); }
+// 【PM-0116】区域版：不实现区域运算，但**明确退整帧并计数**（不许静默丢弃）。
+BOOL InvalidateRgn(HWND h, void *rgn, BOOL erase)
+{
+    (void)rgn; (void)erase;
+    if (wpf_dirty_enabled()) ++g_dirty_rgn_fallbacks;
+    return InvalidateRect(h, NULL, erase);   // NULL ⇒ 整窗
+}
 BOOL ValidateRect(HWND h, const void *rc) { (void)h; (void)rc; return 1; }
 BOOL UpdateWindow(HWND h)
 {
