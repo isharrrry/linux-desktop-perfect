@@ -1165,14 +1165,37 @@ int wpf_atspi_register_control(uint64_t hwnd, int id, const char *name, const ch
 
     wpf_atspi_node *n = atspi_node_by_path(path);
     if (!n) {
-        if (g_node_count >= WPF_ATSPI_MAX_NODES) return 0;
-        n = &g_nodes[g_node_count];
+        /* 【PM-0109 槽位复用修复】`clear_controls` 把子节点 memset 掉（path/alive/registered 全清）
+           但**不归还槽位**，而旧实现只会 `g_node_count++` ⇒ 托管侧每拍「清空 + 重注册」
+           就吃掉一整轮新槽位（113 个/轮），4–5 轮打满 512 后 register_control 全部静默失败
+           ⇒ AT-SPI 树被清空后再也长不回来（GetChildren 返回空、path UnknownMethod）。
+           修法：先找**死槽**（!alive && !registered && path 为空）复用；只有确实没有死槽才扩表。
+           注意：不要动 `clear_controls` 的语义——它 memset 出的空槽正是这里的可复用来源。 */
+        int slot = -1;
+        for (int i = 0; i < g_node_count; ++i) {
+            if (!g_nodes[i].alive && !g_nodes[i].registered && g_nodes[i].path[0] == '\0') {
+                slot = i; break;
+            }
+        }
+        if (slot >= 0) {
+            n = &g_nodes[slot];
+        } else {
+            if (g_node_count >= WPF_ATSPI_MAX_NODES) {
+                /* 不许静默失败：下次靠日志就能看出来，不用 12 连采样才反推 */
+                atspi_diag("[ATSPI] 节点表满 %d，拒绝注册 path=%s（槽位未复用或树过大）",
+                           WPF_ATSPI_MAX_NODES, path);
+                return 0;
+            }
+            n = &g_nodes[g_node_count];
+        }
         memset(n, 0, sizeof(*n));
         snprintf(n->path, sizeof(n->path), "%s", path);
-        if (!dbus_connection_register_object_path(g_bus, n->path, &g_atspi_vtbl, NULL))
+        if (!dbus_connection_register_object_path(g_bus, n->path, &g_atspi_vtbl, NULL)) {
+            atspi_diag("[ATSPI] register_object_path 失败 path=%s", n->path);
             return 0;
+        }
         n->registered = 1;
-        g_node_count++;
+        if (n == &g_nodes[g_node_count]) g_node_count++;
     }
     n->alive = 1;
     n->hwnd = hwnd;
