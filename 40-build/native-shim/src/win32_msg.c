@@ -727,6 +727,22 @@ LRESULT wpf_dispatch_to_window(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
     WNDPROC proc = NULL;
     wpf_global_init();
 
+    /* 【PM-0135 · 大肥鱼 10:0x】`hwnd == NULL` 的派发一律拒绝：
+       Win32 的 `DispatchMessage` 对 `MSG.hwnd == NULL`（线程消息）**直接返回 0、不进任何窗口过程**。
+       shim 之前无条件往下走 ⇒ 拿着空句柄解析窗口、甚至进托管 WndProc
+       （实测栈里就是 `hwnd=0x0 msg=0x8005`）。成本近乎为零，挡掉一整类无窗可派的错派发。 */
+    if (hwnd == NULL) {
+        static int null_shown = 0;
+        if (!null_shown && getenv("WPF_LINUX_XDISPATCH_DIAG")) {
+            extern long wpf_shim_tid(void);
+            null_shown = 1;
+            fprintf(stderr, "[XDISPATCH] null-hwnd msg=0x%04x tid=%ld (Win32 语义：直接返回 0)\n",
+                    (unsigned)msg, wpf_shim_tid());
+            fflush(stderr);
+        }
+        return 0;
+    }
+
     /* ══ 【PM-0135】跨线程派发：这里是全部 6 个调用点的**唯一落点** ══════════════════
        `SendMessageW` / `DispatchMessageW` / `wpf_core_nc_hit_test`（WM_NCHITTEST）/
        `WM_GETMINMAXINFO` 都从这里进托管 WndProc。非 owner 线程直调 ⇒ WPF 钩子链在错误线程
