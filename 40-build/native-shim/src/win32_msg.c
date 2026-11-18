@@ -579,6 +579,11 @@ UINT_PTR SetTimer(HWND hwnd, UINT_PTR id, UINT elapse, TIMERPROC proc)
         if (id < MSGSTAT_TIMER_SLOTS) g_timer_elapse[id] = elapse;
     }
     wpf_global_init();
+    /* 【PM-0117 诊断门】WPF_LINUX_NO_BG_TIMER=1：忽略 id==1（Dispatcher 的
+       1ms 背景定时器）的 SetTimer，只用于量这一份的 CPU 代价；默认关。 */
+    { static int __no_bg = -1;
+      if (__no_bg < 0) __no_bg = getenv("WPF_LINUX_NO_BG_TIMER") ? 1 : 0;
+      if (__no_bg && id == 1) return 0; }
     if (elapse == 0) elapse = 1;          // Win32 的 USER_TIMER_MINIMUM，取 1ms 更贴近 Linux 习惯
 
     wpf_lock();
@@ -890,7 +895,11 @@ static int wait_for_input(wpf_thread *t, int timeout_ms)
         // fd 也就永远不会变可读（这是 Xlib 的经典死锁点）。
         // 走 wpf_x11_flush（内部持 xlock）——XFlush 也会碰连接状态，
         // 必须和终结器线程的 XDestroyWindow 串行化。
-        wpf_x11_flush();
+        /* 【PM-0117 诊断门】WPF_LINUX_NO_PUMP_FLUSH=1：跳过每拍 flush，
+           只用于量「每拍 flush」这一份的 CPU 代价；默认关。 */
+        { static int __no_flush = -1;
+          if (__no_flush < 0) __no_flush = getenv("WPF_LINUX_NO_PUMP_FLUSH") ? 1 : 0;
+          if (!__no_flush) wpf_x11_flush(); }
         fds[n].fd = g_wpf.xfd;
         fds[n].events = POLLIN;
         fds[n].revents = 0;
