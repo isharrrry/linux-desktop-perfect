@@ -739,6 +739,26 @@ int wpf_core_nc_hit_test(HWND hwnd, int x_root, int y_root)
 {
     if (!hwnd) return HTCLIENT;
     if (!wpf_core_is_toplevel(hwnd)) return HTCLIENT;
+    /* 【PM-0135】跨线程派发保护：`wpf_dispatch_to_window` 是**同步直调**窗口过程，
+       而托管侧 WPF 的 WndProc 钩子链必须在窗口所属线程上跑（`Visual.VerifyAccess`）。
+       实测崩溃栈：shim 的鼠标按下路径调到这里 → `WindowChromeWorker._HandleNCHitTest`
+       → `Visual.HitTest` → `VerifyAccess` 抛"调用线程无法访问该对象"。
+       条件：本函数被**非 owner 线程**调用（任何线程泵一次 X 事件都可能把发往主窗口的
+       ButtonPress 拉进自己的队列，见 win32_msg.c:309 的结构性说明）。
+         · `WPF_LINUX_NCHIT_DIAG=1`  → 打诊断（默认零输出）
+         · `WPF_LINUX_NCHIT_GUARD=1` → 跨线程时直接按 DefWindowProc 口径返回 HTCLIENT，
+           不派发（guard 件；默认关 ⇒ 行为与修前逐字一致） */
+    wpf_window *w = wpf_window_find(hwnd);
+    void *me = (void *)wpf_thread_self();
+    void *owner = w ? w->owner_thread : NULL;
+    if (owner && owner != me) {
+        if (getenv("WPF_LINUX_NCHIT_DIAG"))
+            fprintf(stderr, "[NCHIT] cross-thread hwnd=0x%llx cur=%p owner=%p guard=%d\n",
+                    (unsigned long long)(uintptr_t)hwnd, me, owner,
+                    getenv("WPF_LINUX_NCHIT_GUARD") ? 1 : 0);
+        if (getenv("WPF_LINUX_NCHIT_GUARD"))
+            return HTCLIENT;
+    }
     // lParam = 屏幕坐标（Win32：`MAKELPARAM(x, y)`，低 16 位 x、高 16 位 y，带符号语义）
     LPARAM lp = (LPARAM)(uint32_t)(((uint32_t)(x_root & 0xFFFF)) |
                                    (((uint32_t)(y_root & 0xFFFF)) << 16));
