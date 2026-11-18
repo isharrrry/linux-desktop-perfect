@@ -1051,17 +1051,29 @@ BOOL GetMessageW(WPF_MSG *msg, HWND hwnd, UINT lo, UINT hi)
             /* K-1252：坐标可配置（`WPF_ATSPI_ACTION_XY="x,y"`，默认 20,20） */
             int ax = 20, ay = 20;
             if (pax >= 0 && pay >= 0) {
-                /* 控件坐标：先用注册来的中心；若越出窗口范围，说明注册方给的是屏幕坐标，
-                   换算成窗内坐标再用（DoAction 不再用 (20,20) 冒充控件动作）。 */
+                /* 【PM-0109 档2 坐标修复】托管侧注册的 bounds 是**屏幕坐标**，而这里的
+                   `ax/ay` 必须是**客户区坐标**（既用于 WM_LBUTTONDOWN 的 lParam，也用于
+                   XTranslateCoordinates 反推指针位置）。修前把屏幕坐标直接当客户区用，
+                   窗口不在 (0,0) 时点击整体偏移——私有根窗口在 (0,0) 时偏移为 0，把它掩盖了。
+                   只走这一条路：屏幕 → 客户区，不再保留「越界才换算」的分支。
+                   日志一次打三个数：屏幕点 / 窗口原点 / 客户区点。 */
+                int scr_x = pax, scr_y = pay, org_x = -1, org_y = -1;
                 ax = pax; ay = pay;
-                wpf_window *aw = wpf_window_find(ah);
-                if (aw && g_wpf.dpy && (ax < 0 || ay < 0 || ax >= aw->width || ay >= aw->height)) {
+                if (g_wpf.dpy) {
                     Window _ch; int _wx = 0, _wy = 0; unsigned _mk = 0;
                     if (XTranslateCoordinates(g_wpf.dpy, DefaultRootWindow(g_wpf.dpy),
-                                              (Window)(uintptr_t)ah, ax, ay, &_wx, &_wy, &_ch)) {
+                                              (Window)(uintptr_t)ah, pax, pay, &_wx, &_wy, &_ch)) {
                         ax = _wx; ay = _wy;
                     }
+                    if (XTranslateCoordinates(g_wpf.dpy, (Window)(uintptr_t)ah,
+                                              DefaultRootWindow(g_wpf.dpy), 0, 0,
+                                              &org_x, &org_y, &_ch)) {
+                        /* org = 客户区 (0,0) 的屏幕坐标 */
+                    }
                 }
+                fprintf(stderr, "[ATSPI-ACTION] coord screen=%d,%d origin=%d,%d client=%d,%d hwnd=0x%llx",
+                        scr_x, scr_y, org_x, org_y, ax, ay, (unsigned long long)(uintptr_t)ah);
+                fflush(stderr);
             } else {
                 const char *xy = getenv("WPF_ATSPI_ACTION_XY");
                 if (xy && *xy) { sscanf(xy, "%d,%d", &ax, &ay); }
