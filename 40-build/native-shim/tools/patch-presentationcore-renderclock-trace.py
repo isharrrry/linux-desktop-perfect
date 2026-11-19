@@ -151,31 +151,80 @@ def build_source():
     return src
 
 
-def wire_csproj(dry_run):
-    with open(CSPROJ, encoding="utf-8-sig") as f:
-        csproj = f.read()
+def wiring_state(csproj):
+    """纯判据：csproj 里有没有本脚本的接线标记。wired / unwired。"""
+    return "wired" if MARKER_BEGIN in csproj else "unwired"
+
+
+def apply_wiring(csproj):
+    """返回接线后的 csproj 文本（幂等）。找不到 </Project> 直接失败。"""
     if MARKER_BEGIN in csproj:
-        return "csproj: 已接线（幂等）"
+        return csproj
     block = (MARKER_BEGIN + "\n"
              "  <ItemGroup>\n"
              '    <Compile Remove="$(UpstreamWpfRoot)src/Microsoft.DotNet.Wpf/src/PresentationCore/System/Windows/Media/MediaContext.cs" />\n'
              '    <Compile Include="$(WpfLinuxRoot)src/Microsoft.DotNet.Wpf.Linux/src/PresentationCore/MediaContext.Linux.cs" />\n'
              "  </ItemGroup>\n"
              + MARKER_END + "\n")
-    # 插在第一个 </Project> 之前
     idx = csproj.rfind("</Project>")
     if idx < 0:
         fail("csproj 里找不到 </Project>")
-    if not dry_run:
-        with open(CSPROJ, "w", encoding="utf-8") as f:
-            f.write(csproj[:idx] + block + csproj[idx:])
+    return csproj[:idx] + block + csproj[idx:]
+
+
+def wire_csproj(dry_run):
+    with open(CSPROJ, encoding="utf-8-sig") as f:
+        csproj = f.read()
+    if wiring_state(csproj) == "wired":
+        return "csproj: 已接线（幂等）"
+    if dry_run:
+        # PM-0102 修正：此前 dry_run 会无条件报「已接线」，是假阳性。
+        return "csproj: 未接线（需先运行本脚本接线；--check 因此判失败）"
+    with open(CSPROJ, "w", encoding="utf-8") as f:
+        f.write(apply_wiring(csproj))
     return "csproj: 已接线（Remove 上游 + Include 生成物）"
+
+
+def selftest():
+    """红测：喂已知未接线的 csproj，必须报未接线；接线后必须报已接线且幂等。"""
+    failures = []
+    empty = '<?xml version="1.0" encoding="utf-8"?>\n<Project Sdk="Microsoft.NET.Sdk">\n</Project>\n'
+
+    if wiring_state(empty) != "unwired":
+        failures.append("未接线 fixture 被判成 wired")
+    wired = apply_wiring(empty)
+    if wiring_state(wired) != "wired":
+        failures.append("接线后仍被判成 unwired")
+    if "MediaContext.Linux.cs" not in wired:
+        failures.append("接线块缺 Include MediaContext.Linux.cs")
+    if 'Remove="' not in wired:
+        failures.append("接线块缺 Remove 上游 MediaContext.cs")
+    if apply_wiring(wired) != wired:
+        failures.append("接线不幂等")
+
+    # 真实 csproj：只报告状态，不写盘
+    try:
+        with open(CSPROJ, encoding="utf-8-sig") as f:
+            real = wiring_state(f.read())
+        print("[自检] 真实 csproj 当前接线状态：%s" % real)
+    except Exception as e:  # noqa: BLE001
+        failures.append("读真实 csproj 失败：%s" % e)
+
+    for msg in failures:
+        print("[自检][FAIL] " + msg)
+    print("[自检] %s（%d 项断言）" % ("PASS" if not failures else "FAIL", 6))
+    return 0 if not failures else 1
+
 
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--check", action="store_true", help="只比对，不写盘；不一致时退出码 1")
+    ap.add_argument("--check", action="store_true", help="只比对，不写盘；生成物陈旧或 csproj 未接线时退出码 1")
+    ap.add_argument("--selftest", action="store_true", help="红测：验证接线检查能识别未接线（必须报未接线）")
     args = ap.parse_args()
+
+    if args.selftest:
+        return selftest()
 
     src = build_source()
     body = HEADER.replace("{rel}", UP_REL).replace("{n}", str(len(PATCHES))) + src
@@ -189,6 +238,11 @@ def main():
             fail("生成物与上游不一致（需重跑本脚本）")
         print("[检查] src/MediaContext.Linux.cs：内容已是最新")
         print("[接线] " + wire_csproj(dry_run=True))
+        with open(CSPROJ, encoding="utf-8-sig") as f:
+            state = wiring_state(f.read())
+        if state != "wired":
+            print("[检查] FAIL：csproj 未接线，诊断构建会静默使用上游 MediaContext（无插桩）")
+            return 1
         return 0
 
     with open(GEN, "w", encoding="utf-8") as f:
