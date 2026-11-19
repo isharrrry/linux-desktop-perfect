@@ -31,7 +31,7 @@ WARN="-Wall -Wextra -Wno-unused-parameter -Wno-cast-function-type"
 CFLAGS_BASE="$CSTD $OPT $WARN -fPIC -fvisibility=default"
 DBUS_CFLAGS="$(pkg-config --cflags dbus-1 2>/dev/null)"
 DBUS_LIBS="$(pkg-config --libs dbus-1 2>/dev/null)"
-LDLIBS="-lX11 -lXext -ldl -lpthread $DBUS_LIBS -lz"
+LDLIBS="-lX11 -lXext -lXtst -ldl -lpthread $DBUS_LIBS -lz"
 
 SRCS=(src/win32_core.c src/win32_msg.c src/win32_x11.c src/win32_misc.c src/win32_exports.c src/win32_unicode_tables.c src/win32_classification.c src/win32_oem.c src/win32_gdiplus.c src/win32_pts.c src/win32_gdi_dc.c src/win32_atspi.c src/win32_gdi_text.c src/win32_gdip_render.c src/win32_ibus.c src/win32_imm.c src/win32_clipboard.c \
   src/win32_kernel32.c src/win32_com_misc.c src/win32_comstr.c src/win32_drm_stub.c \

@@ -38,6 +38,9 @@
 #include <stdarg.h>
 #include <unistd.h>
 #include <pthread.h>
+#include <X11/Xlib.h>
+#include <X11/extensions/XTest.h>
+#include <unistd.h>
 #include "win32_internal.h"
 #include <dbus/dbus.h>
 
@@ -1045,7 +1048,78 @@ static DBusHandlerResult atspi_msg_handler(DBusConnection *conn, DBusMessage *ms
                            n->bounds[0], n->bounds[1], n->bounds[2], n->bounds[3],
                            g_atspi_pending_action_x, g_atspi_pending_action_y);
             } else if (n && n->parent_index >= 0) {
-                atspi_diag("[ATSPI] DoAction：控件无 bounds，回退窗口默认坐标（非控件动作）");
+                /* 【PM-0143 收口】控件没有 bounds 就**没有可靠的注入点**。
+                   不再回退到写死的窗口坐标，也不接受 env 指定点——那会把不同控件
+                   全点到同一处（今天一批假负结果的根源）。直接判失败，让调用方看得见。 */
+                atspi_diag("[ATSPI] DoAction 失败：控件无 bounds，拒绝注入 path=%s", n->path);
+                target = 0;
+                g_atspi_pending_action_hwnd = 0;
+            }
+            /* 【PM-0143 B2】XTest 优先（坐标与旧消息路径同口径）：
+               ① DoAction 取到的控件 bounds 中心是**屏幕坐标**，这里是客户区口径，
+                  必须先换成客户区再用；否则 XTranslateCoordinates 会把窗口原点算两次
+                  （屏幕点被当客户区 → 再加一次 origin），注入点整体偏移 = 窗口原点。
+                  旧消息路径（win32_msg.c K-1252）已修，这条 XTest 旁路当时没跟上。
+               ② `WPF_LINUX_ATSPI_ACTION_XY=x,y` 可钉住**客户区**注入点（探针用，
+                  排除 bounds 快照差异）；设置后优先于 bounds。
+               ③ `WPF_ATSPI_ACTION_XTEST_CONN=own` 用应用**新开的** X 连接注入（C 臂），
+                  默认复用应用既有连接（B 臂）；两者只差这一条。
+               ④ 日志 `[ATSPI-XTEST]` 一次打全四个数，可直接判偏移。
+               `WPF_ATSPI_ACTION_XTEST=0` 关掉本旁路，回退旧消息注入。 */
+            {
+                const char *xt = getenv("WPF_ATSPI_ACTION_XTEST");
+                int xt_ok = 0;
+                if (!(xt && *xt == '0') && g_wpf.dpy && g_atspi_pending_action_x >= 0) {
+                    Window rt = DefaultRootWindow(g_wpf.dpy);
+                    Window ch;
+                    int scr_x = g_atspi_pending_action_x, scr_y = g_atspi_pending_action_y;
+                    int org_x = -1, org_y = -1;
+                    int cl_x = scr_x, cl_y = scr_y;
+                    int sx = 0, sy = 0;
+                    int have_client = XTranslateCoordinates(g_wpf.dpy, rt,
+                                                            (Window)(uintptr_t)target,
+                                                            scr_x, scr_y, &cl_x, &cl_y, &ch) ? 1 : 0;
+                    XTranslateCoordinates(g_wpf.dpy, (Window)(uintptr_t)target, rt, 0, 0,
+                                          &org_x, &org_y, &ch);
+                    if (have_client
+                        && XTranslateCoordinates(g_wpf.dpy, (Window)(uintptr_t)target, rt,
+                                                 cl_x, cl_y, &sx, &sy, &ch)) {
+                        Display *xdpy = g_wpf.dpy;
+                        Display *own = NULL;
+                        const char *cn = getenv("WPF_ATSPI_ACTION_XTEST_CONN");
+                        if (cn && strcmp(cn, "own") == 0) {
+                            own = XOpenDisplay(NULL);
+                            if (own) xdpy = own;
+                        }
+                        {
+                            extern void wpf_x11_set_input_focus(HWND hwnd);
+                            wpf_x11_set_input_focus((HWND)(uintptr_t)target);
+                            XFlush(xdpy);
+                            usleep(80 * 1000);
+                        }
+                        XWarpPointer(xdpy, None, rt, 0, 0, 0, 0, sx, sy);
+                        XFlush(xdpy);
+                        usleep(20 * 1000);
+                        XTestFakeButtonEvent(xdpy, 1, True, 0);
+                        XFlush(xdpy);
+                        usleep(150 * 1000);
+                        XTestFakeButtonEvent(xdpy, 1, False, 0);
+                        XFlush(xdpy);
+                        fprintf(stderr,
+                                "[ATSPI-XTEST] conn=%s bounds_screen=%d,%d origin=%d,%d client=%d,%d warp_screen=%d,%d hwnd=0x%llx\n",
+                                own ? "own" : "same", scr_x, scr_y, org_x, org_y,
+                                cl_x, cl_y, sx, sy, (unsigned long long)target);
+                        fflush(stderr);
+                        if (own) { XSync(own, False); XCloseDisplay(own); }
+                        xt_ok = 1;
+                    }
+                }
+                if (xt_ok) {
+                    g_atspi_pending_action_hwnd = 0;
+                    g_atspi_pending_action_x = g_atspi_pending_action_y = -1;
+                    target = target;   /* 保持 target 非 0，DoAction 返回 TRUE */
+                    goto atspi_action_done;
+                }
             }
             atspi_diag("[ATSPI] DoAction：置待处理标志 hwnd=0x%llx idx=%d",
                        (unsigned long long)target, (int)idx);
@@ -1058,6 +1132,7 @@ static DBusHandlerResult atspi_msg_handler(DBusConnection *conn, DBusMessage *ms
                 target = 0;
             }
         }
+    atspi_action_done:
         dbus_bool_t r = target ? TRUE : FALSE;
         dbus_message_iter_append_basic(&it, DBUS_TYPE_BOOLEAN, &r);
     } else if (strcmp(member, "GetActionName") == 0 || strcmp(member, "GetActionDescription") == 0 || strcmp(member, "GetKeyBinding") == 0
@@ -1173,9 +1248,19 @@ int wpf_atspi_register_control(uint64_t hwnd, int id, const char *name, const ch
                                uint32_t role_id, int32_t x, int32_t y, int32_t w, int32_t h,
                                int has_action)
 {
-    if (!atspi_ensure() || !g_bus) return 0;
+    /* 【PM-0145 诊断】失败路径必须留痕：否则「托管侧没调」「ensure 没就绪」「父窗口没挂上」
+       三种情况在日志里长得一模一样。仅诊断，不改行为。 */
+    if (!atspi_ensure() || !g_bus) {
+        atspi_diag("[ATSPI] ctl 注册诊断：ensure/g_bus 未就绪 hwnd=0x%llx id=%d name=%s",
+                   (unsigned long long)hwnd, id, name ? name : "?");
+        return 0;
+    }
     wpf_atspi_node *parent = atspi_node_find(hwnd);
-    if (!parent || parent->hwnd == 0) return 0;          /* 必须挂在窗口下 */
+    if (!parent || parent->hwnd == 0) {
+        atspi_diag("[ATSPI] ctl 注册诊断：父窗口未注册 hwnd=0x%llx id=%d name=%s 节点数=%d",
+                   (unsigned long long)hwnd, id, name ? name : "?", g_node_count);
+        return 0;
+    }
     int pidx = (int)(parent - g_nodes);
 
     char path[128];
