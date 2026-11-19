@@ -81,46 +81,49 @@ namespace WpfGfx.Linux.Text
 
             foreach (string path in files)
             {
-                SKTypeface face;
-                try
+                string fileName = Path.GetFileName(path);
+
+                // 【PM-0147 方案 A（2026-11-19）】**集合字体必须枚举全部 face**。
+                //   修前每个文件只取 index 0 ⇒ `NotoSansCJK-Regular.ttc` 只有
+                //   "Noto Sans CJK JP"(0) 进索引，而 launcher 请求的是 "Noto Sans CJK SC"(2)
+                //   ⇒ TryResolve 必然失败 ⇒ 兜底到目录里排序第一个面（实测 Chilanka）。
+                //   fontconfig（fc-match）认集合索引，所以命令行能解析、代码路径不能——
+                //   这是索引口径差异，不是配置路径差异。
+                //   上限 64 是防御：实测 Noto CJK 每个 ttc 10 面；非集合文件 index>0 返回 null。
+                bool isCollection = fileName.EndsWith(".ttc", StringComparison.OrdinalIgnoreCase);
+                int maxFaces = isCollection ? 64 : 1;
+
+                bool anyFace = false;
+                for (int faceIndex = 0; faceIndex < maxFaces; faceIndex++)
                 {
-                    // [W8 / D-F1c 内存半边] 走按路径共享的 `SKData`（否则每个字体文件各留一份整文件映射）。
-                    face = SkiaFontFileCache.CreateFace(path, 0);
-                }
-                catch (Exception)
-                {
-                    continue; // 坏文件跳过，不让一份坏字体毁掉整个集合
-                }
-
-                if (face == null) continue;
-
-                set._typefaces.Add(face);
-                set._fileNames.Add(Path.GetFileName(path));
-
-                // census（缺省关）：把"面 → 文件/faceIndex"记下来（SkiaSharp 的 SKTypeface 不暴露路径）。
-                GlyphFaceCensus.NoteFaceSource(face, Path.GetFileName(path), 0);
-
-                // 顺带量一条与 (乙) 直接相关的事实：**同一个文件里还有没有我们没加载的 face**
-                //   （TTC/TTF 集合字体：本加载器只取 index 0）。只读、只计数。
-                if (GlyphFaceCensus.Enabled)
-                {
+                    SKTypeface face;
                     try
                     {
-                        // [W8 / D-F1c] 同上：census 的"第二面"也从共享后备建，避免瞬时多一份整文件映射。
-                        using SKTypeface second = SkiaFontFileCache.CreateFace(path, 1);
-                        if (second != null)
-                        {
-                            GlyphFaceCensus.NoteFaceSource(second, Path.GetFileName(path), 1);
-                        }
+                        // [W8 / D-F1c 内存半边] 走按路径共享的 `SKData`（否则每个 face 各留一份整文件映射）。
+                        face = SkiaFontFileCache.CreateFace(path, faceIndex);
                     }
-                    catch { /* 不是集合字体/读取失败：忽略 */ }
+                    catch (Exception)
+                    {
+                        break; // 坏文件跳过，不让一份坏字体毁掉整个集合
+                    }
+
+                    if (face == null) break; // 集合只有这么多面（非集合文件 faceIndex>0 即 null）
+
+                    anyFace = true;
+                    set._typefaces.Add(face);
+
+                    // census（缺省关）：把"面 → 文件/faceIndex"记下来（SkiaSharp 的 SKTypeface 不暴露路径）。
+                    GlyphFaceCensus.NoteFaceSource(face, fileName, faceIndex);
+
+                    var desc = new TextFontDescription(face.FamilyName, face.FontWeight, face.FontSlant);
+                    set._exact[desc] = face;
+
+                    var key = (face.FamilyName, face.IsBold, face.IsItalic);
+                    if (!set._approximate.ContainsKey(key)) set._approximate[key] = face;
                 }
 
-                var desc = new TextFontDescription(face.FamilyName, face.FontWeight, face.FontSlant);
-                set._exact[desc] = face;
-
-                var key = (face.FamilyName, face.IsBold, face.IsItalic);
-                if (!set._approximate.ContainsKey(key)) set._approximate[key] = face;
+                // 候选文件数按**文件**计（不是按 face），与诊断行"候选文件="口径一致。
+                if (anyFace) set._fileNames.Add(fileName);
             }
 
             return set;
