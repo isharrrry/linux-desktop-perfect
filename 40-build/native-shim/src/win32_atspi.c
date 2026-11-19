@@ -678,8 +678,18 @@ static void atspi_reply_cache_items(DBusMessageIter *it)
         atspi_append_ref(&item, g_bus_name, WPF_ATSPI_PATH_ROOT);
         if (is_root)
             atspi_append_ref(&item, "", "/org/a11y/atspi/null");
-        else
-            atspi_append_ref(&item, g_bus_name, WPF_ATSPI_PATH_ROOT);
+        else {
+            /* 【PM-0144 修复】parent 必须是**真正的父节点**：
+               窗口的父是 app root，控件的父是它所属的**窗口节点**。
+               原实现对所有非 root 节点一律写 root ⇒ 122 个控件的 parent 全指向 root，
+               而 root 的 child_count 只有 9 ⇒ 树结构与计数自相矛盾，
+               libatspi 只按 child_count 读 9 个 ⇒ 控件全部丢失
+               （pyatspi 实测「122 个节点全是 frame|SourceTree」就是这个机制）。 */
+            int pi = cn->parent_index;
+            const char *ppath = (pi >= 0 && pi < g_node_count && g_nodes[pi].alive)
+                                ? g_nodes[pi].path : WPF_ATSPI_PATH_ROOT;
+            atspi_append_ref(&item, g_bus_name, ppath);
+        }
         dbus_int32_t index = is_root ? -1 : idx++;
         int cc = atspi_child_count(k);
         dbus_int32_t child_count = (dbus_int32_t)cc;
