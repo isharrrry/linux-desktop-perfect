@@ -554,6 +554,8 @@ int32_t WindowPattern_WaitForInputIdle(void) { return E_NOTIMPL; }
 #define WPF_ATSPI_PATH_ROOT "/org/a11y/atspi/accessible/wpf/root"
 /* PM-0109：org.a11y.atspi.Cache 的规范对象路径（at-spi2-core xml/Cache.xml） */
 #define WPF_ATSPI_PATH_CACHE "/org/a11y/atspi/cache"
+/* 【PM-0150】AT-SPI 的「空引用」约定：bus 名空串 + 这个路径 */
+#define WPF_ATSPI_PATH_NULL  "/org/a11y/atspi/null"
 
 typedef struct {
     char path[128];                 // D-Bus 对象路径
@@ -641,6 +643,52 @@ static int atspi_child_count(int index)
     return cnt;
 }
 
+/* 【PM-0150/PM-0152】节点在**父节点内**的序号（0..childCount-1；root 为 -1）。
+   遍历口径必须与 GetChildAtIndex 逐字一致，否则「按序号取孩子」会错位。
+   修前 Cache 里写的是全局序号（窗口 0..8、控件 9..121），与父的 childCount 矛盾。 */
+static int atspi_child_index_of(int ni)
+{
+    if (ni < 0 || ni >= g_node_count || !g_nodes[ni].alive) return -1;
+    const wpf_atspi_node *n = &g_nodes[ni];
+    if (n->hwnd == 0) return -1;              /* root 无父 */
+    int ord = 0;
+    for (int i = 0; i < g_node_count; ++i) {
+        if (!g_nodes[i].alive) continue;
+        if (i == ni) return ord;
+        int sib = (n->parent_index < 0)
+            ? (g_nodes[i].hwnd != 0 && g_nodes[i].parent_index < 0)
+            : (g_nodes[i].parent_index == n->parent_index);
+        if (sib) ++ord;
+    }
+    return -1;
+}
+
+/* 【PM-0144 续】真父路径：root 无父（回空串，调用方补成 null 引用）；
+   窗口的父是 app root；控件的父是它所属的**窗口节点**。
+   修前这里对所有非 root 节点一律回 root，与 Cache.parent 是同一个错，只修了一处。 */
+static const char *atspi_node_parent_path(const wpf_atspi_node *n)
+{
+    if (n->hwnd == 0) return "";
+    int pi = n->parent_index;
+    if (pi >= 0 && pi < g_node_count && g_nodes[pi].alive) return g_nodes[pi].path;
+    return WPF_ATSPI_PATH_ROOT;
+}
+
+/* 【PM-0152】节点的接口列表**只写一份**：Cache.GetItems 与 Accessible.GetInterfaces
+   共用，避免「缓存里声明」与「方法里声明」两处各写又互相矛盾。
+   只列真实现了 handler 的接口：Accessible / Action / Component(GetExtents 已实现)；
+   Text / Value 未实现，不列出（PM-0149）。 */
+static void atspi_append_interfaces(DBusMessageIter *arr, const wpf_atspi_node *n)
+{
+    (void)n;
+    const char *i_acc = "org.a11y.atspi.Accessible";
+    const char *i_act = "org.a11y.atspi.Action";
+    const char *i_cmp = "org.a11y.atspi.Component";
+    dbus_message_iter_append_basic(arr, DBUS_TYPE_STRING, &i_acc);
+    dbus_message_iter_append_basic(arr, DBUS_TYPE_STRING, &i_act);
+    dbus_message_iter_append_basic(arr, DBUS_TYPE_STRING, &i_cmp);
+}
+
 // ── D-Bus 方法处理器 ────────────────────────────────────────────────────────
 static void atspi_append_ref(DBusMessageIter *arr, const char *bus, const char *path)
 {
@@ -667,7 +715,6 @@ static void atspi_reply_cache_items(DBusMessageIter *it)
     int frame_cnt = 0;
     for (int k = 0; k < g_node_count; ++k)
         if (g_nodes[k].alive && g_nodes[k].hwnd != 0) ++frame_cnt;
-    int idx = 0;
     for (int k = 0; k < g_node_count; ++k) {
         if (!g_nodes[k].alive) continue;
         wpf_atspi_node *cn = &g_nodes[k];
@@ -677,7 +724,7 @@ static void atspi_reply_cache_items(DBusMessageIter *it)
         atspi_append_ref(&item, g_bus_name, cn->path);
         atspi_append_ref(&item, g_bus_name, WPF_ATSPI_PATH_ROOT);
         if (is_root)
-            atspi_append_ref(&item, "", "/org/a11y/atspi/null");
+            atspi_append_ref(&item, "", WPF_ATSPI_PATH_NULL);
         else {
             /* 【PM-0144 修复】parent 必须是**真正的父节点**：
                窗口的父是 app root，控件的父是它所属的**窗口节点**。
@@ -690,19 +737,18 @@ static void atspi_reply_cache_items(DBusMessageIter *it)
                                 ? g_nodes[pi].path : WPF_ATSPI_PATH_ROOT;
             atspi_append_ref(&item, g_bus_name, ppath);
         }
-        dbus_int32_t index = is_root ? -1 : idx++;
+        /* 【PM-0152】父内序号（root=-1），不再用全局计数 */
+        dbus_int32_t index = (dbus_int32_t)atspi_child_index_of(k);
         int cc = atspi_child_count(k);
         dbus_int32_t child_count = (dbus_int32_t)cc;
         dbus_message_iter_append_basic(&item, DBUS_TYPE_INT32, &index);
         dbus_message_iter_append_basic(&item, DBUS_TYPE_INT32, &child_count);
         DBusMessageIter ifaces;
         dbus_message_iter_open_container(&item, DBUS_TYPE_ARRAY, "s", &ifaces);
-        const char *i_acc = "org.a11y.atspi.Accessible";
-        dbus_message_iter_append_basic(&ifaces, DBUS_TYPE_STRING, &i_acc);
-        if (cn->has_action) {
-            const char *i_act = "org.a11y.atspi.Action";
-            dbus_message_iter_append_basic(&ifaces, DBUS_TYPE_STRING, &i_act);
-        }
+        /* 【PM-0152】与 GetInterfaces 共用同一份列表。原来这里只写
+           Accessible(+Action)，漏了**已实现的 Component** ⇒ 113/113 个节点的
+           「缓存接口」与「声明接口」互相矛盾。 */
+        atspi_append_interfaces(&ifaces, cn);
         dbus_message_iter_close_container(&item, &ifaces);
         const char *nm = cn->name;
         dbus_message_iter_append_basic(&item, DBUS_TYPE_STRING, &nm);
@@ -878,22 +924,40 @@ static DBusHandlerResult atspi_msg_handler(DBusConnection *conn, DBusMessage *ms
         DBusMessageIter in;
         if (dbus_message_iter_init(msg, &in) && dbus_message_iter_get_arg_type(&in) == DBUS_TYPE_INT32)
             dbus_message_iter_get_basic(&in, &idx);
-        // 简化：忽略 idx，返回第一个顶层窗口
-        const char *cp = "";
-        int found = 0;
-        for (int i = 0; i < g_node_count && !found; ++i)
-            if (g_nodes[i].alive && g_nodes[i].hwnd != 0 && n->hwnd == 0) { cp = g_nodes[i].path; found = 1; }
+        /* 【PM-0150】按**父关系**取第 idx 个真子节点。原实现是 stub：忽略 idx、
+           固定返回「第一个顶层窗口」，且对非 root 节点回空 object path。
+           抓包实证（mon-150536.log）：pyatspi 对 wpf/root 调 10370 次
+           GetChildAtIndex，10370 次全部拿到同一个 win_3200003
+           ⇒ 每个 app 长出 122 个重复的 frame|SourceTree 子节点。
+           越界与无子节点按 AT-SPI 约定回空引用 ("", /org/a11y/atspi/null)。 */
+        const char *cp = WPF_ATSPI_PATH_NULL;
+        int ni = (int)(n - g_nodes);
+        if (idx >= 0) {
+            int seen = 0;
+            for (int i = 0; i < g_node_count; ++i) {
+                if (!g_nodes[i].alive) continue;
+                int is_child = (n->hwnd == 0)
+                    ? (g_nodes[i].hwnd != 0 && g_nodes[i].parent_index < 0)
+                    : (g_nodes[i].parent_index == ni);
+                if (!is_child) continue;
+                if (seen++ == (int)idx) { cp = g_nodes[i].path; break; }
+            }
+        }
+        const char *cp_bus = (strcmp(cp, WPF_ATSPI_PATH_NULL) == 0) ? "" : bus;
         DBusMessageIter st;
         dbus_message_iter_open_container(&it, DBUS_TYPE_STRUCT, NULL, &st);
-        dbus_message_iter_append_basic(&st, DBUS_TYPE_STRING, &bus);
+        dbus_message_iter_append_basic(&st, DBUS_TYPE_STRING, &cp_bus);
         dbus_message_iter_append_basic(&st, DBUS_TYPE_OBJECT_PATH, &cp);
         dbus_message_iter_close_container(&it, &st);
-        (void)idx;
     } else if (strcmp(member, "GetParent") == 0) {
-        const char *pp = (n->hwnd == 0) ? "" : WPF_ATSPI_PATH_ROOT;
+        /* 【PM-0144 续】真父：控件→所属窗口，窗口→app root，root→空引用。
+           修前对所有非 root 节点一律回 root。 */
+        const char *pp = atspi_node_parent_path(n);
+        const char *pn = (*pp) ? bus : "";
+        if (!*pp) pp = WPF_ATSPI_PATH_NULL;
         DBusMessageIter st;
         dbus_message_iter_open_container(&it, DBUS_TYPE_STRUCT, NULL, &st);
-        dbus_message_iter_append_basic(&st, DBUS_TYPE_STRING, &bus);
+        dbus_message_iter_append_basic(&st, DBUS_TYPE_STRING, &pn);
         dbus_message_iter_append_basic(&st, DBUS_TYPE_OBJECT_PATH, &pp);
         dbus_message_iter_close_container(&it, &st);
     } else if (strcmp(member, "GetApplication") == 0) {
@@ -933,9 +997,12 @@ static DBusHandlerResult atspi_msg_handler(DBusConnection *conn, DBusMessage *ms
             dbus_message_iter_append_basic(&var, DBUS_TYPE_STRING, &ds_val);
             dbus_message_iter_close_container(&it, &var);
         } else if (want_prop && (strcmp(want_prop, "childCount") == 0 || strcmp(want_prop, "ChildCount") == 0)) {
-            dbus_int32_t cnt = 0;
-            for (int i = 0; i < g_node_count; ++i)
-                if (g_nodes[i].alive && g_nodes[i].hwnd != 0 && n->hwnd == 0) ++cnt;
+            /* 【PM-0152】必须复用 atspi_child_count()：原实现把「所有带 hwnd 的节点」
+               都算成 root 的孩子（9 窗口 + 113 控件 = 122），且对非 root 恒回 0,
+               与 Cache.child_count / GetChildren 三处自相矛盾
+               ⇒ pyatspi 按 122 遍历，GetChildAtIndex 又回同一个窗口
+               ⇒ 122 个重复 frame 节点。判据：root=9、窗口=113、控件=0。 */
+            dbus_int32_t cnt = (dbus_int32_t)atspi_child_count((int)(n - g_nodes));
             dbus_message_iter_open_container(&it, DBUS_TYPE_VARIANT, "i", &var);
             dbus_message_iter_append_basic(&var, DBUS_TYPE_INT32, &cnt);
             dbus_message_iter_close_container(&it, &var);
@@ -952,11 +1019,14 @@ static DBusHandlerResult atspi_msg_handler(DBusConnection *conn, DBusMessage *ms
             dbus_message_iter_append_basic(&var, DBUS_TYPE_INT32, &aid);
             dbus_message_iter_close_container(&it, &var);
         } else if (want_prop && (strcmp(want_prop, "parent") == 0 || strcmp(want_prop, "Parent") == 0)) {
-            const char *pp = (n->hwnd == 0) ? "" : WPF_ATSPI_PATH_ROOT;
+            /* 【PM-0144 续】与 GetParent 同源：真父（控件→窗口，窗口→root，root→null） */
+            const char *pp = atspi_node_parent_path(n);
+            const char *pn = (*pp) ? bus : "";
+            if (!*pp) pp = WPF_ATSPI_PATH_NULL;
             DBusMessageIter st;
             dbus_message_iter_open_container(&it, DBUS_TYPE_VARIANT, "(so)", &var);
             dbus_message_iter_open_container(&var, DBUS_TYPE_STRUCT, NULL, &st);
-            dbus_message_iter_append_basic(&st, DBUS_TYPE_STRING, &bus);
+            dbus_message_iter_append_basic(&st, DBUS_TYPE_STRING, &pn);
             dbus_message_iter_append_basic(&st, DBUS_TYPE_OBJECT_PATH, &pp);
             dbus_message_iter_close_container(&var, &st);
             dbus_message_iter_close_container(&it, &var);
@@ -995,16 +1065,9 @@ static DBusHandlerResult atspi_msg_handler(DBusConnection *conn, DBusMessage *ms
         /* K-1180：告诉 libatspi 本节点有哪些接口（否则 get_action_iface 返回 None） */
         DBusMessageIter arr;
         dbus_message_iter_open_container(&it, DBUS_TYPE_ARRAY, "s", &arr);
-        const char *ifs[] = {
-            "org.a11y.atspi.Accessible",
-            "org.a11y.atspi.Action",
-            "org.a11y.atspi.Component",
-            /* 【PM-0145】`Text` / `Value` 未实现（无 handler），声明的接口必须真的能用：
-               声明了没实现的接口会让客户端调过来吃 UnknownMethod，比少一个功能更糟。
-               摘掉只留已实现的；标准客户端取文本/数值另立号排下一轮。 */
-        };
-        for (size_t k = 0; k < sizeof(ifs)/sizeof(ifs[0]); ++k)
-            dbus_message_iter_append_basic(&arr, DBUS_TYPE_STRING, &ifs[k]);
+        /* 【PM-0152】与 Cache.GetItems 共用 atspi_append_interfaces()，两处同源。
+           Text / Value 未实现，不列出（PM-0149）。 */
+        atspi_append_interfaces(&arr, n);
         dbus_message_iter_close_container(&it, &arr);
     } else if (strcmp(member, "GetExtents") == 0) {
         /* 【PM-0145 应答】`org.a11y.atspi.Component.GetExtents(coord_type:u)` 规范应答是
