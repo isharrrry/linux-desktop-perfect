@@ -84,6 +84,21 @@ static void atspi_diag(const char *fmt, ...)
     fputc('\n', stderr); fflush(stderr);
 }
 
+/* 【PM-0154】不受 WPF_LINUX_KEY_DIAG 控制的告警：降级/回退必须可见。
+   11-19 事故：a11y 总线缺失 ⇒ 静默回退到 session bus，只留一行被 KEY_DIAG 门控的
+   日志 ⇒ 标准客户端一个 app 都看不到，排查花了半小时。失败不许不吭声。 */
+static void atspi_warn(const char *fmt, ...)
+{
+    va_list ap; va_start(ap, fmt);
+    fputs("[ATSPI][WARN] ", stderr);
+    vfprintf(stderr, fmt, ap);
+    va_end(ap);
+    fputc('\n', stderr); fflush(stderr);
+}
+
+/* 【PM-0154】1 = atspi_address() 最终退到了 $DBUS_SESSION_BUS_ADDRESS（不是真的 a11y 总线） */
+static int g_atspi_fell_back = 0;
+
 // ── 找 AT-SPI 的 bus 地址 ───────────────────────────────────────────────────
 // 顺序：$AT_SPI_BUS_ADDRESS → $XDG_RUNTIME_DIR/at-spi/bus* → ~/.cache/at-spi/bus*
 static int atspi_address(char *out, size_t outsz)
@@ -143,7 +158,12 @@ static int atspi_address(char *out, size_t outsz)
     }
     /* 最后退回通用 session bus（at-spi2 也常挂在上面） */
     const char *sess = getenv("DBUS_SESSION_BUS_ADDRESS");
-    if (sess && *sess) { snprintf(out, outsz, "%s", sess); atspi_diag("[ATSPI] 回退到 $DBUS_SESSION_BUS_ADDRESS"); return 1; }
+    if (sess && *sess) {
+        g_atspi_fell_back = 1;
+        snprintf(out, outsz, "%s", sess);
+        atspi_diag("[ATSPI] 回退到 $DBUS_SESSION_BUS_ADDRESS");
+        return 1;
+    }
     return 0;
 }
 
@@ -214,7 +234,29 @@ static int atspi_ensure(void)
     g_bus_state = -1;                                  /* 先悲观：任何一步失败都保持放弃 */
 
     char addr[1024];
-    if (!atspi_address(addr, sizeof(addr))) { atspi_diag("[ATSPI] 无可用总线，降级"); pthread_mutex_unlock(&g_atspi_lock); return 0; }
+    if (!atspi_address(addr, sizeof(addr))) {
+        /* 【PM-0154】这条必须**无条件**出现（不受 KEY_DIAG 门控） */
+        atspi_warn("找不到 AT-SPI 无障碍总线（$AT_SPI_BUS_ADDRESS 与 XDG/HOME 候选都不存在）"
+                   " ⇒ 标准客户端将看不到本应用；进程继续运行，但不提供 a11y");
+        pthread_mutex_unlock(&g_atspi_lock);
+        return 0;
+    }
+    if (g_atspi_fell_back) {
+        /* 【PM-0154】默认**不在 session bus 上注册**：那是"幽灵注册"——客户端看不到，
+           却让人以为一切正常。要旧行为必须显式开 WPF_LINUX_ATSPI_ALLOW_SESSION_BUS=1。 */
+        const char *allow = getenv("WPF_LINUX_ATSPI_ALLOW_SESSION_BUS");
+        int allowed = (allow && *allow && strcmp(allow, "0") != 0);
+        if (!allowed) {
+            atspi_warn("未找到 AT-SPI 无障碍总线，已回退到 session bus ⇒ 默认**不注册**"
+                       "（注册了标准客户端也看不到，只会造成「看起来正常」）。"
+                       "恢复旧行为：WPF_LINUX_ATSPI_ALLOW_SESSION_BUS=1；"
+                       "修根因：确保 $XDG_RUNTIME_DIR/at-spi/bus 存在，或显式设 AT_SPI_BUS_ADDRESS");
+            pthread_mutex_unlock(&g_atspi_lock);
+            return 0;
+        }
+        atspi_warn("未找到 AT-SPI 无障碍总线，按 WPF_LINUX_ATSPI_ALLOW_SESSION_BUS=1 "
+                   "在 session bus 上注册（标准客户端大概率看不到本应用）");
+    }
 
     DBusError err; dbus_error_init(&err);
     g_bus = dbus_connection_open_private(addr, &err);
@@ -628,9 +670,10 @@ static uint32_t atspi_role_id_for(const char *role)
     if (strcmp(role, "table cell") == 0) return 56;
     if (strcmp(role, "table") == 0) return 55;
     if (strcmp(role, "label") == 0) return 28;
-    if (strcmp(role, "text") == 0) return 46;
+    if (strcmp(role, "text") == 0) return 61;   /* 【PM-0151】ATSPI_ROLE_TEXT=61（原写 46，与枚举不符） */
     if (strcmp(role, "menu") == 0) return 33;
-    if (strcmp(role, "menu item") == 0) return 34;
+    if (strcmp(role, "menu item") == 0) return 35;   /* 【PM-0151】MENU_ITEM=35（原 34 错一位） */
+    if (strcmp(role, "list item") == 0) return 32;   /* 【PM-0151】LIST_ITEM=32（原缺） */
     if (strcmp(role, "scroll bar") == 0) return 60;
     if (strcmp(role, "list") == 0) return 50;
     return 0;
