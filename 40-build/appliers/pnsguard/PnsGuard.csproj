@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <AssemblyName>PnsGuard</AssemblyName>
+    <RootNamespace>LdpFix</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="WindowsBase"><HintPath>/home/links-dev/.local/share/ldp/dotnet/shared/Microsoft.WindowsDesktop.App/10.0.11/WindowsBase.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="PresentationCore"><HintPath>/home/links-dev/.local/share/ldp/dotnet/shared/Microsoft.WindowsDesktop.App/10.0.11/PresentationCore.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="PresentationFramework"><HintPath>/home/links-dev/.local/share/ldp/dotnet/shared/Microsoft.WindowsDesktop.App/10.0.11/PresentationFramework.dll</HintPath><Private>false</Private></Reference>
+  </ItemGroup>
+</Project>

@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Library</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>Pm0138Fix</AssemblyName>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="PresentationFramework">
+      <HintPath>$(MSBuildThisFileDirectory)..\pm0138-fx\PresentationFramework.dll</HintPath>
+    </Reference>
+    <Reference Include="PresentationCore">
+      <HintPath>$(MSBuildThisFileDirectory)..\pm0138-fx\PresentationCore.dll</HintPath>
+    </Reference>
+    <Reference Include="WindowsBase">
+      <HintPath>$(MSBuildThisFileDirectory)..\pm0138-fx\WindowsBase.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+</Project>
