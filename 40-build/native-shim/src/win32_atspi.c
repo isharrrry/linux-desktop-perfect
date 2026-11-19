@@ -989,8 +989,9 @@ static DBusHandlerResult atspi_msg_handler(DBusConnection *conn, DBusMessage *ms
             "org.a11y.atspi.Accessible",
             "org.a11y.atspi.Action",
             "org.a11y.atspi.Component",
-            "org.a11y.atspi.Text",
-            "org.a11y.atspi.Value",
+            /* 【PM-0145】`Text` / `Value` 未实现（无 handler），声明的接口必须真的能用：
+               声明了没实现的接口会让客户端调过来吃 UnknownMethod，比少一个功能更糟。
+               摘掉只留已实现的；标准客户端取文本/数值另立号排下一轮。 */
         };
         for (size_t k = 0; k < sizeof(ifs)/sizeof(ifs[0]); ++k)
             dbus_message_iter_append_basic(&arr, DBUS_TYPE_STRING, &ifs[k]);
