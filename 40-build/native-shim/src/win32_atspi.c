@@ -72,6 +72,9 @@ static int g_bus_state = 0;     /* 0=未尝试 1=可用 -1=已放弃 */
  *   用独立的 `g_atspi_running`（初始 1），只在连接真断开时置 0。 */
 static volatile int g_atspi_running = 1;
 static char g_bus_name[128];
+/* 【PM-0153】本连接的唯一名（:1.x）：Socket.Embed 的 (so) 必须用它，
+   否则 registry 认不出 owner，每次启动积一条 stale app。 */
+static char g_bus_unique[128];
 static pthread_mutex_t g_atspi_lock = PTHREAD_MUTEX_INITIALIZER;
 
 static void atspi_diag(const char *fmt, ...)
@@ -228,6 +231,7 @@ static int atspi_ensure(void)
     }
     const char *uniq = dbus_bus_get_unique_name(g_bus);
     snprintf(g_bus_name, sizeof(g_bus_name), "%s", uniq ? uniq : "wpf-linux");
+    snprintf(g_bus_unique, sizeof(g_bus_unique), "%s", uniq ? uniq : "");
 
     /* 【K-616】**关键修复**：`dbus_connection_open_private` 只建连接、拿到唯一名（`:1.xx`），
      *   **不会请求 well-known 名字**。而 `at-spi2-registryd` / `pyatspi` 是通过
@@ -302,7 +306,12 @@ static int atspi_ensure(void)
             DBusMessageIter it, st;
             dbus_message_iter_init_append(m, &it);
             dbus_message_iter_open_container(&it, DBUS_TYPE_STRUCT, NULL, &st);
-            const char *bus = "org.a11y.atspi.SourceTree";
+            /* 【PM-0153】Embed 的 (so) 必须是**本连接的唯一名**（AT-SPI 规范要求
+               app 的唯一名）。原来硬编码 well-known 名 ⇒ registry 无法按名字
+               关联连接 owner，进程退出后旧条目不被回收，每启动一次积一条 stale app
+               （实测 86 个别名全指向同一个 /wpf/root：全量枚举 10,312 节点 /
+               17.62 s，而单棵树只有 122 节点 / 0.22 s）。 */
+            const char *bus = g_bus_unique[0] ? g_bus_unique : "org.a11y.atspi.SourceTree";
             const char *path = "/org/a11y/atspi/accessible/wpf/root";
             dbus_message_iter_append_basic(&st, DBUS_TYPE_STRING, &bus);
             dbus_message_iter_append_basic(&st, DBUS_TYPE_OBJECT_PATH, &path);
