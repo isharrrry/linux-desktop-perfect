@@ -736,7 +736,13 @@ static DBusHandlerResult atspi_msg_handler(DBusConnection *conn, DBusMessage *ms
              /* K-1249：**根因修复** —— 白名单漏了 `org.a11y.atspi.Action`，
                 导致 Action 的所有方法（GetName/DoAction/GetActions…）都被
                 NOT_YET_HANDLED ⇒ libdbus 回 `UnknownMethod`（L-15 的真因）。 */
-             && strcmp(iface, "org.a11y.atspi.Action") != 0)
+             && strcmp(iface, "org.a11y.atspi.Action") != 0
+             /* 【PM-0145】同 K-1249 的坑：`GetInterfaces` 里声明了 Component/Text/Value，
+                但白名单没有它们 ⇒ 调用一律 NOT_YET_HANDLED ⇒ libdbus 回 UnknownMethod
+                ⇒ 标准客户端拿不到控件坐标（GetExtents 就这么被拒的）。 */
+             && strcmp(iface, "org.a11y.atspi.Component") != 0
+             && strcmp(iface, "org.a11y.atspi.Text") != 0
+             && strcmp(iface, "org.a11y.atspi.Value") != 0)
         return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
 
     /* 【PM-0109】org.a11y.atspi.Cache 挂在规范路径 /org/a11y/atspi/cache
@@ -989,6 +995,29 @@ static DBusHandlerResult atspi_msg_handler(DBusConnection *conn, DBusMessage *ms
         for (size_t k = 0; k < sizeof(ifs)/sizeof(ifs[0]); ++k)
             dbus_message_iter_append_basic(&arr, DBUS_TYPE_STRING, &ifs[k]);
         dbus_message_iter_close_container(&it, &arr);
+    } else if (strcmp(member, "GetExtents") == 0) {
+        /* 【PM-0145 应答】`org.a11y.atspi.Component.GetExtents(coord_type:u)` 规范应答是
+           `(iiii)` = (x, y, width, height)。此前 `GetInterfaces` 里**声明了** Component
+           接口（:985），但 handler 没有这个分支 ⇒ 调用走默认分支返回空 body，
+           pyatspi/gdbus 解析不到矩形 ⇒ 标准客户端拿不到控件坐标。
+           口径：`n->bounds[0..3]` 存的是**注册时的屏幕坐标**（见 wpf_atspi_register_control
+           契约 :1243），这里**直接返回，不再加一次窗口原点**（否则会重复偏移一个 origin）。
+           窗口节点（无 bounds）返回全 0，表示未知。 */
+        dbus_int32_t ex = 0, ey = 0, ew = 0, eh = 0;
+        if (n) {
+            ex = n->bounds[0]; ey = n->bounds[1];
+            ew = n->bounds[2]; eh = n->bounds[3];
+        }
+        {
+            DBusMessageIter st;
+            dbus_message_iter_open_container(&it, DBUS_TYPE_STRUCT, NULL, &st);
+            dbus_message_iter_append_basic(&st, DBUS_TYPE_INT32, &ex);
+            dbus_message_iter_append_basic(&st, DBUS_TYPE_INT32, &ey);
+            dbus_message_iter_append_basic(&st, DBUS_TYPE_INT32, &ew);
+            dbus_message_iter_append_basic(&st, DBUS_TYPE_INT32, &eh);
+            dbus_message_iter_close_container(&it, &st);
+        }
+        atspi_diag("[ATSPI] GetExtents path=%s ⇒ %d,%d %dx%d", path, ex, ey, ew, eh);
     } else if (strcmp(member, "GetActions") == 0) {
         /* K-1250：若 WPF 侧还没设置 action，则按需补一个默认 action（"激活窗口"），
            让 NActions>=1、GetName(0)/GetActions 有真实数据。
