@@ -63,7 +63,7 @@ artifacts:
       bytes: 5156304
       steps: "cp -p 回滚件到同目录临时名 → mv 原子覆盖 /home/links-dev/.local/share/ldp/dotnet/shared/Microsoft.WindowsDesktop.App/10.0.11/wpfgfx_cor3.so（禁 cp 覆盖活动件，禁 git checkout --）→ 回读 sha → kill 实例 → 用 deploy-scripts 下 3f6b7c4c…/54 行/:27 有 的 launcher 重启 → 核 FRESH 与 实际面=Noto Sans CJK SC"
     rebuild:
-      reproducible: unknown
+      reproducible: partial
       kind: patch-chain
       repo: "/home/links-dev/netTest/GitProj/linux-desktop-perfect"
       commit: "5a28e5ba076e2cbfdfb7f3b0ee10587d5f2451e6"
@@ -73,7 +73,19 @@ artifacts:
       base_source_note: "全 64 hex 见 40-build/milcore/patches/README.md；配方硬校验基线必须 1c1bc80b…、822 行"
       base_artifact_sha256: "c022b2395a297fa93dbbd465a71d71f6b03968f8ea90547d0d115c3166adf9c5"
       command: "bash 40-build/milcore/patches/apply-and-build.sh"
-      note: "patch+README+配方已 commit 5a28e5b（本地 main，未 push）；配方 v2 `bf338ba9…`（未 commit，六项修正：node 探测/flock 互斥/固定产物路径/trap 逆回/CLEAN/.rej 拦截/BUILD_DIFF→exit 18）待与清单同批提交。**重建结论**：清空独占重建得 `99fe4626014df6453bb7f20194ea1d23b5f207b7d22b4ddd532aeec6df2d7366`（两路/清空前后一致），≠ 现役 `e453e714…`；两件同尺寸 5,156,304 B，**仅差 40 字节**：`0x280..0x293`（20 B，`.note.gnu.build-id` desc）、`0x20b681..0x20b690`（16 B，`.rodata`，**定性未定**：PDB GUID 与 build-id 镜像两说冲突，待定论）、`0x4ea3c0..0x4ea3c3`（4 B，`.gnu_debuglink` CRC32，readelf 实测段 `0x4ea3ac..0x4ea3c4`，此前误记 `.data.rel.ro`）；**`.text`/`.plt`/`.init` 0 差异**。**根因（决定性）**：冻件 `SOURCES` 记构建环境为 `docker dotnet 10.0.401`，而 127 上 `docker NOTFOUND`，两次重建都在宿主机 `/usr/bin/dotnet 10.0.401` ⇒ 冻件的构建环境在本机不可复现，这不是配方能修好的问题。**`reproducible` 保持 `unknown`**（大肥鱼 12:5x）：`partial` 必须附已入库的逐段工具；工具 `deploy-artifacts/pm0112/artifact-equiv.py`（197 行 / `77dd6952…` / selftest 3/3）随清单同批 commit 进 `40-build/milcore/patches/`，入库且 16 B 归属定论后再改 `partial`，并回填差异段/相等段清单。要 `true` 只有两条路：① 127 装 docker 复现同镜像（成本高、需用户批）；② 用宿主机版重冻一个件当现役（等于换件 + 重跑 P1/P2/P4）。重建前置：PATH 须含 `/home/links-dev/node/bin`；构建前清 `milcore{,-bridge}` 的 `bin/obj`"
+      partial_evidence:
+        equiv_tool: "40-build/milcore/patches/artifact-equiv.py"
+        equiv_tool_sha_prefix: "77dd6952"
+        equiv_tool_selftest: "3/3 PASS（197 行）；commit a900ad4 入库并已 push"
+        reason: "同宿主、同 dotnet 10.0.401、同 recipe 重建，`.text` 逐字节相同，构建期元数据不同，字节不等机制未观测"
+        diff_sets:
+          - "e453e714↔99fe4626 = 40 B 三簇 {0x280..0x293 (20B .note.gnu.build-id desc), 0x20b681..0x20b690 (16B .rodata 模块标识), 0x4ea3c0..0x4ea3c3 (4B .gnu_debuglink CRC32)}"
+          - "e453e714↔ffdad802 = 40 B 三簇（同区间）"
+          - "e453e714↔e3888ba8 = 56 B 四簇（多 0x20b65c..0x20b66b 16B｜中间 0x20b66c..0x20b680 共 21 B 两件全同）"
+        equal_sections: ".text / .plt / .init 逐字节相同；.text sha256 = 65316f1b7b6ba9ce5e6b048eacd378c894e739aed39330060e2895d7426ace6a（四件同）"
+        samples: "四件：冻件 e453e714；deploy-artifacts/pm0112/recipe/rebuild-current.so 99fe4626；rebuild-norev.so ffdad802；rebuild-pinned.so e3888ba8。.text 四件同、0x20b681 的 16 B 四值互异（7bb87960… / 104aadfa… / 362cd673… / 2f79512f…）⇒ 构建期生成、非源码常量"
+        open: "① 哪一项构建期输入决定这 20+16+4 字节（未观测）；② 冻件包内 11:38 记的 REPRODUCIBLE=YES（两次同 sha）与今天三个不同重建值不自洽（可能只是同一冻件复制两次，未核实）"
+      note: "patch+README / 配方 v2 `bf338ba9…` / `artifact-equiv.py` **均已入库并 push**（`5a28e5b`、`a900ad4`）。**重建结论**：宿主机重建稳定得 `99fe4626014df6453bb7f20194ea1d23b5f207b7d22b4ddd532aeec6df2d7366`（两路、清空前后一致），≠ 现役 `e453e714…`；两件同尺寸 5,156,304 B。差异集**按特征逐对写，不写成对所有重建件恒成立**：`e453e714`↔`99fe4626` = 三簇共 40 B —— `0x280..0x293`（20 B，`.note.gnu.build-id` desc）、`0x20b681..0x20b690`（16 B，`.rodata` GUID）、`0x4ea3c0..0x4ea3c3`（4 B，`.gnu_debuglink` CRC32，readelf 实测段 `0x4ea3ac..0x4ea3c4`）；`e453e714`↔`e3888ba8`（钉版本那版）= 四簇共 56 B（`.rodata` 两个 GUID：`0x20b65c..0x20b66b` 与 `0x20b681..0x20b690`，中间 `0x20b66c..0x20b680` 共 21 B 两件全同）。四件（冻件 / `99fe4626` / `ffdad802` / `e3888ba8`）`.text` **逐字节相同**、`0x20b681` 的 16 B **四值互异**（`7bb8… / 104a… / 362c… / 2f79…`）⇒ 该 16 B 为构建期生成、非源码常量。**已排除的两条捷径**：① 「关掉 `IncludeSourceRevisionInInformationalVersion` 即得 `e453e714`」——实测得 `ffdad802`；② 「把内嵌版本钉回 `1.0.0+11e7c22…`」——实测得 `e3888ba8`。docker 归因已作废（`SOURCES:15` 是冻件脚本模板 `pm0112-freeze-fix.sh:53` 的错词，实际全程宿主机），作废记录见 `corrections`。**仍未定**：哪一项构建期输入决定这 20+16+4 字节。**已按大肥鱼 12:5x 的两个前提转 `partial`**（工具 `40-build/milcore/patches/artifact-equiv.py` 197 行 / `77dd6952…` / selftest 3/3，commit `a900ad4` 入库并已 push；16 B 与 4 B 的归属均已独立复核）。要 `true` 需先找到能复现 `e453e714` 的构建参数组合（目前未找到；docker 与钉版本两条已排除）。重建前置：PATH 须含 `/home/links-dev/node/bin`；构建前清 `milcore{,-bridge}` 的 `bin/obj`"
 
   - id: wpfgfx.timer.dll
     path: "/home/links-dev/.local/share/ldp/dotnet/shared/Microsoft.WindowsDesktop.App/10.0.11/wpfgfx_cor3.dll"
@@ -82,8 +94,8 @@ artifacts:
     ticket: "PM-0112"
     role: "wpfgfx 同件 .dll 副本（同字节，两份都要换）；运行时只映射 .so，.dll 不映射（check-mmap-fresh 报 NOT_MAPPED 属正常）"
     rebuild:
-      reproducible: unknown
-      note: "同 wpfgfx.timer：commit 5a28e5b 的 patch-chain 产物；两件同 sha 同 bytes 是硬要求，换件时须逐份核"
+      reproducible: partial
+      note: "同 wpfgfx.timer：commit 5a28e5b 的 patch-chain 产物，判据与差异集见该件的 partial_evidence（工具 artifact-equiv.py / a900ad4）。两件同 sha 同 bytes 是硬要求，换件时须逐份核"
     rollback:
       path: "/home/links-dev/deploy-backup/wpfgfx-fixswap-20261120-1220/wpfgfx_cor3.dll.orig-c022b239"
       sha256: "c022b2395a297fa93dbbd465a71d71f6b03968f8ea90547d0d115c3166adf9c5"
@@ -314,7 +326,7 @@ bypasses:
 snapshots:
   - id: current-2026-11-19T1603
     status: current
-    note: "现役集合，已换入 PM-0112 修后件 e453e714…（2026-11-20 12:2x）。known-good：签署记录 deploy-artifacts/pm0112/PM-0112-known-good-签署-20261120.md（64 行 / 5,394 B / d3bfc129…）已出，但 16 B 归属存在冲突、项目经理已撤回 ⇒ **当前不是 known-good**；定论后按大肥鱼口径重签，写法固定为「现役 e453e714 + 重建产物 99fe4626 仅差 40 字节构建标识、.text 0 差异」，**禁止写「从仓库一键重建出 e453e714」**。另：字体面（实际面=Noto Sans CJK SC）在现役件上的读数仍未核"
+    note: "现役集合，已换入 PM-0112 修后件 e453e714…（2026-11-20 12:2x）。known-good：签署记录 deploy-artifacts/pm0112/PM-0112-known-good-签署-20261120.md（64 行 / 5,394 B / d3bfc129…）已出但被撤回（原撤回理由「16 B = PDB GUID 对不上」已被质量独立复核证实，而「构建期生成、非源码常量」判据成立）⇒ **重签口径统一用这句，逐字不改**：「同宿主、同 dotnet 10.0.401、同 recipe 重建，`.text` 逐字节相同，构建期元数据不同，字节不等机制未观测」；差异集按对写（`e453e714`↔`99fe4626` 40 B 三簇、↔`e3888ba8` 56 B 四簇）；**禁止写「从仓库一键重建出 e453e714」**。另：字体面（实际面=Noto Sans CJK SC）在现役件上的读数仍未核"
     members:
       shim.native: "3a5a4a7274d6a274528b4d9a9bf38dfa3d68c9dd8d2243b20ec9960782eccbf0"
       wpfgfx.timer: "e453e71495e4ca94bc9b428bcb7ba4666e4e7a3b5c2a20ae44c4cdd0460c1ae8"
@@ -362,11 +374,12 @@ unreproducible:
   - "appdll.uia / helper.gitselfheal / helper.uiabridge / applib.gong：补丁器或源码未入库，只有冻件 dll"
   - "hook.pnsguard：源码无版本控制"
   - "windowsbase：只有冻件，无构建命令"
-  - "wpfgfx.timer/.dll（PM-0112 修法件）：能从仓库重建（patch-chain，commit 5a28e5b），但**与冻件不逐字节相等**——差 40 字节构建元数据，根因是冻件构建环境为 docker dotnet 10.0.401、127 上无 docker ⇒ `reproducible` 保持 unknown，待逐段工具 artifact-equiv.py 入库且 16 B 归属定论后再按 partial 登记；未登记前不许写「可重建 == 现役件」"
+  - "wpfgfx.timer/.dll（PM-0112 修法件）：能从仓库重建（patch-chain，commit 5a28e5b），但**与冻件不逐字节相等**——对 `e453e714`↔`99fe4626` 这一对差 40 字节（20 B build-id + 16 B .rodata GUID + 4 B .gnu_debuglink CRC32），`.text` 0 差异；根因未定（docker 一说不成立、关 rev 与钉版本两条已排除）⇒ `reproducible` 保持 unknown，待 `artifact-equiv.py` 入库并按对写清差异集后再按 `partial` 登记；未登记前不许写「可重建 == 现役件」"
   - "wpfgfx 字体面：PM-0147 的 FontSet.cs 已提交 fd70070，但 MilPresentation.cs 兜底 hunk 只在工作区（旧冻件 pm0147-ttc-faces-f60d88bf 有原文）⇒ 若需重建字体件，仍按 partial 处理"
 
 corrections:
-  - "2026-11-20 12:5x（决定性）：冻件 `SOURCES` 记构建环境为 `docker dotnet 10.0.401`，而 127 上 `docker NOTFOUND`（无 docker/镜像/容器记录），两次重建均用宿主机 `/usr/bin/dotnet 10.0.401` ⇒ **冻件构建环境在本机不可复现**，这才是「重建 sha 不等」的根因；不是配方缺陷、也不是代码漂移（`.text` 0 差异）。要 `true` 只有装 docker 复现镜像、或用宿主机版重冻一个件当现役两条路"
+  - "2026-11-20 12:5x（撤回上一条）：**「docker 是根因」作废**。`deploy-freeze/…e453e714…/SOURCES:15` 的「docker dotnet 10.0.401」来自冻件脚本模板 `pm0112-freeze-fix.sh:53` 的错词；实际构建全程宿主机 `/usr/bin/dotnet 10.0.401` + `node 40-build/milcore-bridge/build-bridge.mjs`，`build-fix.log`/`build-fix2.log` 无任何 docker 调用。127 无 docker 属实，但与「不可逐字节重建」无关"
+  - "2026-11-20 12:5x：四变体副本与判据（平台提供，证据件 `deploy-artifacts/pm0112/pm0112-rebuild-equiv-4variants-20261120.md` 81 行 / `b7257895…`）：冻件 `deploy-freeze/pm0112-layeralpha-e453e714…/wpfgfx_cor3.so.e453e714…`、`deploy-artifacts/pm0112/recipe/rebuild-current.so`（`99fe4626`）、`rebuild-norev.so`（`ffdad802`）、`rebuild-pinned.so`（`e3888ba8`）。四件 `.text` 逐字节相同、`0x20b681` 的 16 B 四值互异 ⇒ 构建期生成、非源码常量；差异集是**逐对的量**（40 B 三簇 / 56 B 四簇），不得写成对所有重建件恒 40 字节"
   - "2026-11-20 归属更正：40 字节差异集定为 `{0x280..0x293 (20B build-id desc), 0x20b681..0x20b690 (16B .rodata), 0x4ea3c0..0x4ea3c3 (4B .gnu_debuglink CRC32)}`；此前「`.data.rel.ro`」是错的（readelf 实测 `.data.rel.ro` 区间 0x4e1020..0x4e1788，0 差异）。16 B 的定性（PDB GUID vs build-id 镜像）两方说法冲突，未定论前不得写死"
   - "2026-11-20 12:5x：wpfgfx 两条原记 f60d88bf…（PM-0147 字体件，5,152,192 B）已过时；现役为 PM-0112 修后件 e453e714…（5,156,304 B）。同时本文件此前只在 Windows 侧 ops-ldp/，从未 commit 进 127 仓——11-19 台账「部署清单与核对脚本已出」订正为「已出稿、未进仓、未与 pm0112 现役对齐」"
   - "2026-11-20：本清单 schema 为 ldp-deploy-manifest/1（运维 11-19 回填版），与架构规程 §2 的 schema v1 字段名不同（artifacts/launch/env/bypasses/snapshots/judges 语义一致，但 source vs rebuild、sha256 vs members 等写法不同）；进仓前需二选一：按规程映射字段，或把规程 §2 改成此 schema。未定前不许拿规程 §2 去 lint 本文件"
