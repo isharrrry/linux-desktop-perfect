@@ -35,13 +35,13 @@ artifacts:
     installed_at: "2026-11-19T19:45:53+0800"
     evidence: "换件备份 deploy-backup/shim-20261119-194553/（.orig=3a5a4a72…/825,120 B）；expected-shim.sha=17538e0d…；2026-11-20 20:2x verify-manifest.sh 实测 sha=17538e0d bytes=825200"
     rebuild:
-      reproducible: unknown
+      reproducible: true
       kind: repo-build
       repo: "/home/links-dev/netTest/GitProj/linux-desktop-perfect"
       subdir: "40-build/native-shim"
-      commit: "none（19:45 出件时源码未提交，无法按提交号重建；前一件 3a5a4a72 出自 f13cd272）"
+      commit: "2c346489830328161233fcb8247ef0d5ea96f08b"
       command: "bash /home/links-dev/netTest/GitProj/linux-desktop-perfect/40-build/native-shim/build-shim.sh"
-      note: "平台 11-20 提交的 946157f1… 是 PM-0170 那处改动（win32_atspi.c 删 :1196 无条件 pending_action_hwnd 赋值、移到 :1278 XTest 失败回退路径），按该 rev 重建得 3d72befa…/825,200 B（deploy-freeze/shim-pm0170-3d72befa/，证据 deploy-artifacts/pm0170/rebuild-20261120-200941/）。本件与 3d72befa 同尺寸但 .text 292,482 vs 292,498 B、全文件逐字节差 45,715 B（deploy-artifacts/pm0170/shim-17538e0d-vs-3d72befa.cmp）⇒ 两件关系未观测，不得写「可重建 == 现役件」"
+      note: "现役件由提交 2c34648 的 native-shim 子树构建，字节相同（deploy-artifacts/pm0170/rebuild-pre-20261120-201708/）；候选 3d72befa 由 946157f 构建，字节相同（rebuild-20261120-200941/）；两提交该子树只差 win32_atspi.c 一处 +5/−1，45,715 B 差异由该改动引起，两件不是同一件的重编译。冻件当时未留 build log，工具链断言只限今天这台（gcc 11.4.0）。证据 PM0170-SRC-TO-ARTIFACT-20261120.md（40 行 / 3,462 B / d82dbde6…）"
     rollback:
       path: "/home/links-dev/deploy-freeze/rollback-3a5a4a72/libwpfwin32.so"
       sha256: "3a5a4a7274d6a274528b4d9a9bf38dfa3d68c9dd8d2243b20ec9960782eccbf0"
