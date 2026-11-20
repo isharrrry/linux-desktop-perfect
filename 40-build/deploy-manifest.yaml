@@ -28,23 +28,24 @@ paths:
 artifacts:
   - id: shim.native
     path: "/home/links-dev/.local/share/ldp/dotnet/shared/Microsoft.WindowsDesktop.App/10.0.11/libwpfwin32.so"
-    sha256: "3a5a4a7274d6a274528b4d9a9bf38dfa3d68c9dd8d2243b20ec9960782eccbf0"
-    bytes: 825120
-    ticket: "PM-0153"
-    role: "WPF Win32/GDI/AT-SPI 原生垫片；Embed 改用连接唯一名"
-    installed_at: "2026-11-19T16:03:43+0800"
+    sha256: "17538e0d8cd9e65b38bd7e7f38b669a0dd228b8e90deda30a85c58207b49b854"
+    bytes: 825200
+    ticket: "PM-0154 + PM-0151（合一件、同一次换件）"
+    role: "WPF Win32/GDI/AT-SPI 原生垫片；PM-0154 静默回退 + PM-0151 合并件"
+    installed_at: "2026-11-19T19:45:53+0800"
+    evidence: "换件备份 deploy-backup/shim-20261119-194553/（.orig=3a5a4a72…/825,120 B）；expected-shim.sha=17538e0d…；2026-11-20 20:2x verify-manifest.sh 实测 sha=17538e0d bytes=825200"
     rebuild:
-      reproducible: true
+      reproducible: unknown
       kind: repo-build
       repo: "/home/links-dev/netTest/GitProj/linux-desktop-perfect"
       subdir: "40-build/native-shim"
-      commit: "f13cd2720e49ccccc653ccff2a0fab332c4811c6"
+      commit: "none（19:45 出件时源码未提交，无法按提交号重建；前一件 3a5a4a72 出自 f13cd272）"
       command: "bash /home/links-dev/netTest/GitProj/linux-desktop-perfect/40-build/native-shim/build-shim.sh"
-      note: "该子树无已跟踪未提交修改；仅 2 个未跟踪文件（win32_atspi.c.bak-pm0150、tools/patch-presentationcore-renderclock-trace.py），不进构建"
+      note: "平台 11-20 提交的 946157f1… 是 PM-0170 那处改动（win32_atspi.c 删 :1196 无条件 pending_action_hwnd 赋值、移到 :1278 XTest 失败回退路径），按该 rev 重建得 3d72befa…/825,200 B（deploy-freeze/shim-pm0170-3d72befa/，证据 deploy-artifacts/pm0170/rebuild-20261120-200941/）。本件与 3d72befa 同尺寸但 .text 292,482 vs 292,498 B、全文件逐字节差 45,715 B（deploy-artifacts/pm0170/shim-17538e0d-vs-3d72befa.cmp）⇒ 两件关系未观测，不得写「可重建 == 现役件」"
     rollback:
-      path: "/home/links-dev/deploy-freeze/rollback-48bf4529/libwpfwin32.so"
-      sha256: "48bf452983a4f8e63c620ed7afdfab70d72d333f2024fbcc129960fcf0cc8098"
-      bytes: 825080
+      path: "/home/links-dev/deploy-freeze/rollback-3a5a4a72/libwpfwin32.so"
+      sha256: "3a5a4a7274d6a274528b4d9a9bf38dfa3d68c9dd8d2243b20ec9960782eccbf0"
+      bytes: 825120
 
   - id: wpfgfx.timer
     path: "/home/links-dev/.local/share/ldp/dotnet/shared/Microsoft.WindowsDesktop.App/10.0.11/wpfgfx_cor3.so"
@@ -221,8 +222,10 @@ artifacts:
 # ---------------------------------------------------------------- launch
 launch:
   launcher: "/home/links-dev/deploy-scripts/launch-10-7env-atspi1.sh"
-  launcher_sha256: "cc1c42ba3fc6a0eb85c2c732337dcfecb35e8b8bfd52968458a40a8f16b640ea"
-  launcher_note: "PM-0155 写死 AT_SPI_BUS_ADDRESS（18:01）；19:03 起加启动前日志轮转检查（>500 MB，写 [ROTATE] 标记）；19:08 起加 WPF_LINUX_MIL_TRACE=1（PM-0147 A/F 取数用）；都只对下次启动生效"
+  launcher_sha256: "3f6b7c4c7ea49be551b250f9a71e544a846cea77a90818eb67339d075c4a7a92"
+  launcher_lines: 54
+  launcher_line27: "export WPF_LINUX_MIL_TRACE=1"
+  launcher_note: "PM-0155 写死 AT_SPI_BUS_ADDRESS（18:01）；19:03 起加启动前日志轮转检查（>500 MB，写 [ROTATE] 标记）；19:08 起加 WPF_LINUX_MIL_TRACE=1（PM-0147 A/F 取数用）；19:5x/20:1x 加 S1_SPLIT=1、HBLINE_TRACE=1（都只对下次启动生效）。11-19 20:09 恢复为现役 3f6b7c4c…/54 行（清掉 S1_DIAG 与 :25-26 注释），此后窗口记录的三项以此件为准。旧值 cc1c42ba… 是 .bak-20261119-2009 那份历史壳（3,426 B）——不许再装回"
   pre_start_rotate:
     script: "/home/links-dev/deploy-scripts/rotate-x10-log.sh"
     script_sha256: "cd10b111cee4debc3f085ee60f2dede7054ccf0ec124c744b360421abf55218f"
@@ -276,6 +279,10 @@ env:
     purpose: "PM-0147 A/F 取数：MIL 只读 trace（stderr、每进程 400 行预算、缺省关）；不带它质量读不到「实际面=」"
   - line: "export WPF_LINUX_IBUS_DEDUP=1"
     purpose: "ibus 去重"
+  - line: "export WPF_LINUX_S1_SPLIT=1"
+    purpose: "PM-0139 基线埋点门控（只读；未开埋点前零输出），11-19 20:0x 起在 launcher 里"
+  - line: "export WPF_LINUX_HBLINE_TRACE=1"
+    purpose: "PM-0167 两态取证 HBLINE 只读 trace（每站点 60 行预算），11-19 20:1x 起随重启自然带上"
   - line: "export LD_LIBRARY_PATH=$FX/native:$FX:"
     purpose: "原生库路径"
   - line: "export DISPLAY=:10"
@@ -324,11 +331,11 @@ bypasses:
 # ---------------------------------------------------------------- snapshots
 # 回滚以版本集合为单位；current = 现役集合，shim 的回滚件按链列出
 snapshots:
-  - id: current-2026-11-19T1603
+  - id: current-2026-11-19T1945
     status: current
-    note: "现役集合，已换入 PM-0112 修后件 e453e714…（2026-11-20 12:2x）。known-good：签署记录 deploy-artifacts/pm0112/PM-0112-known-good-签署-20261120.md（64 行 / 5,394 B / d3bfc129…）已出但被撤回（原撤回理由「16 B = PDB GUID 对不上」已被质量独立复核证实，而「构建期生成、非源码常量」判据成立）⇒ **重签口径统一用这句，逐字不改**：「同宿主、同 dotnet 10.0.401、同 recipe 重建，`.text` 逐字节相同，构建期元数据不同，字节不等机制未观测」；差异集按对写（`e453e714`↔`99fe4626` 40 B 三簇、↔`e3888ba8` 56 B 四簇）；**禁止写「从仓库一键重建出 e453e714」**。另：字体面（实际面=Noto Sans CJK SC）在现役件上的读数仍未核"
+    note: "现役集合，已换入 PM-0112 修后件 e453e714…（2026-11-20 12:2x）。known-good：签署记录 deploy-artifacts/pm0112/PM-0112-known-good-签署-20261120.md（64 行 / 5,394 B / d3bfc129…）已出但被撤回（原撤回理由「16 B = PDB GUID 对不上」已被质量独立复核证实，而「构建期生成、非源码常量」判据成立）⇒ **重签口径统一用这句，逐字不改**：「同宿主、同 dotnet 10.0.401、同 recipe 重建，`.text` 逐字节相同，构建期元数据不同，字节不等机制未观测」；差异集按对写（`e453e714`↔`99fe4626` 40 B 三簇、↔`e3888ba8` 56 B 四簇）；**禁止写「从仓库一键重建出 e453e714」**。另：字体面（实际面=Noto Sans CJK SC）在现役件上的读数仍未核；2026-11-20 20:2x 核账：shim 成员由 3a5a4a72… 改为现役 17538e0d…（11-19 19:45 换件）"
     members:
-      shim.native: "3a5a4a7274d6a274528b4d9a9bf38dfa3d68c9dd8d2243b20ec9960782eccbf0"
+      shim.native: "17538e0d8cd9e65b38bd7e7f38b669a0dd228b8e90deda30a85c58207b49b854"
       wpfgfx.timer: "e453e71495e4ca94bc9b428bcb7ba4666e4e7a3b5c2a20ae44c4cdd0460c1ae8"
       wpfgfx.timer.dll: "e453e71495e4ca94bc9b428bcb7ba4666e4e7a3b5c2a20ae44c4cdd0460c1ae8"
       presentationcore: "ca0a2e6e0b685746acb6763f6dcd09435c3cb4842810b23324d122e01f11c5a2"
@@ -362,7 +369,7 @@ judges:
   - id: swap-shim-v2
     path: "/home/links-dev/deploy-scripts/swap-shim-v2.sh"
     sha256: "870a603f2eb66eab945cd0814bf87e6ca2b3f4b347d6f2ca1da67ffa8f09c6f8"
-    usage: "swap-shim-v2.sh --dry-run|--apply <frozen.so> <expected_new_sha> <expected_old_sha>"
+    usage: "swap-shim-v2.sh <frozen.so> <expected_new_sha> [dry-run|real]（位置参数；MODE 缺省 real。旧写法 --dry-run/--apply 会把 SRC 当成字符串 → ABORT src_missing 13）"
     guards: "拒 DO-NOT-DEPLOY.txt(17) / status_override=SUPERSEDED(18) / 无 git_rev(16)"
   - id: config-fingerprint
     path: "/home/links-dev/deploy-scripts/config-fingerprint.sh"
