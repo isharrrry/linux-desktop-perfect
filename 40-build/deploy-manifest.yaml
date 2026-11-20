@@ -209,14 +209,14 @@ artifacts:
     freeze_dir: "/home/links-dev/deploy-freeze/pm0138-rowmin-4920114d"
     rebuild:
       reproducible: false
-      note: "源码已在仓 40-build/appliers/pm0138fix（Hook.cs c8bd8df5… / csproj 0ce8417c…，11e7c22 入仓；旧注「未入库」过时）。2026-11-20 22:1x 六件回归 0/6（f54b39b8…）：重建失败 11 errors，因 csproj 的 HintPath 指向 ../pm0138-fx/ 三件引用缺失（40-build/appliers/pm0138-fx/PresentationFramework.dll、PresentationCore.dll、WindowsBase.dll）。三件已在工作区找到，决定补进仓、不改 csproj，见 design/PM-0166-pm0138-fx引用缺失-处置决定-20261120.md"
+      note: "源码已在仓 40-build/appliers/pm0138fix（Hook.cs c8bd8df5… / csproj 0ce8417c…，11e7c22 入仓）。**可重建、PE 结构等同，逐字节不等只因构建元数据（时间戳/MVID/PDB 路径）**：SDK 10.0.401 重建矩阵——默认/RID 版 6,144 B（PE32+ 0x8664）、纯 AnyCPU 7,168 B（.text=5120）、带 -p:RuntimeIdentifier= -p:IncludeSourceRevisionInInformationalVersion=false → 6,656 B（.text=4608/.rsrc=1024/.reloc=512，与现役同结构）。与现役差 25 簇 / 260 B（TimeDateStamp、MVID×2、PDB 调试路径串、_CorDllMain/mscoree.dll 位移、5 处单字节；方法体区无成段差异）。reproducible 保持 false。证据：deploy-artifacts/pm0166/PM-0166-pm0138fix-REBUILD-20261120.txt（c8f584b4…）。旧句「重建失败 11 errors / 引用件缺失」作废——四件引用已随 98044e8 入仓（SOURCES b5252f08…）"
       refs_found:
         files:
           - "PresentationFramework.dll 6,188,544 B / db2dd06b1a122427fbe570d6646bb3b740d997d4f768687ed149e514d2d7b50f"
           - "PresentationCore.dll 3,609,088 B / ca0a2e6e0b685746acb6763f6dcd09435c3cb4842810b23324d122e01f11c5a2（=部署件 presentationcore）"
           - "WindowsBase.dll 1,108,480 B / 06c470e05dab76efa18c4b0460476a3963a7763440e66f38b79198570b1cdd9e（=部署件 windowsbase）"
           - "System.Xaml.dll 613,888 B / 41a91420e3098cfd28830feae701ddd36c99fbfdf296c15afe96beb4b8129e2e（csproj 未引用、出现在构建输出，补进仓时一并带上并由构建验证）"
-        note: "以上四件在本机工作区 dotnet/pm0138-fx/ 与 Pm0138Fix/bin/Release/net10.0/ 两处同名同 sha；构建输出 Pm0138Fix.dll 6,656 B / 4920114d…（mtime 11-19 18:28:10）= 现役件（部署 18:30）⇒ 该套引用在 Windows SDK 10.0.203 下产出现役件；Linux SDK 10.0.401 重跑未做，reproducible 仍为 false"
+        note: "以上四件已随 98044e8 入仓（40-build/appliers/pm0138-fx/ 下四件 + SOURCES.txt b5252f08…；构建期引用、不入部署）。本机工作区副本与构建输出同 sha；构建输出 Pm0138Fix.dll 6,656 B / 4920114d…（mtime 11-19 18:28:10）＝现役件。重建矩阵与差异簇见 :212 note 与 PM-0166-pm0138fix-REBUILD-20261120.txt（c8f584b4…）；reproducible 仍为 false（逐字节差仅构建元数据）"
 
   - id: hook.pnsguard
     path: "/home/links-dev/pnsguard/bin/Release/net10.0/PnsGuard.dll"
@@ -388,7 +388,7 @@ judges:
 
 unreproducible:
   - "appdll.uia：补丁器本体未入库，只有冻件 dll（不在 PM-0166 六件 0/6 判据内）"
-  - "helper.gitselfheal / helper.uiabridge / applib.gong / applib.split-pm0138 / helper.pm0138 / hook.pnsguard：2026-11-20 22:1x 六件回归 **0/6**（判定件 `deploy-artifacts/pm0166/PM0166-REGRESSION-QA-20261120.txt`，4,440 B / `f54b39b8…`）：GongSolutions 现役 `#Strings` 多 215 个未入库注入段名字、Split 多 54 个、Pm0138Fix 构建失败 11 errors（缺 `40-build/appliers/pm0138-fx/` 三件引用）、另三件差 232–251 B 且部署早于源码入仓（11-19 21:51）⇒ 不能当同链"
+  - "helper.gitselfheal / helper.uiabridge / applib.gong / applib.split-pm0138 / helper.pm0138 / hook.pnsguard：2026-11-20 22:1x 六件回归 **0/6**（判定件 deploy-artifacts/pm0166/PM0166-REGRESSION-QA-20261120.txt，4,440 B / f54b39b8…）：GongSolutions 现役 #Strings 多 215 个未入库注入段名字、Split 多 54 个、另三件差 232–251 B 且部署早于源码入仓（11-19 21:51）⇒ 不能当同链；Pm0138Fix 例外：可重建、PE 结构等同，逐字节不等只因构建元数据（时间戳/MVID/PDB 路径）（引用件已随 98044e8 入仓）"
   - "windowsbase：只有冻件，无构建命令"
   - "wpfgfx.timer/.dll（PM-0112 修法件）：能从仓库重建（patch-chain，commit 5a28e5b），但**与冻件不逐字节相等**——对 `e453e714`↔`99fe4626` 这一对差 40 字节（20 B build-id + 16 B .rodata GUID + 4 B .gnu_debuglink CRC32），`.text` 0 差异；根因未定（docker 一说不成立、关 rev 与钉版本两条已排除）⇒ **`reproducible: partial`（2026-11-20 21:1x 更正：原写「保持 unknown、待工具入库再转 partial」，其前提已满足——`artifact-equiv.py` 已入库 `a900ad4` / `77dd6952…`，差异集已按对写清见 corrections 382/383；与第 88 行同值，两份不再打架）**；不许写「可重建 == 现役件」"
   - "wpfgfx 字体面：PM-0147 的 FontSet.cs 已提交 fd70070，但 MilPresentation.cs 兜底 hunk 只在工作区（旧冻件 pm0147-ttc-faces-f60d88bf 有原文）⇒ 若需重建字体件，仍按 partial 处理"
@@ -411,3 +411,4 @@ corrections:
   - "2026-11-20 21:3x：上条要求的**调用方核查已完成（运维实测）**：**代码层 0 处**——仓库内 `grep -rIn verify-manifest` 只命中本文件注释（`:7`/`:36`/`:378`）；`deploy-scripts/` 下 `(if|&&|\\|\\|).*verify-manifest` 0 行；`restart-10.sh`/`swap-shim-v2.sh` 不引用；只读引用两处（`preflight-launch.sh:17` 纯注释、`runbook-deps.sh:6` 只看文件存在与 sha、不看 rc）⇒ **接口变更无代码破坏面**。**文档层 5 处已改**（原把 `VERDICT=OK` 当唯一门禁）：`PM-0170-runbook`（`f976b364→c23c1686`）、`pm0137a/WINDOW-20261120-RUNBOOK.md`（`85a48302→80d1d686`）、`pm0112/RUNBOOK-POPUP-NEXT.md` 的 `:12`/`:28`（`33d34809→c07beee3`）、`FX-WRITE-POLICY.md` §2（`02433203→08a5bcd2`），均带 `.bak-20261120-2116xx` 备份、改写前用脚本断言命中数。**定性要写准**：当前实跑 `VERDICT=OK`、旧文案也过得去，风险只出现在 partial/unknown 件真产生预期差那天——这 5 处是按「将来会错」提前改的，不是当前已错"
   - "2026-11-20 22:1x（大肥鱼定）：`PM-0166` 六件回归 **0/6 可重建**，六件 `reproducible` 一律 `false`——其中五件原本已是 `false`，仅 `hook.pnsguard` 由 `unknown` 改为 `false`；六件 note 已补判定件与理由，并顺带更正五处过时的「源码未入库」注（appliers 源码 11e7c22 / 11-19 21:51 才入仓，晚于全部部署）。判定件 `/home/links-dev/deploy-artifacts/pm0166/PM0166-REGRESSION-QA-20261120.txt` 4,440 B / `f54b39b8…`：① GongSolutions 链件 102,400 ≠ 现役 105,984（差 3,584 B）、Split 链件 36,864 ≠ 37,888（差 1,024 B），且现役 `#Strings` 各多 215 / 54 个未入库注入段名字；② Pm0138Fix 构建失败 11 errors（缺 `40-build/appliers/pm0138-fx/` 三件）；③ 另三件同名同尺寸、差 232–251 B，已证部署早于源码入仓 ⇒ 不能当同链"
   - "2026-11-20 22:2x：`pm0138-fx` 三件引用缺失的处置决定见 `design/PM-0166-pm0138-fx引用缺失-处置决定-20261120.md`：**补进仓优先、不改 csproj**——三件/四件（含 System.Xaml）在工作区已找到并与部署件、构建输出对上 sha（见 `helper.pm0138.rebuild.refs_found`），补进 `40-build/appliers/pm0138-fx/` 并附 SOURCES；只补引用不等于 `Pm0138Fix` 可重建，Linux SDK 10.0.401 重跑字节相等前 `reproducible` 保持 `false`"
+  - "2026-11-20 22:1x：pm0138fix 重建定论（系统底层实测，证据 /home/links-dev/deploy-artifacts/pm0166/PM-0166-pm0138fix-REBUILD-20261120.txt，c8f584b4…）：可重建、PE 结构等同，逐字节不等只因构建元数据（时间戳/MVID/PDB 路径）——25 簇 / 260 B（TimeDateStamp、MVID×2、PDB 路径串、_CorDllMain/mscoree.dll 位移、5 处单字节），方法体区无成段差异；reproducible 保持 false。四件引用已随 98044e8 入仓（SOURCES.txt b5252f08…，构建期引用、不入部署）。本行取代上一条（:413）「只补引用不等于可重建 / 重跑字节相等前保持 false」的措辞；上条作历史保留"
