@@ -1,0 +1,11 @@
+--- a/40-build/milcore/Rendering/SkiaRenderBackend.cs
++++ b/40-build/milcore/Rendering/SkiaRenderBackend.cs
+@@ -272,7 +272,7 @@
+                 }
+             }
+ 
+-            double layerAlpha = opacity * maskAlpha;
++            double layerAlpha = Math.Clamp(v.Opacity, 0.0, 1.0) * maskAlpha;
+ 
+             int entry = canvas.SaveCount;
+ 
