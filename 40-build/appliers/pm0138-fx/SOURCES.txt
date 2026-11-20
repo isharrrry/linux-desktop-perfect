@@ -1,0 +1,20 @@
+# pm0138-fx —— Pm0138Fix 构建期引用（构建期引用、不入部署）
+# 用途：40-build/appliers/pm0138fix/Pm0138Fix.csproj 三个 <HintPath> 的目标目录
+purpose: build-time-reference
+deploy: no（构建期引用、不入部署；运行期不加载这四件，用的仍是 FX 现役件）
+origin: SourceTree app-3.4.15 部署件同名文件（= 127 FX 现役件）；本机 11-19 16:20 暂存副本，2026-11-20 22:1x 补进仓
+git_rev: 0e2ef8d
+file: PresentationCore.dll        bytes=3609088  sha256=ca0a2e6e0b685746acb6763f6dcd09435c3cb4842810b23324d122e01f11c5a2
+file: PresentationFramework.dll   bytes=6188544  sha256=db2dd06b1a122427fbe570d6646bb3b740d997d4f768687ed149e514d2d7b50f
+file: WindowsBase.dll             bytes=1108480  sha256=06c470e05dab76efa18c4b0460476a3963a7763440e66f38b79198570b1cdd9e
+file: System.Xaml.dll             bytes=613888   sha256=41a91420e3098cfd28830feae701ddd36c99fbfdf296c15afe96beb4b8129e2e
+rebuild: |
+  cd 40-build/appliers/pm0138fix && rm -rf bin obj
+  dotnet build -c Release -p:RuntimeIdentifier= -p:IncludeSourceRevisionInInformationalVersion=false
+  产物 bin/Release/net10.0/Pm0138Fix.dll = 6656 B / sha256 04cd1f316cbda9f6ada04480d90c00ad6578d52a89c9e26b6cc66a5c741f5bfe
+  现役（部署件）= 6656 B / sha256 4920114d59d5030267c05cafcd35a452f926ae874dea98fb8f006ab09a68ea7e
+result: reproducible=no（逐字节不等）
+  - PE 结构完全相同：machine=0x014c / magic=0x10b / .text=4608 / .rsrc=1024 / .reloc=512
+  - 字节差 25 簇 / 260 B，全部落在 PE 头与元数据/调试区：TimeDateStamp、MVID×2、PDB 路径（Windows 构建机路径 vs 本机路径）、入口 stub 的少量位移
+  - 方法体区无成段差异
+  - 证据 deploy-artifacts/pm0166/PM-0166-pm0138fix-REBUILD-20261120.txt
