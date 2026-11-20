@@ -1,0 +1,378 @@
+# deploy-manifest.yaml — linux-desktop-perfect 在 127 上的部署唯一事实源
+# 生成：运维专家 2026-11-19 17:0x +0800（按现有部署实况回填）
+# 2026-11-20 12:5x 架构更新：wpfgfx.timer/.dll 换成 PM-0112 修后件 e453e714…；
+#   rebuild 改 patch-chain、commit 填 5a28e5b；快照成员同上；待运维全量重建比 sha
+# 状态：v0.2-pm0112-draft，进仓前须过两关：① schema 与架构规程 §2 对齐（见 corrections）；
+#   ② 运维按 commit 5a28e5b 全量重建比 sha 通过（通过后 reproducible 改 true）
+# 校验：bash /home/links-dev/deploy-scripts/verify-manifest.sh [本文件]
+#       逐件核 sha/字节、核 launcher 里的 env 行、核垫片与判据脚本；不一致 exit 41
+schema: ldp-deploy-manifest/1
+revision: 0.2-pm0112-draft
+host:
+  name: "127"
+  addr: "192.168.15.127"
+  user: "links-dev"
+  display: ":10"
+paths:
+  fx: "/home/links-dev/.local/share/ldp/dotnet/shared/Microsoft.WindowsDesktop.App/10.0.11"
+  app: "/home/links-dev/stpkg/SourceTree/app-3.4.15"
+  repo: "/home/links-dev/netTest/GitProj/linux-desktop-perfect"
+  freeze: "/home/links-dev/deploy-freeze"
+  backup: "/home/links-dev/deploy-backup"
+  scripts: "/home/links-dev/deploy-scripts"
+  log: "/home/links-dev/app-x10.log"
+
+# ---------------------------------------------------------------- artifacts
+# 每个件的校验口径：path 必须存在、sha256 与 bytes 必须逐位相同。
+# rebuild.reproducible: true=仓库提交可重建 / false=不可重建（见 note）/ unknown=有源码但无构建证据
+artifacts:
+  - id: shim.native
+    path: "/home/links-dev/.local/share/ldp/dotnet/shared/Microsoft.WindowsDesktop.App/10.0.11/libwpfwin32.so"
+    sha256: "3a5a4a7274d6a274528b4d9a9bf38dfa3d68c9dd8d2243b20ec9960782eccbf0"
+    bytes: 825120
+    ticket: "PM-0153"
+    role: "WPF Win32/GDI/AT-SPI 原生垫片；Embed 改用连接唯一名"
+    installed_at: "2026-11-19T16:03:43+0800"
+    rebuild:
+      reproducible: true
+      kind: repo-build
+      repo: "/home/links-dev/netTest/GitProj/linux-desktop-perfect"
+      subdir: "40-build/native-shim"
+      commit: "f13cd2720e49ccccc653ccff2a0fab332c4811c6"
+      command: "bash /home/links-dev/netTest/GitProj/linux-desktop-perfect/40-build/native-shim/build-shim.sh"
+      note: "该子树无已跟踪未提交修改；仅 2 个未跟踪文件（win32_atspi.c.bak-pm0150、tools/patch-presentationcore-renderclock-trace.py），不进构建"
+    rollback:
+      path: "/home/links-dev/deploy-freeze/rollback-48bf4529/libwpfwin32.so"
+      sha256: "48bf452983a4f8e63c620ed7afdfab70d72d333f2024fbcc129960fcf0cc8098"
+      bytes: 825080
+
+  - id: wpfgfx.timer
+    path: "/home/links-dev/.local/share/ldp/dotnet/shared/Microsoft.WindowsDesktop.App/10.0.11/wpfgfx_cor3.so"
+    sha256: "e453e71495e4ca94bc9b428bcb7ba4666e4e7a3b5c2a20ae44c4cdd0460c1ae8"
+    bytes: 5156304
+    ticket: "PM-0112（层 alpha 本地化；2026-11-20 上机）"
+    role: "wpfgfx 渲染层；源 1c1bc80b + 11 行修法 patch（SkiaRenderBackend.cs:275 建层 alpha 改用本层 v.Opacity，不再用祖先累计值）"
+    installed_at: "2026-11-20T12:2x+0800（换件后重启；launcher 3f6b7c4c…/54 行/:27 有）"
+    evidence: "P1 工具栏文字 core 237→148、lt200 1886→1382、P4 取消后回 51/1886、空闲带 MIN=51/1977、单实例 1337839；证据 deploy-artifacts/pm0112/PM-0112-修后取数-20261120.md"
+    notes:
+      - "字体面待核：旧件为 PM-0147 字体件 f60d88bf…（5,152,192 B），本件 5,156,304 B 已替换它；本件是否同样含「实际面=Noto Sans CJK SC」未核——读现役 MIL 行即可判定；核前不得写「字体面未变」"
+      - "冻结目录前缀 /home/links-dev/deploy-freeze/pm0112-layeralpha-e453e714…；全名与 freeze_dir 字段由运维回填"
+    rollback:
+      path: "/home/links-dev/deploy-backup/wpfgfx-fixswap-20261120-1220/wpfgfx_cor3.so.orig-c022b239"
+      sha256: "c022b2395a297fa93dbbd465a71d71f6b03968f8ea90547d0d115c3166adf9c5"
+      bytes: 5156304
+      steps: "cp -p 回滚件到同目录临时名 → mv 原子覆盖 /home/links-dev/.local/share/ldp/dotnet/shared/Microsoft.WindowsDesktop.App/10.0.11/wpfgfx_cor3.so（禁 cp 覆盖活动件，禁 git checkout --）→ 回读 sha → kill 实例 → 用 deploy-scripts 下 3f6b7c4c…/54 行/:27 有 的 launcher 重启 → 核 FRESH 与 实际面=Noto Sans CJK SC"
+    rebuild:
+      reproducible: unknown
+      kind: patch-chain
+      repo: "/home/links-dev/netTest/GitProj/linux-desktop-perfect"
+      commit: "5a28e5ba076e2cbfdfb7f3b0ee10587d5f2451e6"
+      patch: "40-build/milcore/patches/PM-0112-local-layer-alpha.patch"
+      patch_sha256: "4f626b12cf7be020100591b26c313dd3588a1f95dc63a884d2d1cca903097762"
+      base_source_sha_prefix: "1c1bc80b"
+      base_source_note: "全 64 hex 见 40-build/milcore/patches/README.md；配方硬校验基线必须 1c1bc80b…、822 行"
+      base_artifact_sha256: "c022b2395a297fa93dbbd465a71d71f6b03968f8ea90547d0d115c3166adf9c5"
+      command: "bash 40-build/milcore/patches/apply-and-build.sh"
+      note: "patch+README+配方已 commit 5a28e5b（本地 main，未 push）；配方 v2 `bf338ba9…`（未 commit，六项修正：node 探测/flock 互斥/固定产物路径/trap 逆回/CLEAN/.rej 拦截/BUILD_DIFF→exit 18）待与清单同批提交。**重建结论**：清空独占重建得 `99fe4626014df6453bb7f20194ea1d23b5f207b7d22b4ddd532aeec6df2d7366`（两路/清空前后一致），≠ 现役 `e453e714…`；两件同尺寸 5,156,304 B，**仅差 40 字节**：`0x280..0x293`（20 B，`.note.gnu.build-id` desc）、`0x20b681..0x20b690`（16 B，`.rodata`，**定性未定**：PDB GUID 与 build-id 镜像两说冲突，待定论）、`0x4ea3c0..0x4ea3c3`（4 B，`.gnu_debuglink` CRC32，readelf 实测段 `0x4ea3ac..0x4ea3c4`，此前误记 `.data.rel.ro`）；**`.text`/`.plt`/`.init` 0 差异**。**根因（决定性）**：冻件 `SOURCES` 记构建环境为 `docker dotnet 10.0.401`，而 127 上 `docker NOTFOUND`，两次重建都在宿主机 `/usr/bin/dotnet 10.0.401` ⇒ 冻件的构建环境在本机不可复现，这不是配方能修好的问题。**`reproducible` 保持 `unknown`**（大肥鱼 12:5x）：`partial` 必须附已入库的逐段工具；工具 `deploy-artifacts/pm0112/artifact-equiv.py`（197 行 / `77dd6952…` / selftest 3/3）随清单同批 commit 进 `40-build/milcore/patches/`，入库且 16 B 归属定论后再改 `partial`，并回填差异段/相等段清单。要 `true` 只有两条路：① 127 装 docker 复现同镜像（成本高、需用户批）；② 用宿主机版重冻一个件当现役（等于换件 + 重跑 P1/P2/P4）。重建前置：PATH 须含 `/home/links-dev/node/bin`；构建前清 `milcore{,-bridge}` 的 `bin/obj`"
+
+  - id: wpfgfx.timer.dll
+    path: "/home/links-dev/.local/share/ldp/dotnet/shared/Microsoft.WindowsDesktop.App/10.0.11/wpfgfx_cor3.dll"
+    sha256: "e453e71495e4ca94bc9b428bcb7ba4666e4e7a3b5c2a20ae44c4cdd0460c1ae8"
+    bytes: 5156304
+    ticket: "PM-0112"
+    role: "wpfgfx 同件 .dll 副本（同字节，两份都要换）；运行时只映射 .so，.dll 不映射（check-mmap-fresh 报 NOT_MAPPED 属正常）"
+    rebuild:
+      reproducible: unknown
+      note: "同 wpfgfx.timer：commit 5a28e5b 的 patch-chain 产物；两件同 sha 同 bytes 是硬要求，换件时须逐份核"
+    rollback:
+      path: "/home/links-dev/deploy-backup/wpfgfx-fixswap-20261120-1220/wpfgfx_cor3.dll.orig-c022b239"
+      sha256: "c022b2395a297fa93dbbd465a71d71f6b03968f8ea90547d0d115c3166adf9c5"
+      bytes: 5156304
+      steps: "同 wpfgfx.timer：临时名 + mv 原子覆盖 .dll 后逐份核 sha；.dll 不被运行时映射但仍须与 .so 同 sha 同 bytes"
+
+  - id: presentationcore
+    path: "/home/links-dev/.local/share/ldp/dotnet/shared/Microsoft.WindowsDesktop.App/10.0.11/PresentationCore.dll"
+    sha256: "ca0a2e6e0b685746acb6763f6dcd09435c3cb4842810b23324d122e01f11c5a2"
+    bytes: 3609088
+    ticket: "PM-0132/PM-0133"
+    role: "WPF 托管核心（PM-0132 HbTextLine 修复构建；fix-only，无 LdpTiming DRAW 插桩）"
+    freeze_dir: "/home/links-dev/deploy-freeze/pm0132-pc-ca0a2e6e0b6857"
+    frozen_at: "2026-11-18T09:00+0800"
+    rebuild:
+      reproducible: true
+      kind: repo-commit
+      repo: "/home/links-dev/netTest/GitProj/linux-desktop-perfect"
+      commit: "f13cd2720e49ccccc653ccff2a0fab332c4811c6"
+      commit_note: "含 PM-0132 修复提交 c2bdc7e"
+      build_script: "40-build/wpf-port/build-port.mjs"
+      build_cmd: "/home/links-dev/node/bin/node 40-build/wpf-port/build-port.mjs --only PresentationCore --upstream 40-build/build/wpf"
+      toolchain: "node v24.22.3（/home/links-dev/node/bin/node）；非交互 shell 的 PATH 里没有 node，命令必须写绝对路径（实测 bare node 报 rc=127）"
+      output: "40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationCore/bin/Release/PresentationCore.dll"
+      measured: "2026-11-19 16:57 重建 26,394 ms，产物 ca0a2e6e… 3,609,088 B，与部署件逐字节相同"
+      baseline: "9a9504f8c85597502378a580f9863b2bd2dbfca270824c92fb97602a43b284e2"
+      note: "fix-only build, no LdpTiming DRAW instrumentation；renderclock 插桩脚本 bcc8acb 不是本件生产者"
+
+  - id: windowsbase
+    path: "/home/links-dev/.local/share/ldp/dotnet/shared/Microsoft.WindowsDesktop.App/10.0.11/WindowsBase.dll"
+    sha256: "06c470e05dab76efa18c4b0460476a3963a7763440e66f38b79198570b1cdd9e"
+    bytes: 1108480
+    ticket: "PM-0133"
+    role: "WPF WindowsBase（NonPumpingSynchronizationContext 相关改动）"
+    rebuild:
+      reproducible: unknown
+      note: "冻件目录 deploy-freeze/wb-06c470e0 在，但没有构建命令；基线回滚件 wb-3643bcb3 在"
+
+  - id: appdll.uia
+    path: "/home/links-dev/stpkg/SourceTree/app-3.4.15/SourceTree.Api.UI.Wpf.dll"
+    sha256: "87a0fad82eceb838c85ea301d046442830a25f00f97bdaf40b6d151653631b45"
+    bytes: 2131968
+    ticket: "PM-0109"
+    role: "SourceTree 主 app dll（含 drag ret 降级、OpenBookmark 自愈、BookmarksPanel_Loaded 注入）"
+    rebuild:
+      reproducible: unknown
+      note: "冻件 SOURCES.sha256 记了三处补丁点与 BASE_APP_DLL=3b09162b，但补丁器本体未入库"
+
+  - id: helper.gitselfheal
+    path: "/home/links-dev/stpkg/SourceTree/app-3.4.15/GitSelfHeal.dll"
+    sha256: "753ae5f3bb3df5bd8e4b3ecbfa1f7db1e35c9fe0d28575caf5cb1b09ba610521"
+    bytes: 7680
+    ticket: "PM-0128"
+    role: "git 调用自愈 helper"
+    rebuild:
+      reproducible: false
+      note: "全盘未找到源码或工程（find 无 .csproj/.cs），只在 deploy-freeze/pm0109-app-uia-87a0fad82ece/ 里保留 dll"
+
+  - id: helper.uiabridge
+    path: "/home/links-dev/stpkg/SourceTree/app-3.4.15/UiaBridge.dll"
+    sha256: "a101c6480fdca1fa53908c84a61f19ade701c6166465691452e7a1a621440dd8"
+    bytes: 9728
+    ticket: "PM-0109"
+    role: "UIA/AT-SPI 桥（V3：名字为空时回退视觉 TextBlock）"
+    rebuild:
+      reproducible: false
+      note: "全盘未找到源码或工程；冻件里只有 UiaBridge.dll 三个版本（V2/V3 同目录不同 sha 记录）"
+
+  - id: applib.gong
+    path: "/home/links-dev/stpkg/SourceTree/app-3.4.15/GongSolutions.Wpf.DragDrop.dll"
+    sha256: "c595b8cc1f71f36327a89fe97a312a7d102420d0fc8781c27485767bb070d654"
+    bytes: 105984
+    ticket: "PM-0148"
+    role: "拖放库（拖源入口插 ret：拖文件行不动作、不崩溃）"
+    rebuild:
+      reproducible: false
+      note: "补丁器 pm0148-patcher（Cecil）未入库；冻件里记了原件 sha abb63fdf8125a590…（110904 B）与补丁后 sha；40-build/appliers/gong-dnd 是另一处 DragDrop..cctor 补丁，产物应为 102400 B，不是本件"
+    rollback:
+      path: "/home/links-dev/deploy-backup/appdll-pm0148-20261119-140148/GongSolutions.Wpf.DragDrop.dll.orig"
+      sha256: "abb63fdf8125a59096918778e4c1f9afdac3fe08b37c700895bfafdd8b63abfc"
+      bytes: 110904
+      note: "原件（未补丁）110,904 B；回滚=用它覆盖 app 目录同名文件后重启实例"
+
+  - id: applib.split-pm0138
+    path: "/home/links-dev/stpkg/SourceTree/app-3.4.15/SourceTree.Ui.FileListContainer.Split.Wpf.dll"
+    sha256: "52cf60923140e8e639901e74ebeb64be9d8118c558dc75ff4c46593a08de6b89"
+    bytes: 37888
+    ticket: "PM-0138"
+    role: "History 视图分栏容器（.ctor 末尾调 Pm0138.Hook.Apply；只加 RowDefinition.MinHeight，不动 BAML/布局数学）"
+    installed_at: "2026-11-19T18:30:00+0800"
+    freeze_dir: "/home/links-dev/deploy-freeze/pm0138-rowmin-4920114d"
+    rebuild:
+      reproducible: false
+      note: "Cecil 注入件，补丁器未入库；原件 60a389981a73ecc040944eaa528ea644bd95b19d4bcca7ed78621afd511f3f0b（41936 B）"
+    rollback:
+      path: "/home/links-dev/deploy-backup/appdll-pm0138-20261119-183010/SourceTree.Ui.FileListContainer.Split.Wpf.dll.orig"
+      sha256: "60a389981a73ecc040944eaa528ea644bd95b19d4bcca7ed78621afd511f3f0b"
+      bytes: 41936
+      note: "回滚=覆盖回原件 + 删除同目录 Pm0138Fix.dll + 重启实例"
+
+  - id: helper.pm0138
+    path: "/home/links-dev/stpkg/SourceTree/app-3.4.15/Pm0138Fix.dll"
+    sha256: "4920114d59d5030267c05cafcd35a452f926ae874dea98fb8f006ab09a68ea7e"
+    bytes: 6656
+    ticket: "PM-0138"
+    role: "RowDefinition.MinHeight 补丁 helper（干净版，无日志；被注入的 split dll 调用）"
+    installed_at: "2026-11-19T18:30:00+0800"
+    freeze_dir: "/home/links-dev/deploy-freeze/pm0138-rowmin-4920114d"
+    rebuild:
+      reproducible: false
+      note: "源码 Pm0138Fix/Hook.cs 在本机工作区未入库；JIT_ALL total=5 ok=5 fail=0（WindowsDesktop.App 10.0.11）"
+
+  - id: hook.pnsguard
+    path: "/home/links-dev/pnsguard/bin/Release/net10.0/PnsGuard.dll"
+    sha256: "e9092eda6c4e5e37393783977f09c12ab0df026eabf24ea2d073d2dae0cb24da"
+    bytes: 6656
+    ticket: "PM-0138/PM-0115"
+    role: "DOTNET_STARTUP_HOOKS 启动钩子（PnsGuard）"
+    rebuild:
+      reproducible: unknown
+      note: "源码在 /home/links-dev/pnsguard（PnsGuard.csproj + StartupHook.cs），但不在任何 git 仓库里，无法按提交号重建"
+
+# ---------------------------------------------------------------- launch
+launch:
+  launcher: "/home/links-dev/deploy-scripts/launch-10-7env-atspi1.sh"
+  launcher_sha256: "cc1c42ba3fc6a0eb85c2c732337dcfecb35e8b8bfd52968458a40a8f16b640ea"
+  launcher_note: "PM-0155 写死 AT_SPI_BUS_ADDRESS（18:01）；19:03 起加启动前日志轮转检查（>500 MB，写 [ROTATE] 标记）；19:08 起加 WPF_LINUX_MIL_TRACE=1（PM-0147 A/F 取数用）；都只对下次启动生效"
+  pre_start_rotate:
+    script: "/home/links-dev/deploy-scripts/rotate-x10-log.sh"
+    script_sha256: "cd10b111cee4debc3f085ee60f2dede7054ccf0ec124c744b360421abf55218f"
+    threshold_bytes: 524288000
+    archive_dir: "/home/links-dev/deploy-artifacts/logs"
+    keep: 8
+    marker: "[ROTATE] ts=… backup=… size=…"
+    note: "大肥鱼 11-19 裁定：只在启动前检查，不建定时任务（19:02 误装的 cron 已撤）；copytruncate，禁 rm 重建——应用持 8 个 O_APPEND fd"
+  command: "bash /home/links-dev/deploy-scripts/launch-10-7env-atspi1.sh"
+  log: "/home/links-dev/app-x10.log"
+  expect:
+    window_class: "SourceTree"
+    geometry: "600x518"
+    window_within_s: 60
+    first_line: "[LAUNCH] <date> launch-10-7env-atspi1.sh pid=..."
+  guard:
+    script: "/home/links-dev/deploy-scripts/restart-10-guarded.sh"
+    sha256: "d5049de66edabe26a41b87f506f82772e92e74f4349221ab528f8a13516bc34b"
+    usage: "restart-10-guarded.sh <launcher> <need> <wait> <full_sha64>；sha 取自 deploy-scripts/expected-shim.sha"
+    expected_shim_file: "/home/links-dev/deploy-scripts/expected-shim.sha"
+  preflight:
+    script: "/home/links-dev/deploy-scripts/preflight-launch.sh"
+    sha256: "ccf733b4726c245aac5f8db3973f1bca69df6ea9b9333d01a25dd420e1f8608c"
+    note: "2026-11-19 19:12 把 WPF env 条数校验从「等于」改成「不少于」：加 env 不再挡门；逐条 presence 由本清单 env[] 保证"
+  unset_note: "launcher 内 unset 了 12 个诊断变量（SKIP_EMPTY_EVERY/FORCE_REPROBE/XSYNC_DIAG/UIA_DIAG/WNDPROC_DIAG/GLYPH_CENSUS/DRAW_CENSUS/CREATE_DIAG/CLICKCOUNT_DIAG/INPUT_TRACE/FOCUS_TRACE），回读时不要以为它们生效"
+
+env:
+  - line: "export PATH=/home/links-dev/bin:$PATH"
+    purpose: "git 垫片优先（见 bypasses.git-sleep-shim）"
+  - line: "export DOTNET_ROOT=/home/links-dev/.local/share/ldp/dotnet"
+    purpose: "私有 dotnet 运行时"
+  - line: "export DOTNET_ReadyToRun=0"
+    purpose: "关 ReadyToRun（本移植层不准）"
+  - line: "export WPF_LINUX_ATSPI=1"
+    purpose: "打开 AT-SPI 注册（UIA 桥的前提）"
+  - line: "export WPF_LINUX_UI_FONT=\"Noto Sans CJK SC\""
+    purpose: "字体固定"
+  - line: "export WPF_LINUX_WATCHDOG_MS=2000"
+    purpose: "看门狗"
+  - line: "export WPF_LINUX_WIN32_SHIM=$FX/libwpfwin32.so"
+    purpose: "指定垫片绝对路径"
+  - line: "export WPF_LINUX_SKIP_EMPTY_COMMIT=1"
+    purpose: "绕空白提交（白屏相关的绕开项）"
+  - line: "export WPF_LINUX_KEY_DIAG=1"
+    purpose: "键盘诊断"
+  - line: "export WPF_LINUX_NCHIT_GUARD=1"
+    purpose: "非客户区命中保护（PM-0142）"
+  - line: "export WPF_LINUX_PRESENT3=1"
+    purpose: "present 三段计时总闸（配合 wpfgfx.timer）"
+  - line: "export WPF_LINUX_MIL_TRACE=1"
+    purpose: "PM-0147 A/F 取数：MIL 只读 trace（stderr、每进程 400 行预算、缺省关）；不带它质量读不到「实际面=」"
+  - line: "export WPF_LINUX_IBUS_DEDUP=1"
+    purpose: "ibus 去重"
+  - line: "export LD_LIBRARY_PATH=$FX/native:$FX:"
+    purpose: "原生库路径"
+  - line: "export DISPLAY=:10"
+    purpose: "目标显示"
+  - line: "export XAUTHORITY=/home/links-dev/.Xauthority"
+    purpose: "X 认证"
+  - line: "export AT_SPI_BUS_ADDRESS=unix:path=/run/user/1000/at-spi/bus"
+    purpose: "PM-0155 显式指定 a11y 总线；总线不在时不再静默回退 session bus，而是显式失败"
+  - line: "export DOTNET_STARTUP_HOOKS=/home/links-dev/pnsguard/bin/Release/net10.0/PnsGuard.dll"
+    purpose: "启动钩子"
+  - line: "exec /home/links-dev/.local/share/ldp/dotnet/dotnet SourceTree.exe /tmp/stgit"
+    purpose: "实际启动命令"
+
+a11y_bus:
+  address: "unix:path=/run/user/1000/at-spi/bus"
+  why: "shim 解析顺序里 $XDG_RUNTIME_DIR/at-spi/bus 是第 6 条；无后缀路径不在就静默回退 session bus（probe 见 0 app）"
+  start:
+    - "setsid nohup /usr/bin/dbus-daemon --config-file=/usr/share/defaults/at-spi2/accessibility.conf --nofork --address=unix:path=/run/user/1000/at-spi/bus &"
+    - "AT_SPI_BUS_ADDRESS=unix:path=/run/user/1000/at-spi/bus setsid nohup /usr/libexec/at-spi2-registryd &"
+  verify: "gdbus call --address unix:path=/run/user/1000/at-spi/bus --dest org.a11y.atspi.Registry --object-path /org/a11y/atspi/accessible/root --method org.a11y.atspi.Accessible.GetChildren  =>  (@a(so) [],)"
+  known_wrong: "用 --fork --print-address 11 起会 Failed to start message bus（无 launcher 提供 fd 11）；用 org.a11y.Bus 自动激活会得到 bus_0 后缀路径，应用不认"
+  pgrep_note: "进程名 comm 截断为 15 字符，必须 pgrep -af at-spi2-registryd，pgrep -a 会假阴性"
+
+# ---------------------------------------------------------------- bypasses
+# 绕开做法：必须带失效条件，否则退不出去
+bypasses:
+  - id: git-sleep-shim
+    kind: file
+    path: "/home/links-dev/bin/git"
+    sha256: "d1d6c98ea147c5b80d01e6c1acf909d3b94a286531868fdd1ee002bcdd4923cd"
+    bytes: 505
+    why: "PM-0131 白屏：0.05 时 a83bb224 起窗会撞 rev-parse HEAD 竞态；改 0.30 后私有根不白屏"
+    invalidate_when: "PM-0131 真修（改端口侧）或用户要求默认环境零白屏"
+    owner: "大肥鱼 2026-11-19 决定保留"
+    backup: "/home/links-dev/bin/git.bak-20261119-1130"
+  - id: skip-empty-commit-env
+    kind: env
+    line: "export WPF_LINUX_SKIP_EMPTY_COMMIT=1"
+    why: "绕空白提交路径，属白屏绕开"
+    invalidate_when: "PM-0131 真修后重评"
+  - id: online-bin-path
+    kind: retired
+    why: "曾想用 PATH 上的 online-bin 替换 git，但 which 硬编码 $HOME/bin/git，方案从未生效，且会致“未找到 Git”并丢 _NET_WM_PID"
+    note: "/home/links-dev/deploy-scripts/online-bin 保留目录但不许再启用"
+
+# ---------------------------------------------------------------- snapshots
+# 回滚以版本集合为单位；current = 现役集合，shim 的回滚件按链列出
+snapshots:
+  - id: current-2026-11-19T1603
+    status: current
+    note: "现役集合，已换入 PM-0112 修后件 e453e714…（2026-11-20 12:2x）。known-good：签署记录 deploy-artifacts/pm0112/PM-0112-known-good-签署-20261120.md（64 行 / 5,394 B / d3bfc129…）已出，但 16 B 归属存在冲突、项目经理已撤回 ⇒ **当前不是 known-good**；定论后按大肥鱼口径重签，写法固定为「现役 e453e714 + 重建产物 99fe4626 仅差 40 字节构建标识、.text 0 差异」，**禁止写「从仓库一键重建出 e453e714」**。另：字体面（实际面=Noto Sans CJK SC）在现役件上的读数仍未核"
+    members:
+      shim.native: "3a5a4a7274d6a274528b4d9a9bf38dfa3d68c9dd8d2243b20ec9960782eccbf0"
+      wpfgfx.timer: "e453e71495e4ca94bc9b428bcb7ba4666e4e7a3b5c2a20ae44c4cdd0460c1ae8"
+      wpfgfx.timer.dll: "e453e71495e4ca94bc9b428bcb7ba4666e4e7a3b5c2a20ae44c4cdd0460c1ae8"
+      presentationcore: "ca0a2e6e0b685746acb6763f6dcd09435c3cb4842810b23324d122e01f11c5a2"
+      windowsbase: "06c470e05dab76efa18c4b0460476a3963a7763440e66f38b79198570b1cdd9e"
+      appdll.uia: "87a0fad82eceb838c85ea301d046442830a25f00f97bdaf40b6d151653631b45"
+      helper.gitselfheal: "753ae5f3bb3df5bd8e4b3ecbfa1f7db1e35c9fe0d28575caf5cb1b09ba610521"
+      helper.uiabridge: "a101c6480fdca1fa53908c84a61f19ade701c6166465691452e7a1a621440dd8"
+      applib.gong: "c595b8cc1f71f36327a89fe97a312a7d102420d0fc8781c27485767bb070d654"
+      applib.split-pm0138: "52cf60923140e8e639901e74ebeb64be9d8118c558dc75ff4c46593a08de6b89"
+      helper.pm0138: "4920114d59d5030267c05cafcd35a452f926ae874dea98fb8f006ab09a68ea7e"
+      hook.pnsguard: "e9092eda6c4e5e37393783977f09c12ab0df026eabf24ea2d073d2dae0cb24da"
+  - id: rollback-chain-shim
+    status: available
+    note: "shim 逐次回滚件（deploy-freeze/rollback-<前缀>/libwpfwin32.so），按时间倒序"
+    members:
+      "rollback-48bf4529": "48bf452983a4f8e63c620ed7afdfab70d72d333f2024fbcc129960fcf0cc8098"
+      "rollback-0b3c3b5d": "0b3c3b5ddba1994ec12f55952350115b696f6a29e60f9436d3478c427eda41c6"
+      "rollback-83c35d92": "83c35d92572f903861cb580fffe2c1a39fdd13615f27f356a31dff2184c6cc3f"
+      "rollback-a83bb224": "a83bb224ed8d893ea5a13c367e21ca7bd3adbf12287060a6eff55001528f17b8"
+      "rollback-2679f210": "2679f21018444bca7dbfe577327b6c3d1b568142ba15317d56437120d8fc3f1d"
+
+# ---------------------------------------------------------------- judges
+judges:
+  - id: pyatspi-probe
+    path: "/home/links-dev/netTest/GitProj/linux-desktop-perfect/50-verify/pm0109/pyatspi_probe.py"
+    sha256: "fdaca6bb410b55721b9dfb31115b8d327c895e8cbcd4bc6dafa71c4fd94330a8"
+    lines: 285
+    usage: "python3 <path> --bus unix:path=/run/user/1000/at-spi/bus --find 文件状态 [--extents 文件状态] [--full-walk]"
+    red_test: "已红测（质量 19:0x 复核）：漏 --find → rc=2 USAGE_ERROR、0 行判据；--find/--extents 名字不一致 → rc=2；去掉守卫后旧静默形态原样复现（T4）"
+    note: "sha 已按加固版更新（e3842a89/267 行 → fdaca6bb/285 行）；旧台账行作废"
+  - id: swap-shim-v2
+    path: "/home/links-dev/deploy-scripts/swap-shim-v2.sh"
+    sha256: "870a603f2eb66eab945cd0814bf87e6ca2b3f4b347d6f2ca1da67ffa8f09c6f8"
+    usage: "swap-shim-v2.sh --dry-run|--apply <frozen.so> <expected_new_sha> <expected_old_sha>"
+    guards: "拒 DO-NOT-DEPLOY.txt(17) / status_override=SUPERSEDED(18) / 无 git_rev(16)"
+  - id: config-fingerprint
+    path: "/home/links-dev/deploy-scripts/config-fingerprint.sh"
+    sha256: "13cc80ea01d551417a017aee47cd7878b17fd4158e9d44513b33b9d5fb967c39"
+    usage: "config-fingerprint.sh [snapshot]  # 共享配置（user.config/opentabs.xml/Startup.Profile）指纹，非件校验"
+    note: "件校验归 verify-manifest.sh；两者分工：配置漂移 vs 部署漂移"
+
+unreproducible:
+  - "appdll.uia / helper.gitselfheal / helper.uiabridge / applib.gong：补丁器或源码未入库，只有冻件 dll"
+  - "hook.pnsguard：源码无版本控制"
+  - "windowsbase：只有冻件，无构建命令"
+  - "wpfgfx.timer/.dll（PM-0112 修法件）：能从仓库重建（patch-chain，commit 5a28e5b），但**与冻件不逐字节相等**——差 40 字节构建元数据，根因是冻件构建环境为 docker dotnet 10.0.401、127 上无 docker ⇒ `reproducible` 保持 unknown，待逐段工具 artifact-equiv.py 入库且 16 B 归属定论后再按 partial 登记；未登记前不许写「可重建 == 现役件」"
+  - "wpfgfx 字体面：PM-0147 的 FontSet.cs 已提交 fd70070，但 MilPresentation.cs 兜底 hunk 只在工作区（旧冻件 pm0147-ttc-faces-f60d88bf 有原文）⇒ 若需重建字体件，仍按 partial 处理"
+
+corrections:
+  - "2026-11-20 12:5x（决定性）：冻件 `SOURCES` 记构建环境为 `docker dotnet 10.0.401`，而 127 上 `docker NOTFOUND`（无 docker/镜像/容器记录），两次重建均用宿主机 `/usr/bin/dotnet 10.0.401` ⇒ **冻件构建环境在本机不可复现**，这才是「重建 sha 不等」的根因；不是配方缺陷、也不是代码漂移（`.text` 0 差异）。要 `true` 只有装 docker 复现镜像、或用宿主机版重冻一个件当现役两条路"
+  - "2026-11-20 归属更正：40 字节差异集定为 `{0x280..0x293 (20B build-id desc), 0x20b681..0x20b690 (16B .rodata), 0x4ea3c0..0x4ea3c3 (4B .gnu_debuglink CRC32)}`；此前「`.data.rel.ro`」是错的（readelf 实测 `.data.rel.ro` 区间 0x4e1020..0x4e1788，0 差异）。16 B 的定性（PDB GUID vs build-id 镜像）两方说法冲突，未定论前不得写死"
+  - "2026-11-20 12:5x：wpfgfx 两条原记 f60d88bf…（PM-0147 字体件，5,152,192 B）已过时；现役为 PM-0112 修后件 e453e714…（5,156,304 B）。同时本文件此前只在 Windows 侧 ops-ldp/，从未 commit 进 127 仓——11-19 台账「部署清单与核对脚本已出」订正为「已出稿、未进仓、未与 pm0112 现役对齐」"
+  - "2026-11-20：本清单 schema 为 ldp-deploy-manifest/1（运维 11-19 回填版），与架构规程 §2 的 schema v1 字段名不同（artifacts/launch/env/bypasses/snapshots/judges 语义一致，但 source vs rebuild、sha256 vs members 等写法不同）；进仓前需二选一：按规程映射字段，或把规程 §2 改成此 schema。未定前不许拿规程 §2 去 lint 本文件"
+  - "2026-11-20 12:2x：**一键重建不成立**。按 commit 5a28e5b 全量重建得 `99fe4626014df6453bb7f20194ea1d23b5f207b7d22b4ddd532aeec6df2d7366`，不是现役件 `e453e714…` ⇒ 第 1 件只到「patch+配方进仓、能跑通」，没到「重建==冻件」；known-good 继续挂起。日志 deploy-artifacts/pm0112/rebuild-5a28e5b-r2.log"
+  - "2026-11-20 12:20：同一配方被两路同时跑（运维 r2 与平台严格重建），产物交叉污染、出现 SkiaRenderBackend.cs.rej，双方产物 99fe4626 均作废过一次；配方必须加互斥锁后独占跑，否则 sha 永不可信"
+  - "2026-11-20：配方 apply-and-build.sh 实测在「打补丁后、构建中」失败时没有逆回工作区（运维遇到 node 未找到，工作区被留成 3681da3f）⇒ 一键重建必须补失败逆回（trap/finally），否则重建一次就把 1c1bc80b 基线弄脏，回滚路径也失效"
+  - "2026-11-20：配方门有洞——打了 BUILD_DIFF 之后仍正常退出（tee 管道吞非零码、缺 set -o pipefail）⇒ 对外一律读 ARTIFACT_SHA，不读退出码；脚本里 BUILD_DIFF 后应 exit 11"
+  - "2026-11-19 16:58：presentationcore 曾被我判为「没有冻件、不可重建」——错。规范冻件 /home/links-dev/deploy-freeze/pm0132-pc-ca0a2e6e0b6857/ 一直在（我按 pc- 前缀搜漏了，实际前缀是 pm0132-pc-）；我另建的 deploy-freeze/pc-ca0a2e6e/ 已移出 freeze 到 deploy-artifacts/_superseded/pc-ca0a2e6e-20261119-REDUNDANT/"
+  - "2026-11-19 16:58：上一版把 40-build/wpf-port/out/PresentationCore.dll（3ab1c931…）当该链产物是错的；正确产物在 40-build/wpf-port/src/Microsoft.DotNet.Wpf.Linux/src/PresentationCore/bin/Release/PresentationCore.dll，重建后 ca0a2e6e…，逐字节相同"
