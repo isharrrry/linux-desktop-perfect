@@ -1193,7 +1193,6 @@ static DBusHandlerResult atspi_msg_handler(DBusConnection *conn, DBusMessage *ms
         if (n && n->has_action && (idx == 0 || idx == -1))
             target = n->hwnd ? n->hwnd : (uint64_t)(uintptr_t)g_focus_window;
         if (target) {
-            g_atspi_pending_action_hwnd = target;
             g_atspi_pending_action_x = g_atspi_pending_action_y = -1;
             /* 【PM-0109 档2】控件有 bounds ⇒ 注入坐标取中心；没有则回退 hwnd/env 默认 */
             if (n && n->parent_index >= 0 && n->bounds[2] > 0 && n->bounds[3] > 0) {
@@ -1276,6 +1275,11 @@ static DBusHandlerResult atspi_msg_handler(DBusConnection *conn, DBusMessage *ms
                     goto atspi_action_done;
                 }
             }
+            /* 【PM-0143 B1】pending 必须等 XTest 失败后才置。此前在 bounds 处理前无条件置，
+               UI 线程会在 XTest 的 80+20+150 ms usleep 窗口内先消费，造成旧 WM_ 消息点击
+               与 XTest 点击各注入一次（实测 ACTION +2.45 ms / XTEST +252.38 ms，同一点）。
+               XTest 成功时走到上面的 goto，永远不会置。 */
+            g_atspi_pending_action_hwnd = target;
             atspi_diag("[ATSPI] DoAction：置待处理标志 hwnd=0x%llx idx=%d",
                        (unsigned long long)target, (int)idx);
             /* 唤醒 owner 线程（PostMessageW 内部按窗口 owner 路由 + wake） */
